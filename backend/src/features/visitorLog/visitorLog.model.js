@@ -45,6 +45,10 @@ const visitorLogSchema = new mongoose.Schema(
         type: String,
         trim: true,
       },
+      phone: {
+        type: String,
+        trim: true,
+      },
       idProofNumber: {
         type: String,
         trim: true,

@@ -89,6 +89,7 @@ export class VisitorLogService {
     // Check Blacklist before initiating walk-in
     const isBanned = await blacklistService.checkMatch(walkInData.orgId, {
       name: walkInData.snapshot?.visitorName,
+      phone: walkInData.snapshot?.phone,
       plate: walkInData.snapshot?.vehicleNumber
     });
     if (isBanned) {
@@ -103,6 +104,7 @@ export class VisitorLogService {
       logStatus: 'PENDING',
       snapshot: {
         visitorName: walkInData.snapshot?.visitorName,
+        phone: walkInData.snapshot?.phone,
         idProofNumber: walkInData.snapshot?.idProofNumber,
         vehicleNumber: walkInData.snapshot?.vehicleNumber
       }

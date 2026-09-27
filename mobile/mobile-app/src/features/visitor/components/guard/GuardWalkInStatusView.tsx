@@ -41,7 +41,11 @@ export const GuardWalkInStatusView: React.FC = () => {
     loadPendingWalkIns();
   }, [loadPendingWalkIns]);
 
-  const items: WalkInApprovalItem[] = walkIns?.pendingList || [];
+  // Outcomes received live first, then requests still awaiting the host.
+  const items: WalkInApprovalItem[] = useMemo(
+    () => [...(walkIns?.resolvedList || []), ...(walkIns?.pendingList || [])],
+    [walkIns?.resolvedList, walkIns?.pendingList]
+  );
 
   const filteredItems = useMemo(() => {
     if (filter === 'ALL') return items;

@@ -55,6 +55,13 @@ export const walkInRequestRules = [
     .withMessage('Visitor name must be a string')
     .trim(),
 
+  body('snapshot.phone')
+    .optional({ checkFalsy: true })
+    .isString()
+    .trim()
+    .matches(/^\d{10}$/)
+    .withMessage('Visitor phone must be exactly 10 digits'),
+
   body('snapshot.idProofNumber')
     .optional()
     .isString()

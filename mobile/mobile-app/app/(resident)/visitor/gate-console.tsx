@@ -350,6 +350,7 @@ export default function GateConsoleScreen() {
         entryType: 'WALK_IN',
         snapshot: {
           visitorName: data.visitorName,
+          phone: data.phone?.replace(/\D/g, ''),
           idProofNumber: data.idProofNumber,
           vehicleNumber: data.vehicleNumber,
         },

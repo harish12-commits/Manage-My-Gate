@@ -14,6 +14,9 @@ export const useAppSocket = () => {
 
   const userId = user?.id || (user as any)?._id;
   const userRole = user?.role;
+  const permissions: string[] = Array.isArray((user as any)?.permissions) ? (user as any).permissions : [];
+  // Gate staff receive walk-in outcomes on the backend's org guard room.
+  const isGateStaff = permissions.some((p) => p === '*' || p === 'visitor:guard' || p === 'visitor:admin');
   const uAny = user as any;
   const orgId =
     uAny?.orgId ||
@@ -49,6 +52,9 @@ export const useAppSocket = () => {
         if (userRole) {
           sock.emit('join_room', `org:${orgId}:role:${userRole.toLowerCase()}`);
           sock.emit('join_room', `org:${orgId}:role:${userRole}`);
+        }
+        if (isGateStaff) {
+          sock.emit('join_room', `org:${orgId}:guards`);
         }
       }
     };
@@ -103,7 +109,7 @@ export const useAppSocket = () => {
         joinUserRooms(sharedSocket);
       }
     }
-  }, [isAuthenticated, userId, token, userRole, orgId]);
+  }, [isAuthenticated, userId, token, userRole, orgId, isGateStaff]);
 
   const emitEvent = (eventName: string, payload: any) => {
     const sock = activeSocket || sharedSocket;

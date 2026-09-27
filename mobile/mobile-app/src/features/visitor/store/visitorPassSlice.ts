@@ -58,6 +58,8 @@ export interface DashboardSummary {
 
 export interface WalkInState {
   pendingList: WalkInApprovalItem[];
+  /** Requests resolved while this session watched them, so the gate can see the outcome. */
+  resolvedList: WalkInApprovalItem[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   actionStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
@@ -111,6 +113,7 @@ const initialState: VisitorPassState = {
   },
   walkIns: {
     pendingList: [],
+    resolvedList: [],
     status: 'idle',
     actionStatus: 'idle',
     error: null,
@@ -391,6 +394,15 @@ export const visitorPassSlice = createSlice({
       state.walkIns.pendingList = state.walkIns.pendingList.filter(
         (item) => item.id !== targetId && item.rawLog?._id !== targetId
       );
+
+      // Keep the outcome visible on the gate board (APPROVED / DENIED BY HOST).
+      if (action.payload.rawLog) {
+        const resolvedItem = mapBackendWalkInToApprovalItem(action.payload.rawLog);
+        state.walkIns.resolvedList = [
+          resolvedItem,
+          ...(state.walkIns.resolvedList || []).filter((item) => item.id !== resolvedItem.id),
+        ].slice(0, 50);
+      }
 
       state.dashboard.pendingWalkIns = state.dashboard.pendingWalkIns.filter(
         (p) => p._id !== targetId && p.id !== targetId
