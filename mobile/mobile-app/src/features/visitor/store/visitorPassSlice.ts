@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import visitorService from '../services/visitorService';
-import { WalkInApprovalItem, DEFAULT_MOCK_VISITOR_PASSES } from '../mocks/visitorMocks';
+import { WalkInApprovalItem } from '../mocks/visitorMocks';
 import { mapBackendWalkInToApprovalItem } from '../utils/mapBackendWalkInToApprovalItem';
 
 import {
@@ -186,26 +186,17 @@ export const fetchPassByCode = createAsyncThunk(
 
 export const updatePassStatus = createAsyncThunk(
   'visitorPass/updatePassStatus',
-  async ({ id, status }: { id: string; status: string }, { getState }) => {
+  async ({ id, status }: { id: string; status: string }, { rejectWithValue }) => {
     try {
       const response = await visitorService.updatePassStatus(id, status);
       const body = response && (response as any).success !== undefined ? response : (response as any)?.data;
       if (body?.data || body?._id) {
         return (body?.data || body) as any;
       }
-    } catch {
-      // Graceful fallback for offline / mock / locally created passes
+      return rejectWithValue('Visitor pass update returned no pass data');
+    } catch (error: any) {
+      return rejectWithValue(error?.response?.data?.message || error?.message || 'Failed to update visitor pass');
     }
-    const state = getState() as any;
-    const existing = state?.visitorPass?.passes?.find(
-      (p: any) => p._id === id || (p as any).id === id
-    );
-    return {
-      ...(existing || {}),
-      _id: id,
-      status,
-      updatedAt: new Date().toISOString(),
-    };
   }
 );
 

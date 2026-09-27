@@ -15,13 +15,19 @@ export const preApprovedEntryRules = [
   body('guardId')
     .optional()
     .isMongoId()
-    .withMessage('Guard ID must be a valid Mongo ID')
+    .withMessage('Guard ID must be a valid Mongo ID'),
+
+  body('gateName')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 120 })
+    .withMessage('Gate name must be at most 120 characters')
 ];
 
 export const walkInRequestRules = [
   body('orgId')
-    .notEmpty()
-    .withMessage('Organization ID (orgId) is required')
+    .optional()
     .isMongoId()
     .withMessage('Organization ID must be a valid Mongo ID'),
 
@@ -31,13 +37,17 @@ export const walkInRequestRules = [
     .withMessage('Guard ID must be a valid Mongo ID'),
 
   body('residentId')
-    .optional({ nullable: true, checkFalsy: true })
-    .custom((val) => {
-      if (val && !/^[0-9a-fA-F]{24}$/.test(val)) {
-        throw new Error('Resident ID must be a valid Mongo ID');
-      }
-      return true;
-    }),
+    .notEmpty()
+    .withMessage('Resident ID is required')
+    .isMongoId()
+    .withMessage('Resident ID must be a valid Mongo ID'),
+
+  body('gateName')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 120 })
+    .withMessage('Gate name must be at most 120 characters'),
 
   body('snapshot.visitorName')
     .optional()
@@ -65,4 +75,13 @@ export const resolveWalkInRules = [
     .withMessage('Action is required')
     .isIn(['APPROVE', 'REJECT'])
     .withMessage('Action must be APPROVE or REJECT')
+];
+
+export const checkoutRules = [
+  body('gateName')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 120 })
+    .withMessage('Gate name must be at most 120 characters'),
 ];

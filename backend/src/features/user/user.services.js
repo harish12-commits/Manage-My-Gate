@@ -718,7 +718,20 @@ export class UserService {
     };
   }
 
-  async updateProfile(id, { name, phone, phoneOtp, email, emailOtp, avatarFilename, removeAvatar }) {
+  async updateProfile(id, {
+    name,
+    phone,
+    phoneOtp,
+    email,
+    emailOtp,
+    bio,
+    work,
+    hometown,
+    allowIntercomCalls,
+    interests,
+    avatarFilename,
+    removeAvatar,
+  }) {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
@@ -726,6 +739,15 @@ export class UserService {
 
       const payload = { $set: {}, $unset: {} };
       if (name !== undefined) payload.$set.name = name;
+      if (bio !== undefined) payload.$set.bio = String(bio).trim();
+      if (work !== undefined) payload.$set.work = String(work).trim();
+      if (hometown !== undefined) payload.$set.hometown = String(hometown).trim();
+      if (allowIntercomCalls !== undefined) payload.$set.allowIntercomCalls = Boolean(allowIntercomCalls);
+      if (interests !== undefined) {
+        payload.$set.interests = interests
+          .map((interest) => String(interest).trim())
+          .filter(Boolean);
+      }
 
       // Phone change verification via OTP
       if (phone !== undefined) {

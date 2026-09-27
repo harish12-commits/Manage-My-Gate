@@ -1,6 +1,7 @@
 import visitorLogService from './visitorLog.service.js';
 import visitorPassTokenService from '../visitorPassToken/visitorPassToken.service.js';
 import HttpError from '../../utils/httpError.utils.js';
+import { assertVisitorPermission } from '../visitorPass/visitorPass.policy.js';
 
 export class VisitorLogController {
   /**
@@ -8,12 +9,14 @@ export class VisitorLogController {
    */
   async logPreApproved(req, res, next) {
     try {
-      let { passId, guardId, code } = req.body;
+      let { passId, code } = req.body;
       if (!passId && code) {
         passId = await visitorPassTokenService.getPassIdByCode(code);
       }
-      guardId = guardId || req.user?.id || req.user?._id || req.headers['x-user-id'];
-      const data = await visitorLogService.logPreApprovedEntry(passId, guardId);
+      const data = await visitorLogService.logPreApprovedEntry(passId, req.user, {
+        orgId: req.tenant.orgId,
+        gateName: req.body.gateName,
+      });
       res.success(data, 'Pre-approved visitor check-in logged successfully', 201);
     } catch (error) {
       next(error);
@@ -25,16 +28,16 @@ export class VisitorLogController {
    */
   async initiateWalkIn(req, res, next) {
     try {
-      const guardId = req.body.guardId || req.user?.id || req.user?._id || req.headers['x-user-id'];
+      assertVisitorPermission(['gate', 'manager'], req.user);
       let residentId = req.body.residentId;
       if (residentId && !/^[0-9a-fA-F]{24}$/.test(residentId)) {
         residentId = undefined;
       }
       const data = await visitorLogService.initiateWalkInRequest({
         ...req.body,
-        guardId,
+        orgId: req.tenant.orgId,
         ...(residentId ? { residentId } : {}),
-      });
+      }, req.user);
       res.success(data, 'Walk-in visitor check-in request initiated', 201);
     } catch (error) {
       next(error);
@@ -48,7 +51,7 @@ export class VisitorLogController {
     try {
       const { id } = req.params;
       const { action } = req.body;
-      const data = await visitorLogService.resolveWalkInRequest(id, action);
+      const data = await visitorLogService.resolveWalkInRequest(id, action, req.user);
       res.success(data, `Walk-in visitor check-in request resolved as ${action} successfully`);
     } catch (error) {
       next(error);
@@ -61,7 +64,7 @@ export class VisitorLogController {
   async checkout(req, res, next) {
     try {
       const { id } = req.params;
-      const data = await visitorLogService.checkout(id);
+      const data = await visitorLogService.checkout(id, req.user, { orgId: req.tenant.orgId, gateName: req.body.gateName });
       res.success(data, 'Visitor checked out successfully');
     } catch (error) {
       next(error);
@@ -77,7 +80,7 @@ export class VisitorLogController {
       if (!req.tenant?.isPlatform && req.tenant?.orgId && String(req.tenant.orgId) !== String(orgId)) {
         throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
       }
-      const data = await visitorLogService.getActiveLogsInside(orgId);
+      const data = await visitorLogService.getActiveLogsInside(orgId, req.user);
       res.success(data, 'Active logs retrieved successfully');
     } catch (error) {
       next(error);
@@ -93,11 +96,7 @@ export class VisitorLogController {
       if (!req.tenant?.isPlatform && req.tenant?.orgId && String(req.tenant.orgId) !== String(orgId)) {
         throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
       }
-      const userId = req.user.id;
-      
-      const residentIdFilter = ['GUARD', 'SECURITY', 'ADMIN', 'MANAGER'].includes(req.user.role) ? null : userId;
-      
-      const data = await visitorLogService.getPendingApprovals(orgId, residentIdFilter);
+      const data = await visitorLogService.getPendingApprovals(orgId, req.user);
       res.success(data, 'Pending approvals retrieved successfully');
     } catch (error) {
       next(error);
@@ -124,7 +123,7 @@ export class VisitorLogController {
         filter.entryType = req.query.entryType.toUpperCase();
       }
       
-      const data = await visitorLogService.getHistoryLogs(orgId, skip, limit, filter);
+      const data = await visitorLogService.getHistoryLogs(orgId, skip, limit, filter, req.user);
       res.success(data, 'Visitor logs history retrieved successfully');
     } catch (error) {
       next(error);

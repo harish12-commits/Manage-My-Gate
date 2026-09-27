@@ -53,6 +53,7 @@ export const ScanResultSheet: React.FC<ScanResultSheetProps> = ({
 
   const isSuccess = result.success && result.status !== 'REJECTED' && result.status !== 'REVOKED' && result.status !== 'EXPIRED';
   const isExpired = result.status === 'EXPIRED';
+  const requiresServerDecision = result.status === 'PENDING';
 
   let statusVariant: StatusVariant = 'danger';
   let statusLabel = 'ACCESS REJECTED';
@@ -60,6 +61,9 @@ export const ScanResultSheet: React.FC<ScanResultSheetProps> = ({
   if (isSuccess) {
     statusVariant = 'success';
     statusLabel = 'VERIFIED ACCESS';
+  } else if (requiresServerDecision) {
+    statusVariant = 'warning';
+    statusLabel = 'SERVER CHECK REQUIRED';
   } else if (isExpired) {
     statusVariant = 'neutral';
     statusLabel = 'PASS EXPIRED';
@@ -170,7 +174,7 @@ export const ScanResultSheet: React.FC<ScanResultSheetProps> = ({
 
         {/* Action Button Row */}
         <View className="gap-2.5 pt-1">
-          {isSuccess && onPrimaryAction ? (
+          {(isSuccess || requiresServerDecision) && onPrimaryAction ? (
             <Button
               onPress={onPrimaryAction}
               disabled={loading}

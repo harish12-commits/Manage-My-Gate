@@ -25,7 +25,7 @@ export interface CustomiseDeckZoneProps {
 
 export const CustomiseDeckZone: React.FC<CustomiseDeckZoneProps> = ({
   activeItems,
-  maxCapacity = 6,
+  maxCapacity = 7,
   onRemoveItem,
   onReorderItem,
   isDropTargetActive = false,
@@ -77,7 +77,7 @@ export const CustomiseDeckZone: React.FC<CustomiseDeckZoneProps> = ({
         </Text>
       </View>
 
-      {/* Fixed-height cards keep the two-row, three-column action deck aligned. */}
+      {/* Fixed-height cards keep the two-row, four-column action deck aligned. */}
       <View className="flex-row flex-wrap gap-y-2.5 -mx-1">
         {activeItems.map((item, index) => {
           const meta = ALL_AVAILABLE_FEATURES.find((f) => f.id === item.id);
@@ -86,10 +86,10 @@ export const CustomiseDeckZone: React.FC<CustomiseDeckZoneProps> = ({
           const colorBg = meta?.colorBg || item.colorBg || 'bg-secondary';
 
           return (
-            <View key={item.id} className="w-1/3 px-1">
+            <View key={item.id} className="w-1/4 px-1">
               <View
                 style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }}
-                className="relative h-[118px] w-full items-center rounded-2xl border border-border/70 px-2 py-2 shadow-xs"
+                className="relative h-[110px] w-full items-center rounded-2xl border border-border/70 px-1.5 py-2 shadow-xs"
               >
                 <View className="relative">
                   <View className={`w-11 h-11 items-center justify-center rounded-[15px] border border-border/50 ${colorBg}`}>
@@ -154,14 +154,14 @@ export const CustomiseDeckZone: React.FC<CustomiseDeckZoneProps> = ({
 
         {/* Empty Slots with Dashed Borders */}
         {Array.from({ length: emptySlotsCount }).map((_, index) => (
-          <View key={`empty_${index}`} className="w-1/3 px-1">
+          <View key={`empty_${index}`} className="w-1/4 px-1">
             <View
               style={{
                 backgroundColor: isDropTargetActive
                   ? (isDark ? 'rgba(194, 65, 12, 0.2)' : 'rgba(194, 65, 12, 0.1)')
                   : (isDark ? '#262626' : '#F5F5F4'),
               }}
-              className={`w-full h-[118px] border border-dashed rounded-[18px] items-center justify-center p-2 transition-colors ${
+              className={`w-full h-[110px] border border-dashed rounded-[18px] items-center justify-center p-2 transition-colors ${
                 isDropTargetActive
                   ? 'border-primary/80'
                   : 'border-border/70'

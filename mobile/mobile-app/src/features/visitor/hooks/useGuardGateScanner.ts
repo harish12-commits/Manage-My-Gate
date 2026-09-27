@@ -116,29 +116,26 @@ export function useGuardGateScanner() {
           const isExpired =
             passData.status === 'EXPIRED' ||
             (passData.validUntil && new Date(passData.validUntil).getTime() < Date.now());
-          const isPending = passData.status === 'PENDING';
-          const isValid = passData.status === 'ACTIVE' || (!isRevoked && !isExpired);
+          const requiresServerDecision = !isRevoked && !isExpired;
 
           const status: 'VERIFIED' | 'REJECTED' | 'EXPIRED' | 'PENDING' | 'REVOKED' = isRevoked
             ? 'REVOKED'
             : isExpired
             ? 'EXPIRED'
-            : isValid
-            ? 'VERIFIED'
+            : requiresServerDecision
+            ? 'PENDING'
             : 'REJECTED';
 
           const formattedResult: ScanResultData = {
-            success: isValid,
+            success: false,
             status,
-            title: isValid ? 'Visitor Access Verified' : 'Visitor Access Denied',
+            title: requiresServerDecision ? 'Pass Located' : 'Visitor Access Denied',
             message: isRevoked
               ? 'Pass has been revoked by host resident or estate admin.'
               : isExpired
               ? 'Visitor pass has expired.'
-              : isPending
-              ? 'Pass is pending resident approval.'
-              : isValid
-              ? 'Pre-approved pass is active and verified.'
+              : requiresServerDecision
+              ? 'Confirm entry to request the current server authorization decision.'
               : 'Pass is invalid or unrecognized.',
             visitorName: passData.visitorName || 'Guest Visitor',
             visitorPhone: passData.phone || passData.visitorPhone,
@@ -174,7 +171,7 @@ export function useGuardGateScanner() {
               passType: formattedResult.passType || 'GUEST',
               unitOrVilla: formattedResult.unitOrVilla,
               scanTime: new Date().toISOString(),
-              status: isValid ? 'VERIFIED' : isExpired ? 'EXPIRED' : 'REJECTED',
+              status: requiresServerDecision ? 'VERIFIED' : isExpired ? 'EXPIRED' : 'REJECTED',
             },
             ...prev.slice(0, 4),
           ]);

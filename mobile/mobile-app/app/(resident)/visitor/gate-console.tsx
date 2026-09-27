@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { Redirect } from 'expo-router';
 import { TabBar } from '@/components/ui/TabBar';
 import { KPIRow } from '@/components/ui/KPIRow';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ import {
 } from 'lucide-react-native';
 import { parseAndValidateAppBarcode } from '@/src/utils/appBarcodeProtocol';
 import { useTranslation } from '@/src/utils/i18n';
+import { isFeatureAllowedForUser } from '@/src/utils/rbac';
 
 export default function GateConsoleScreen() {
   const { t } = useTranslation();
@@ -47,6 +49,10 @@ export default function GateConsoleScreen() {
   ];
   const activeOrgId = useSelector(selectActiveOrgId);
   const authUser = useSelector(selectAuthUser);
+  const hasGateAccess = isFeatureAllowedForUser({ id: 'visitor_gate_console', permission: 'visitor:guard' }, authUser);
+  if (authUser && !hasGateAccess) {
+    return <Redirect href="/(resident)/dashboard" />;
+  }
   const {
     passes,
     activePass,
@@ -219,24 +225,23 @@ export default function GateConsoleScreen() {
       const isExpired =
         passData.status === 'EXPIRED' ||
         (passData.validUntil && new Date(passData.validUntil).getTime() < Date.now());
-      const isPending = passData.status === 'PENDING';
-      const isValid = passData.status === 'ACTIVE' || (!isRevoked && !isExpired);
+      const requiresServerDecision = !isCurrentlyInside && !isRevoked && !isExpired;
 
       const status: 'VERIFIED' | 'REJECTED' | 'EXPIRED' | 'PENDING' | 'REVOKED' = isRevoked
         ? 'REVOKED'
         : isExpired
         ? 'EXPIRED'
-        : isValid
-        ? 'VERIFIED'
+        : requiresServerDecision
+        ? 'PENDING'
         : 'REJECTED';
 
       const result: ScanResultData = {
-        success: isValid,
+        success: isCurrentlyInside,
         status,
         title: isCurrentlyInside
           ? 'Visitor Currently On-Premises'
-          : isValid
-          ? 'Visitor Access Verified'
+          : requiresServerDecision
+          ? 'Pass Located'
           : 'Access Verification Denied',
         message: isCurrentlyInside
           ? 'Visitor is currently inside the estate. Tap below to log gate check-out.'
@@ -244,9 +249,9 @@ export default function GateConsoleScreen() {
           ? 'Pass has been revoked by host resident or estate admin.'
           : isExpired
           ? 'This visitor pass has expired.'
-          : isPending
-          ? 'Pass is pending resident approval.'
-          : 'Pre-approved pass is active and verified. Tap below to admit visitor.',
+          : requiresServerDecision
+          ? 'Confirm entry to request the current server authorization decision.'
+          : 'Pass is not eligible for entry.',
         visitorName: passData.visitorDetails?.name || passData.visitorName || 'Guest Visitor',
         visitorPhone: passData.visitorDetails?.phone || passData.phone,
         passType: passData.passType || 'GUEST',
@@ -282,21 +287,13 @@ export default function GateConsoleScreen() {
       return;
     }
 
-    const guardId =
-      authUser?.id ||
-      authUser?._id ||
-      authUser?.userId ||
-      authUser?.user?.id ||
-      authUser?.user?._id;
-
     setAdmitLoading(true);
     try {
       await processPreApproved({
         passId: scanResult.metadata?.passId,
         code: scanResult.metadata?.code || scanResult.bookingReference,
-        ...(guardId ? { guardId } : {}),
         orgId: activeOrgId,
-        entryGate: 'Main Security Gate',
+        gateName: t('default_gate_name', 'Main gate'),
       });
 
       setScanResultSheetOpen(false);
@@ -342,10 +339,9 @@ export default function GateConsoleScreen() {
   }) => {
     setWalkInLoading(true);
     try {
-      const targetResidentUser = data.residentId || data.villaId;
+      const targetResidentUser = data.residentId;
       await submitWalkIn({
         orgId: activeOrgId,
-        guardId: authUser?.id || authUser?._id,
         residentId: targetResidentUser,
         entryType: 'WALK_IN',
         snapshot: {

@@ -110,6 +110,48 @@ export const updateProfileRules = [
     .withMessage('OTP must be 6 digits'),
   body('removeAvatar')
     .optional(),
+  body('bio')
+    .optional()
+    .isString()
+    .withMessage('Bio must be text')
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Bio cannot exceed 500 characters'),
+  body('work')
+    .optional()
+    .isString()
+    .withMessage('Work must be text')
+    .trim()
+    .isLength({ max: 120 })
+    .withMessage('Work cannot exceed 120 characters'),
+  body('hometown')
+    .optional()
+    .isString()
+    .withMessage('Hometown must be text')
+    .trim()
+    .isLength({ max: 120 })
+    .withMessage('Hometown cannot exceed 120 characters'),
+  body('allowIntercomCalls')
+    .optional()
+    .isBoolean()
+    .withMessage('allowIntercomCalls must be a boolean')
+    .toBoolean(),
+  body('interests')
+    .optional()
+    .custom((value) => {
+      let items = value;
+      if (typeof value === 'string') {
+        try {
+          items = JSON.parse(value);
+        } catch {
+          return false;
+        }
+      }
+      return Array.isArray(items)
+        && items.length <= 20
+        && items.every((item) => typeof item === 'string' && item.trim().length > 0 && item.trim().length <= 60);
+    })
+    .withMessage('Interests must be an array of up to 20 short labels'),
 ];
 
 export const bulkInviteUserRules = [
@@ -220,5 +262,3 @@ export const resendInvitationRules = [
     .isMongoId()
     .withMessage('Invalid Invitation ID format'),
 ];
-
-

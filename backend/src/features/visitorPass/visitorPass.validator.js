@@ -2,14 +2,12 @@ import { body } from 'express-validator';
 
 export const createPassRules = [
   body('orgId')
-    .notEmpty()
-    .withMessage('Organization ID (orgId) is required')
+    .optional()
     .isMongoId()
     .withMessage('Organization ID must be a valid Mongo ID'),
 
   body('createdById')
-    .notEmpty()
-    .withMessage('Creator ID (createdById) is required')
+    .optional()
     .isMongoId()
     .withMessage('Creator ID must be a valid Mongo ID'),
   body('villaId')
@@ -168,6 +166,21 @@ export const createPassRules = [
     .matches(/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/)
     .withMessage('Validity timeWindowEnd must be in HH:mm format (24-hour)'),
 
+  body('validity.timeWindows')
+    .optional()
+    .isArray()
+    .withMessage('Validity timeWindows must be an array'),
+
+  body('validity.timeWindows.*.start')
+    .optional()
+    .matches(/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/)
+    .withMessage('Validity time window start must be in HH:mm format (24-hour)'),
+
+  body('validity.timeWindows.*.end')
+    .optional()
+    .matches(/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/)
+    .withMessage('Validity time window end must be in HH:mm format (24-hour)'),
+
   body('validity.allowedDays')
     .optional()
     .isArray()
@@ -189,5 +202,11 @@ export const updatePassStatusRules = [
     .notEmpty()
     .withMessage('Status is required')
     .isIn(['PENDING', 'ACTIVE', 'REVOKED', 'EXPIRED'])
-    .withMessage('Status must be PENDING, ACTIVE, REVOKED, or EXPIRED')
+    .withMessage('Status must be PENDING, ACTIVE, REVOKED, or EXPIRED'),
+  body('reason')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Reason must be at most 500 characters')
 ];
