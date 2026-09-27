@@ -20,7 +20,8 @@ export class VisitorPassTokenService {
     while (exists && attempts < 10) {
       key = Math.floor(100000 + Math.random() * 900000).toString();
       passCode = `${orgId}_${key}`;
-      const existing = await visitorPassTokenRepository.findByCode(passCode, session);
+      // Keep active short keys unique across communities so a bare key (public share links) is unambiguous.
+      const existing = await visitorPassTokenRepository.findByShortKey(key, session);
       if (!existing) {
         exists = false;
       }
@@ -51,8 +52,8 @@ export class VisitorPassTokenService {
    * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
    * @returns {Promise<string>} The associated visitor pass ID.
    */
-  async getPassIdByCode(passCode, session = null) {
-    const tokenDoc = await visitorPassTokenRepository.findByCode(passCode, session);
+  async getPassIdByCode(passCode, session = null, orgId = null) {
+    const tokenDoc = await visitorPassTokenRepository.findByCode(passCode, session, orgId);
     if (!tokenDoc) {
       throw new HttpError(404, 'Invalid or expired entry code.');
     }

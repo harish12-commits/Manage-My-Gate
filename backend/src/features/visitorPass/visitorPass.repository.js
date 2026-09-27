@@ -24,6 +24,19 @@ export class VisitorPassRepository {
   }
 
   /**
+   * Find a VisitorPass with the unit and host resolved, for screens that show who is visiting whom.
+   * @param {string} id - The ID of the pass.
+   * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
+   * @returns {Promise<Object|null>} The pass document, or null if not found.
+   */
+  async findByIdWithParties(id, session = null) {
+    return await VisitorPass.findById(id)
+      .populate('villaId', 'unitNumber blockOrBuilding')
+      .populate('createdById', 'name')
+      .session(session || null);
+  }
+
+  /**
    * Update the status of a VisitorPass.
    * @param {string} id - The ID of the pass.
    * @param {string} status - The new status value (PENDING, ACTIVE, REVOKED, EXPIRED).
@@ -74,7 +87,8 @@ export class VisitorPassRepository {
           },
         },
       ],
-      { returnDocument: 'after', ...(session ? { session } : {}) }
+      // Mongoose 9 rejects pipeline (array) updates unless explicitly opted in.
+      { returnDocument: 'after', updatePipeline: true, ...(session ? { session } : {}) }
     );
   }
 

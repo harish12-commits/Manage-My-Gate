@@ -125,7 +125,7 @@ export class VisitorPassController {
       const { code } = req.params;
       let passId;
       try {
-        passId = await visitorPassTokenService.getPassIdByCode(code);
+        passId = await visitorPassTokenService.getPassIdByCode(code, null, req.tenant.orgId);
       } catch (err) {
         if (/^[0-9a-fA-F]{24}$/.test(code)) {
           passId = code;

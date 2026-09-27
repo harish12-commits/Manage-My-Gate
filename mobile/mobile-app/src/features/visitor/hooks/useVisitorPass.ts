@@ -160,7 +160,11 @@ export const useVisitorPass = () => {
     async (payload: any) => {
       const orgId = payload?.orgId || activeOrgId;
       const res = await dispatch(processPreApprovedThunk({ ...payload, orgId }));
-      return (res as any)?.payload;
+      // Gate decisions must fail loudly: a refused entry is never reported as admitted.
+      if (processPreApprovedThunk.rejected.match(res)) {
+        throw new Error(String(res.payload || 'Failed to check in visitor'));
+      }
+      return res.payload;
     },
     [dispatch, activeOrgId]
   );
@@ -168,7 +172,10 @@ export const useVisitorPass = () => {
   const checkoutVisitor = useCallback(
     async (logId: string) => {
       const res = await dispatch(checkoutVisitorThunk(logId));
-      return (res as any)?.payload;
+      if (checkoutVisitorThunk.rejected.match(res)) {
+        throw new Error(String(res.payload || 'Failed to checkout visitor'));
+      }
+      return res.payload;
     },
     [dispatch]
   );

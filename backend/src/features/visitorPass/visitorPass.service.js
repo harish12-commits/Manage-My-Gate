@@ -117,7 +117,7 @@ export class VisitorPassService {
    * @returns {Promise<Object>} The pass document.
    */
   async getPassById(id, session = null) {
-    const pass = await visitorPassRepository.findById(id, session);
+    const pass = await visitorPassRepository.findByIdWithParties(id, session);
     if (!pass) {
       throw new HttpError(404, `Visitor pass with ID ${id} not found.`);
     }

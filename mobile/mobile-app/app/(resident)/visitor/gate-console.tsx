@@ -255,7 +255,9 @@ export default function GateConsoleScreen() {
         visitorName: passData.visitorDetails?.name || passData.visitorName || 'Guest Visitor',
         visitorPhone: passData.visitorDetails?.phone || passData.phone,
         passType: passData.passType || 'GUEST',
-        unitOrVilla: passData.villaId?.name || passData.villaId?.number || passData.unit || 'Estate',
+        unitOrVilla: passData.villaId?.unitNumber
+          ? `Villa ${passData.villaId.unitNumber}${passData.villaId.blockOrBuilding ? ` (${passData.villaId.blockOrBuilding})` : ''}`
+          : passData.villaId?.name || passData.villaId?.number || passData.unit || 'Community / Common Area',
         hostName: passData.createdById?.name || passData.hostName || 'Host Resident',
         bookingReference: passData.shortKey || passData.code || cleanCode,
         validityWindow:
@@ -301,6 +303,8 @@ export default function GateConsoleScreen() {
       setStatusMessage(`Visitor ${scanResult.visitorName || ''} successfully admitted!`);
       await loadData();
     } catch (err: any) {
+      // Close the sheet so the refusal reason is visible on the console.
+      setScanResultSheetOpen(false);
       setStatusMessage(err?.response?.data?.message || err?.message || 'Failed to admit visitor.');
     } finally {
       setAdmitLoading(false);

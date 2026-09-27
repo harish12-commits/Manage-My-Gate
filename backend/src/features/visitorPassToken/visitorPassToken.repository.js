@@ -18,11 +18,13 @@ export class VisitorPassTokenRepository {
    * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
    * @returns {Promise<Object|null>} The token mapping document, or null if not found.
    */
-  async findByCode(passCode, session = null) {
+  async findByCode(passCode, session = null, orgId = null) {
     if (!passCode) return null;
     const raw = String(passCode).trim();
     const clean = raw.replace(/^PASS-?/i, '').replace(/[\s-]/g, '').trim();
     return await VisitorPassToken.findOne({
+      // Short keys are only unique per community, so signed-in lookups pass their community.
+      ...(orgId ? { orgId } : {}),
       $or: [
         { passCode: raw },
         { passCode: clean },
@@ -31,6 +33,16 @@ export class VisitorPassTokenRepository {
         { passCode: { $regex: new RegExp(`_${clean}$`, 'i') } },
       ],
     }).session(session || null);
+  }
+
+  /**
+   * Find an active token by its bare short key in any community.
+   * @param {string} shortKey - The 6-digit key.
+   * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
+   * @returns {Promise<Object|null>} The token mapping document, or null if not found.
+   */
+  async findByShortKey(shortKey, session = null) {
+    return await VisitorPassToken.findOne({ shortKey }).session(session || null);
   }
 
   /**

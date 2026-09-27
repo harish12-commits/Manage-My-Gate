@@ -11,7 +11,7 @@ export class VisitorLogController {
     try {
       let { passId, code } = req.body;
       if (!passId && code) {
-        passId = await visitorPassTokenService.getPassIdByCode(code);
+        passId = await visitorPassTokenService.getPassIdByCode(code, null, req.tenant.orgId);
       }
       const data = await visitorLogService.logPreApprovedEntry(passId, req.user, {
         orgId: req.tenant.orgId,
