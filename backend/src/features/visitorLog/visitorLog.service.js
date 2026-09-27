@@ -4,6 +4,14 @@ import visitorLogEvents from './visitorLog.events.js';
 import HttpError from '../../utils/httpError.utils.js';
 import blacklistService from '../blacklist/blacklist.service.js';
 import visitorPassTokenService from '../visitorPassToken/visitorPassToken.service.js';
+import orgMembershipService from '../orgMembership/orgMembership.services.js';
+import {
+  assertVisitorPermission,
+  assertWalkInResolutionAccess,
+  getActorId,
+  isGateOperator,
+  isVisitorManager,
+} from '../visitorPass/visitorPass.policy.js';
 
 export class VisitorLogService {
   /**
@@ -14,9 +22,14 @@ export class VisitorLogService {
    * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
    * @returns {Promise<Object>} The created entry log.
    */
-  async logPreApprovedEntry(passId, guardId, session = null) {
+  async logPreApprovedEntry(passId, actor, context = {}, session = null) {
+    assertVisitorPermission(['gate', 'manager'], actor);
+    const guardId = getActorId(actor);
     // 1. Verify pass status, dates, times, allowed days, usage limits
     const pass = await visitorPassService.verifyPassForEntry(passId, session);
+    if (String(pass.orgId) !== String(context.orgId)) {
+      throw new HttpError(403, 'Forbidden. This pass belongs to another community.');
+    }
 
     // 2. Use pass transactionally (increments usage count, updates status)
     await visitorPassService.usePass(pass, session);
@@ -27,6 +40,7 @@ export class VisitorLogService {
       passId: pass._id,
       guardId,
       residentId: pass.createdById,
+      ...(context.gateName ? { gateName: context.gateName } : {}),
       entryType: 'PRE_APPROVED',
       logStatus: 'INSIDE',
       snapshot: {
@@ -36,6 +50,12 @@ export class VisitorLogService {
       },
       checkInTime: new Date()
     };
+    logData.actionHistory = [{
+      action: 'CHECKED_IN',
+      actorId: guardId,
+      ...(context.gateName ? { gateName: context.gateName } : {}),
+      occurredAt: logData.checkInTime,
+    }];
 
     // 4. Create log entry
     const log = await visitorLogRepository.create(logData, session);
@@ -52,7 +72,20 @@ export class VisitorLogService {
    * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
    * @returns {Promise<Object>} The pending visitor log.
    */
-  async initiateWalkInRequest(walkInData, session = null) {
+  async initiateWalkInRequest(walkInData, actor, session = null) {
+    assertVisitorPermission(['gate', 'manager'], actor);
+    const guardId = getActorId(actor);
+    if (!walkInData.residentId) {
+      throw new HttpError(400, 'A resident host must be selected before a walk-in request can be sent.');
+    }
+    const residentMembership = await orgMembershipService.getMembership(
+      walkInData.residentId,
+      walkInData.orgId,
+      session
+    );
+    if (!residentMembership || residentMembership.status !== 'Active') {
+      throw new HttpError(400, 'The selected resident is not active in this community.');
+    }
     // Check Blacklist before initiating walk-in
     const isBanned = await blacklistService.checkMatch(walkInData.orgId, {
       name: walkInData.snapshot?.visitorName,
@@ -64,7 +97,7 @@ export class VisitorLogService {
 
     const logData = {
       orgId: walkInData.orgId,
-      guardId: walkInData.guardId,
+      guardId,
       residentId: walkInData.residentId,
       entryType: 'WALK_IN',
       logStatus: 'PENDING',
@@ -74,6 +107,13 @@ export class VisitorLogService {
         vehicleNumber: walkInData.snapshot?.vehicleNumber
       }
     };
+    if (walkInData.gateName) logData.gateName = walkInData.gateName;
+    logData.actionHistory = [{
+      action: 'REQUESTED',
+      actorId: guardId,
+      ...(walkInData.gateName ? { gateName: walkInData.gateName } : {}),
+      occurredAt: new Date(),
+    }];
 
     const log = await visitorLogRepository.create(logData, session);
     visitorLogEvents.emit('walk_in_pending', log);
@@ -87,15 +127,19 @@ export class VisitorLogService {
    * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
    * @returns {Promise<Object>} The resolved visitor log.
    */
-  async resolveWalkInRequest(logId, action, session = null) {
+  async resolveWalkInRequest(logId, action, actor, session = null) {
     const log = await visitorLogRepository.findById(logId, session);
     if (!log) {
       throw new HttpError(404, `Visitor log with ID ${logId} not found.`);
     }
 
+    if (String(log.orgId) !== String(actor?.orgId)) {
+      throw new HttpError(403, 'Forbidden. This request belongs to another community.');
+    }
     if (log.logStatus !== 'PENDING') {
       throw new HttpError(400, `Visitor log with ID ${logId} is already resolved or not pending.`);
     }
+    assertWalkInResolutionAccess(log, actor);
 
     let updateData = {};
     if (action === 'APPROVE') {
@@ -111,7 +155,16 @@ export class VisitorLogService {
       throw new HttpError(400, `Invalid action "${action}". Must be "APPROVE" or "REJECT".`);
     }
 
-    const updatedLog = await visitorLogRepository.update(logId, updateData, session);
+    const updatedLog = await visitorLogRepository.update(logId, {
+      $set: updateData,
+      $push: {
+        actionHistory: {
+          action: action === 'APPROVE' ? 'APPROVED' : 'REJECTED',
+          actorId: getActorId(actor),
+          occurredAt: new Date(),
+        },
+      },
+    }, session);
     visitorLogEvents.emit('walk_in_resolved', updatedLog);
     return updatedLog;
   }
@@ -122,7 +175,8 @@ export class VisitorLogService {
    * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
    * @returns {Promise<Object>} The checked out log.
    */
-  async checkout(logIdOrPassId, session = null) {
+  async checkout(logIdOrPassId, actor, context = {}, session = null) {
+    assertVisitorPermission(['gate', 'manager'], actor);
     let log = await visitorLogRepository.findById(logIdOrPassId, session);
     
     // If log not found by ID, it might be a pass ID from the admin screens, so check for active logs matching this passId
@@ -132,41 +186,40 @@ export class VisitorLogService {
 
     if (!log) {
       try {
-        const pass = await visitorPassService.getPassById(logIdOrPassId);
-        if (pass && pass.status === 'ACTIVE') {
-          await visitorPassService.updatePassStatus(pass._id, 'EXPIRED', session);
-          return {
-            _id: pass._id,
-            passId: pass._id,
-            logStatus: 'COMPLETED',
-            isMockLog: true,
-            message: 'Pass was active but visitor never checked in. The pass has been force-expired.'
-          };
-        }
+        await visitorPassService.getPassById(logIdOrPassId);
       } catch (err) {
         // Ignore pass fetch errors and throw standard log not found error below
       }
       throw new HttpError(404, `Visitor log with ID ${logIdOrPassId} not found.`);
     }
 
+    if (String(log.orgId) !== String(context.orgId)) {
+      throw new HttpError(403, 'Forbidden. This entry belongs to another community.');
+    }
     if (log.logStatus !== 'INSIDE') {
       throw new HttpError(400, `Visitor log with ID ${log._id} status is not INSIDE.`);
     }
 
-    const updatedLog = await visitorLogRepository.updateLogForCheckout(log._id, new Date(), session);
+    const updatedLog = await visitorLogRepository.updateLogForCheckout(
+      log._id,
+      new Date(),
+      getActorId(actor),
+      context.gateName,
+      session
+    );
     
     // Update pass status to EXPIRED upon check-out if usage limit reached and no other visitors remain inside
     if (updatedLog.passId) {
       try {
         const pass = await visitorPassService.getPassById(updatedLog.passId, session);
         if (pass && (pass.status === 'ACTIVE' || pass.status === 'PENDING')) {
-          const logsInside = await visitorLogRepository.findActiveLogsInside(log.orgId, session);
+          const logsInside = await visitorLogRepository.findActiveLogsInside(log.orgId, null, session);
           const anyoneLeft = logsInside.some(l => 
             l.passId?.toString() === pass._id?.toString() && 
             l._id?.toString() !== log._id.toString()
           );
           if (!anyoneLeft && (pass.usageLimit?.currentUses >= pass.usageLimit?.maxUses)) {
-            await visitorPassService.updatePassStatus(pass._id, 'EXPIRED', session);
+            await visitorPassService.updatePassStatus(pass._id, 'EXPIRED', session, { actorId: getActorId(actor) });
             await visitorPassTokenService.deleteTokenByPassId(pass._id, session);
           }
         }
@@ -185,8 +238,10 @@ export class VisitorLogService {
    * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
    * @returns {Promise<Object[]>}
    */
-  async getActiveLogsInside(orgId, session = null) {
-    return await visitorLogRepository.findActiveLogsInside(orgId, session);
+  async getActiveLogsInside(orgId, actor, session = null) {
+    assertVisitorPermission(['resident', 'gate', 'manager'], actor);
+    const residentId = isGateOperator(actor) || isVisitorManager(actor) ? null : getActorId(actor);
+    return visitorLogRepository.findActiveLogsInside(orgId, residentId, session);
   }
 
   /**
@@ -195,13 +250,14 @@ export class VisitorLogService {
    * @param {string|null} residentId - Optional resident ID to filter by.
    * @returns {Promise<Object[]>}
    */
-  async getPendingApprovals(orgId, residentId = null) {
+  async getPendingApprovals(orgId, actor) {
+    assertVisitorPermission(['resident', 'gate', 'manager'], actor);
     const query = {
       orgId,
       logStatus: 'PENDING'
     };
-    if (residentId) {
-      query.residentId = residentId;
+    if (!isGateOperator(actor) && !isVisitorManager(actor)) {
+      query.residentId = getActorId(actor);
     }
     return await visitorLogRepository.findPendingApprovals(query);
   }
@@ -215,8 +271,13 @@ export class VisitorLogService {
    * @param {import('mongoose').ClientSession} [session=null] - Optional Mongoose session.
    * @returns {Promise<{ data: Object[], totalRecords: number }>}
    */
-  async getHistoryLogs(orgId, skip, limit, filters = {}, session = null) {
-    return await visitorLogRepository.findHistoryLogsByOrg(orgId, skip, limit, filters, session);
+  async getHistoryLogs(orgId, skip, limit, filters = {}, actor, session = null) {
+    assertVisitorPermission(['resident', 'gate', 'manager'], actor);
+    const scopedFilters = { ...filters };
+    if (!isGateOperator(actor) && !isVisitorManager(actor)) {
+      scopedFilters.residentId = getActorId(actor);
+    }
+    return visitorLogRepository.findHistoryLogsByOrg(orgId, skip, limit, scopedFilters, session);
   }
 }
 

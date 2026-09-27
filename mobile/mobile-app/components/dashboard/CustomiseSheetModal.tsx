@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { View, Modal, TouchableOpacity, ScrollView, Dimensions, StyleSheet } from 'react-native';
+import { View, Modal, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Text } from '../ui/text';
 import Animated, {
   useSharedValue,
@@ -9,7 +9,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Sparkles } from 'lucide-react-native';
+import { Sparkles, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import CustomiseDeckZone from './CustomiseDeckZone';
 import CustomiseAvailableZone, { AvailableFeatureCardItem } from './CustomiseAvailableZone';
@@ -20,16 +20,14 @@ import { useTranslation } from '../../src/utils/i18n';
 import {
   ALL_AVAILABLE_FEATURES,
   REAL_APP_FEATURES,
-  DEFAULT_6_QUICK_ACTIONS,
-  DEFAULT_5_QUICK_ACTIONS,
   AppFeatureItem,
-  getRoleDefaultQuickActions,
 } from '../../src/features/dashboard/dashboardCatalog';
 
 export { ALL_AVAILABLE_FEATURES, REAL_APP_FEATURES, AppFeatureItem };
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_HEIGHT = Math.round(SCREEN_HEIGHT * 0.85);
+const MAX_QUICK_ACTIONS = 7;
 
 interface CustomiseSheetModalProps {
   visible: boolean;
@@ -60,10 +58,10 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
   }, [availableFeatures, user]);
 
   const defaultRoleQuickActions = useMemo(() => {
-    return getDefaultQuickActionsForUser(user).slice(0, 6);
+    return getDefaultQuickActionsForUser(user).slice(0, MAX_QUICK_ACTIONS);
   }, [user]);
 
-  // Sanitize incoming IDs to ensure only valid current catalog items allowed for this user are retained (max 6)
+  // Sanitize incoming IDs to ensure only valid current catalog items allowed for this user are retained.
   const sanitizedActiveIds = useMemo(() => {
     if (!activeFeatureIds || activeFeatureIds.length === 0) {
       return defaultRoleQuickActions;
@@ -71,7 +69,7 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
     const valid = activeFeatureIds.filter((id) => {
       const item = ALL_AVAILABLE_FEATURES.find((f) => f.id === id);
       return item && isFeatureAllowedForUser(item, user);
-    }).slice(0, 6);
+    }).slice(0, MAX_QUICK_ACTIONS);
     return valid.length > 0 ? valid : defaultRoleQuickActions;
   }, [activeFeatureIds, defaultRoleQuickActions, user]);
 
@@ -97,7 +95,7 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
   const toggleSelect = (id: string) => {
     if (selectedIds.includes(id)) {
       setSelectedIds((prev) => prev.filter((item) => item !== id));
-    } else if (selectedIds.length < 6) {
+    } else if (selectedIds.length < MAX_QUICK_ACTIONS) {
       setSelectedIds((prev) => [...prev, id]);
     }
     if (onToggleFeature) onToggleFeature(id);
@@ -113,7 +111,7 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
   };
 
   const handleSave = () => {
-    if (onSave) onSave(selectedIds.slice(0, 6));
+    if (onSave) onSave(selectedIds.slice(0, MAX_QUICK_ACTIONS));
     onClose();
   };
 
@@ -138,7 +136,7 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
     const sheetTop = SCREEN_HEIGHT - SHEET_HEIGHT;
     const deckZoneThreshold = sheetTop + 54 + deckHeight + 40;
 
-    if (absY > 0 && absY < deckZoneThreshold && !selectedIds.includes(feature.id) && selectedIds.length < 6) {
+    if (absY > 0 && absY < deckZoneThreshold && !selectedIds.includes(feature.id) && selectedIds.length < MAX_QUICK_ACTIONS) {
       setSelectedIds((prev) => [...prev, feature.id]);
     }
     setDraggingFeature(null);
@@ -182,14 +180,14 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
     opacity: 0.95,
   }));
 
-  // Active selected items (up to 6, strictly permitted)
+  // Active selected items (up to seven, strictly permitted)
   const activeItems = useMemo(() => {
     return selectedIds
       .map((id) => ALL_AVAILABLE_FEATURES.find((f) => f.id === id))
       .filter((item): item is typeof ALL_AVAILABLE_FEATURES[0] =>
         Boolean(item && isFeatureAllowedForUser(item, user))
       )
-      .slice(0, 6);
+      .slice(0, MAX_QUICK_ACTIONS);
   }, [selectedIds, user]);
 
   return (
@@ -224,38 +222,36 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
                   <View className="w-10 h-1.5 rounded-full bg-muted-foreground/30" />
                 </View>
 
-                {/* Header Bar */}
-                <View className="flex-row items-center px-4 py-3 border-b border-border">
-                  <View className="w-16">
-                    <TouchableOpacity onPress={onClose} activeOpacity={0.7} className="self-start py-1 px-1.5 rounded-lg active:bg-secondary">
-                      <Text className="text-sm font-semibold text-muted-foreground">{t('cancel', 'Cancel')}</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <Text numberOfLines={1} className="flex-1 text-center text-base font-extrabold text-foreground">
-                    {t('customise_dashboard', 'Customise Dashboard')}
+                <View className="px-5 pt-2 pb-4 border-b border-border">
+                  <TouchableOpacity
+                    onPress={onClose}
+                    className="absolute right-4 top-1 size-10 rounded-full items-center justify-center active:bg-secondary"
+                    accessibilityRole="button"
+                    accessibilityLabel={t('close', 'Close')}
+                  >
+                    <X size={26} className="text-foreground" strokeWidth={2.5} />
+                  </TouchableOpacity>
+                  <Text className="text-center text-[25px] font-extrabold text-foreground tracking-tight">
+                    {t('customise_quick_actions', 'Customise Quick Actions')}
                   </Text>
-
-                  <View className="w-16 items-end">
-                    <TouchableOpacity onPress={handleSave} activeOpacity={0.8} className="w-16 items-center bg-primary py-2 rounded-full">
-                      <Text className="text-xs font-bold text-primary-foreground">{t('save', 'Save')}</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Text className="mt-2 px-7 text-center text-base leading-6 text-muted-foreground">
+                    {t('quick_actions_reorder_hint', 'Press and hold to arrange your first 7 actions')}
+                  </Text>
                 </View>
               </View>
             </GestureDetector>
 
-            {/* Pinned Active Selection Zone (The Deck - 6 Slots, always visible at top) */}
+            {/* Pinned active selection zone, always visible at the top of the sheet. */}
             <View
               style={{ backgroundColor: isDark ? '#292524' : '#F5F5F4' }}
               onLayout={(e) => setDeckHeight(e.nativeEvent.layout.height)}
             >
               <CustomiseDeckZone
                 activeItems={activeItems}
-                maxCapacity={6}
+                maxCapacity={MAX_QUICK_ACTIONS}
                 onRemoveItem={toggleSelect}
                 onReorderItem={handleReorder}
-                isDropTargetActive={isOverDeck || (Boolean(draggingFeature) && selectedIds.length < 6)}
+                isDropTargetActive={isOverDeck || (Boolean(draggingFeature) && selectedIds.length < MAX_QUICK_ACTIONS)}
               />
             </View>
 
@@ -273,7 +269,7 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
             {/* Scrollable Available Features Body */}
             <ScrollView
               style={{ flex: 1, backgroundColor: isDark ? '#1C1917' : '#FFFFFF' }}
-              contentContainerStyle={{ paddingBottom: 60, backgroundColor: isDark ? '#1C1917' : '#FFFFFF' }}
+              contentContainerStyle={{ paddingBottom: 18, backgroundColor: isDark ? '#1C1917' : '#FFFFFF' }}
               showsVerticalScrollIndicator={false}
               scrollEnabled={!draggingFeature}
             >
@@ -286,6 +282,25 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
                 onDragEnd={handleDragEnd}
               />
             </ScrollView>
+
+            <View className="flex-row gap-3 border-t border-border bg-card px-4 py-3">
+              <TouchableOpacity
+                onPress={() => setSelectedIds(defaultRoleQuickActions)}
+                className="h-12 flex-1 items-center justify-center rounded-2xl border border-border active:bg-secondary"
+                accessibilityRole="button"
+                accessibilityLabel={t('reset', 'Reset')}
+              >
+                <Text className="text-sm font-bold text-foreground">{t('reset', 'Reset')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSave}
+                className="h-12 flex-1 items-center justify-center rounded-2xl bg-primary active:bg-primary/90"
+                accessibilityRole="button"
+                accessibilityLabel={t('save', 'Save')}
+              >
+                <Text className="text-sm font-bold text-primary-foreground">{t('save', 'Save')}</Text>
+              </TouchableOpacity>
+            </View>
           </Animated.View>
 
           {/* Floating Card Drag Preview: Never clipped, floats directly under user's finger */}

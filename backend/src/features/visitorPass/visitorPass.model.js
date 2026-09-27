@@ -38,6 +38,15 @@ const visitorPassSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    statusHistory: [
+      {
+        fromStatus: { type: String, trim: true },
+        toStatus: { type: String, trim: true, required: true },
+        actorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        reason: { type: String, trim: true, maxlength: 500 },
+        occurredAt: { type: Date, default: Date.now },
+      },
+    ],
     isPrivate: {
       type: Boolean,
       default: false,

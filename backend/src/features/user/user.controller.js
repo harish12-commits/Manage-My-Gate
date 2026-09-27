@@ -153,12 +153,16 @@ export class UserController {
   }
 
   /**
-   * Updates current user's profile, email (with OTP), phone (with OTP), and avatar.
+   * Updates current user's profile, contact verification fields, avatar, and profile details.
    */
   async updateProfile(req, res, next) {
     try {
       const userId = req.user.id || req.user._id;
-      const { name, phone, phoneOtp, email, emailOtp, removeAvatar } = req.body;
+      const { name, phone, phoneOtp, email, emailOtp, removeAvatar, bio, work, hometown, allowIntercomCalls } = req.body;
+      let interests = req.body.interests;
+      if (typeof interests === 'string') {
+        interests = JSON.parse(interests);
+      }
       const avatarFilename = req.file ? req.file.filename : undefined;
 
       const updatedUser = await userService.updateProfile(userId, {
@@ -167,6 +171,11 @@ export class UserController {
         phoneOtp,
         email,
         emailOtp,
+        bio,
+        work,
+        hometown,
+        allowIntercomCalls,
+        interests,
         avatarFilename,
         removeAvatar: removeAvatar === 'true' || removeAvatar === true || removeAvatar === '1',
       });
@@ -179,6 +188,11 @@ export class UserController {
         phone: updatedUser.phone,
         phoneVerified: updatedUser.phoneVerified,
         avatar: updatedUser.avatar || null,
+        bio: updatedUser.bio || '',
+        work: updatedUser.work || '',
+        hometown: updatedUser.hometown || '',
+        allowIntercomCalls: Boolean(updatedUser.allowIntercomCalls),
+        interests: updatedUser.interests || [],
       }, 'Profile updated successfully');
     } catch (error) {
       if (req.file && req.file.path) {

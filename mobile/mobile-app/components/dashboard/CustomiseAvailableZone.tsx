@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { Text } from '../ui/text';
-import { Check, Plus } from 'lucide-react-native';
+import { Star } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import FeatureIcon from '../ui/FeatureIcon';
 import { ALL_AVAILABLE_FEATURES, AppFeatureItem } from '../../src/features/dashboard/dashboardCatalog';
@@ -80,15 +80,11 @@ const AvailableFeatureCard: React.FC<AvailableFeatureCardProps> = React.memo(({
   );
 
   return (
-    <View className="w-1/3 px-1">
+    <View className="w-1/4 px-1">
       <GestureDetector gesture={composedGesture}>
         <View
-          style={{
-            backgroundColor: isSelected
-              ? (isDark ? '#2A1F1B' : '#FFF7ED')
-              : (isDark ? '#262626' : '#FFFFFF'),
-          }}
-          className={`h-[122px] p-2.5 rounded-2xl border items-center justify-between ${
+          style={{ backgroundColor: isDark ? '#262626' : '#FFFFFF' }}
+          className={`relative h-[112px] p-2 rounded-2xl border items-center justify-between ${
             isSelected
               ? 'border-primary/60 shadow-xs'
               : 'border-border/80 shadow-xs'
@@ -96,6 +92,11 @@ const AvailableFeatureCard: React.FC<AvailableFeatureCardProps> = React.memo(({
           accessibilityRole="button"
           accessibilityLabel={`${meta?.name || feature.name}, ${isSelected ? 'Added' : 'Tap or Drag to Add'}`}
         >
+          {isSelected ? (
+            <View className="absolute -right-1.5 -top-1.5 size-7 rounded-full bg-primary items-center justify-center border-2 border-card z-10">
+              <Star size={13} color="#FFFFFF" fill="#FFFFFF" />
+            </View>
+          ) : null}
           <View className={`w-12 h-12 items-center justify-center rounded-[17px] border border-border/40 ${colorBg}`}>
             <FeatureIcon iconName={iconName} color={colorIcon} size={23} strokeWidth={1.9} />
           </View>
@@ -109,20 +110,9 @@ const AvailableFeatureCard: React.FC<AvailableFeatureCardProps> = React.memo(({
             </Text>
           </View>
 
-          {/* Add / Added pill indicator */}
-          <View className="mt-0.5">
-            {isSelected ? (
-              <View className="bg-primary px-2.5 py-0.5 rounded-full flex-row items-center gap-1">
-                <Check size={10} color="#fff" />
-                <Text className="text-[9px] font-bold font-sans text-primary-foreground">{t('added', 'Added')}</Text>
-              </View>
-            ) : (
-              <View className="bg-secondary px-2.5 py-0.5 rounded-full flex-row items-center gap-1 border border-border/70">
-                <Plus size={10} className="text-muted-foreground" />
-                <Text className="text-[9px] font-medium font-sans text-muted-foreground">{t('add', 'Add')}</Text>
-              </View>
-            )}
-          </View>
+          <Text className={`text-[9px] font-semibold ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+            {isSelected ? t('added', 'Added') : t('tap_to_add', 'Tap to add')}
+          </Text>
         </View>
       </GestureDetector>
     </View>
@@ -169,7 +159,7 @@ export const CustomiseAvailableZone: React.FC<CustomiseAvailableZoneProps> = ({
             </Text>
           </View>
 
-          {/* 3-Column Grid for Category Items */}
+          {/* Four compact action tiles match the dashboard customisation layout. */}
           <View className="flex-row flex-wrap gap-y-2.5 -mx-1">
             {group.items.map((feature) => (
               <AvailableFeatureCard
