@@ -20,8 +20,8 @@ export const AppVersionFooter = ({
   const version = Constants.expoConfig?.version || '1.0.1';
   const buildNumber =
     Platform.OS === 'ios'
-      ? Constants.expoConfig?.ios?.buildNumber || '15'
-      : Constants.expoConfig?.android?.versionCode?.toString() || '18';
+      ? Constants.expoConfig?.ios?.buildNumber || '17'
+      : Constants.expoConfig?.android?.versionCode?.toString() || '22';
 
   return (
     <View className={cn('pt-6 pb-4 items-center justify-center gap-2', className)}>

@@ -146,34 +146,31 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
             ]}
             className="border-t border-border rounded-t-3xl shadow-2xl overflow-hidden flex-col"
           >
-            {/* Top Pill Handle & Header with Pull-Down Pan Gesture */}
-            <GestureDetector gesture={headerPanGesture}>
-              <View
-                style={{ backgroundColor: isDark ? '#1C1917' : '#FFFFFF' }}
-                className="bg-card"
-              >
+            {/* Keep the drag gesture on the handle only, so the close control remains tappable. */}
+            <View style={{ backgroundColor: isDark ? '#1C1917' : '#FFFFFF' }} className="bg-card">
+              <GestureDetector gesture={headerPanGesture}>
                 <View className="items-center pt-2.5 pb-1">
                   <View className="w-10 h-1.5 rounded-full bg-muted-foreground/30" />
                 </View>
+              </GestureDetector>
 
-                <View className="px-5 pt-2 pb-4 border-b border-border">
-                  <TouchableOpacity
-                    onPress={onClose}
-                    className="absolute right-4 top-1 size-10 rounded-full items-center justify-center active:bg-secondary"
-                    accessibilityRole="button"
-                    accessibilityLabel={t('close', 'Close')}
-                  >
-                    <X size={26} className="text-foreground" strokeWidth={2.5} />
-                  </TouchableOpacity>
-                  <Text className="text-center text-[25px] font-extrabold text-foreground tracking-tight">
-                    {t('customise_quick_actions', 'Customise Quick Actions')}
-                  </Text>
-                  <Text className="mt-2 px-7 text-center text-base leading-6 text-muted-foreground">
-                    {t('quick_actions_reorder_hint', 'Press and hold to arrange your first 7 actions')}
-                  </Text>
-                </View>
+              <View className="px-5 pt-2 pb-4 border-b border-border">
+                <TouchableOpacity
+                  onPress={onClose}
+                  className="absolute right-4 top-1 size-10 rounded-full items-center justify-center active:bg-secondary"
+                  accessibilityRole="button"
+                  accessibilityLabel={t('close', 'Close')}
+                >
+                  <X size={26} className="text-foreground" strokeWidth={2.5} />
+                </TouchableOpacity>
+                <Text className="text-center text-[25px] font-extrabold text-foreground tracking-tight">
+                  {t('customise_quick_actions', 'Customise Quick Actions')}
+                </Text>
+                <Text className="mt-2 px-7 text-center text-base leading-6 text-muted-foreground">
+                  {t('quick_actions_reorder_hint', 'Press and hold to arrange your first 7 actions')}
+                </Text>
               </View>
-            </GestureDetector>
+            </View>
 
             {/* One grid: starred tiles are selected Quick Actions; all other actions remain selectable here. */}
             <ScrollView
