@@ -56,10 +56,8 @@ export class TokenService {
 
   /**
    * Finds a token document by unhashed token string without mutating it.
-   * Uses 3-tier fallback resolution:
-   * Tier 1: Hashed / Unhashed token lookup in Token collection
-   * Tier 2: Invitation token payload in OutboxEvent collection
-   * Tier 3: Direct User ID matching
+   * The Token collection is the sole authority. Outbox payloads and user IDs
+   * must never be promoted into synthetic, renewable invitation credentials.
    *
    * @param {string} unhashedToken - Raw token string
    * @param {string} [type='INVITATION'] - Token type
@@ -69,7 +67,7 @@ export class TokenService {
     if (!unhashedToken) return null;
     const hashedToken = crypto.createHash('sha256').update(unhashedToken).digest('hex');
 
-    // Tier 1: Query Token collection (both hashed and unhashed token representations)
+    // Query Token collection (both hashed and legacy unhashed representations).
     let doc = await tokenRepository.findOne(
       {
         $or: [{ token: hashedToken }, { token: unhashedToken }],
@@ -89,61 +87,6 @@ export class TokenService {
         ).catch(() => null);
       }
       return doc;
-    }
-
-    // Tier 2: Query OutboxEvent payload for async invitation dispatches
-    try {
-      const OutboxEvent = (await import('../outbox/outboxEvent.model.js')).default;
-      const outbox = await OutboxEvent.findOne({
-        $or: [
-          { 'payload.invitationToken': unhashedToken },
-          { 'payload.invitationToken': hashedToken },
-        ],
-      }).session(session || null);
-
-      if (outbox && outbox.payload?.email) {
-        const User = (await import('../user/user.model.js')).default;
-        const user = await User.findOne({ email: outbox.payload.email.toLowerCase() }).session(session || null);
-        if (user) {
-          return {
-            _id: outbox._id,
-            userId: user._id,
-            orgId: outbox.payload.orgId || user.orgId || null,
-            inviterId: outbox.payload.inviterId || null,
-            token: unhashedToken,
-            type: 'INVITATION',
-            status: 'PENDING',
-            invitationSource: outbox.payload.invitationSource || 'WEB',
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-          };
-        }
-      }
-    } catch (err) {
-      // Non-blocking fallback
-    }
-
-    // Tier 3: Direct User ID matching fallback
-    try {
-      const mongoose = (await import('mongoose')).default;
-      if (mongoose.Types.ObjectId.isValid(unhashedToken)) {
-        const User = (await import('../user/user.model.js')).default;
-        const user = await User.findById(unhashedToken).session(session || null);
-        if (user) {
-          return {
-            _id: user._id,
-            userId: user._id,
-            orgId: user.orgId || null,
-            inviterId: null,
-            token: unhashedToken,
-            type: 'INVITATION',
-            status: 'PENDING',
-            invitationSource: 'WEB',
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-          };
-        }
-      }
-    } catch (err) {
-      // Non-blocking fallback
     }
 
     return null;
@@ -215,8 +158,8 @@ export class TokenService {
     const { userId, orgId, inviterId, tokenDoc } = await this.validateInvitationToken(unhashedToken, session);
 
     if (tokenDoc && tokenDoc._id) {
-      await tokenRepository.updateOne(
-        { _id: tokenDoc._id },
+      const consumed = await tokenRepository.findOneAndUpdate(
+        { _id: tokenDoc._id, status: 'PENDING', used: { $ne: true } },
         {
           $set: {
             status: 'ACCEPTED',
@@ -224,8 +167,10 @@ export class TokenService {
             usedAt: new Date(),
           },
         },
+        {},
         session
       );
+      if (!consumed) throw new HttpError(409, 'Invitation has already been processed.');
       tokenDoc.status = 'ACCEPTED';
       tokenDoc.used = true;
       tokenDoc.usedAt = new Date();
@@ -243,8 +188,8 @@ export class TokenService {
     const { userId, orgId, inviterId, tokenDoc } = await this.validateInvitationToken(unhashedToken, session);
 
     if (tokenDoc && tokenDoc._id) {
-      await tokenRepository.updateOne(
-        { _id: tokenDoc._id },
+      const rejected = await tokenRepository.findOneAndUpdate(
+        { _id: tokenDoc._id, status: 'PENDING', used: { $ne: true } },
         {
           $set: {
             status: 'REJECTED',
@@ -252,8 +197,10 @@ export class TokenService {
             usedAt: new Date(),
           },
         },
+        {},
         session
       );
+      if (!rejected) throw new HttpError(409, 'Invitation has already been processed.');
       tokenDoc.status = 'REJECTED';
       tokenDoc.used = true;
       tokenDoc.usedAt = new Date();

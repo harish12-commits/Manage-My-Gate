@@ -38,7 +38,8 @@ export default function MobileHandoffScreen() {
         const token = innerData?.token;
         const refreshToken = innerData?.refreshToken;
         const rawUser = innerData?.user;
-        const availableWorkspaces = innerData?.availableWorkspaces || rawUser?.availableWorkspaces || [];
+        const availableWorkspaces =
+          innerData?.availableWorkspaces || rawUser?.availableWorkspaces || [];
         const user = rawUser ? { ...rawUser, availableWorkspaces } : null;
 
         if (token && user) {
@@ -50,9 +51,7 @@ export default function MobileHandoffScreen() {
 
           if (isMounted) {
             setStatus('success');
-            setTimeout(() => {
-              router.replace('/(resident)/dashboard');
-            }, 600);
+            router.replace('/(resident)/dashboard');
           }
         } else {
           throw new Error('Invalid handoff response from server.');
@@ -60,7 +59,8 @@ export default function MobileHandoffScreen() {
       } catch (err: any) {
         if (isMounted) {
           setStatus('error');
-          const msg = err.response?.data?.message || err.message || 'Mobile handoff failed or has expired.';
+          const msg =
+            err.response?.data?.message || err.message || 'Mobile handoff failed or has expired.';
           setErrorMessage(msg);
         }
       }
@@ -82,10 +82,10 @@ export default function MobileHandoffScreen() {
               <Smartphone size={32} className="text-primary" />
             </View>
             <ActivityIndicator size="large" className="mb-4 text-primary" />
-            <Text className="text-lg font-bold font-sans text-foreground mb-1 text-center">
+            <Text className="mb-1 text-center font-bold font-sans text-lg text-foreground">
               Connecting Your Session
             </Text>
-            <Text className="text-sm font-sans text-muted-foreground text-center max-w-xs">
+            <Text className="max-w-xs text-center font-sans text-sm text-muted-foreground">
               Securely syncing your accepted workspace invitation to this device...
             </Text>
           </View>
@@ -93,13 +93,13 @@ export default function MobileHandoffScreen() {
 
         {status === 'success' && (
           <View className="items-center justify-center py-12">
-            <View className="mb-4 h-16 w-16 items-center justify-center rounded-3xl bg-success/10">
+            <View className="bg-success/10 mb-4 h-16 w-16 items-center justify-center rounded-3xl">
               <CheckCircle2 size={32} className="text-success" />
             </View>
-            <Text className="text-lg font-bold font-sans text-foreground mb-1 text-center">
+            <Text className="mb-1 text-center font-bold font-sans text-lg text-foreground">
               Welcome to Nahom!
             </Text>
-            <Text className="text-sm font-sans text-muted-foreground text-center max-w-xs">
+            <Text className="max-w-xs text-center font-sans text-sm text-muted-foreground">
               Handoff complete. Opening your community dashboard...
             </Text>
           </View>
@@ -109,7 +109,10 @@ export default function MobileHandoffScreen() {
           <EmptyState
             icon={AlertCircle}
             title="Handoff Link Expired or Invalid"
-            description={errorMessage || 'This mobile handoff link has already been used or has expired. Please sign in or initiate a new handoff from your browser.'}
+            description={
+              errorMessage ||
+              'This mobile handoff link has already been used or has expired. Please sign in or initiate a new handoff from your browser.'
+            }
             actionLabel="Go to Sign In"
             onAction={() => router.replace('/(auth)/login')}
           />

@@ -761,6 +761,10 @@ export class AuthService {
     let targetOrgIdFromInvite = null;
     if (inviteToken) {
       try {
+        const inviteDoc = await tokenService.getInvitationToken(inviteToken, 'INVITATION');
+        if (!inviteDoc?.userId || inviteDoc.userId.toString() !== user._id.toString()) {
+          throw new HttpError(403, 'The authenticated account does not match the invitation identity.');
+        }
         try {
           const { orgId } = await tokenService.validateAndDeleteToken(inviteToken, 'INVITATION');
           targetOrgIdFromInvite = orgId;
@@ -814,7 +818,7 @@ export class AuthService {
           userEvents.emit('USER_UPDATED', { userId: user._id, orgId: targetOrgIdFromInvite, action: 'activated' });
         }
       } catch (tokenError) {
-        console.warn('Login processed with invalid or expired invite token for active user:', tokenError.message);
+        throw tokenError;
       }
     }
 
@@ -1078,7 +1082,7 @@ export class AuthService {
 
       // Transition invitation token to ACCEPTED only after identity verification succeeds
       if (rawToken) {
-        await tokenService.consumeInvitationToken(rawToken, session).catch(() => null);
+        await tokenService.consumeInvitationToken(rawToken, session);
       }
 
       const orgMembershipService = (await import('../orgMembership/orgMembership.services.js')).default;
@@ -1104,7 +1108,7 @@ export class AuthService {
       }
 
       // Update OrgMembership status to Active for this organization or user
-      await orgMembershipService.updateStatus(user._id, orgId || null, 'Active', session).catch(() => null);
+      await orgMembershipService.updateStatus(user._id, orgId || null, 'Active', session);
 
       // Assign resident to villa upon accepting invitation
       if (orgId) {
@@ -2321,13 +2325,10 @@ export class AuthService {
       user = await userService.getUserByEmail(tokenDoc.email.trim().toLowerCase()).catch(() => null);
     }
 
-    // Server-side authorization check: If an authenticated user calls validate-invite, verify they own this invitation
-    if (authenticatedUserId && user && user._id.toString() !== authenticatedUserId.toString()) {
-      const authUser = await userService.getUserById(authenticatedUserId).catch(() => null);
-      if (authUser && authUser.email?.toLowerCase() !== user.email?.toLowerCase()) {
-        throw new HttpError(403, 'Access denied. This invitation belongs to another user account.');
-      }
-    }
+    let authenticatedUser = null;
+    let accountMismatch = false;
+    if (authenticatedUserId) authenticatedUser = await userService.getUserById(authenticatedUserId).catch(() => null);
+    if (authenticatedUser && user && user._id.toString() !== authenticatedUser._id.toString()) accountMismatch = true;
 
     const expectedEmail = (tokenDoc.email || user?.email || '').trim().toLowerCase();
 
@@ -2339,7 +2340,8 @@ export class AuthService {
       }
     }
 
-    const resolvedOrgId = tokenDoc?.orgId || user.orgId || null;
+    if (!user) throw new HttpError(409, 'Invitation recipient account is missing.');
+    const resolvedOrgId = tokenDoc?.orgId || user?.orgId || null;
     let orgName = '';
     let villaDetails = '';
     let roleDetails = '';
@@ -2433,6 +2435,7 @@ export class AuthService {
     const hasAccountCredentials = hasPassword && user.status === 'Active';
     // User is only considered an existing registered user who can Sign In with credentials if they actually have a password configured
     const isAlreadyRegistered = hasPassword && (user.status === 'Active' || isAlreadyMemberInOrg);
+    const identityFields = { invitedEmail: user?.email || expectedEmail, authenticatedEmail: authenticatedUser?.email || null };
 
     let inviterName = '';
     if (tokenDoc?.inviterId) {
@@ -2448,6 +2451,7 @@ export class AuthService {
     if (tokenDoc.status === 'EXPIRED' || (tokenDoc.expiresAt && new Date() > new Date(tokenDoc.expiresAt))) {
       return {
         valid: false,
+        state: 'EXPIRED',
         invitationId: tokenDoc._id,
         invitationStatus: 'EXPIRED',
         membershipStatus: 'Expired',
@@ -2464,6 +2468,7 @@ export class AuthService {
     if (tokenDoc.status === 'REVOKED') {
       return {
         valid: false,
+        state: 'REVOKED',
         invitationId: tokenDoc._id,
         invitationStatus: 'REVOKED',
         membershipStatus: 'Revoked',
@@ -2480,6 +2485,7 @@ export class AuthService {
     if (tokenDoc.status === 'REJECTED') {
       return {
         valid: false,
+        state: 'REJECTED',
         invitationId: tokenDoc._id,
         invitationStatus: 'REJECTED',
         membershipStatus: 'Rejected',
@@ -2494,8 +2500,10 @@ export class AuthService {
     }
 
     if (tokenDoc.status === 'ACCEPTED' || tokenDoc.used === true) {
+      const acceptedState = accountMismatch ? 'ALREADY_ACCEPTED_OTHER_ACCOUNT' : (isAlreadyMemberInOrg ? 'ALREADY_ACCEPTED' : 'INVITATION_COMPLETED_MEMBERSHIP_INVALID');
       return {
-        valid: false,
+        valid: acceptedState !== 'INVITATION_COMPLETED_MEMBERSHIP_INVALID',
+        state: acceptedState,
         invitationId: tokenDoc._id,
         invitationStatus: 'ACCEPTED',
         membershipStatus: 'Accepted',
@@ -2508,11 +2516,13 @@ export class AuthService {
         unit: villaDetails || '',
         role: roleDetails || '',
         message: 'Invitation has already been accepted.',
+        ...identityFields,
       };
     }
 
     return {
       valid: true,
+      state: accountMismatch ? 'ACCOUNT_MISMATCH' : (authenticatedUser ? 'READY_TO_ACCEPT' : 'SIGN_IN_REQUIRED'),
       invitationId: tokenDoc._id,
       isExisting: isAlreadyRegistered,
       isAlreadyRegistered,
@@ -2530,6 +2540,7 @@ export class AuthService {
       unit: villaDetails || '',
       role: roleDetails || '',
       invitationSource,
+      ...identityFields,
     };
   }
 

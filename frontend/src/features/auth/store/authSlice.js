@@ -269,8 +269,10 @@ export const switchWorkspaceContext = createAsyncThunk(
       if (rawPayload.targetVillaId) payload.targetVillaId = rawPayload.targetVillaId
       if (rawPayload.targetRole) payload.targetRole = rawPayload.targetRole
       if (rawPayload.targetAssignmentId) payload.targetAssignmentId = rawPayload.targetAssignmentId
-      if (rawPayload.targetAssignmentName) payload.targetAssignmentName = rawPayload.targetAssignmentName
-      if (rawPayload.targetAssignmentType) payload.targetAssignmentType = rawPayload.targetAssignmentType
+      if (rawPayload.targetAssignmentName)
+        payload.targetAssignmentName = rawPayload.targetAssignmentName
+      if (rawPayload.targetAssignmentType)
+        payload.targetAssignmentType = rawPayload.targetAssignmentType
 
       const response = await authService.switchContext(payload)
 
@@ -832,7 +834,8 @@ const authSlice = createSlice({
         if (state.user) {
           localStorage.setItem('user', JSON.stringify(state.user))
         }
-        const availableWs = action.payload?.data?.availableWorkspaces || action.payload?.availableWorkspaces
+        const availableWs =
+          action.payload?.data?.availableWorkspaces || action.payload?.availableWorkspaces
         if (availableWs) {
           localStorage.setItem('availableWorkspaces', JSON.stringify(availableWs))
         }
@@ -968,13 +971,9 @@ const authSlice = createSlice({
         state.invitation.token = action.meta?.arg
         const data = action.payload.data?.data || action.payload.data || action.payload
         state.invitation.data = data
-        if (data?.membershipStatus === 'Rejected' || data?.invitationStatus === 'REJECTED' || data?.status === 'REJECTED') {
-          state.invitation.valid = false
-          state.invitation.error = 'REJECTED'
-        } else {
-          state.invitation.valid = true
-          state.invitation.error = null
-        }
+        state.invitation.valid = data?.valid !== false
+        state.invitation.error =
+          data?.valid === false ? data?.state || data?.invitationStatus || 'INVALID' : null
       })
       .addCase(validateInvitation.rejected, (state, action) => {
         state.invitation.loading = false

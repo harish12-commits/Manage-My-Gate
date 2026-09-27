@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { Database, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Database, Search, ChevronLeft, ChevronRight, FileSpreadsheet, FileText } from 'lucide-react';
 import { Badge } from 'src/components/ui/badge';
 import { Input } from 'src/components/ui/input';
 import { Button } from 'src/components/ui/button';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import toast from 'react-hot-toast';
 
 export const VisitorLogsTable = ({ logs }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,6 +31,42 @@ export const VisitorLogsTable = ({ logs }) => {
 
     return matchesSearch && matchesType && matchesStatus;
   });
+
+  const handleExportCSV = () => {
+    if (!filteredLogs || filteredLogs.length === 0) {
+      toast.error('No visitor log records available to export.');
+      return;
+    }
+
+    const exportData = filteredLogs.map((log) => {
+      const name = log.visitorName || log.snapshot?.visitorName || '—';
+      const type = (log.type || (log.entryType === 'PRE_APPROVED' ? 'guest' : 'walk_in')).replace('_', ' ');
+      const destination = log.villa || log.passId?.villaId?.villaNumber || 'Villa Gate';
+      const resident = log.resident || log.residentId?.name || '—';
+      const checkIn = log.checkIn || (log.checkInTime ? new Date(log.checkInTime).toLocaleString('en-US') : '—');
+      const checkOut = log.checkOut || (log.checkOutTime ? new Date(log.checkOutTime).toLocaleString('en-US') : '—');
+      const status = log.status || log.logStatus || '—';
+      const guard = log.guard || log.guardId?.name || 'Gate Operator';
+
+      return {
+        'Visitor Name': name,
+        'Visitor Type': type.toUpperCase(),
+        'Destination Unit': destination,
+        'Host Resident': resident,
+        'Check-In Time': checkIn,
+        'Check-Out Time': checkOut,
+        'Status': status,
+        'Guard Operator': guard,
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+    const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
+    const dateStr = new Date().toISOString().split('T')[0];
+    saveAs(blob, `visitor_logs_${dateStr}.csv`);
+    toast.success('Visitor logs exported as CSV successfully');
+  };
 
   // Pagination
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
@@ -61,6 +100,17 @@ export const VisitorLogsTable = ({ logs }) => {
               />
               <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-gray-400" />
             </div>
+
+            {/* Export CSV Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCSV}
+              className="text-xs font-semibold px-3 py-1.5 border-stroke dark:border-strokedark text-black dark:text-white flex items-center gap-1.5"
+            >
+              <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>Export CSV</span>
+            </Button>
 
             {/* Type Selector */}
             <select 

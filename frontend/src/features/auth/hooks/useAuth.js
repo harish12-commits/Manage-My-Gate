@@ -23,6 +23,7 @@ import {
   verifyResetOtp as verifyResetOtpAction,
   resetPassword as resetPasswordAction,
   performLogout,
+  switchWorkspaceContext,
 } from '../store/authSlice'
 import authService from '../services/authService.js'
 
@@ -90,9 +91,7 @@ export const useAuth = () => {
         return {
           success: true,
           data:
-            resultAction.payload.data?.data ||
-            resultAction.payload.data ||
-            resultAction.payload,
+            resultAction.payload.data?.data || resultAction.payload.data || resultAction.payload,
         }
       } else {
         return {
@@ -134,7 +133,8 @@ export const useAuth = () => {
         }
         return { success: true, payload: resultAction.payload }
       } else {
-        const errorMsg = resultAction.payload || t('auth.invite.error', 'Failed to accept invitation')
+        const errorMsg =
+          resultAction.payload || t('auth.invite.error', 'Failed to accept invitation')
         toast.error(errorMsg)
         return { success: false, error: errorMsg }
       }
@@ -152,7 +152,8 @@ export const useAuth = () => {
         toast.success(t('auth.invite.declinedSuccess', 'Invitation declined.'))
         return { success: true, payload: resultAction.payload }
       } else {
-        const errorMsg = resultAction.payload || t('auth.invite.error', 'Failed to reject invitation')
+        const errorMsg =
+          resultAction.payload || t('auth.invite.error', 'Failed to reject invitation')
         return { success: false, error: errorMsg }
       }
     } catch (err) {
@@ -203,7 +204,12 @@ export const useAuth = () => {
     return { success: false, error: resultAction.payload }
   }
 
-  const handleAcceptSsoInvitation = async (inviteTokenOrObj, ssoCredential, provider, options = {}) => {
+  const handleAcceptSsoInvitation = async (
+    inviteTokenOrObj,
+    ssoCredential,
+    provider,
+    options = {},
+  ) => {
     try {
       let inviteToken = inviteTokenOrObj
       let finalCredential = ssoCredential
@@ -219,7 +225,11 @@ export const useAuth = () => {
       }
 
       const resultAction = await dispatch(
-        acceptSsoInvitation({ inviteToken, ssoCredential: finalCredential, provider: finalProvider }),
+        acceptSsoInvitation({
+          inviteToken,
+          ssoCredential: finalCredential,
+          provider: finalProvider,
+        }),
       )
       if (acceptSsoInvitation.fulfilled.match(resultAction)) {
         const data = resultAction.payload?.data
@@ -255,6 +265,12 @@ export const useAuth = () => {
     }
   }
 
+  const handleSwitchWorkspace = async (orgId) => {
+    const resultAction = await dispatch(switchWorkspaceContext({ targetOrgId: orgId }))
+    if (switchWorkspaceContext.fulfilled.match(resultAction)) return { success: true }
+    return { success: false, error: resultAction.payload }
+  }
+
   const register = (userData) => {
     return dispatch(registerUser(userData))
   }
@@ -272,7 +288,9 @@ export const useAuth = () => {
 
     const roleUpper = (currentUser.role || '').toUpperCase()
     if (
-      ['Super Admin', 'Platform Super Admin', 'Community Admin', 'Admin', 'SuperAdmin'].includes(currentUser.role) ||
+      ['Super Admin', 'Platform Super Admin', 'Community Admin', 'Admin', 'SuperAdmin'].includes(
+        currentUser.role,
+      ) ||
       roleUpper.includes('ADMIN') ||
       roleUpper.includes('SUPER') ||
       currentUser.isPlatform
@@ -303,7 +321,10 @@ export const useAuth = () => {
       return true
     }
 
-    if (currentUser.permissions && (currentUser.permissions.includes('*') || currentUser.permissions.includes('all'))) {
+    if (
+      currentUser.permissions &&
+      (currentUser.permissions.includes('*') || currentUser.permissions.includes('all'))
+    ) {
       return true
     }
 
@@ -314,13 +335,19 @@ export const useAuth = () => {
 
       const isModuleEnabled = (key) => {
         if (allowedFeatures.includes(key)) return true
-        if (activeWorkspace?.modules?.some((m) => m.moduleKey === key && m.enabled !== false)) return true
-        if (activeWorkspace?.workspaceModules?.some((m) => m.moduleKey === key && m.enabled === true)) return true
+        if (activeWorkspace?.modules?.some((m) => m.moduleKey === key && m.enabled !== false))
+          return true
+        if (
+          activeWorkspace?.workspaceModules?.some((m) => m.moduleKey === key && m.enabled === true)
+        )
+          return true
         return false
       }
 
       if (featurePart === 'amenities' || featurePart === 'booking') {
-        return ['amenities', 'booking', 'amenity', 'amenitiesBooking'].some((f) => isModuleEnabled(f))
+        return ['amenities', 'booking', 'amenity', 'amenitiesBooking'].some((f) =>
+          isModuleEnabled(f),
+        )
       }
 
       if (['villas', 'users', 'roles', 'integrations'].includes(featurePart)) {
@@ -344,8 +371,18 @@ export const useAuth = () => {
 
     if (
       (permissionName === 'amenities:wallet' || permissionName === 'billing:wallet') &&
-      (['Family Member', 'Family', 'Resident', 'Resident Owner', 'Resident Tenant', 'Tenant', 'Owner'].includes(currentUser.role) ||
-       ['Family Member', 'Family', 'Resident Owner', 'Tenant', 'Owner'].includes(currentUser.residencyType))
+      ([
+        'Family Member',
+        'Family',
+        'Resident',
+        'Resident Owner',
+        'Resident Tenant',
+        'Tenant',
+        'Owner',
+      ].includes(currentUser.role) ||
+        ['Family Member', 'Family', 'Resident Owner', 'Tenant', 'Owner'].includes(
+          currentUser.residencyType,
+        ))
     ) {
       return true
     }
@@ -406,6 +443,7 @@ export const useAuth = () => {
     verifyResetOtp,
     resetAccountPassword,
     handleCreateInviteHandoff,
+    handleSwitchWorkspace,
   }
 }
 

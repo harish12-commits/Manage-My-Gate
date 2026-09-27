@@ -44,7 +44,7 @@ const AdminLedgersView = () => {
 
   const [showAmenityBreakdown, setShowAmenityBreakdown] = useState(true)
 
-  const handleExport = () => {
+  const handleExportCSV = () => {
     if (!bookings || bookings.length === 0) {
       alert('No booking records available to export.')
       return
@@ -84,35 +84,10 @@ const AdminLedgersView = () => {
     })
 
     const worksheet = XLSX.utils.json_to_sheet(exportData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Amenity Ledgers')
-
-    // Set column widths for clean accounting export
-    worksheet['!cols'] = [
-      { wch: 18 }, // Reference
-      { wch: 20 }, // Resident
-      { wch: 14 }, // Villa
-      { wch: 20 }, // Amenity
-      { wch: 14 }, // Date
-      { wch: 12 }, // Start Time
-      { wch: 12 }, // End Time
-      { wch: 12 }, // Persons
-      { wch: 18 }, // Booking Amt
-      { wch: 16 }, // Paid Amt
-      { wch: 18 }, // Refunded Amt
-      { wch: 16 }, // Net Revenue
-      { wch: 16 }, // Payment Status
-      { wch: 16 }, // Booking Status
-      { wch: 16 }, // Method
-      { wch: 24 }, // Transaction Ref
-      { wch: 22 }, // Created Date
-    ]
-
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
-    const dataBlob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    })
-    saveAs(dataBlob, `amenity_master_ledger_${new Date().toISOString().split('T')[0]}.xlsx`)
+    const csvOutput = XLSX.utils.sheet_to_csv(worksheet)
+    const dataBlob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' })
+    const dateStr = new Date().toISOString().split('T')[0]
+    saveAs(dataBlob, `amenity_master_ledger_${dateStr}.csv`)
   }
 
   const getStatusBadge = (bStatus) => {
@@ -174,8 +149,8 @@ const AdminLedgersView = () => {
                 <i className={`fa-solid fa-chart-pie me-1`}></i>
                 {showAmenityBreakdown ? 'Hide Amenity Summary' : 'Show Amenity Summary'}
               </button>
-              <button className="btn btn-primary" onClick={handleExport}>
-                <i className="fa-solid fa-download me-1"></i> Export Excel
+              <button className="btn btn-primary d-flex align-items-center gap-1" onClick={handleExportCSV}>
+                <i className="fa-solid fa-file-csv me-1"></i> Export CSV
               </button>
             </div>
           </div>

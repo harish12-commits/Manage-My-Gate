@@ -41,7 +41,6 @@ import crmTaskRouter from '../features/crmTask/crmTask.router.js';
 import crmThreadRouter from '../features/crmThread/crmThread.router.js';
 import crmMeetingRouter from '../features/crmMeeting/crmMeeting.router.js';
 import platformCrmRouter from '../features/platformCrm/enquiry.routes.js';
-import sessionRouter from '../features/session/session.router.js';
 
 // Complaint and Technician routes
 import complaintRouter from '../features/complaint/complaint.router.js';
@@ -66,10 +65,9 @@ router.use('/webhooks', webhookRouter);
 router.use('/sample', sampleFeatureRouter);
 router.use('/auth', authRouter);
 router.use('/session', sessionRouter);
+router.use('/sessions', sessionRouter);
 router.use('/roles', roleRouter);
 router.use('/users', userRouter);
-router.use('/session', sessionRouter);
-router.use('/sessions', sessionRouter);
 router.use('/notifications', notificationRouter);
 router.use('/device-tokens', deviceTokenRouter);
 router.use('/directory', directoryRouter);

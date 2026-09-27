@@ -263,7 +263,8 @@ router.get('/roles', authController.getRoles);
  *       400:
  *         description: Invalid token.
  */
-router.get('/validate-invite', authController.validateInvite);
+// Public endpoint, but attach a valid session when present so invitation state is identity-aware.
+router.get('/validate-invite', optionalAuth, authController.validateInvite);
 
 /**
  * @swagger

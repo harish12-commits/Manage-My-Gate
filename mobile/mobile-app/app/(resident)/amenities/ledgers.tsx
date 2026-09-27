@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Alert } from 'react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { KPIRow } from '@/components/ui/KPIRow';
 import { KPICardProps } from '@/components/ui/KPICard';
@@ -7,6 +7,8 @@ import { PaginatedList } from '@/components/ui/PaginatedList';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { DropdownSelect } from '@/components/forms/DropdownSelect';
 import { Text } from '@/components/ui/text';
+import { ExportReportButton } from '@/components/analytics/ExportReportButton';
+import { downloadCSVFile } from '@/src/utils/downloadHelper';
 import { useAdminLedgers } from '@/src/features/amenities/hooks/useAdminLedgers';
 import { BookingDetailModal } from '@/src/features/amenities/components/BookingDetailModal';
 import { AmenityLedgerCard } from '@/src/features/amenities/components/AmenityLedgerCard';
@@ -35,6 +37,74 @@ export default function AmenityLedgersScreen() {
     error,
     handleRefresh,
   } = useAdminLedgers();
+
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportCSV = async () => {
+    if (!filteredBookings || filteredBookings.length === 0) {
+      Alert.alert('No Data to Export', 'There are no financial ledger entries matching the current filter.');
+      return;
+    }
+
+    try {
+      setExporting(true);
+      const headers = [
+        'Booking Ref ID',
+        'Resident Name',
+        'Unit / Villa',
+        'Amenity Name',
+        'Booking Date',
+        'Start Time',
+        'End Time',
+        'Persons',
+        'Total Amount (INR)',
+        'Payment Status',
+        'Booking Status',
+        'Payment Method',
+        'Transaction Ref',
+      ];
+
+      const escapeCSV = (val: any) => {
+        if (val === undefined || val === null) return '""';
+        const str = String(val).replace(/"/g, '""');
+        return `"${str}"`;
+      };
+
+      const rows = filteredBookings.map((b: AmenityBooking) => {
+        const userObj: any = b.userId || {};
+        const amenityObj: any = b.amenityId || {};
+        const residentName = userObj.name || userObj.username || b.userName || 'Community Resident';
+        const villaUnit = b.villaNumber || userObj.villaNumber || userObj.flatNumber || userObj.unit || 'N/A';
+        const amenityName = amenityObj.name || b.amenityName || 'Amenity';
+        const totalAmt = b.pricingDetails?.totalAmount || b.totalPrice || b.bookingAmount || 0;
+
+        return [
+          escapeCSV(b.bookingId || b._id),
+          escapeCSV(residentName),
+          escapeCSV(villaUnit),
+          escapeCSV(amenityName),
+          escapeCSV(b.bookingDate || ''),
+          escapeCSV(b.startTime || ''),
+          escapeCSV(b.endTime || ''),
+          escapeCSV(b.numberOfPersons || 1),
+          escapeCSV(totalAmt),
+          escapeCSV((b.paymentStatus || 'pending').toUpperCase()),
+          escapeCSV((b.status || 'pending').toUpperCase()),
+          escapeCSV(b.paymentMethod || 'Online'),
+          escapeCSV(b.paymentId || b.razorpayTransactionId || 'N/A'),
+        ].join(',');
+      });
+
+      const csvContent = [headers.join(','), ...rows.map((r) => r)].join('\n');
+      const dateStr = new Date().toISOString().split('T')[0];
+      const fileName = `amenity_master_ledger_${dateStr}.csv`;
+      await downloadCSVFile(csvContent, fileName);
+    } catch (err) {
+      console.error('Export CSV error:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const amenityOptions = useMemo(() => {
     const opts = amenities.map((a) => ({ label: a.name, value: a._id }));
@@ -118,9 +188,12 @@ export default function AmenityLedgersScreen() {
         </View>
       </View>
 
-      <Text variant="large" className="font-bold text-foreground mt-1">
-        Master Financial Ledger Entries ({filteredBookings.length})
-      </Text>
+      <View className="flex-row items-center justify-between mt-1">
+        <Text variant="large" className="font-bold text-foreground">
+          Master Financial Ledger Entries ({filteredBookings.length})
+        </Text>
+        <ExportReportButton onExport={handleExportCSV} loading={exporting} />
+      </View>
     </View>
   );
 
@@ -129,6 +202,7 @@ export default function AmenityLedgersScreen() {
       title="Master Ledgers & Accounts"
       subtitle="Financial accounts, master booking ledger & transaction audit trail"
       iconName="Receipt"
+      headerRight={<ExportReportButton onExport={handleExportCSV} loading={exporting} />}
       loading={loading && adminBookings.length === 0}
       error={error}
       onRetry={handleRefresh}

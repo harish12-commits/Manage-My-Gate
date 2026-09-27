@@ -1,11 +1,14 @@
 import React, { useState } from 'react'
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
+import toast from 'react-hot-toast'
 
 export const VisitorLogsTable = ({ logs }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 3
+  const itemsPerPage = 10
 
   // Filter logs based on search and drop-downs
   const filteredLogs = logs.filter((log) => {
@@ -26,6 +29,50 @@ export const VisitorLogsTable = ({ logs }) => {
 
     return matchesSearch && matchesType && matchesStatus
   })
+
+  const handleExportCSV = () => {
+    if (!filteredLogs || filteredLogs.length === 0) {
+      toast.error('No visitor log records available to export.')
+      return
+    }
+
+    const exportData = filteredLogs.map((log) => {
+      const name = log.visitorName || log.snapshot?.visitorName || '—'
+      const type = (log.type || (log.entryType === 'PRE_APPROVED' ? 'guest' : 'walk_in')).replace('_', ' ')
+      const destination =
+        log.villa ||
+        log.passId?.villaId?.unitNumber ||
+        log.passId?.villaId?.villaNumber ||
+        'Villa Gate'
+      const resident = log.resident || log.residentId?.name || '—'
+      const checkIn =
+        log.checkIn ||
+        (log.checkInTime ? new Date(log.checkInTime).toLocaleString('en-US') : '—')
+      const checkOut =
+        log.checkOut ||
+        (log.checkOutTime ? new Date(log.checkOutTime).toLocaleString('en-US') : '—')
+      const status = log.status || log.logStatus || '—'
+      const guard = log.guard || log.guardId?.name || 'Gate Operator'
+
+      return {
+        'Visitor Name': name,
+        'Visitor Type': type.toUpperCase(),
+        'Destination Unit': destination,
+        'Host Resident': resident,
+        'Check-In Time': checkIn,
+        'Check-Out Time': checkOut,
+        Status: status,
+        'Guard Operator': guard,
+      }
+    })
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
+    const csvOutput = XLSX.utils.sheet_to_csv(worksheet)
+    const dataBlob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' })
+    const dateStr = new Date().toISOString().split('T')[0]
+    saveAs(dataBlob, `visitor_logs_${dateStr}.csv`)
+    toast.success('Visitor logs exported as CSV successfully')
+  }
 
   // Pagination
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage)
@@ -54,6 +101,14 @@ export const VisitorLogsTable = ({ logs }) => {
                 setCurrentPage(1)
               }}
             />
+
+            {/* Export CSV Button */}
+            <button
+              className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+              onClick={handleExportCSV}
+            >
+              <i className="fa-solid fa-file-csv"></i> Export CSV
+            </button>
 
             {/* Type Selector */}
             <select
