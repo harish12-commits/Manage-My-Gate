@@ -13,7 +13,6 @@ import {
 } from './wallet.events.js';
 import { Wallet, WalletTransaction } from './wallet.model.js';
 import { paymentEventEmitter, PAYMENT_SUCCESS, PAYMENT_REFUNDED } from '../payment/payment.events.js';
-import { amenityBookingEventEmitter, AMENITY_BOOKING_CONFIRMED } from '../amenityBooking/amenityBooking.events.js';
 import invoiceService from '../invoice/invoice.services.js';
 import paymentService from '../payment/payment.service.js';
 import HttpError from '../../utils/httpError.utils.js';
@@ -27,68 +26,38 @@ class WalletService {
   }
 
   registerListeners() {
-    // Listen for confirmed bookings (both manual and paid)
-    amenityBookingEventEmitter.on(AMENITY_BOOKING_CONFIRMED, async ({ booking, paymentMethod, amount }) => {
+    // Unified wallet rule: WalletTransactions record ONLY real wallet balance movements.
+    // Card/Razorpay booking payments never touch the wallet (they appear in Financial History via the booking),
+    // and wallet booking debits are posted synchronously inside the booking creation API.
+
+    // Refund of a WALLET-paid amenity booking settled through the unified payment core
+    // (the PAYMENT_REFUNDED payload is the refund Payment record; its amount is negative).
+    paymentEventEmitter.on(PAYMENT_REFUNDED, async (refundRecord) => {
+      if (refundRecord.referenceType !== 'AmenityBooking' || (refundRecord.paymentMethod || '').toUpperCase() !== 'WALLET') {
+        return;
+      }
       try {
-        await this.createBookingTransaction(booking, 'Debit', amount || booking.totalPrice, paymentMethod, 'success');
-        walletEventEmitter.emit(WALLET_UPDATED, { userId: booking.userId, orgId: booking.orgId });
-      } catch (e) {
-        logger.error('Error creating wallet transaction for confirmed booking', e);
-      }
-    });
-
-    // Listen for refunds
-    paymentEventEmitter.on(PAYMENT_REFUNDED, async (payment) => {
-      if (payment.referenceType === 'AmenityBooking' && (payment.paymentMethod || '').toUpperCase() === 'WALLET') {
-        try {
-          const amenityBookingService = (await import('../amenityBooking/amenityBooking.services.js')).default;
-          const booking = await amenityBookingService.getBookingById(payment.referenceId, payment.orgId);
-          if (booking) {
-            await this.createBookingTransaction(booking, 'Credit', payment.amount, payment.paymentMethod, 'refunded');
-            walletEventEmitter.emit(WALLET_UPDATED, { userId: booking.userId, orgId: booking.orgId });
-          }
-        } catch (e) {
-          logger.error('Error creating wallet transaction for refund', e);
+        const amenityBookingService = (await import('../amenityBooking/amenityBooking.services.js')).default;
+        const booking = await amenityBookingService.getBookingById(refundRecord.referenceId, refundRecord.orgId);
+        if (booking) {
+          await this.creditWallet({
+            userId: booking.userId?._id || booking.userId,
+            orgId: booking.orgId,
+            amount: Math.abs(Number(refundRecord.amount)),
+            referenceType: 'Refund',
+            referenceId: booking._id,
+            // Same key as the cancellation refund path, so a booking is never refunded to the wallet twice
+            idempotencyKey: `AMENITY-REFUND-${booking._id.toString()}`,
+            paymentMethod: 'WALLET',
+            description: 'Refund for Cancelled Amenity Booking',
+            // paymentSettlement.settleRefund already posted the refund ledger entry (Revenue Adjustment -> Resident Wallet)
+            skipLedger: true,
+          });
         }
+      } catch (e) {
+        logger.error('Error crediting wallet for amenity booking refund', e);
       }
     });
-  }
-
-  async createBookingTransaction(booking, type, amount, paymentMethod, paymentStatus) {
-    const amenityService = (await import('../amenity/amenity.services.js')).default;
-    const amenity = await amenityService.getAmenityById(booking.amenityId, booking.orgId);
-
-    const normalizedMethod = (paymentMethod || '').toUpperCase();
-    if (type === 'Debit' && (normalizedMethod === 'WALLET' || normalizedMethod === 'PAY_AT_GATE')) {
-      // WALLET transactions are created synchronously inside the booking creation API.
-      // PAY_AT_GATE does not involve the wallet ledger.
-      return null;
-    }
-
-    const transactionData = {
-      orgId: booking.orgId,
-      userId: booking.userId,
-      bookingId: booking.bookingId,
-      type,
-      amount: Math.abs(amount),
-      paymentMethod,
-      paymentStatus,
-      referenceType: 'AmenityBooking',
-      referenceId: booking._id,
-      amenityName: amenity ? amenity.name : 'Unknown Amenity',
-      description: type === 'Debit' ? `Booking for ${amenity ? amenity.name : 'Amenity'}` : `Refund for ${amenity ? amenity.name : 'Amenity'}`
-    };
-
-    const transaction = await walletRepository.createTransaction(transactionData);
-
-    if (normalizedMethod === 'WALLET') {
-      const absAmount = Math.abs(amount);
-      const delta = type === 'Debit' ? -absAmount : absAmount;
-      await walletRepository.updateBalance(booking.userId, booking.orgId, delta);
-    }
-
-    walletEventEmitter.emit(WALLET_TRANSACTION_CREATED, transaction);
-    return transaction;
   }
 
   async addMoney(userId, orgId, amount, paymentMethod = 'admin_adjustment', description = 'Wallet Recharge') {
@@ -733,6 +702,7 @@ class WalletService {
     paymentId = null,
     idempotencyKey = null,
     description = '',
+    skipLedger = false,
     session: outerSession = null,
   }) {
     const numericAmount = Number(amount);
@@ -798,22 +768,25 @@ class WalletService {
 
       // 4. Record Double-Entry Financial Ledger Entry in the SAME session
       let ledgerEntry = null;
-      try {
-        const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
-        ledgerEntry = await financialLedgerService.recordWalletDebitEntry({
-          userId,
-          orgId,
-          amount: numericAmount,
-          referenceType,
-          referenceId: referenceId || transaction._id,
-          paymentId,
-          idempotencyKey: `${transactionId}:LEDGER`,
-          description: transaction.description,
-          session: activeSession,
-        });
-      } catch (ledgerErr) {
-        logger.error('debitWallet: financial ledger recording failed', { error: ledgerErr.message });
-        throw ledgerErr;
+      // skipLedger: the payment settlement layer has already posted the ledger entry for this movement
+      if (!skipLedger) {
+        try {
+          const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
+          ledgerEntry = await financialLedgerService.recordWalletDebitEntry({
+            userId,
+            orgId,
+            amount: numericAmount,
+            referenceType,
+            referenceId: referenceId || transaction._id,
+            paymentId,
+            idempotencyKey: `${transactionId}:LEDGER`,
+            description: transaction.description,
+            session: activeSession,
+          });
+        } catch (ledgerErr) {
+          logger.error('debitWallet: financial ledger recording failed', { error: ledgerErr.message });
+          throw ledgerErr;
+        }
       }
 
       // 5. Commit if local session
@@ -893,6 +866,7 @@ class WalletService {
     idempotencyKey = null,
     paymentMethod = 'ONLINE',
     description = '',
+    skipLedger = false,
     session: outerSession = null,
   }) {
     const numericAmount = Number(amount);
@@ -972,23 +946,26 @@ class WalletService {
 
       // 4. Record Double-Entry Financial Ledger Entry in the SAME session
       let ledgerEntry = null;
-      try {
-        const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
-        ledgerEntry = await financialLedgerService.recordWalletCreditEntry({
-          userId,
-          orgId,
-          amount: numericAmount,
-          referenceType,
-          referenceId: referenceId || transaction._id,
-          paymentId,
-          idempotencyKey: `${transactionId}:LEDGER`,
-          paymentMethod,
-          description: transaction.description,
-          session: activeSession,
-        });
-      } catch (ledgerErr) {
-        logger.error('creditWallet: financial ledger recording failed', { error: ledgerErr.message });
-        throw ledgerErr;
+      // skipLedger: the payment settlement layer has already posted the ledger entry for this movement
+      if (!skipLedger) {
+        try {
+          const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
+          ledgerEntry = await financialLedgerService.recordWalletCreditEntry({
+            userId,
+            orgId,
+            amount: numericAmount,
+            referenceType,
+            referenceId: referenceId || transaction._id,
+            paymentId,
+            idempotencyKey: `${transactionId}:LEDGER`,
+            paymentMethod,
+            description: transaction.description,
+            session: activeSession,
+          });
+        } catch (ledgerErr) {
+          logger.error('creditWallet: financial ledger recording failed', { error: ledgerErr.message });
+          throw ledgerErr;
+        }
       }
 
       // 5. Commit if local session

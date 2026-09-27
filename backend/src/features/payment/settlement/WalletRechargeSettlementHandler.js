@@ -27,31 +27,24 @@ export class WalletRechargeSettlementHandler extends DomainSettlementInterface {
       amount: refundRecord.amount,
     });
 
-    const walletRepository = (await import('../../wallet/wallet.repository.js')).default;
-    const refundAmount = Math.abs(Number(refundRecord.amount));
-
-    // Deduct refunded amount from wallet balance
-    const updatedWallet = await walletRepository.updateBalance(
-      payment.userId,
-      payment.orgId,
-      -refundAmount,
-      session
-    );
-
-    // Record adjustment transaction
-    const transaction = await walletRepository.createTransaction({
-      orgId: payment.orgId,
+    // Cross-feature access goes through the wallet service (never the wallet repository).
+    // debitWallet is atomic and rejects the reversal if the recharged money has already been spent.
+    const walletService = (await import('../../wallet/wallet.service.js')).default;
+    const { wallet, transaction } = await walletService.debitWallet({
       userId: payment.userId,
-      type: 'Debit',
-      amount: refundAmount,
-      paymentMethod: payment.paymentMethod || 'ONLINE',
-      paymentStatus: 'success',
+      orgId: payment.orgId,
+      amount: Math.abs(Number(refundRecord.amount)),
       referenceType: 'Refund',
       referenceId: refundRecord._id,
+      paymentId: payment._id,
+      idempotencyKey: `RECHARGE-REFUND-${refundRecord._id.toString()}`,
       description: `Wallet recharge refund reversal (Payment: ${payment.gatewayTransactionId || payment._id})`,
-    }, session);
+      // settleRefund posts the refund ledger entry itself
+      skipLedger: true,
+      session,
+    });
 
-    return { wallet: updatedWallet, transaction };
+    return { wallet, transaction };
   }
 }
 

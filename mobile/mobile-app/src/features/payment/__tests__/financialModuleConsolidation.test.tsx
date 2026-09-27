@@ -111,12 +111,28 @@ describe('Financial Module Consolidation & All Features Integration', () => {
       expect(isFeatureAllowedForUser(hubFeature, residentUser)).toBe(true);
     });
 
-    it('strictly denies Community Admin persona access to resident personal finance', () => {
+    it('grants seeded Resident Owner (amenities:wallet only) access to the Digital Wallet', () => {
+      const ownerUser = {
+        id: 'own-1',
+        role: 'Resident Owner',
+        permissions: ['villas:read', 'amenities:discover', 'amenities:my_booking', 'amenities:wallet', 'notices:read'],
+      };
       const walletFeature = ALL_AVAILABLE_FEATURES.find((f) => f.id === 'billing_wallet')!;
       const historyFeature = ALL_AVAILABLE_FEATURES.find((f) => f.id === 'financial_history')!;
       const duesFeature = ALL_AVAILABLE_FEATURES.find((f) => f.id === 'billing_my_dues')!;
 
-      // Excluded from admin view via RESIDENT_ONLY_FEATURE_IDS
+      expect(isFeatureAllowedForUser(walletFeature, ownerUser)).toBe(true);
+      expect(isFeatureAllowedForUser(historyFeature, ownerUser)).toBe(true);
+      // amenities:wallet must not leak into billing dues
+      expect(isFeatureAllowedForUser(duesFeature, ownerUser)).toBe(false);
+    });
+
+    it('denies Community Admin the Digital Wallet when Role Builder does not grant billing:action_center', () => {
+      const walletFeature = ALL_AVAILABLE_FEATURES.find((f) => f.id === 'billing_wallet')!;
+      const historyFeature = ALL_AVAILABLE_FEATURES.find((f) => f.id === 'financial_history')!;
+      const duesFeature = ALL_AVAILABLE_FEATURES.find((f) => f.id === 'billing_my_dues')!;
+
+      // Not granted in Role Builder => hidden, even for admins
       expect(isFeatureAllowedForUser(walletFeature, adminUser)).toBe(false);
       expect(isFeatureAllowedForUser(historyFeature, adminUser)).toBe(false);
       expect(isFeatureAllowedForUser(duesFeature, adminUser)).toBe(false);
@@ -142,10 +158,23 @@ describe('Financial Module Consolidation & All Features Integration', () => {
       expect(isFeatureAllowedForUser(ledgerFeature, guardUser)).toBe(false);
     });
 
-    it('verifies RESIDENT_ONLY_FEATURE_IDS contains personal financial feature keys', () => {
-      expect(RESIDENT_ONLY_FEATURE_IDS.has('billing_wallet')).toBe(true);
-      expect(RESIDENT_ONLY_FEATURE_IDS.has('financial_history')).toBe(true);
-      expect(RESIDENT_ONLY_FEATURE_IDS.has('billing_my_dues')).toBe(true);
+    it('grants Digital Wallet & Ledger to ANY role granted billing:action_center in Role Builder', () => {
+      const actionCenterIds = ['billing_wallet', 'financial_history', 'billing_my_dues'];
+      const grantedAdmin = { ...adminUser, permissions: [...adminUser.permissions, 'billing:action_center'] };
+      const grantedGuard = { ...guardUser, permissions: [...guardUser.permissions, 'billing:action_center'] };
+
+      actionCenterIds.forEach((id) => {
+        const feature = ALL_AVAILABLE_FEATURES.find((f) => f.id === id)!;
+        expect(isFeatureAllowedForUser(feature, grantedAdmin)).toBe(true);
+        expect(isFeatureAllowedForUser(feature, grantedGuard)).toBe(true);
+        expect(isFeatureAllowedForUser(feature, residentUser)).toBe(true);
+      });
+    });
+
+    it('keeps Digital Wallet & Ledger features out of RESIDENT_ONLY_FEATURE_IDS', () => {
+      expect(RESIDENT_ONLY_FEATURE_IDS.has('billing_wallet')).toBe(false);
+      expect(RESIDENT_ONLY_FEATURE_IDS.has('financial_history')).toBe(false);
+      expect(RESIDENT_ONLY_FEATURE_IDS.has('billing_my_dues')).toBe(false);
     });
   });
 

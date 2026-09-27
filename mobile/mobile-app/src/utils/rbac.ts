@@ -177,14 +177,35 @@ const matchesUserPermissions = (
 };
 
 // Features strictly reserved for resident self-service (hidden from Admin and Guard consoles)
-// NOTE: billing_wallet and financial_history are intentionally NOT included here — both Admin
-// and Resident personas can access the Digital Wallet and Financial History screens.
-// Access differentiation is handled entirely by the permission string 'billing:action_center'.
+// NOTE: Digital Wallet & Ledger features (wallet, dues, history) are NOT resident-only — see WALLET_LEDGER_FEATURE_IDS.
 export const RESIDENT_ONLY_FEATURE_IDS = new Set([
   'visitor_resident_passes',
   'visitor_passes',
-  'billing_my_dues',
 ]);
+
+// Digital Wallet & Ledger features (Wallet, Dues & Invoices, Financial History). These are available to
+// EVERY role (Admin, Guard, Resident, custom) that is granted 'billing:action_center' in Role Builder.
+export const WALLET_LEDGER_FEATURE_IDS = new Set([
+  'billing_wallet',
+  'financial_history',
+  'amenities_wallet',
+  'billing_my_dues',
+  'billing_my_invoices',
+]);
+
+// Exact Role Builder grants ('Digital Wallet' = billing:action_center). Deliberately excludes billing:dashboard synonyms so that
+// only an explicit Digital Wallet grant exposes these tiles.
+const WALLET_LEDGER_GRANTS = ['billing:action_center', 'billing.action_center', 'billing'];
+
+// 'amenities:wallet' is the legacy wallet permission still carried by seeded Resident Owner / Tenant roles.
+// It unlocks the wallet tiles only — never billing dues/invoices (the backend rejects those without a billing grant).
+const LEGACY_WALLET_GRANTS = ['amenities:wallet', 'amenities.wallet'];
+const LEGACY_WALLET_FEATURE_IDS = new Set(['billing_wallet', 'financial_history', 'amenities_wallet']);
+
+const hasWalletLedgerGrant = (itemId: string, permissions: string[]): boolean => {
+  if (permissions.includes(itemId) || WALLET_LEDGER_GRANTS.some((grant) => permissions.includes(grant))) return true;
+  return LEGACY_WALLET_FEATURE_IDS.has(itemId) && LEGACY_WALLET_GRANTS.some((grant) => permissions.includes(grant));
+};
 
 // Features strictly reserved for gate security hardware (hidden from Admin and Resident consoles)
 export const GUARD_ONLY_FEATURE_IDS = new Set<string>([]);
@@ -266,6 +287,11 @@ export const isFeatureAllowedForUser = (
   // Super Admin / Platform bypass (full system visibility)
   if (user.isPlatform === true || permissions.includes('platform:super_admin') || permissions.includes('*')) {
     return true;
+  }
+
+  // Digital Wallet & Ledger is role-agnostic: when Role Builder permissions are present they are the only source of truth.
+  if (WALLET_LEDGER_FEATURE_IDS.has(item.id) && permissions.length > 0) {
+    return hasWalletLedgerGrant(item.id, permissions);
   }
 
   const isAdmin = checkIsAdmin(user);

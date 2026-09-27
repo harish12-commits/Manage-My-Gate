@@ -343,9 +343,14 @@ describe('Phase 6: Amenity Booking Payment Migration to Unified Payment Core', (
     assert.equal(ledger.status, LEDGER_STATUSES.POSTED);
     assert.equal(ledger.debitAccount, FINANCIAL_ACCOUNTS.EXTERNAL_CLEARING);
     assert.equal(ledger.creditAccount, FINANCIAL_ACCOUNTS.AMENITY_REVENUE);
+
+    // Unified wallet rule: a card payment must never appear as a wallet debit (listeners run asynchronously)
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const walletTxns = await WalletTransaction.countDocuments({ referenceId: booking._id });
+    assert.equal(walletTxns, 0, 'Razorpay amenity payments must not create wallet transactions');
   });
 
-  test('Test 1.4 — Settlement Idempotency: re-verifying settled payment does not duplicate ledger or corrupt pass tokens', async () => {
+  test('Test 1.4— Settlement Idempotency: re-verifying settled payment does not duplicate ledger or corrupt pass tokens', async () => {
     const booking = await createTestBooking({ totalAmount: 500 });
 
     const orderResult = await paymentService.createPaymentOrder({
@@ -843,6 +848,85 @@ describe('Phase 6: Amenity Booking Payment Migration to Unified Payment Core', (
     assert.ok(refundLedgers.length >= 1, 'Wallet refund ledger entry must be recorded');
     assert.equal(refundLedgers[0].debitAccount, FINANCIAL_ACCOUNTS.REVENUE_ADJUSTMENT);
     assert.equal(refundLedgers[0].creditAccount, FINANCIAL_ACCOUNTS.RESIDENT_WALLET);
+  });
+
+  test('Test 6.3 — Gateway Refund Wallet Isolation: card refund never writes a wallet transaction or changes balance', async () => {
+    const preWallet = await walletService.getWallet(testUserId, testOrgId);
+    const booking = await createTestBooking({
+      totalAmount: 400,
+      paymentMethod: 'ONLINE',
+      paymentStatus: 'success',
+      status: 'confirmed',
+      bookingDate: getFutureBookingDate(9),
+      startTime: '18:00',
+      endTime: '19:00',
+    });
+    const payment = await Payment.create({
+      orgId: testOrgId,
+      userId: testUserId,
+      domain: 'AMENITY',
+      referenceType: 'AmenityBooking',
+      referenceId: booking._id,
+      amount: 400,
+      currency: 'INR',
+      paymentMethod: 'ONLINE',
+      status: 'success',
+      paidAt: new Date(),
+      gatewayTransactionId: `pay_isolation_test_${Date.now()}`,
+    });
+    await financialLedgerService.recordSettlementLedgerEntry(payment, 'AMENITY');
+
+    await unifiedPaymentService.processRefund({ paymentId: payment._id, amount: 400 });
+    // PAYMENT_REFUNDED listeners run asynchronously after emit
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    const walletTxns = await WalletTransaction.countDocuments({ referenceId: booking._id });
+    assert.equal(walletTxns, 0, 'Card refunds must not create wallet transactions');
+    const postWallet = await walletService.getWallet(testUserId, testOrgId);
+    assert.equal(postWallet.balance, preWallet.balance);
+  });
+
+  test('Test 6.4 — Online Booking Without Gateway ID: cancellation refunds to unified wallet with ledger entry', async () => {
+    const preWallet = await walletService.getWallet(testUserId, testOrgId);
+    const booking = await createTestBooking({
+      totalAmount: 300,
+      paymentMethod: 'ONLINE',
+      paymentStatus: 'success',
+      status: 'confirmed',
+      bookingDate: getFutureBookingDate(10),
+      startTime: '18:00',
+      endTime: '19:00',
+    });
+
+    const cancelled = await amenityBookingService.cancelBooking(booking._id, testUserId, testOrgId, 'No gateway id');
+    assert.equal(cancelled.paymentStatus, 'refunded');
+
+    const postWallet = await walletService.getWallet(testUserId, testOrgId);
+    assert.equal(postWallet.balance, preWallet.balance + 300);
+
+    const refundTxn = await WalletTransaction.findOne({ transactionId: `AMENITY-REFUND-${booking._id.toString()}` });
+    assert.ok(refundTxn, 'Refund wallet transaction must exist');
+    assert.equal(refundTxn.paymentStatus, 'success');
+    assert.equal(refundTxn.referenceType, 'Refund');
+
+    const refundLedger = await FinancialLedgerEntry.findOne({ referenceId: booking._id, referenceType: 'Refund' });
+    assert.ok(refundLedger, 'Wallet refund ledger entry must be recorded');
+    assert.equal(refundLedger.creditAccount, FINANCIAL_ACCOUNTS.RESIDENT_WALLET);
+  });
+
+  test('Test 6.5 — Wallet Refund Idempotency: the same booking can never be refunded to the wallet twice', async () => {
+    const booking = await createTestBooking({ totalAmount: 250, paymentMethod: 'WALLET', paymentStatus: 'success' });
+    const preWallet = await walletService.getWallet(testUserId, testOrgId);
+    const refundArgs = { targetUserId: testUserId, orgId: testOrgId, refundAmount: 250, refundPercentage: 100, booking };
+
+    await amenityBookingService._refundToWallet(refundArgs);
+    const second = await amenityBookingService._refundToWallet(refundArgs);
+    assert.equal(second.alreadyProcessed, true);
+
+    const postWallet = await walletService.getWallet(testUserId, testOrgId);
+    assert.equal(postWallet.balance, preWallet.balance + 250);
+    const ledgers = await FinancialLedgerEntry.countDocuments({ referenceId: booking._id, referenceType: 'Refund' });
+    assert.equal(ledgers, 1);
   });
 
   // --------------------------------------------------------------------------

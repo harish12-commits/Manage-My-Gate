@@ -206,30 +206,14 @@ paymentEventEmitter.on(PAYMENT_FAILED, async (payment) => {
   }
 });
 
-paymentEventEmitter.on(PAYMENT_REFUNDED, async (payment) => {
-  if (payment.referenceType !== 'AmenityBooking') return;
+// Payload is the refund Payment record. Wallet crediting for WALLET-paid bookings is owned by the wallet
+// service (unified wallet + ledger); gateway refunds go back to the card, so the wallet is not touched here.
+paymentEventEmitter.on(PAYMENT_REFUNDED, async (refundRecord) => {
+  if (refundRecord.referenceType !== 'AmenityBooking') return;
 
   try {
-    const booking = await amenityBookingRepository.findById(payment.referenceId, payment.orgId);
+    const booking = await amenityBookingRepository.findById(refundRecord.referenceId, refundRecord.orgId);
     if (booking) {
-      const amenityName = booking.amenityId?.name || 'Amenity Booking';
-      await walletService.createTransaction({
-        orgId: booking.orgId,
-        userId: booking.userId,
-        bookingId: booking.bookingId,
-        type: 'Credit',
-        amount: payment.amount || booking.totalPrice || 0,
-        paymentMethod: payment.method || 'system',
-        paymentStatus: 'refunded',
-        referenceType: 'Refund',
-        referenceId: booking._id,
-        amenityName,
-        description: 'Booking cancelled and refunded'
-      });
-      if (payment.method === 'wallet' || booking.paymentMethod === 'wallet') {
-        await walletService.updateBalance(booking.userId, booking.orgId, (payment.amount || booking.totalPrice));
-      }
-      
       await sendBookingNotification(booking, 'info', 'Refund Processed', 'Your refund for the cancelled booking has been processed.');
     }
   } catch (err) {

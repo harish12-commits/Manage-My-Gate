@@ -275,7 +275,8 @@ export class OrganizationService {
         'villas:read', 'users:read', 
         'amenities:discover', 'amenities:my_booking', 
         'amenities:wallet', 'amenities:history', 'amenities:amenities',
-        'notices:read'
+        'notices:read',
+        'billing:action_center'
       ]);
       await rolePermissionService.updateRolePermissions(ownerRole._id.toString(), ownerPerms, session);
 
@@ -288,7 +289,8 @@ export class OrganizationService {
         'villas:read', 'users:read', 
         'amenities:discover', 'amenities:my_booking', 
         'amenities:wallet', 'amenities:history', 'amenities:amenities',
-        'notices:read'
+        'notices:read',
+        'billing:action_center'
       ]);
       await rolePermissionService.updateRolePermissions(tenantRole._id.toString(), tenantPerms, session);
 

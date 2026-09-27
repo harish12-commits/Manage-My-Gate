@@ -751,6 +751,25 @@ export class AmenityBookingService {
   }
 
 
+  /**
+   * Credits a cancellation refund to the unified digital wallet via the canonical wallet credit path, which
+   * atomically updates the balance, records the WalletTransaction and posts the double-entry ledger entry.
+   * The deterministic idempotency key guarantees a booking can never be refunded to the wallet twice.
+   */
+  async _refundToWallet({ targetUserId, orgId, refundAmount, refundPercentage, booking, paymentMethod = 'WALLET' }) {
+    const walletService = (await import('../wallet/wallet.service.js')).default;
+    return walletService.creditWallet({
+      userId: targetUserId,
+      orgId,
+      amount: refundAmount,
+      referenceType: 'Refund',
+      referenceId: booking._id,
+      idempotencyKey: `AMENITY-REFUND-${booking._id.toString()}`,
+      paymentMethod,
+      description: `Refund for Cancelled Amenity Booking (${refundPercentage}% refund)`,
+    });
+  }
+
   async cancelBooking(bookingId, userId, orgId, reason = '', isAdmin = false, options = {}) {
     const mongoose = (await import('mongoose')).default;
     // Removed transaction to support standalone local MongoDB
@@ -817,38 +836,12 @@ export class AmenityBookingService {
 
         if (isWallet && refundAmount > 0) {
           try {
-            const walletService = (await import('../wallet/wallet.service.js')).default;
-            await walletService.updateBalance(targetUserId, orgId, refundAmount);
-            await walletService.createTransaction({
-              orgId,
-              userId: targetUserId,
-              type: 'Credit',
-              amount: refundAmount,
-              paymentMethod: 'WALLET',
-              paymentStatus: 'success',
-              referenceType: 'Refund',
-              referenceId: booking._id,
-              description: `Refund for Cancelled Amenity Booking (${refundPercentage}% refund)`
-            });
-            try {
-              const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
-              await financialLedgerService.recordWalletCreditEntry({
-                userId: targetUserId,
-                orgId,
-                amount: refundAmount,
-                referenceType: 'Refund',
-                referenceId: booking._id,
-                paymentMethod: 'WALLET',
-                description: `Refund for Cancelled Amenity Booking (${refundPercentage}% refund)`
-              });
-            } catch (ledgerErr) {
-              console.error(`[CANCEL BOOKING] Financial ledger wallet refund credit failed:`, ledgerErr.message);
-            }
-            const { walletEventEmitter, WALLET_UPDATED } = await import('../wallet/wallet.events.js');
-            walletEventEmitter.emit(WALLET_UPDATED, { userId: targetUserId, orgId });
+            await this._refundToWallet({ targetUserId, orgId, refundAmount, refundPercentage, booking });
             newPaymentStatus = refundPercentage === 100 ? 'refunded' : 'partial_refund';
           } catch (walletErr) {
-            console.error(`[CANCEL BOOKING] Wallet refund failed for booking ${bookingId}:`, walletErr.message);
+            logger.error(`[CANCEL BOOKING] Wallet refund failed for booking ${bookingId}`, { error: walletErr.message });
+            // Refund is still owed — surface it instead of leaving the booking marked as paid
+            newPaymentStatus = 'refund_pending';
           }
         } else if (booking.paymentId && refundAmount > 0) {
           const paymentService = (await import('../payment/payment.service.js')).default;
@@ -862,21 +855,7 @@ export class AmenityBookingService {
           } catch (refundError) {
              console.error(`[CANCEL BOOKING] Refund failed for booking ${bookingId}, crediting to digital wallet:`, refundError.message);
              try {
-               const walletService = (await import('../wallet/wallet.service.js')).default;
-               await walletService.updateBalance(targetUserId, orgId, refundAmount);
-               await walletService.createTransaction({
-                 orgId,
-                 userId: targetUserId,
-                 type: 'Credit',
-                 amount: refundAmount,
-                 paymentMethod: booking.paymentMethod || 'ONLINE',
-                 paymentStatus: 'success',
-                 referenceType: 'Refund',
-                 referenceId: booking._id,
-                 description: `Refund for Cancelled Amenity Booking (${refundPercentage}% refund)`
-               });
-               const { walletEventEmitter, WALLET_UPDATED } = await import('../wallet/wallet.events.js');
-               walletEventEmitter.emit(WALLET_UPDATED, { userId: targetUserId, orgId });
+               await this._refundToWallet({ targetUserId, orgId, refundAmount, refundPercentage, booking, paymentMethod: booking.paymentMethod || 'ONLINE' });
                newPaymentStatus = refundPercentage === 100 ? 'refunded' : 'partial_refund';
              } catch (fallbackErr) {
                console.error(`[CANCEL BOOKING] Fallback wallet refund failed:`, fallbackErr.message);
@@ -886,24 +865,11 @@ export class AmenityBookingService {
         } else if (refundAmount > 0) {
           // ONLINE or other digital payment method without direct gateway ID: Credit to resident's digital wallet
           try {
-            const walletService = (await import('../wallet/wallet.service.js')).default;
-            await walletService.updateBalance(targetUserId, orgId, refundAmount);
-            await walletService.createTransaction({
-              orgId,
-              userId: targetUserId,
-              type: 'Credit',
-              amount: refundAmount,
-              paymentMethod: booking.paymentMethod || 'ONLINE',
-              paymentStatus: 'success',
-              referenceType: 'Refund',
-              referenceId: booking._id,
-              description: `Refund for Cancelled Amenity Booking (${refundPercentage}% refund)`
-            });
-            const { walletEventEmitter, WALLET_UPDATED } = await import('../wallet/wallet.events.js');
-            walletEventEmitter.emit(WALLET_UPDATED, { userId: targetUserId, orgId });
+            await this._refundToWallet({ targetUserId, orgId, refundAmount, refundPercentage, booking, paymentMethod: booking.paymentMethod || 'ONLINE' });
             newPaymentStatus = refundPercentage === 100 ? 'refunded' : 'partial_refund';
           } catch (walletErr) {
-            console.error(`[CANCEL BOOKING] Digital wallet refund credit failed:`, walletErr.message);
+            logger.error(`[CANCEL BOOKING] Digital wallet refund credit failed for booking ${bookingId}`, { error: walletErr.message });
+            newPaymentStatus = 'refund_pending';
           }
         }
       } else if (booking.paymentStatus === 'pending') {

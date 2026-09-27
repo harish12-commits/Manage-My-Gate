@@ -101,8 +101,8 @@ export const GlobalNavModal: React.FC<GlobalNavModalProps> = ({ visible, onClose
       titleKey: 'nav_digital_wallet',
       defaultTitle: 'DIGITAL WALLET & LEDGER',
       items: [
-        { id: 'w-wallet', labelKey: 'feature_billing_wallet_name', defaultLabel: 'Digital Wallet', route: '/(resident)/billing/wallet', icon: Wallet, color: '#10b981', permission: 'billing:action_center' },
-        { id: 'w-history', labelKey: 'financial_history', defaultLabel: 'Financial History', route: '/(resident)/billing/history', icon: Receipt, color: '#0d9488', permission: 'billing:action_center' },
+        { id: 'billing_wallet', labelKey: 'feature_billing_wallet_name', defaultLabel: 'Digital Wallet', route: '/(resident)/billing/wallet', icon: Wallet, color: '#10b981', permission: 'billing:action_center' },
+        { id: 'financial_history', labelKey: 'financial_history', defaultLabel: 'Financial History', route: '/(resident)/billing/history', icon: Receipt, color: '#0d9488', permission: 'billing:action_center' },
       ],
     },
     {

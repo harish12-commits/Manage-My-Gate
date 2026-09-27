@@ -8,10 +8,10 @@ const router = express.Router();
 router.use(isAuthenticated);
 
 // Resident & Admin routes for wallet
-router.get('/', authorizeAnyPermission(['billing:wallet', 'amenities:wallet', 'wallet:read', 'wallet:manage']), getMyWallet);
-router.post('/add-money', authorizeAnyPermission(['billing:wallet', 'amenities:wallet', 'wallet:create', 'wallet:manage']), addMoney);
-router.post('/pay-invoice', authorizeAnyPermission(['billing:wallet', 'amenities:wallet', 'wallet:create']), payInvoice);
-router.post('/create-order', authorizeAnyPermission(['billing:wallet', 'amenities:wallet', 'wallet:create', 'wallet:manage']), createOrder);
-router.post('/verify-payment', authorizeAnyPermission(['billing:wallet', 'amenities:wallet', 'wallet:create', 'wallet:manage']), verifyPayment);
+router.get('/', authorizeAnyPermission(['billing:action_center', 'billing:wallet', 'amenities:wallet', 'wallet:read', 'wallet:manage']), getMyWallet);
+router.post('/add-money', authorizeAnyPermission(['billing:action_center', 'billing:wallet', 'amenities:wallet', 'wallet:create', 'wallet:manage']), addMoney);
+router.post('/pay-invoice', authorizeAnyPermission(['billing:action_center', 'billing:wallet', 'amenities:wallet', 'wallet:create']), payInvoice);
+router.post('/create-order', authorizeAnyPermission(['billing:action_center', 'billing:wallet', 'amenities:wallet', 'wallet:create', 'wallet:manage']), createOrder);
+router.post('/verify-payment', authorizeAnyPermission(['billing:action_center', 'billing:wallet', 'amenities:wallet', 'wallet:create', 'wallet:manage']), verifyPayment);
 
 export default router;
