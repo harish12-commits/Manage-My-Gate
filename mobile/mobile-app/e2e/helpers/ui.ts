@@ -12,6 +12,14 @@ export const typeInto = async (view: View, placeholder: string | RegExp, value: 
   await fireEvent.changeText(await view.findByPlaceholderText(placeholder), value);
 };
 
+const flatten = (c: any): string =>
+  Array.isArray(c) ? c.map(flatten).join('') : typeof c === 'string' || typeof c === 'number' ? String(c) : '';
+
+/** Every distinct text currently rendered — for diagnosing label/translation mismatches. */
+export const visibleTexts = (view: View): string[] => [
+  ...new Set(view.queryAllByText(/.+/).map((n: any) => flatten(n.props.children))),
+];
+
 /** Waits until `text` is visible, failing with whatever error banner the screen shows instead. */
 export const expectVisible = async (view: View, text: string | RegExp, timeout = 15000) =>
   waitFor(() => expect(view.getByText(text)).toBeOnTheScreen(), { timeout });

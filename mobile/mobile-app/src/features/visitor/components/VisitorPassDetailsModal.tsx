@@ -45,6 +45,7 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
   const [showQR, setShowQR] = useState(false);
   const [revokeConfirm, setRevokeConfirm] = useState(false);
   const [revoking, setRevoking] = useState(false);
+  const [revokeError, setRevokeError] = useState<string | null>(null);
   const [sharingImage, setSharingImage] = useState(false);
 
   const { revokePass } = useVisitorPass();
@@ -83,8 +84,14 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
     if (revoking) return;
     setRevoking(true);
     const targetId = pass._id || (pass as any).id || pass.code || '';
+    setRevokeError(null);
     try {
-      await revokePass(targetId);
+      const result: any = await revokePass(targetId);
+      // The thunk resolves with a rejected action instead of throwing; keep the sheet open and say why.
+      if (result?.meta?.requestStatus === 'rejected') {
+        setRevokeError(String(result.payload || 'Could not revoke this pass. Please try again.'));
+        return;
+      }
       setRevokeConfirm(false);
       onRevokePress?.(pass);
       onClose();
@@ -346,13 +353,21 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
                 <Text className="text-sm font-bold text-destructive">Revoke Visitor Pass?</Text>
               </View>
               <Text className="text-xs text-muted-foreground">
-                This will immediately invalidate the entry pass for {pass.visitorName || 'this visitor'}.
+                {`This will immediately invalidate the entry pass for ${pass.visitorName || 'this visitor'}.`}
               </Text>
+              {revokeError ? (
+                <Text className="text-xs font-semibold text-destructive" accessibilityRole="alert">
+                  {revokeError}
+                </Text>
+              ) : null}
               <View className="flex-row gap-2 pt-1">
                 <Button
                   variant="outline"
                   size="sm"
-                  onPress={() => setRevokeConfirm(false)}
+                  onPress={() => {
+                    setRevokeConfirm(false);
+                    setRevokeError(null);
+                  }}
                   className="flex-1"
                   disabled={revoking}
                 >
@@ -368,7 +383,7 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
                   {revoking ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    'Confirm Revoke'
+                    'Revoke Pass'
                   )}
                 </Button>
               </View>

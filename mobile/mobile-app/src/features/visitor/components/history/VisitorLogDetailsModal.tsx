@@ -494,7 +494,7 @@ export const VisitorLogDetailsModal: React.FC<VisitorLogDetailsModalProps> = ({
                         {submittingRevoke ? (
                           <ActivityIndicator size="small" color="#fff" />
                         ) : (
-                          'Confirm Revoke'
+                          'Revoke Pass'
                         )}
                       </Button>
                     </View>
