@@ -24,6 +24,17 @@ export interface WalletState {
   transactionHistory?: any[];
   transactions?: any[];
   isPaymentGatewayConfigured?: boolean;
+  minimumRefundAmount?: number;
+  refundEligibleBalance?: number;
+  refundableSources?: Array<{
+    paymentId: string;
+    amount: number;
+    refundableAmount?: number;
+    availableAmount: number;
+    paidAt?: string;
+    createdAt?: string;
+    [key: string]: unknown;
+  }>;
   loading?: boolean;
   pagination?: WalletPagination;
   isLoading: boolean;

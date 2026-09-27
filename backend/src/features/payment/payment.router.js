@@ -15,6 +15,7 @@ router.use(isAuthenticated, tenantContext);
 
 // Order creation, verification, and refund endpoints
 router.get('/status', paymentController.getGatewayStatus);
+router.get('/:paymentId/status', paymentController.getPaymentStatus);
 router.post('/create-order', paymentController.createOrder);
 router.post('/verify-signature', paymentController.verifySignature);
 router.post('/refund', paymentController.refund);

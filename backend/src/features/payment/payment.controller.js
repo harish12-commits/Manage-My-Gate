@@ -15,6 +15,7 @@ class PaymentController {
   async createOrder(req, res, next) {
     try {
       const { referenceId, referenceType, amount, currency, gateway } = req.body;
+      const idempotencyKey = req.get('Idempotency-Key') || req.body.idempotencyKey || null;
       const { orgId, userId } = getRequestActor(req);
 
       if (!orgId || !userId) {
@@ -29,6 +30,7 @@ class PaymentController {
         amount,
         currency,
         gateway,
+        idempotencyKey,
       });
 
       res.status(201).json({
@@ -148,6 +150,18 @@ class PaymentController {
         success: true,
         data: status
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPaymentStatus(req, res, next) {
+    try {
+      const { orgId, userId } = getRequestActor(req);
+      const isAdmin = await checkIsAdmin(req);
+      await paymentService.assertPaymentAccess(req.params.paymentId, { orgId, userId, isAdmin });
+      const status = await paymentService.getPaymentStatus(req.params.paymentId);
+      res.status(200).json({ success: true, data: status });
     } catch (error) {
       next(error);
     }

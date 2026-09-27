@@ -176,7 +176,7 @@ export const useQuickActions = () => {
       };
       
       baseCatalog = baseCatalog.map(category => {
-        let requiredCategoryModules = categoryToModuleMap[category.categoryKey];
+        let requiredCategoryModules: string[] | undefined = categoryToModuleMap[category.categoryKey];
 
         // digital_wallet passthrough: if none of the billing/amenities/wallet module keys
         // exist in the workspace module list at all (e.g. workspace API returned unrelated keys),

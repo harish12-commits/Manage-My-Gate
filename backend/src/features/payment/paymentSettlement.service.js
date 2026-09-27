@@ -215,11 +215,26 @@ export class PaymentSettlementService {
     try {
       const activeSession = session && typeof session.inTransaction === 'function' && session.inTransaction() ? session : null;
 
+      const refundQuery = Payment.findById(refundRecord._id);
+      if (activeSession) refundQuery.session(activeSession);
+      const persistedRefund = await refundQuery;
+      if (!persistedRefund) throw new HttpError(404, `Refund record ${refundRecord._id} not found.`);
+      if (persistedRefund.status === 'success') {
+        if (isLocalSession) {
+          if (session.inTransaction()) await session.commitTransaction();
+          session.endSession();
+        }
+        return { success: true, alreadySettled: true, refund: persistedRefund };
+      }
+      persistedRefund.status = 'success';
+      persistedRefund.errorReason = null;
+      await persistedRefund.save(activeSession ? { session: activeSession } : undefined);
+
       const domain = resolvePaymentDomain(originalPayment);
       const handler = settlementHandlerRegistry.getHandler(domain);
 
       // Execute domain refund adjustments
-      const domainResult = await handler.refund(originalPayment, refundRecord, activeSession);
+      const domainResult = await handler.refund(originalPayment, persistedRefund, activeSession);
 
       // Record compensating double-entry ledger entry inside the same session
       let ledgerEntry = null;
@@ -227,7 +242,7 @@ export class PaymentSettlementService {
         const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
         ledgerEntry = await financialLedgerService.recordRefundLedgerEntry(
           originalPayment,
-          refundRecord,
+          persistedRefund,
           domain,
           activeSession
         );
@@ -249,11 +264,11 @@ export class PaymentSettlementService {
       });
 
       // Emit event AFTER commit
-      paymentEventEmitter.emit(PAYMENT_REFUNDED, refundRecord, { originalPayment, domainResult, ledgerEntry });
+      paymentEventEmitter.emit(PAYMENT_REFUNDED, persistedRefund, { originalPayment, domainResult, ledgerEntry });
 
       return {
         success: true,
-        refund: refundRecord,
+        refund: persistedRefund,
         domainResult,
         ledgerEntry,
       };

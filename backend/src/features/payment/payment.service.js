@@ -54,7 +54,7 @@ export class PaymentService {
    * Initiate a payment order using the unified payment core.
    */
   async createPaymentOrder(
-    { orgId, userId, referenceId, referenceType, amount, currency = 'INR', gateway = null },
+    { orgId, userId, referenceId, referenceType, amount, currency = 'INR', gateway = null, idempotencyKey = null },
     session = null
   ) {
     if (!orgId || !userId || !referenceId || !amount) {
@@ -71,6 +71,7 @@ export class PaymentService {
         userId,
         orgId,
         paymentMethod: CANONICAL_PAYMENT_METHODS.ONLINE,
+        idempotencyKey,
       });
     } else if (referenceType === 'AmenityBooking' || referenceType === 'Amenity') {
       const AmenityBooking = (await import('../amenityBooking/amenityBooking.model.js')).default;
@@ -86,6 +87,7 @@ export class PaymentService {
         userId,
         orgId,
         paymentMethod: CANONICAL_PAYMENT_METHODS.ONLINE,
+        idempotencyKey,
       });
     } else {
       const domain = resolvePaymentDomain({ referenceType });
@@ -98,6 +100,7 @@ export class PaymentService {
         amount: Number(amount),
         currency: currency || 'INR',
         paymentMethod: CANONICAL_PAYMENT_METHODS.ONLINE,
+        idempotencyKey,
       });
     }
 

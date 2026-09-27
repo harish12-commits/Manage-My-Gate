@@ -41,6 +41,8 @@ export interface AmenityBooking {
   type?: 'booking' | 'maintenance' | string;
   residentId?: string | null;
   residentName?: string;
+  userName?: string;
+  villaNumber?: string;
   date: string;
   bookingDate?: string;
   startTime: string;
@@ -51,6 +53,8 @@ export interface AmenityBooking {
   paymentMethod?: 'WALLET' | 'PAY_AT_GATE' | 'ONLINE' | string;
   paymentStatus?: 'PENDING' | 'PAID' | 'PARTIALLY_PAID' | 'NOT_REQUIRED' | 'REFUNDED' | 'FAILED' | string;
   totalFee?: number;
+  totalPrice?: number;
+  pricingDetails?: { totalAmount?: number; [key: string]: unknown };
   bookingAmount?: number;
   paidAmount?: number;
   remainingAmount?: number;
@@ -62,6 +66,8 @@ export interface AmenityBooking {
   checkInTime?: string;
   checkOutTime?: string;
   cancellationReason?: string;
+  paymentId?: string;
+  razorpayTransactionId?: string;
   createdAt?: string;
   subtitle?: string;
 }

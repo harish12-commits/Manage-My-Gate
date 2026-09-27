@@ -94,6 +94,8 @@ export class UnifiedPaymentService {
 
     // 3. Prevent duplicate active orders within a 5-minute window
     const recentActiveOrder = await Payment.findOne({
+      orgId,
+      userId,
       referenceId,
       referenceType,
       status: 'pending',
@@ -318,9 +320,12 @@ export class UnifiedPaymentService {
 
     logger.info('payment.verification.success', { paymentId: payment._id, razorpayPaymentId });
 
-    const gatewayPayment = activeGateway === 'mock'
-      ? await provider.getPaymentStatus({ paymentId: effectivePaymentId, orderId: storedOrderId, amount: payment.amount, currency: payment.currency }, config)
-      : await provider.getPaymentStatus({ paymentId: effectivePaymentId }, config);
+    const gatewayPayment = await provider.getPaymentStatus({
+      paymentId: effectivePaymentId,
+      orderId: storedOrderId,
+      amount: payment.amount,
+      currency: payment.currency,
+    }, config);
     if (gatewayPayment.orderId !== storedOrderId) {
       throw new HttpError(400, 'Gateway payment belongs to a different order.');
     }
@@ -386,7 +391,8 @@ export class UnifiedPaymentService {
     const razorpayPaymentId = paymentEntity.id || payload?.payment?.entity?.id;
     const orderId = paymentEntity.order_id || paymentEntity.id;
     const notes = paymentEntity.notes || {};
-    const eventId = eventPayload.id || `evt_${orderId || razorpayPaymentId}_${Date.now()}`;
+    const rawEvent = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody), 'utf8');
+    const eventId = headers['x-razorpay-event-id'] || eventPayload.id || `evt_sha256_${crypto.createHash('sha256').update(rawEvent).digest('hex')}`;
 
     // 1. Authoritative Payment Lookup by gateway order or transaction ID
     let payment = null;
@@ -414,17 +420,17 @@ export class UnifiedPaymentService {
       });
       if (config.webhookSecret) {
         webhookSecret = config.webhookSecret;
-      } else if (config.keySecret) {
-        webhookSecret = config.keySecret;
       }
     }
 
     if (!webhookSecret) {
-      webhookSecret = 'default_webhook_secret_key';
+      if (process.env.NODE_ENV !== 'test') throw new HttpError(503, 'Razorpay webhook secret is not configured.');
+      webhookSecret = 'test-only-webhook-secret';
     }
 
     // 3. Verify Signature
-    if (signature && process.env.NODE_ENV !== 'test') {
+    if (process.env.NODE_ENV !== 'test') {
+      if (!signature) throw new HttpError(400, 'Missing Razorpay webhook signature.');
       const isValid = verifyWebhookSignature(rawBody, signature, webhookSecret);
       if (!isValid) {
         logger.warn('payment.webhook.signature_failed', { orderId, razorpayPaymentId });
@@ -433,7 +439,7 @@ export class UnifiedPaymentService {
     }
 
     // 4. Handle Webhook Events
-    if (event === 'payment.captured' || event === 'order.paid') {
+    if (event === 'payment.captured') {
       if (!payment) {
         logger.info('payment.webhook.unmatched', { orderId, razorpayPaymentId, notes });
         return { success: true, message: 'Webhook received for unmatched entity' };
@@ -443,6 +449,14 @@ export class UnifiedPaymentService {
       if (payment.status === 'success' || payment.processedEvents?.some((e) => e.eventId === eventId)) {
         logger.info('payment.webhook.duplicate', { paymentId: payment._id, eventId });
         return { success: true, message: 'Webhook already processed (idempotent)', paymentId: payment._id };
+      }
+
+      if (!razorpayPaymentId || paymentEntity.status !== 'captured' || paymentEntity.captured === false ||
+        String(payment.gatewayOrderId) !== String(paymentEntity.order_id) ||
+        Number(paymentEntity.amount) !== Math.round(Number(payment.amount) * 100) ||
+        String(paymentEntity.currency || '').toUpperCase() !== String(payment.currency || '').toUpperCase()) {
+        logger.warn('payment.webhook.entity_mismatch', { paymentId: payment._id, orderId, eventId });
+        throw new HttpError(400, 'Webhook payment details do not match the payment order.');
       }
 
       // Execute Atomic Settlement
@@ -494,6 +508,30 @@ export class UnifiedPaymentService {
       return { success: true, message: 'Payment failure recorded' };
     }
 
+    if (event === 'refund.processed' || event === 'refund.failed') {
+      const refundEntity = payload?.refund?.entity || {};
+      const refundRecord = refundEntity.id ? await Payment.findOne({ type: 'Refund', gatewayTransactionId: refundEntity.id }) : null;
+      if (!refundRecord) return { success: true, message: 'Webhook received for unmatched refund' };
+      if (Number(refundEntity.amount) !== Math.round(Math.abs(Number(refundRecord.amount)) * 100)) {
+        throw new HttpError(400, 'Webhook refund amount does not match the refund record.');
+      }
+      if (event === 'refund.failed') {
+        if (refundRecord.status !== 'success') {
+          refundRecord.status = 'failed';
+          refundRecord.errorReason = refundEntity.error_description || 'Refund failed on gateway';
+          await refundRecord.save();
+        }
+        return { success: true, message: 'Refund failure recorded' };
+      }
+      if (refundRecord.status === 'success') return { success: true, message: 'Refund already processed (idempotent)' };
+      const originalPayment = await Payment.findById(refundRecord.parentPaymentId);
+      if (!originalPayment || String(refundEntity.payment_id) !== String(originalPayment.gatewayTransactionId)) {
+        throw new HttpError(400, 'Webhook refund does not match the original payment.');
+      }
+      const result = await paymentSettlementService.settleRefund({ originalPayment, refundRecord });
+      return { success: true, message: 'Refund processed successfully', refundId: result.refund._id };
+    }
+
     logger.info('payment.webhook.ignored_event', { event });
     return { success: true, message: `Event ${event} acknowledged` };
   }
@@ -540,7 +578,7 @@ export class UnifiedPaymentService {
     const existingRefunds = await Payment.find({
       parentPaymentId: originalPayment._id,
       type: 'Refund',
-      status: 'success',
+      status: { $in: ['processing', 'success'] },
     });
     const totalRefunded = existingRefunds.reduce((sum, r) => sum + Math.abs(Number(r.amount)), 0);
 
@@ -574,6 +612,8 @@ export class UnifiedPaymentService {
     }
 
     // Create Refund Payment record
+    const gatewayRefundStatus = String(gatewayRefund.status || 'processed').toLowerCase();
+    const isGatewayProcessed = gatewayRefundStatus === 'processed';
     const refundRecord = await Payment.create({
       orgId: originalPayment.orgId,
       userId: originalPayment.userId,
@@ -584,17 +624,15 @@ export class UnifiedPaymentService {
       currency: originalPayment.currency,
       type: 'Refund',
       parentPaymentId: originalPayment._id,
-      status: 'success',
+      status: isGatewayProcessed ? 'processing' : gatewayRefundStatus === 'failed' ? 'failed' : 'processing',
       gateway: activeGateway,
       gatewayTransactionId: gatewayRefund.refundId || gatewayRefund.id,
       paymentMethod: originalPayment.paymentMethod,
     });
 
     // Execute Domain Refund Settlement
-    const result = await paymentSettlementService.settleRefund({
-      originalPayment,
-      refundRecord,
-    });
+    let result = null;
+    if (isGatewayProcessed) result = await paymentSettlementService.settleRefund({ originalPayment, refundRecord });
 
     logger.info('payment.refund.success', {
       originalPaymentId: originalPayment._id,
@@ -604,9 +642,9 @@ export class UnifiedPaymentService {
 
     return {
       success: true,
-      message: 'Refund processed successfully',
-      refund: refundRecord,
-      domainResult: result.domainResult,
+      message: isGatewayProcessed ? 'Refund processed successfully' : 'Refund submitted and awaiting gateway confirmation',
+      refund: result?.refund || refundRecord,
+      domainResult: result?.domainResult,
     };
   }
 

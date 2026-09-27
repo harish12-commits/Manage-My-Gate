@@ -939,7 +939,6 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
         currency: order.currency || 'INR',
         description: `Amenity Booking: ${facility.name}`,
       });
-      setCheckoutPurpose('AMENITY');
       setIsRazorpayOpen(true);
     } catch (err: any) {
       setStepError(err?.message || 'Unable to start secure Razorpay checkout.');
@@ -1054,8 +1053,6 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
   const handleRazorpayDismiss = useCallback(() => {
     setIsRazorpayOpen(false);
     setRazorpayOptions(null);
-    setCheckoutPurpose(null);
-    setWalletTopUpAmount(0);
   }, []);
 
   const handleTopUpSubmit = useCallback(
