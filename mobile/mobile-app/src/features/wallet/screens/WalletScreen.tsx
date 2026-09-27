@@ -121,6 +121,14 @@ export function WalletScreen() {
     setShowRefundSheet(true);
   }, [refundableSources, refundEligibleBalance, minimumRefundAmount]);
 
+  const closeRefundSheet = useCallback(() => {
+    if (isProcessingRefund) return;
+    // A confirmation modal must never outlive a user-cancelled refund sheet.
+    // This prevents a second modal from being left hidden beneath the sheet.
+    setShowRefundConfirmation(false);
+    setShowRefundSheet(false);
+  }, [isProcessingRefund]);
+
   const executeWalletRefund = async () => {
     if (isRefundInvalid || !selectedRefundSource || isProcessingRefund) return;
     setIsProcessingRefund(true);
@@ -146,10 +154,10 @@ export function WalletScreen() {
 
   const confirmWalletRefund = () => {
     if (isRefundInvalid || !selectedRefundSource || isProcessingRefund) return;
-    // React Native Web intentionally implements Alert.alert as a no-op.
-    // Use the app's reusable modal so this confirmation works on Web, iOS,
-    // and Android before money is sent to Razorpay.
+    // Modal stacking is unreliable on React Native Web. Unmount the refund
+    // sheet before presenting the confirmation so it is always the top layer.
     setRefundErrorMessage(null);
+    setShowRefundSheet(false);
     setShowRefundConfirmation(true);
   };
 
@@ -372,7 +380,7 @@ export function WalletScreen() {
         {/* Refund always returns via Razorpay to the original payment account. */}
         <BottomSheet
           visible={showRefundSheet}
-          onClose={() => !isProcessingRefund && setShowRefundSheet(false)}
+          onClose={closeRefundSheet}
           title="Refund Wallet Balance"
         >
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="w-full">
@@ -473,7 +481,7 @@ export function WalletScreen() {
         />
 
         <ConfirmationModal
-          visible={showRefundConfirmation}
+          visible={showRefundConfirmation && !showRefundSheet}
           title="Confirm Wallet Refund"
           message={`Refund ₹${refundAmount.toLocaleString('en-IN')} to the original UPI or card account used for this wallet top-up? This cannot be undone after Razorpay accepts it.`}
           confirmLabel={`Refund ₹${refundAmount.toLocaleString('en-IN')}`}
@@ -481,7 +489,10 @@ export function WalletScreen() {
           variant="warning"
           loading={isProcessingRefund}
           onConfirm={executeWalletRefund}
-          onCancel={() => setShowRefundConfirmation(false)}
+          onCancel={() => {
+            setShowRefundConfirmation(false);
+            setShowRefundSheet(true);
+          }}
         />
 
         <ConfirmationModal

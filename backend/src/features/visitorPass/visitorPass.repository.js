@@ -53,6 +53,31 @@ export class VisitorPassRepository {
     );
   }
 
+  /** Atomically consumes one pass use, preventing replayed QR scans from admitting twice. */
+  async consumeForEntry(id, session = null) {
+    return VisitorPass.findOneAndUpdate(
+      {
+        _id: id,
+        status: { $in: ['PENDING', 'ACTIVE'] },
+        $expr: {
+          $lt: [
+            { $ifNull: ['$usageLimit.currentUses', 0] },
+            { $ifNull: ['$usageLimit.maxUses', 1] },
+          ],
+        },
+      },
+      [
+        {
+          $set: {
+            status: { $cond: [{ $eq: ['$status', 'PENDING'] }, 'ACTIVE', '$status'] },
+            'usageLimit.currentUses': { $add: [{ $ifNull: ['$usageLimit.currentUses', 0] }, 1] },
+          },
+        },
+      ],
+      { returnDocument: 'after', ...(session ? { session } : {}) }
+    );
+  }
+
   /**
    * Paginated aggregation to retrieve passes in an organization with multi-filtering and deep lookups.
    * @param {string} orgId - The organization ID.
@@ -77,6 +102,7 @@ export class VisitorPassRepository {
       search,
       villaId,
       scope,
+      createdById,
     } = opts;
 
     const matchStage = {
@@ -85,6 +111,10 @@ export class VisitorPassRepository {
 
     if (statuses && statuses.length > 0) {
       matchStage.status = { $in: statuses };
+    }
+
+    if (createdById && mongoose.Types.ObjectId.isValid(createdById)) {
+      matchStage.createdById = new mongoose.Types.ObjectId(createdById);
     }
 
     if (scope === 'COMMUNITY') {

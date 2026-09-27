@@ -17,6 +17,8 @@ import { ExtendedVisitorPass, PassTypeKey } from '@/src/features/visitor/mocks/v
 import { useVisitorPass } from '@/src/features/visitor/hooks/useVisitorPass';
 import { mapBackendPassToHistoryItem } from '@/src/features/visitor/utils/mapBackendPassToHistoryItem';
 import { useTranslation } from '@/src/utils/i18n';
+import { useAuth } from '@/src/features/auth/hooks/useAuth';
+import { isFeatureAllowedForUser } from '@/src/utils/rbac';
 import { UserPlus, History, ShieldAlert, ShieldCheck, Plus } from 'lucide-react-native';
 
 export default function VisitorDashboardScreen() {
@@ -26,6 +28,7 @@ export default function VisitorDashboardScreen() {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const { dashboard, fetchDashboardData, activeVisitors, fetchActiveVisitors } = useVisitorPass();
 
@@ -85,6 +88,11 @@ export default function VisitorDashboardScreen() {
     },
   ];
 
+  const canUseGateConsole = isFeatureAllowedForUser(
+    { id: 'visitor_gate_console', permission: 'visitor:guard' },
+    user
+  );
+
   const visitorActions: ActionGridItem[] = [
     {
       id: 'invite',
@@ -94,14 +102,14 @@ export default function VisitorDashboardScreen() {
       colorIcon: '#10b981',
       onPress: () => setInviteSheetOpen(true),
     },
-    {
+    ...(canUseGateConsole ? [{
       id: 'gate_console',
       name: t('gate_console', 'Gate Console'),
       iconName: 'DoorOpen',
       colorBg: 'bg-teal-500/10',
       colorIcon: '#0d9488',
       route: '/(resident)/visitor/gate-console',
-    },
+    } as ActionGridItem] : []),
     {
       id: 'history',
       name: t('history_logs', 'History Logs'),

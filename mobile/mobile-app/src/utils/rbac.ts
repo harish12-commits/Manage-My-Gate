@@ -208,7 +208,7 @@ const hasWalletLedgerGrant = (itemId: string, permissions: string[]): boolean =>
 };
 
 // Features strictly reserved for gate security hardware (hidden from Admin and Resident consoles)
-export const GUARD_ONLY_FEATURE_IDS = new Set<string>([]);
+export const GUARD_ONLY_FEATURE_IDS = new Set<string>(['visitor_gate_console']);
 
 // Features allowed for Security Guard
 const FALLBACK_SECURITY_FEATURE_IDS = new Set([
@@ -237,8 +237,7 @@ const FALLBACK_SECURITY_PERMISSIONS = new Set([
 
 const FALLBACK_RESIDENT_FEATURE_IDS = new Set([
   'visitor_resident_passes',
-  'visitor_gate_pass',
-  'visitor_gate_console',
+  'visitor_invite',
   'billing_dashboard',
   'billing_my_dues',
   'billing_my_invoices',
@@ -449,4 +448,3 @@ export const getDefaultQuickActionsForUser = (user: UserLike | null | undefined)
     'complaints_raise_ticket',
   ];
 };
-

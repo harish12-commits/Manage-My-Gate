@@ -15,7 +15,7 @@ import { useBottomNavScroll } from '@/components/navigation/BottomNavScrollConte
 import authService from '@/src/features/auth/services/authService';
 import { updateProfileThunk } from '@/src/features/auth/store/authSlice';
 import { useTranslation } from '@/src/utils/i18n';
-import { Save, Camera, Image as ImageIcon, FileUp, Trash2, Settings, CheckCircle2, Building2, ShieldCheck, MapPin, Home, ChevronRight } from 'lucide-react-native';
+import { Save, Camera, Image as ImageIcon, FileUp, Trash2, Settings, Building2, ShieldCheck, MapPin, Home, ChevronRight, BriefcaseBusiness, UserRound } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { validateEmail, validatePhone, parseBackendError } from '@/src/utils/validation';
@@ -59,6 +59,11 @@ export default function ProfileScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [bio, setBio] = useState('');
+  const [work, setWork] = useState('');
+  const [hometown, setHometown] = useState('');
+  const [interestsText, setInterestsText] = useState('');
+  const [allowCalls, setAllowCalls] = useState(false);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState<SelectedAvatarFile | null>(null);
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
@@ -83,6 +88,11 @@ export default function ProfileScreen() {
       setName(user.name || user.username || uAny.fullName || (user.email ? user.email.split('@')[0] : ''));
       setEmail(user.email || uAny.emailAddress || '');
       setPhone(user.phone || uAny.phoneNumber || uAny.mobile || '');
+      setBio(uAny.bio || '');
+      setWork(uAny.work || '');
+      setHometown(uAny.hometown || '');
+      setInterestsText(Array.isArray(uAny.interests) ? uAny.interests.join(', ') : '');
+      setAllowCalls(uAny.allowIntercomCalls !== false);
       if (user.avatar || uAny.avatarUrl) {
         setAvatarUri(user.avatar || uAny.avatarUrl);
       } else {
@@ -305,11 +315,21 @@ export default function ProfileScreen() {
     setProfileSaving(true);
     setProfileSuccess(null);
     try {
+      const interests = interestsText
+        .split(',')
+        .map((interest) => interest.trim())
+        .filter(Boolean)
+        .slice(0, 20);
       let payload: any;
       if (selectedAvatarFile) {
         const formData = new FormData();
         formData.append('name', name.trim());
         formData.append('phone', phone.trim());
+        formData.append('bio', bio.trim());
+        formData.append('work', work.trim());
+        formData.append('hometown', hometown.trim());
+        formData.append('allowIntercomCalls', String(allowCalls));
+        formData.append('interests', JSON.stringify(interests));
         if (emailToUpdate && emailOtp) {
           formData.append('email', emailToUpdate);
           formData.append('emailOtp', emailOtp);
@@ -335,6 +355,11 @@ export default function ProfileScreen() {
         payload = {
           name: name.trim(),
           phone: phone.trim(),
+          bio: bio.trim(),
+          work: work.trim(),
+          hometown: hometown.trim(),
+          allowIntercomCalls: allowCalls,
+          interests,
           ...(emailToUpdate && emailOtp ? { email: emailToUpdate, emailOtp } : {}),
         };
       }
@@ -523,13 +548,15 @@ export default function ProfileScreen() {
           email={email || user?.email}
           phone={phone || user?.phone}
           unitName={isResidentRole ? dynamicUnit : undefined}
-          roleName={tRole(dynamicRole, dynamicRole)}
+          roleName={dynamicRole}
           communityName={dynamicCommunity}
           avatarUrl={avatarUri}
           showCameraBadge={true}
           isAvatarLoading={avatarUploading}
           onAvatarPress={() => setShowPhotoOptions(true)}
           onUnitPress={isResidentRole ? () => setVillaModalOpen(true) : undefined}
+          allowCalls={allowCalls}
+          onAllowCallsChange={setAllowCalls}
         />
 
         {/* Section: Organisation, Role & Villa Switching */}
@@ -797,6 +824,48 @@ export default function ProfileScreen() {
                 setPhone('');
                 setFieldErrors((prev) => ({ ...prev, phone: undefined }));
               }}
+            />
+
+            <View className="h-px bg-border/70" />
+
+            <TextInput
+              label={t('bio', 'Bio')}
+              placeholder={t('bio_placeholder', 'Tell your neighbours about yourself')}
+              value={bio}
+              onChangeText={setBio}
+              multiline
+              maxLength={500}
+              leftIcon={UserRound}
+            />
+
+            <View className="flex-row gap-3">
+              <TextInput
+                containerClassName="flex-1"
+                label={t('work', 'Work')}
+                placeholder={t('add_work', 'Add work')}
+                value={work}
+                onChangeText={setWork}
+                maxLength={120}
+                leftIcon={BriefcaseBusiness}
+              />
+              <TextInput
+                containerClassName="flex-1"
+                label={t('hometown', 'Hometown')}
+                placeholder={t('add_hometown', 'Add hometown')}
+                value={hometown}
+                onChangeText={setHometown}
+                maxLength={120}
+                leftIcon={MapPin}
+              />
+            </View>
+
+            <TextInput
+              label={t('interests', 'Interests')}
+              placeholder={t('interests_placeholder', 'Add interests, separated by commas')}
+              helperText={t('interests_help', 'Choose up to 20 interests')}
+              value={interestsText}
+              onChangeText={setInterestsText}
+              maxLength={1200}
             />
 
             {profileSuccess && <SuccessToast message={profileSuccess} />}

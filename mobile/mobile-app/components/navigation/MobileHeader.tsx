@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, Image } from 'react-native';
 import { Text } from '@/components/ui/text';
-import { Bell, Home, Building2, ChevronDown, Sun, Moon, User } from 'lucide-react-native';
+import { Bell, Home, Building2, ChevronDown, Sun, Moon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
 import storage from '../../src/utils/storage';
@@ -334,11 +334,9 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                 onError={() => setImageError(true)}
               />
             ) : (
-              <User
-                size={18}
-                color={colorScheme === 'dark' ? '#F1F5F9' : '#334155'}
-                strokeWidth={2.2}
-              />
+              <Text className="text-base font-extrabold text-primary dark:text-primary-foreground">
+                {avatarLetter}
+              </Text>
             )}
           </TouchableOpacity>
         </View>

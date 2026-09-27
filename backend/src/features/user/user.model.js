@@ -59,6 +59,24 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    bio: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: '',
+    },
+    work: {
+      type: String,
+      trim: true,
+      maxlength: 120,
+      default: '',
+    },
+    hometown: {
+      type: String,
+      trim: true,
+      maxlength: 120,
+      default: '',
+    },
 
     // --- LEGACY BACKWARD-COMPATIBILITY FIELDS ---
     // NOTE (GAP-04): The canonical source of truth for multi-tenant gated community data is OrgMembership

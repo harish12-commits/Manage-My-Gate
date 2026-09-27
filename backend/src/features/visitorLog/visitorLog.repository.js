@@ -20,14 +20,19 @@ export class VisitorLogRepository {
    * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
    * @returns {Promise<Object|null>} The updated log document.
    */
-  async updateLogForCheckout(id, checkOutTime = new Date(), session = null) {
+  async updateLogForCheckout(id, checkOutTime = new Date(), actorId, gateName, session = null) {
     return await VisitorLog.findByIdAndUpdate(
       id,
       {
         $set: {
           logStatus: 'COMPLETED',
-          checkOutTime: checkOutTime || new Date()
-        }
+          checkOutTime: checkOutTime || new Date(),
+        },
+        ...(actorId ? {
+          $push: {
+            actionHistory: { action: 'CHECKED_OUT', actorId, ...(gateName ? { gateName } : {}), occurredAt: checkOutTime || new Date() },
+          },
+        } : {}),
       },
       { returnDocument: 'after', runValidators: true, ...(session ? { session } : {}) }
     );
@@ -39,7 +44,7 @@ export class VisitorLogRepository {
    * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
    * @returns {Promise<Object[]>} List of active visitor log documents.
    */
-  async findActiveLogsInside(orgId, session = null) {
+  async findActiveLogsInside(orgId, residentId = null, session = null) {
     if (!orgId) return [];
     const isMongoId = mongoose.isValidObjectId(orgId);
     const orgQuery = isMongoId
@@ -48,7 +53,8 @@ export class VisitorLogRepository {
 
     return await VisitorLog.find({
       ...orgQuery,
-      logStatus: 'INSIDE'
+      logStatus: 'INSIDE',
+      ...(residentId ? { residentId } : {}),
     })
     .sort({ checkInTime: -1 })
     .populate({
@@ -98,9 +104,10 @@ export class VisitorLogRepository {
    * @returns {Promise<Object|null>} The updated log document.
    */
   async update(id, updateData, session = null) {
+    const hasOperators = Object.keys(updateData).some((key) => key.startsWith('$'));
     return await VisitorLog.findByIdAndUpdate(
       id,
-      { $set: updateData },
+      hasOperators ? updateData : { $set: updateData },
       { returnDocument: 'after', runValidators: true, ...(session ? { session } : {}) }
     );
   }
