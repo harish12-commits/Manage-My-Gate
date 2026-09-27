@@ -234,6 +234,39 @@ export class AmenityReservationService {
       session
     );
 
+    // Sync legacy amenity_bookings document for backwards compatibility
+    try {
+      const moment = (await import('moment-timezone')).default;
+      const TIMEZONE = 'Asia/Kolkata';
+      const startM = hold.requestedStartDateTime ? moment.tz(hold.requestedStartDateTime, TIMEZONE) : null;
+      const endM = hold.requestedEndDateTime ? moment.tz(hold.requestedEndDateTime, TIMEZONE) : null;
+
+      const legacyBookingDoc = {
+        _id: reservation._id,
+        bookingNumber: reservationNumber,
+        orgId,
+        userId: residentId,
+        amenityId: hold.facilityId,
+        resourceId: hold.resourceId || null,
+        bookingDate: startM ? startM.format('YYYY-MM-DD') : '',
+        startTime: startM ? startM.format('HH:mm') : '',
+        endTime: endM ? endM.format('HH:mm') : '',
+        status: bookingStatus.toLowerCase(),
+        paymentStatus: paymentStatus.toLowerCase(),
+        numberOfPersons: hold.headcount || hold.quantity || 1,
+        totalPrice: totalAmount,
+        createdAt: reservation.createdAt || new Date(),
+        updatedAt: reservation.updatedAt || new Date(),
+      };
+      await mongoose.connection.db.collection('amenity_bookings').updateOne(
+        { _id: reservation._id },
+        { $set: legacyBookingDoc },
+        { upsert: true }
+      );
+    } catch (syncErr) {
+      // Gracefully log sync error without interrupting transaction
+    }
+
     // 9. Promote Ledger Entries & Discrete Slot
     await amenityAllocationLedgerRepository.transitionStatus(
       {
@@ -567,7 +600,27 @@ export class AmenityReservationService {
     const isWalletPayment =
       (reservation.paymentStatus === 'PAID' || reservation.paymentStatus === 'REFUND_PENDING') &&
       reservation.paymentMethod === 'WALLET';
-    const refundAmount = Number(reservation.paidAmount || reservation.totalAmount || 0);
+    let refundAmount = Number(reservation.paidAmount || reservation.totalAmount || 0);
+    if (refundAmount <= 0 && (reservation.paymentStatus === 'PAID' || reservation.paymentStatus === 'REFUND_PENDING') && reservation.facilityId) {
+      try {
+        const facilityId = reservation.facilityId._id || reservation.facilityId;
+        const facility = await amenityFacilityRepository.findById(facilityId, orgId, session);
+        if (facility && facility.pricingConfig) {
+          const calc = pricingService.calculatePricingSnapshot({
+            pricingConfig: facility.pricingConfig,
+            startDateTime: reservation.requestedStartDateTime || reservation.effectiveStartDateTime,
+            endDateTime: reservation.requestedEndDateTime || reservation.effectiveEndDateTime,
+            headcount: reservation.headcount || 1,
+            quantity: reservation.quantity || 1,
+          });
+          if (calc.totalAmount > 0) {
+            refundAmount = calc.totalAmount;
+          }
+        }
+      } catch (reCalcErr) {
+        // Non-blocking fallback
+      }
+    }
     let newPaymentStatus = reservation.paymentStatus;
     if (reservation.paymentStatus === 'PAID' || reservation.paymentStatus === 'REFUND_PENDING') {
       newPaymentStatus = isWalletPayment ? 'REFUNDED' : 'REFUND_PENDING';
@@ -585,9 +638,20 @@ export class AmenityReservationService {
         cancelledAt: new Date(),
         cancellationReason: cancellationReason || (isManagementCancellation ? 'Cancelled by administration' : 'Cancelled by user'),
         cancelledBy: cancelledBy || residentId,
+        refundAmount: isWalletPayment ? refundAmount : 0,
+        refundMethod: isWalletPayment ? 'WALLET' : (newPaymentStatus === 'REFUND_PENDING' ? 'RAZORPAY' : null),
       },
       session
     );
+
+    try {
+      await mongoose.connection.db.collection('amenity_bookings').updateOne(
+        { _id: reservation._id },
+        { $set: { status: 'cancelled', paymentStatus: (newPaymentStatus || 'refunded').toLowerCase(), updatedAt: new Date() } }
+      );
+    } catch (syncErr) {
+      // Gracefully log
+    }
 
     if (isWalletPayment && refundAmount > 0) {
       await walletService.refundAmenityReservationToWallet(
@@ -1324,8 +1388,64 @@ export class AmenityReservationService {
     } catch (err) {
       console.error('[AmenityReservationService] Auto refund error:', err?.message || err);
       return reservation;
-    }
   }
+    }
+
+  async _enrichAndRepairPricingSnapshot(reservation, session = null) {
+    if (!reservation) return reservation;
+    const resDoc = reservation.toObject ? reservation.toObject() : { ...reservation };
+
+    const snap = resDoc.pricingSnapshot || {};
+    const hasZeroOrMissingPricing = (!snap.baseAmount || snap.baseAmount === 0) && (snap.totalAmount === 0 || !snap.totalAmount) && (resDoc.totalAmount === 0 || !resDoc.totalAmount);
+
+    if (hasZeroOrMissingPricing && resDoc.facilityId) {
+      try {
+        const facilityId = resDoc.facilityId._id || resDoc.facilityId;
+        const facility = await amenityFacilityRepository.findById(facilityId, resDoc.orgId, session);
+
+        if (facility && facility.pricingConfig && Number(facility.pricingConfig.baseRate) > 0) {
+          const calculatedSnap = pricingService.calculatePricingSnapshot({
+            pricingConfig: facility.pricingConfig,
+            startDateTime: resDoc.requestedStartDateTime || resDoc.effectiveStartDateTime,
+            endDateTime: resDoc.requestedEndDateTime || resDoc.effectiveEndDateTime,
+            headcount: resDoc.headcount || 1,
+            quantity: resDoc.quantity || 1,
+          });
+
+          resDoc.pricingSnapshot = calculatedSnap;
+          resDoc.totalAmount = calculatedSnap.totalAmount;
+          resDoc.paidAmount = calculatedSnap.totalAmount;
+
+          const AmenityReservation = (await import('./amenityReservation.model.js')).default;
+          AmenityReservation.updateOne(
+            { _id: resDoc._id },
+            { $set: { pricingSnapshot: calculatedSnap, totalAmount: calculatedSnap.totalAmount, paidAmount: calculatedSnap.totalAmount } }
+          ).catch(() => {});
+        } else if (!snap.baseAmount && snap.totalAmount !== undefined) {
+          resDoc.pricingSnapshot = {
+            baseAmount: snap.totalAmount || 0,
+            taxAmount: snap.taxAmount || 0,
+            depositAmount: snap.depositAmount || 0,
+            totalAmount: snap.totalAmount || 0,
+            currency: snap.currency || 'INR',
+          };
+        }
+      } catch (err) {
+        // Non-blocking fallback
+      }
+    } else if (!snap.baseAmount && snap.totalAmount !== undefined) {
+      resDoc.pricingSnapshot = {
+        baseAmount: snap.totalAmount || 0,
+        taxAmount: snap.taxAmount || 0,
+        depositAmount: snap.depositAmount || 0,
+        totalAmount: snap.totalAmount || 0,
+        currency: snap.currency || 'INR',
+      };
+    }
+
+    return resDoc;
+  }
+
 
   /**
    * Retrieves reservation by ID.
@@ -1337,7 +1457,7 @@ export class AmenityReservationService {
     if (reservation && reservation.paymentStatus === 'REFUND_PENDING') {
       reservation = await this._autoSettlePendingRefund(reservation, session);
     }
-    return reservation;
+    return await this._enrichAndRepairPricingSnapshot(reservation, session);
   }
 
   /**
@@ -1351,7 +1471,7 @@ export class AmenityReservationService {
     if (reservation && reservation.paymentStatus === 'REFUND_PENDING') {
       reservation = await this._autoSettlePendingRefund(reservation, session);
     }
-    return reservation;
+    return await this._enrichAndRepairPricingSnapshot(reservation, session);
   }
 
   /**
@@ -1359,7 +1479,13 @@ export class AmenityReservationService {
    * @param {Object} queryParams
    */
   async listReservations(queryParams) {
-    return amenityReservationRepository.findWithPagination(queryParams);
+    const result = await amenityReservationRepository.findWithPagination(queryParams);
+    if (result && Array.isArray(result.data)) {
+      result.data = await Promise.all(
+        result.data.map((resv) => this._enrichAndRepairPricingSnapshot(resv))
+      );
+    }
+    return result;
   }
 
   /**

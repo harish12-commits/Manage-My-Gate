@@ -152,6 +152,7 @@ export class AmenityReservationHoldService {
         holdType,
         status: 'ACTIVE',
         expiresAt,
+        pricingSnapshot,
       },
       session
     );

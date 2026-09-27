@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Text } from '@/components/ui/text';
@@ -20,6 +20,50 @@ export function PollVotersModal({
   if (!poll) return null;
 
   const isAnonymous = Boolean(poll.isAnonymous);
+
+  const votersList = useMemo(() => {
+    if (!voters) return [];
+    if (Array.isArray(voters)) return voters;
+
+    // Handle backend response format with anonymous summary: { isAnonymous: true, summary: [...] }
+    if (voters.summary && Array.isArray(voters.summary)) {
+      return voters.summary.map((item, idx) => ({
+        _id: `summary-${idx}`,
+        name: item.optionText || `Option ${idx + 1}`,
+        unit: `${item.votesCount || 0} votes`,
+        optionText: `${item.votesCount || 0} votes`,
+        isSummary: true,
+      }));
+    }
+
+    // Handle backend response format grouped by option index: { "0": [{ name, unit, votedAt }], "1": [...] }
+    if (typeof voters === 'object') {
+      const list = [];
+      Object.keys(voters).forEach((key) => {
+        const optionIndex = parseInt(key, 10);
+        const optionText =
+          !isNaN(optionIndex) && poll?.options?.[optionIndex]
+            ? poll.options[optionIndex].text
+            : undefined;
+
+        const items = voters[key];
+        if (Array.isArray(items)) {
+          items.forEach((item, vIdx) => {
+            if (typeof item === 'object' && item !== null) {
+              list.push({
+                ...item,
+                _id: item._id || item.id || `voter-${key}-${vIdx}`,
+                optionText: item.optionText || optionText,
+              });
+            }
+          });
+        }
+      });
+      return list;
+    }
+
+    return [];
+  }, [voters, poll]);
 
   return (
     <BottomSheet
@@ -43,18 +87,18 @@ export function PollVotersModal({
           <View className="py-8 items-center justify-center">
             <Text className="text-sm text-muted-foreground">Loading voter records...</Text>
           </View>
-        ) : !voters || voters.length === 0 ? (
+        ) : !votersList || votersList.length === 0 ? (
           <View className="py-8 items-center justify-center">
             <Text className="text-sm text-muted-foreground">No voter records recorded yet.</Text>
           </View>
         ) : (
           <View className="gap-2">
-            {voters.map((voter, index) => {
-              const displayName = isAnonymous
-                ? `Voter #${index + 1}`
+            {votersList.map((voter, index) => {
+              const displayName = isAnonymous || voter?.isSummary
+                ? voter?.name || `Voter #${index + 1}`
                 : voter?.name || voter?.userName || voter?.residentName || 'Community Member';
               const unit = isAnonymous ? null : voter?.unitNumber || voter?.unit;
-              const optionText = isAnonymous ? null : voter?.optionText;
+              const optionText = voter?.optionText;
 
               return (
                 <View

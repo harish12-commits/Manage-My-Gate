@@ -170,6 +170,79 @@ export class PaymentContextFactory {
   }
 
   /**
+   * Build a PaymentContext from an AmenityReservationHold document or entity.
+   * @param {object} hold - Ephemeral hold document
+   * @param {object} [options={}] - Override options
+   * @returns {PaymentContext}
+   */
+  static fromAmenityReservationHold(hold, options = {}) {
+    if (!hold || typeof hold !== 'object') {
+      throw new HttpError(400, 'AmenityReservationHold object is required to construct PaymentContext.');
+    }
+
+    const holdId = hold._id || hold.id;
+    if (!holdId) {
+      throw new HttpError(400, 'AmenityReservationHold must have a valid _id or id.');
+    }
+
+    const rawOrg = options.orgId || hold.orgId;
+    const orgId = rawOrg?._id || rawOrg;
+    if (!orgId) {
+      throw new HttpError(400, 'AmenityReservationHold must have an orgId.');
+    }
+
+    const rawUser = options.userId || hold.residentId || hold.userId;
+    const userId = rawUser?._id || rawUser;
+    if (!userId) {
+      throw new HttpError(400, 'AmenityReservationHold must have a residentId/userId.');
+    }
+
+    let amount = options.amount;
+    if (amount === undefined || amount === null) {
+      amount = Number(
+        hold.pricingSnapshot?.totalAmount !== undefined
+          ? hold.pricingSnapshot.totalAmount
+          : hold.totalAmount !== undefined
+          ? hold.totalAmount
+          : hold.amount
+      ) || 0;
+    } else {
+      amount = Number(amount);
+    }
+
+    const paymentMethodRaw = options.paymentMethod || hold.paymentMethod || 'ONLINE';
+
+    const metadata = {
+      holdId: String(holdId),
+      facilityId: hold.facilityId ? String(hold.facilityId) : undefined,
+      resourceId: hold.resourceId ? String(hold.resourceId) : undefined,
+      requestedStartDateTime: hold.requestedStartDateTime,
+      requestedEndDateTime: hold.requestedEndDateTime,
+      ...(options.metadata || {}),
+    };
+
+    const context = new PaymentContext({
+      domain: PAYMENT_DOMAINS.AMENITY,
+      referenceId: String(holdId),
+      referenceType: options.referenceType || PAYMENT_REFERENCE_TYPES.AMENITY_RESERVATION_HOLD,
+      orgId: String(orgId),
+      userId: String(userId),
+      payerUserId: options.payerUserId ? String(options.payerUserId) : String(userId),
+      amount,
+      currency: hold.currency || hold.pricingSnapshot?.currency || DEFAULT_CURRENCY,
+      paymentMethod: toCanonicalPaymentMethod(paymentMethodRaw),
+      idempotencyKey: options.idempotencyKey,
+      metadata,
+    });
+
+    if (options.validate !== false) {
+      assertValidPaymentContext(context);
+    }
+
+    return context;
+  }
+
+  /**
    * Build a PaymentContext for a Wallet Recharge.
    * @param {object} params
    * @param {string|object} params.orgId - Organization ID

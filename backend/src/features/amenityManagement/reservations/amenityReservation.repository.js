@@ -15,21 +15,30 @@ export class AmenityReservationRepository {
     return AmenityReservation.populate(doc, [
       { path: 'facilityId', select: 'name timezone type category isExclusive' },
       { path: 'resourceId', select: 'name type' },
-      { path: 'residentId', select: 'name username email' }
+      { path: 'residentId', select: 'name fullName firstName lastName username email villaId villaNumber' },
+      { path: 'unitId', select: 'unitNumber villaNumber block floor' }
     ]);
   }
 
   /**
-   * Finds a reservation by ID.
+   * Finds a reservation by ID with optional orgId tenant filter.
    * @param {string|mongoose.Types.ObjectId} reservationId
+   * @param {string|mongoose.Types.ObjectId} [orgId]
    * @param {mongoose.ClientSession} [session]
    */
-  async findById(reservationId, session) {
-    return AmenityReservation.findById(reservationId)
+  async findById(reservationId, orgId = null, session = null) {
+    const filter = { _id: reservationId };
+    if (orgId && typeof orgId !== 'function' && !orgId.inTransaction) {
+      const targetOrgId = mongoose.Types.ObjectId.isValid(orgId) ? new mongoose.Types.ObjectId(orgId) : orgId;
+      filter.$or = [{ orgId: targetOrgId }, { orgId: String(orgId) }];
+    }
+    const actualSession = (orgId && (orgId.inTransaction || typeof orgId === 'object')) ? orgId : session;
+    return AmenityReservation.findOne(filter)
       .populate('facilityId', 'name timezone type category isExclusive')
       .populate('resourceId', 'name type')
-      .populate('residentId', 'name username email')
-      .session(getValidSession(session));
+      .populate('residentId', 'name fullName firstName lastName username email villaId villaNumber')
+      .populate('unitId', 'unitNumber villaNumber block floor')
+      .session(getValidSession(actualSession));
   }
 
   /**
@@ -42,7 +51,8 @@ export class AmenityReservationRepository {
     return AmenityReservation.findOne({ orgId, reservationNumber })
       .populate('facilityId', 'name timezone type category isExclusive')
       .populate('resourceId', 'name type')
-      .populate('residentId', 'name username email')
+      .populate('residentId', 'name fullName firstName lastName username email villaId villaNumber')
+      .populate('unitId', 'unitNumber villaNumber block floor')
       .session(getValidSession(session));
   }
 
@@ -138,90 +148,141 @@ export class AmenityReservationRepository {
     page = 1,
     limit = 10,
   }) {
-    const match = { orgId: new mongoose.Types.ObjectId(orgId) };
+    const targetOrgId = mongoose.Types.ObjectId.isValid(orgId) ? new mongoose.Types.ObjectId(orgId) : orgId;
+    
+    // Construct flexible matching query for AmenityReservation (amenity_management_reservations)
+    const matchConditions = [
+      { $or: [{ orgId: targetOrgId }, { orgId: String(orgId) }] }
+    ];
 
-    if (facilityId) match.facilityId = new mongoose.Types.ObjectId(facilityId);
-    if (residentId) match.residentId = new mongoose.Types.ObjectId(residentId);
-    if (unitId) match.unitId = new mongoose.Types.ObjectId(unitId);
-    if (bookingStatus) match.bookingStatus = bookingStatus;
-    if (paymentStatus) match.paymentStatus = paymentStatus;
-    if (approvalStatus) match.approvalStatus = approvalStatus;
+    if (facilityId) {
+      const targetFacId = mongoose.Types.ObjectId.isValid(facilityId) ? new mongoose.Types.ObjectId(facilityId) : facilityId;
+      matchConditions.push({ $or: [{ facilityId: targetFacId }, { facilityId: String(facilityId) }] });
+    }
+    if (residentId) {
+      const targetResId = mongoose.Types.ObjectId.isValid(residentId) ? new mongoose.Types.ObjectId(residentId) : residentId;
+      matchConditions.push({ $or: [{ residentId: targetResId }, { residentId: String(residentId) }] });
+    }
+    if (unitId) {
+      const targetUnitId = mongoose.Types.ObjectId.isValid(unitId) ? new mongoose.Types.ObjectId(unitId) : unitId;
+      matchConditions.push({ $or: [{ unitId: targetUnitId }, { unitId: String(unitId) }] });
+    }
+    if (bookingStatus && bookingStatus !== 'All' && bookingStatus !== 'ALL') {
+      matchConditions.push({ bookingStatus: bookingStatus.toUpperCase() });
+    }
+    if (paymentStatus && paymentStatus !== 'All' && paymentStatus !== 'ALL') {
+      matchConditions.push({ paymentStatus: paymentStatus.toUpperCase() });
+    }
+    if (approvalStatus && approvalStatus !== 'All' && approvalStatus !== 'ALL') {
+      matchConditions.push({ approvalStatus: approvalStatus.toUpperCase() });
+    }
 
+    const match = matchConditions.length === 1 ? matchConditions[0] : { $and: matchConditions };
+
+    const v2Reservations = await AmenityReservation.find(match)
+      .populate('facilityId', 'name type images category location pricingConfig operatingHours')
+      .populate('resourceId', 'name identifier type')
+      .populate('residentId', 'name username email phone profilePicture')
+      .populate('unitId', 'unitNumber villaNumber block floor')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Query legacy amenity_bookings collection for complete dual-collection sync
+    let v1Bookings = [];
+    try {
+      const AmenityBooking = (await import('../../amenityBooking/amenityBooking.model.js')).default;
+      const v1MatchConditions = [
+        { $or: [{ orgId: targetOrgId }, { orgId: String(orgId) }] }
+      ];
+      if (facilityId) {
+        const targetFacId = mongoose.Types.ObjectId.isValid(facilityId) ? new mongoose.Types.ObjectId(facilityId) : facilityId;
+        v1MatchConditions.push({ $or: [{ amenityId: targetFacId }, { amenityId: String(facilityId) }] });
+      }
+      if (residentId) {
+        const targetResId = mongoose.Types.ObjectId.isValid(residentId) ? new mongoose.Types.ObjectId(residentId) : residentId;
+        v1MatchConditions.push({ $or: [{ userId: targetResId }, { userId: String(residentId) }] });
+      }
+      if (bookingStatus && bookingStatus !== 'All' && bookingStatus !== 'ALL') {
+        v1MatchConditions.push({ status: bookingStatus.toLowerCase() });
+      }
+      const v1Query = v1MatchConditions.length === 1 ? v1MatchConditions[0] : { $and: v1MatchConditions };
+
+      v1Bookings = await AmenityBooking.find(v1Query)
+        .populate('amenityId', 'name type images location bookingRules pricing category')
+        .populate('userId', 'name username email phone profilePicture')
+        .sort({ createdAt: -1 })
+        .lean();
+    } catch (v1Err) {
+      // Graceful fallback
+    }
+
+    // Adapt v1 bookings into v2 AmenityReservation shape
+    const moment = (await import('moment-timezone')).default;
+    const TIMEZONE = 'Asia/Kolkata';
+
+    const adaptedV1 = v1Bookings.map((b) => {
+      const fac = b.amenityId || {};
+      const bookingDateStr = b.bookingDate || '';
+      const startTimeStr = b.startTime || '00:00';
+      const endTimeStr = b.endTime || '23:59';
+      
+      let startDt = b.createdAt;
+      let endDt = b.createdAt;
+      if (bookingDateStr) {
+        startDt = moment.tz(`${bookingDateStr}T${startTimeStr}`, 'YYYY-MM-DDTHH:mm', TIMEZONE).toDate();
+        endDt = moment.tz(`${bookingDateStr}T${endTimeStr}`, 'YYYY-MM-DDTHH:mm', TIMEZONE).toDate();
+      }
+
+      const pConfig = fac.pricing || fac.pricingConfig || {};
+
+      return {
+        _id: b._id,
+        orgId: b.orgId,
+        facilityId: typeof fac === 'object' && fac._id ? fac : { _id: b.amenityId, name: fac.name || 'Amenity Facility' },
+        resourceId: b.resourceId ? { _id: b.resourceId, name: 'Resource' } : null,
+        residentId: typeof b.userId === 'object' && b.userId ? b.userId : { _id: b.userId },
+        unitId: b.unitId ? { _id: b.unitId } : null,
+        reservationNumber: b.bookingId || b.bookingNumber || String(b._id),
+        requestedStartDateTime: startDt,
+        requestedEndDateTime: endDt,
+        effectiveStartDateTime: startDt,
+        effectiveEndDateTime: endDt,
+        startDateTime: startDt,
+        endDateTime: endDt,
+        headcount: b.numberOfPersons || 1,
+        quantity: 1,
+        bookingStatus: (b.status || 'CONFIRMED').toUpperCase(),
+        paymentStatus: (b.paymentStatus === 'success' || b.paymentStatus === 'paid') ? 'PAID' : (b.paymentStatus || 'NOT_REQUIRED').toUpperCase(),
+        approvalStatus: 'NOT_REQUIRED',
+        accessStatus: 'PASS_GENERATED',
+        completionStatus: 'PENDING',
+        totalAmount: b.totalPrice || b.pricingDetails?.totalAmount || 0,
+        paidAmount: b.totalPrice || 0,
+        paymentMethod: (b.paymentMethod || 'NONE').toUpperCase(),
+        createdAt: b.createdAt || new Date(),
+        updatedAt: b.updatedAt || new Date(),
+      };
+    });
+
+    // Merge v2 reservations and adapted v1 bookings, deduplicating by _id string
+    const existingIds = new Set(v2Reservations.map((r) => String(r._id)));
+    const merged = [...v2Reservations];
+    for (const item of adaptedV1) {
+      if (!existingIds.has(String(item._id))) {
+        existingIds.add(String(item._id));
+        merged.push(item);
+      }
+    }
+
+    // Sort by createdAt descending
+    merged.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    const total = merged.length;
     const skip = (page - 1) * limit;
-
-    const [result] = await AmenityReservation.aggregate([
-      { $match: match },
-      { $sort: { createdAt: -1 } },
-      {
-        $facet: {
-          data: [
-            { $skip: skip },
-            { $limit: limit },
-            {
-              $addFields: {
-                startDateTime: { $ifNull: ['$effectiveStartDateTime', '$requestedStartDateTime'] },
-                endDateTime: { $ifNull: ['$effectiveEndDateTime', '$requestedEndDateTime'] },
-              },
-            },
-            {
-              $lookup: {
-                from: 'amenity_management_facilities',
-                localField: 'facilityId',
-                foreignField: '_id',
-                as: 'facilityId',
-              },
-            },
-            {
-              $unwind: {
-                path: '$facilityId',
-                preserveNullAndEmptyArrays: true,
-              },
-            },
-            {
-              $lookup: {
-                from: 'amenity_management_resources',
-                localField: 'resourceId',
-                foreignField: '_id',
-                as: 'resourceId',
-              },
-            },
-            {
-              $unwind: {
-                path: '$resourceId',
-                preserveNullAndEmptyArrays: true,
-              },
-            },
-            {
-              $lookup: {
-                from: 'users',
-                localField: 'residentId',
-                foreignField: '_id',
-                as: 'residentId',
-              },
-            },
-            {
-              $unwind: {
-                path: '$residentId',
-                preserveNullAndEmptyArrays: true,
-              },
-            },
-            {
-              $project: {
-                'residentId.password': 0,
-                'residentId.otp': 0,
-              },
-            }
-          ],
-          totalCount: [{ $count: 'count' }],
-        },
-      },
-    ]);
-
-    const data = result?.data || [];
-    const total = result?.totalCount?.[0]?.count || 0;
+    const paginatedItems = merged.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit) || 1;
 
-    return { data, items: data, total, page, limit, totalPages };
+    return { data: paginatedItems, items: paginatedItems, total, page, limit, totalPages };
   }
 
   /**

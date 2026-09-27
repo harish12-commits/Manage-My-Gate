@@ -17,3 +17,7 @@ export const simulatePayment = async (
 export const verifyRazorpaySignature = async (payload) => {
   return await apiClient.post('/payments/verify-signature', payload)
 }
+
+export const getGatewayStatus = async () => {
+  return await apiClient.get('/payments/status')
+}

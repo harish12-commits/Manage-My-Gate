@@ -8,7 +8,70 @@ export class AmenityRepository {
 
   async findById(id, orgId) {
     if (!id || !mongoose.Types.ObjectId.isValid(id)) return null;
-    return await Amenity.findOne({ _id: id, orgId, isDeleted: false });
+    const filter = { _id: id, isDeleted: false };
+    if (orgId) filter.orgId = orgId;
+    let amenity = await Amenity.findOne(filter);
+    if (!amenity) {
+      try {
+        const AmenityFacility = (await import('../amenityManagement/facilities/amenityFacility.model.js')).default;
+        const query = { _id: id, isDeleted: false };
+        if (orgId) query.orgId = orgId;
+        const facility = await AmenityFacility.findOne(query);
+        if (facility) {
+          const f = facility.toObject ? facility.toObject() : facility;
+          const pConfig = f.pricingConfig || {};
+          const baseRate = Number(pConfig.baseRate) || 0;
+          amenity = {
+            _id: f._id,
+            orgId: f.orgId,
+            name: f.name,
+            description: f.description || '',
+            type:
+              f.archetype === 'EXCLUSIVE_HOURLY'
+                ? 'sports'
+                : f.archetype === 'SHARED_CAPACITY'
+                  ? 'pool'
+                  : f.archetype === 'EVENT_SPACE'
+                    ? 'hall'
+                    : 'general',
+            category: f.category || 'General',
+            archetype: f.archetype,
+            code: f.code,
+            location: f.location || '',
+            pricing: {
+              baseRate,
+              pricingType: (pConfig.pricingType || 'FREE').toLowerCase(),
+              peakRateMultiplier: 1,
+              weekendRateMultiplier: 1,
+              holidayRateMultiplier: 1,
+              securityDeposit: pConfig.securityDeposit || 0,
+              securityDepositDescription:
+                (pConfig.securityDeposit || 0) > 0 ? 'Refundable deposit against equipment damages.' : null,
+              taxPercentage: pConfig.taxPercentage || 0,
+              cancellationChargePercentage: 0,
+              dynamicPricingEnabled: false,
+            },
+            pricingConfig: f.pricingConfig,
+            ratePerHour: baseRate,
+            status: (f.status || 'ACTIVE').toLowerCase(),
+            capacity: f.maxCapacity || 1,
+            bookingRules: {
+              slotDurationMinutes: f.slotDurationMinutes || 60,
+              bufferTimeMinutes: f.setupBufferMinutes || 10,
+              openTime: f.operatingHours?.[0]?.openTime || '06:00',
+              closeTime: f.operatingHours?.[0]?.closeTime || '22:00',
+              maxBookingsPerUserPerSlot: f.maxHeadcountPerReservation || 2,
+              advanceBookingDays: f.advanceBookingDays || 7,
+              minAdvanceBookingHours: 1,
+              isCancellationEnabled: f.cancellationPolicy?.isAllowed !== false,
+            },
+          };
+        }
+      } catch (e) {
+        // Fallback gracefully
+      }
+    }
+    return amenity;
   }
 
   async findByName(name, orgId) {

@@ -60,7 +60,14 @@ export function ResidentReservationDetailView({
 
   const facilityName = reservation.facilityName || 'Amenity Facility';
   const reservationNumber = reservation.reservationNumber || reservation._id;
-  const pricing = reservation.pricingSnapshot;
+  const pricing = reservation.pricingSnapshot || {
+    baseAmount: reservation.totalAmount || 0,
+    taxAmount: 0,
+    depositAmount: reservation.depositAmount || 0,
+    totalAmount: reservation.totalAmount || 0,
+    currency: 'INR',
+  };
+  const baseAmountVal = pricing.baseAmount !== undefined ? pricing.baseAmount : (pricing.totalAmount || reservation.totalAmount || 0);
 
   const tz = reservation.facilityTimezone || 'Asia/Kolkata';
   const rawStart =
@@ -301,7 +308,7 @@ export function ResidentReservationDetailView({
       >
         <DetailRow
           label="Base Amount"
-          value={`${pricing.baseAmount} ${pricing.currency}`}
+          value={`${baseAmountVal} ${pricing.currency || 'INR'}`}
         />
         {pricing.taxAmount > 0 ? (
           <DetailRow

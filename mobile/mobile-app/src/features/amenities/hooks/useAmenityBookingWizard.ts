@@ -66,6 +66,10 @@ import {
  * Adapt canonical Phase 6 AmenityBooking document into UI-consumable AmenityReservation shape
  */
 const adaptBookingToReservation = (booking: any, facility: AmenityFacility): AmenityReservation => {
+  const pricing = booking?.pricingSnapshot || booking?.pricingDetails || {};
+  const totalAmount = Number(pricing.totalAmount ?? booking?.totalAmount ?? booking?.totalPrice ?? 0);
+  const resident = booking?.residentId || booking?.userId;
+  const unit = booking?.unitId || resident?.villaId;
   const bStatus = String(booking?.status || 'CONFIRMED').toUpperCase();
   const pStatus = (
     booking?.paymentStatus === 'success' || booking?.paymentStatus === 'paid'
@@ -85,7 +89,9 @@ const adaptBookingToReservation = (booking: any, facility: AmenityFacility): Ame
     completionStatus: 'SCHEDULED',
     facilityId: booking?.amenityId?._id || booking?.amenityId || facility._id,
     resourceId: booking?.resourceId,
-    reservedBy: booking?.residentId || booking?.userId,
+    reservedBy: resident?._id || resident,
+    userName: resident?.fullName || resident?.name || [resident?.firstName, resident?.lastName].filter(Boolean).join(' ') || booking?.userName,
+    unitId: unit?.villaNumber || unit?.unitNumber || resident?.villaNumber || unit?._id || unit,
     slotSelection: {
       slotId: booking?.slotId || 'custom-slot',
       date: booking?.bookingDate || booking?.date || '',
@@ -97,11 +103,12 @@ const adaptBookingToReservation = (booking: any, facility: AmenityFacility): Ame
     headcount: booking?.numberOfPersons || booking?.guestsCount || 1,
     quantity: booking?.numberOfPersons || 1,
     pricingSnapshot: {
-      baseRate: booking?.totalPrice || 0,
-      totalAmount: booking?.totalPrice || 0,
-      taxAmount: 0,
+      baseRate: Number(pricing.baseAmount ?? pricing.baseRate ?? totalAmount),
+      totalAmount,
+      taxAmount: Number(pricing.taxAmount || 0),
       discountAmount: 0,
-      currency: 'INR',
+      depositAmount: Number(pricing.depositAmount || 0),
+      currency: pricing.currency || booking?.currency || 'INR',
     },
     paymentReference: booking?.paymentId,
     notes: booking?.notes,
@@ -225,6 +232,25 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
   // Payment Selection
   const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'RAZORPAY' | 'PAY_AT_GATE'>('WALLET');
   const [paymentReference, setPaymentReference] = useState<string>('');
+  const [isRazorpayConfigured, setIsRazorpayConfigured] = useState<boolean>(false);
+
+  useEffect(() => {
+    let active = true;
+    paymentService
+      .getGatewayStatus()
+      .then((res: any) => {
+        if (!active) return;
+        const data = res?.data || res;
+        const configured = Boolean(data?.isConfigured ?? data === true);
+        setIsRazorpayConfigured(configured);
+      })
+      .catch(() => {
+        if (active) setIsRazorpayConfigured(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // API Feedback & Caches
   const [availabilityResult, setAvailabilityResult] = useState<AmenityAvailabilityResult | null>(null);
@@ -1178,6 +1204,7 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
     isRazorpayOpen,
     setIsRazorpayOpen,
     razorpayOptions,
+    isRazorpayConfigured,
     balance,
     walletLoading,
 

@@ -214,14 +214,14 @@ export function ScreenShell({
               >
                 <Text
                   numberOfLines={subtitle ? 1 : 2}
-                  className="text-foreground text-[23px] sm:text-[25px] font-extrabold tracking-tight leading-tight shrink"
+                  className="text-foreground text-[22px] sm:text-[24px] font-extrabold tracking-tight leading-snug shrink mb-0.5"
                 >
                   {translateText(title)}
                 </Text>
                 {subtitle ? (
                   <Text
                     numberOfLines={1}
-                    className="text-[14.5px] sm:text-[15.5px] text-muted-foreground mt-1 font-normal leading-normal shrink"
+                    className="text-[13.5px] sm:text-[14.5px] text-muted-foreground font-normal leading-normal shrink"
                   >
                     {translateText(subtitle)}
                   </Text>

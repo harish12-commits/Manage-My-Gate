@@ -205,6 +205,10 @@ export interface AmenityReservation {
   notes?: string;
   holdId?: string;
   paymentReference?: string;
+  paymentMethod?: 'NONE' | 'WALLET' | 'RAZORPAY' | string;
+  paidAmount?: number;
+  refundAmount?: number;
+  refundMethod?: 'WALLET' | 'RAZORPAY' | string;
   createdAt: string;
   updatedAt: string;
 }

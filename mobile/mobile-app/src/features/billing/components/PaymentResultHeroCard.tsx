@@ -208,7 +208,7 @@ export function PaymentResultHeroCard({
       ) : null}
 
       {/* Main Headline Title */}
-      <Text className="text-xl font-extrabold text-foreground text-center mb-1">
+      <Text skipTranslate className="text-xl font-extrabold text-foreground text-center mb-1">
         {outcome.title}
       </Text>
 

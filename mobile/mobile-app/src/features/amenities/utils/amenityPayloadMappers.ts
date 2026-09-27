@@ -282,7 +282,20 @@ export const normalizeReservationFromApi = (payload: any): AmenityReservation =>
   const rawUser = doc.residentId || doc.userId;
   const userObj = typeof rawUser === 'object' && rawUser !== null ? rawUser : null;
   const userId = userObj ? userObj._id || userObj.id : String(rawUser || '');
-  const userName = userObj ? userObj.name || userObj.username : doc.userName || doc.residentName;
+  const userName = userObj
+    ? userObj.fullName || userObj.name || [userObj.firstName, userObj.lastName].filter(Boolean).join(' ') || userObj.username
+    : doc.userName || doc.residentName;
+  const rawUnit = doc.unitId || userObj?.villaId;
+  const unitId = typeof rawUnit === 'object' && rawUnit !== null
+    ? rawUnit.villaNumber || rawUnit.unitNumber || rawUnit.flatNumber || rawUnit._id
+    : rawUnit;
+  const pricingSource = doc.pricingSnapshot || doc.pricingDetails || {
+    baseAmount: doc.baseAmount ?? doc.totalAmount ?? doc.totalPrice,
+    totalAmount: doc.totalAmount ?? doc.totalPrice ?? doc.paidAmount,
+    taxAmount: doc.taxAmount,
+    depositAmount: doc.depositAmount,
+    currency: doc.currency,
+  };
 
   const startDt = doc.startDateTime || doc.requestedStartDateTime || doc.effectiveStartDateTime || '';
   const endDt = doc.endDateTime || doc.requestedEndDateTime || doc.effectiveEndDateTime || '';
@@ -309,7 +322,7 @@ export const normalizeReservationFromApi = (payload: any): AmenityReservation =>
     resourceName,
     userId,
     userName,
-    unitId: doc.unitId,
+    unitId,
     startDateTime: startDt,
     endDateTime: endDt,
     effectiveStartDateTime: doc.effectiveStartDateTime,
@@ -319,7 +332,7 @@ export const normalizeReservationFromApi = (payload: any): AmenityReservation =>
     headcount: doc.headcount ?? 1,
     quantity: doc.quantity ?? 1,
     guests: Array.isArray(doc.guests) ? [...doc.guests] : [],
-    pricingSnapshot: normalizePricingSnapshot(doc.pricingSnapshot),
+    pricingSnapshot: normalizePricingSnapshot(pricingSource),
 
     // The Five Independent State Dimensions
     bookingStatus: derivedBookingStatus,
@@ -333,6 +346,10 @@ export const normalizeReservationFromApi = (payload: any): AmenityReservation =>
     notes: doc.notes,
     holdId: doc.holdId,
     paymentReference: doc.paymentReference,
+    paymentMethod: doc.paymentMethod,
+    paidAmount: Number(doc.paidAmount ?? pricingSource?.totalAmount ?? 0),
+    refundAmount: Number(doc.refundAmount || 0),
+    refundMethod: doc.refundMethod,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
@@ -344,7 +361,7 @@ export const normalizeAccessPassFromApi = (raw: ApiAmenityAccessPass | any): Ame
   const passDoc = raw.pass || raw;
   const checkInTimestamp = passDoc.checkInTimestamp || passDoc.checkedInAt || null;
   const checkOutTimestamp = passDoc.checkOutTimestamp || passDoc.checkedOutAt || null;
-  const qrData = String(passDoc.qrData || passDoc.rawToken || passDoc.passTokenHash || passDoc.passCode || passDoc._id || '');
+  const qrData = String(passDoc.qrData || passDoc.rawToken || passDoc.passCode || passDoc._id || '');
 
   const resident = raw.resident || null;
   const facility = raw.facility || null;

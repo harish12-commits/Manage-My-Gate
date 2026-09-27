@@ -95,6 +95,7 @@ export const SearchFilterBar = React.forwardRef<View, SearchFilterBarProps>(
     const isNonDefaultSort = Boolean(
       currentSort &&
       currentSort !== 'ALL' &&
+      currentSort !== 'All' &&
       currentSort !== 'all' &&
       currentSort !== ''
     );

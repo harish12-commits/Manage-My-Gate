@@ -162,7 +162,7 @@ export function PaymentReceiptModal({
             <View className="w-12 h-12 rounded-full bg-destructive/20 items-center justify-center mb-2">
               <Icon as={AlertCircle} size={28} className="text-destructive" />
             </View>
-            <Text className="font-extrabold text-lg text-foreground text-center">
+            <Text skipTranslate className="font-extrabold text-lg text-foreground text-center">
               Payment Submission Rejected
             </Text>
             <Text className="text-xs text-muted-foreground text-center mt-1">
@@ -175,7 +175,7 @@ export function PaymentReceiptModal({
                 variant="danger"
               />
               <View className="bg-destructive/20 px-2.5 py-0.5 rounded-full">
-                <Text className="text-[11px] font-bold text-destructive">
+                <Text skipTranslate className="text-[11px] font-bold text-destructive">
                   Payment submission rejected.
                 </Text>
               </View>

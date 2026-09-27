@@ -1,5 +1,18 @@
 import mongoose from 'mongoose';
 
+const pricingSnapshotSchema = new mongoose.Schema(
+  {
+    baseAmount: { type: Number, default: 0 },
+    tier: { type: String, default: null },
+    taxAmount: { type: Number, default: 0 },
+    depositAmount: { type: Number, default: 0 },
+    discountAmount: { type: Number, default: 0 },
+    totalAmount: { type: Number, default: 0 },
+    currency: { type: String, default: 'INR' },
+  },
+  { _id: false }
+);
+
 const amenityReservationHoldSchema = new mongoose.Schema(
   {
     orgId: {
@@ -83,6 +96,10 @@ const amenityReservationHoldSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Hold expiration datetime is required'],
       index: true,
+    },
+    pricingSnapshot: {
+      type: pricingSnapshotSchema,
+      default: null,
     },
   },
   {

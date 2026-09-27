@@ -38,6 +38,8 @@ export const CANONICAL_PAYMENT_STATUSES = Object.freeze({
 export const PAYMENT_REFERENCE_TYPES = Object.freeze({
   INVOICE: 'Invoice',
   AMENITY_BOOKING: 'AmenityBooking',
+  AMENITY_RESERVATION_HOLD: 'AmenityReservationHold',
+  AMENITY_RESERVATION: 'AmenityReservation',
   WALLET_RECHARGE: 'WalletRecharge',
   REFUND: 'Refund',
   ADJUSTMENT: 'Adjustment',

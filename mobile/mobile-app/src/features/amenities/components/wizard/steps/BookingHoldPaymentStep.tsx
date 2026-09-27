@@ -21,6 +21,7 @@ export interface BookingHoldPaymentStepProps {
   paymentMethod: 'WALLET' | 'RAZORPAY' | 'PAY_AT_GATE';
   onPaymentMethodChange: (method: 'WALLET' | 'RAZORPAY' | 'PAY_AT_GATE') => void;
   balance: number;
+  isRazorpayConfigured?: boolean;
   onOpenTopUp: () => void;
   onLaunchRazorpay: () => void;
   onConfirmReservation: () => void;
@@ -38,6 +39,7 @@ export function BookingHoldPaymentStep({
   paymentMethod,
   onPaymentMethodChange,
   balance,
+  isRazorpayConfigured = false,
   onOpenTopUp,
   onLaunchRazorpay,
   onConfirmReservation,
@@ -195,30 +197,38 @@ export function BookingHoldPaymentStep({
 
           {/* Razorpay Option */}
           <TouchableOpacity
-            onPress={() => onPaymentMethodChange('RAZORPAY')}
-            activeOpacity={0.7}
+            onPress={() => isRazorpayConfigured && onPaymentMethodChange('RAZORPAY')}
+            disabled={!isRazorpayConfigured}
+            activeOpacity={isRazorpayConfigured ? 0.7 : 1}
             accessibilityRole="button"
             accessibilityLabel="Select Razorpay online gateway payment"
             className={`p-3.5 rounded-xl border transition-all ${
-              paymentMethod === 'RAZORPAY'
+              !isRazorpayConfigured
+                ? 'bg-muted/20 border-border/50 opacity-60'
+                : paymentMethod === 'RAZORPAY'
                 ? 'bg-primary/5 border-primary'
                 : 'bg-muted/30 border-border'
             }`}
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center gap-2.5">
-                <CreditCard size={18} className="text-primary" />
-                <View>
-                  <Text className="font-semibold text-xs text-foreground">
+                <CreditCard size={18} className={isRazorpayConfigured ? 'text-primary' : 'text-muted-foreground'} />
+                <View className="flex-1 me-2">
+                  <Text className={`font-semibold text-xs ${isRazorpayConfigured ? 'text-foreground' : 'text-muted-foreground'}`}>
                     Online Payment (Cards, UPI, NetBanking)
                   </Text>
                   <Text variant="muted" className="text-[11px]">
-                    Secured by Razorpay Payment Gateway
+                    {isRazorpayConfigured
+                      ? 'Secured by Razorpay Payment Gateway'
+                      : 'Not configured by community admin'}
                   </Text>
                 </View>
               </View>
 
-              <StatusBadge label="Instant" variant="info" />
+              <StatusBadge
+                label={isRazorpayConfigured ? 'Instant' : 'Disabled'}
+                variant={isRazorpayConfigured ? 'info' : 'outline'}
+              />
             </View>
           </TouchableOpacity>
 

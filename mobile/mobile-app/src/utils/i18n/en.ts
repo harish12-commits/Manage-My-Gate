@@ -806,7 +806,7 @@ export const en: Record<string, string> = {
   'checking_payment_status_title': "We're checking your payment status.",
   'checking_payment_status_desc': 'Your payment request may already have reached the server. Do not submit another payment while we verify the result.',
   'verification_pending_title': 'Payment submitted — awaiting verification.',
-  'rejection_title': 'Payment submission rejected.',
+  'rejection_title': 'Payment Submission Rejected',
   'not_yet_settled': 'Not yet settled.',
   'support_info_title': 'Payment Support Information',
   'support_info_privacy_note': 'This diagnostic payload is safe to share with resident support. It contains zero private credentials or payment card secrets.',

@@ -973,17 +973,30 @@ class WalletService {
 
     let session = outerSession;
     let isLocalSession = false;
-    if (!session) {
-      session = await mongoose.startSession();
-      isLocalSession = true;
+    let isTransactionActive = false;
+    const topologyType = mongoose.connection?.client?.topology?.description?.type;
+    const transactionsSupported = !topologyType || topologyType !== 'Single';
+
+    if (!session && transactionsSupported) {
       try {
+        session = await mongoose.startSession();
+        isLocalSession = true;
         session.startTransaction();
+        isTransactionActive = true;
       } catch (e) {
         logger.debug('debitWallet: transaction start skipped', { error: e.message });
+        if (isLocalSession && session) {
+          try { await session.endSession(); } catch (_) {}
+        }
+        session = null;
+        isLocalSession = false;
+        isTransactionActive = false;
       }
+    } else if (session) {
+      isTransactionActive = typeof session.inTransaction === 'function' && session.inTransaction();
     }
 
-    const activeSession = session && typeof session.inTransaction === 'function' && session.inTransaction() ? session : null;
+    const activeSession = isTransactionActive ? session : null;
 
     try {
       walletEventEmitter.emit(WALLET_DEBIT_STARTED, { userId, orgId, amount: numericAmount });
@@ -1137,17 +1150,30 @@ class WalletService {
 
     let session = outerSession;
     let isLocalSession = false;
-    if (!session) {
-      session = await mongoose.startSession();
-      isLocalSession = true;
+    let isTransactionActive = false;
+    const topologyType = mongoose.connection?.client?.topology?.description?.type;
+    const transactionsSupported = !topologyType || topologyType !== 'Single';
+
+    if (!session && transactionsSupported) {
       try {
+        session = await mongoose.startSession();
+        isLocalSession = true;
         session.startTransaction();
+        isTransactionActive = true;
       } catch (e) {
         logger.debug('creditWallet: transaction start skipped', { error: e.message });
+        if (isLocalSession && session) {
+          try { await session.endSession(); } catch (_) {}
+        }
+        session = null;
+        isLocalSession = false;
+        isTransactionActive = false;
       }
+    } else if (session) {
+      isTransactionActive = typeof session.inTransaction === 'function' && session.inTransaction();
     }
 
-    const activeSession = session && typeof session.inTransaction === 'function' && session.inTransaction() ? session : null;
+    const activeSession = isTransactionActive ? session : null;
 
     try {
       walletEventEmitter.emit(WALLET_CREDIT_STARTED, { userId, orgId, amount: numericAmount });

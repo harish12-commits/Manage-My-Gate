@@ -148,7 +148,10 @@ class PaymentController {
       const status = await paymentService.isGatewayConfigured(orgId);
       res.status(200).json({
         success: true,
-        data: status
+        data: {
+          isConfigured: Boolean(status),
+          provider: 'razorpay'
+        }
       });
     } catch (error) {
       next(error);

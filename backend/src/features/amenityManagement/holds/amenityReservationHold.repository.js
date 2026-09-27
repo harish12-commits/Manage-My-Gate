@@ -16,26 +16,40 @@ export class AmenityReservationHoldRepository {
   }
 
   /**
-   * Finds hold by ID.
+   * Finds hold by ID with optional orgId tenant filter.
    * @param {string|mongoose.Types.ObjectId} holdId
+   * @param {string|mongoose.Types.ObjectId} [orgId]
    * @param {mongoose.ClientSession} [session]
    */
-  async findById(holdId, session) {
-    return AmenityReservationHold.findById(holdId).session(getValidSession(session));
+  async findById(holdId, orgId = null, session = null) {
+    const filter = { _id: holdId };
+    if (orgId && typeof orgId !== 'function' && !orgId.inTransaction) {
+      const targetOrgId = mongoose.Types.ObjectId.isValid(orgId) ? new mongoose.Types.ObjectId(orgId) : orgId;
+      filter.$or = [{ orgId: targetOrgId }, { orgId: String(orgId) }];
+    }
+    const actualSession = (orgId && (orgId.inTransaction || typeof orgId === 'object')) ? orgId : session;
+    return AmenityReservationHold.findOne(filter).session(getValidSession(actualSession));
   }
 
   /**
    * Finds an ACTIVE, non-expired hold by ID.
    * Explicitly checks expiresAt > now (does not rely on TTL delay).
    * @param {string|mongoose.Types.ObjectId} holdId
+   * @param {string|mongoose.Types.ObjectId} [orgId]
    * @param {mongoose.ClientSession} [session]
    */
-  async findActiveById(holdId, session) {
-    return AmenityReservationHold.findOne({
+  async findActiveById(holdId, orgId = null, session = null) {
+    const filter = {
       _id: holdId,
       status: 'ACTIVE',
       expiresAt: { $gt: new Date() },
-    }).session(getValidSession(session));
+    };
+    if (orgId && typeof orgId !== 'function' && !orgId.inTransaction) {
+      const targetOrgId = mongoose.Types.ObjectId.isValid(orgId) ? new mongoose.Types.ObjectId(orgId) : orgId;
+      filter.$or = [{ orgId: targetOrgId }, { orgId: String(orgId) }];
+    }
+    const actualSession = (orgId && (orgId.inTransaction || typeof orgId === 'object')) ? orgId : session;
+    return AmenityReservationHold.findOne(filter).session(getValidSession(actualSession));
   }
 
   /**

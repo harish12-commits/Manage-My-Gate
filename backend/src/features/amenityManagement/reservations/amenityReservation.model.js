@@ -226,6 +226,16 @@ const amenityReservationSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    refundAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Refund amount cannot be negative'],
+    },
+    refundMethod: {
+      type: String,
+      enum: ['WALLET', 'RAZORPAY', null],
+      default: null,
+    },
     depositAmount: {
       type: Number,
       default: 0,

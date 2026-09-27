@@ -114,8 +114,12 @@ export class AmenityFacilityRepository {
    * @param {number} [params.limit=10]
    */
   async findWithPagination({ orgId, archetype, isActive, status, isDraft, search, page = 1, limit = 10 }) {
+    const targetOrgId = mongoose.Types.ObjectId.isValid(orgId) ? new mongoose.Types.ObjectId(orgId) : orgId;
     const match = {
-      orgId: new mongoose.Types.ObjectId(orgId),
+      $or: [
+        { orgId: targetOrgId },
+        { orgId: String(orgId) }
+      ],
       isDeleted: false,
     };
 

@@ -165,6 +165,7 @@ export function AmenityBookingWizard({ facility, onClose }: AmenityBookingWizard
             paymentMethod={wizard.paymentMethod}
             onPaymentMethodChange={wizard.setPaymentMethod}
             balance={wizard.balance}
+            isRazorpayConfigured={wizard.isRazorpayConfigured}
             onOpenTopUp={() => wizard.setIsTopUpOpen(true)}
             onLaunchRazorpay={wizard.handleLaunchRazorpay}
             onConfirmReservation={wizard.handleConfirmReservation}

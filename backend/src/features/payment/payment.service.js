@@ -73,6 +73,22 @@ export class PaymentService {
         paymentMethod: CANONICAL_PAYMENT_METHODS.ONLINE,
         idempotencyKey,
       });
+    } else if (referenceType === 'AmenityReservationHold') {
+      const AmenityReservationHold = (await import('../amenityManagement/holds/amenityReservationHold.model.js')).default;
+      const holdQuery = AmenityReservationHold.findById(referenceId);
+      if (session) holdQuery.session(session);
+      const hold = await holdQuery;
+      if (!hold) {
+        throw new HttpError(404, 'Referenced reservation hold not found.');
+      }
+      const PaymentContextFactory = (await import('./paymentContext.factory.js')).default;
+      paymentContext = PaymentContextFactory.fromAmenityReservationHold(hold, {
+        amount: Number(amount),
+        userId,
+        orgId,
+        paymentMethod: CANONICAL_PAYMENT_METHODS.ONLINE,
+        idempotencyKey,
+      });
     } else if (referenceType === 'AmenityBooking' || referenceType === 'Amenity') {
       const AmenityBooking = (await import('../amenityBooking/amenityBooking.model.js')).default;
       const bookingQuery = AmenityBooking.findById(referenceId);

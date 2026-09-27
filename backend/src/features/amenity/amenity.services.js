@@ -614,7 +614,7 @@ export class AmenityService {
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       multiplier = amenity.pricing?.weekendRateMultiplier || 1.0;
     }
-    const baseRate = amenity.pricing?.baseRate || amenity.ratePerHour || 0;
+    const baseRate = amenity.pricingConfig?.baseRate || amenity.pricing?.baseRate || amenity.ratePerHour || 0;
     const durationHours = durationMins / 60;
     const price = baseRate * durationHours * multiplier;
 
@@ -759,7 +759,7 @@ export class AmenityService {
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       multiplier = amenity.pricing?.weekendRateMultiplier || 1.0;
     }
-    const baseRate = amenity.pricing?.baseRate || amenity.ratePerHour || 0;
+    const baseRate = amenity.pricingConfig?.baseRate || amenity.pricing?.baseRate || amenity.ratePerHour || 0;
     const durationHours = durationMins / 60;
     const price = baseRate * durationHours * multiplier;
 

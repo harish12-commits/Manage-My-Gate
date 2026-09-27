@@ -382,6 +382,51 @@ export class AmenityBookingService {
 
       const booking = await amenityBookingRepository.create(newBookingData, sessionOpt);
 
+      // Sync to AmenityReservation (amenity_management_reservations) for dual-collection consistency
+      try {
+        const AmenityReservation = (await import('../amenityManagement/reservations/amenityReservation.model.js')).default;
+        const resvDoc = {
+          _id: booking._id,
+          orgId: booking.orgId,
+          facilityId: booking.amenityId,
+          resourceId: booking.resourceId || null,
+          residentId: booking.userId,
+          unitId: booking.unitId || booking.userId,
+          reservationNumber: booking.bookingId || String(booking._id),
+          requestedStartDateTime: bookingDateTimeStart,
+          requestedEndDateTime: bookingDateTimeEnd,
+          effectiveStartDateTime: bookingDateTimeStart,
+          effectiveEndDateTime: bookingDateTimeEnd,
+          headcount: booking.numberOfPersons || 1,
+          quantity: 1,
+          bookingStatus: (booking.status || 'CONFIRMED').toUpperCase(),
+          paymentStatus: (booking.paymentStatus === 'success' || booking.paymentStatus === 'PAID') ? 'PAID' : (booking.paymentStatus || 'PENDING').toUpperCase(),
+          approvalStatus: 'NOT_REQUIRED',
+          accessStatus: 'PASS_GENERATED',
+          completionStatus: 'PENDING',
+          pricingSnapshot: {
+            baseAmount: pricingDetails?.baseAmount !== undefined ? pricingDetails.baseAmount : (booking.totalPrice || 0),
+            taxAmount: pricingDetails?.taxAmount || 0,
+            depositAmount: pricingDetails?.securityDeposit || deposit || 0,
+            totalAmount: booking.totalPrice || 0,
+            currency: 'INR'
+          },
+          totalAmount: booking.totalPrice || 0,
+          paidAmount: booking.totalPrice || 0,
+          paymentMethod: (booking.paymentMethod || 'NONE').toUpperCase(),
+          createdAt: booking.createdAt || new Date(),
+          updatedAt: booking.updatedAt || new Date()
+        };
+
+        await AmenityReservation.updateOne(
+          { _id: booking._id },
+          { $set: resvDoc },
+          { upsert: true, session: sessionOpt }
+        );
+      } catch (syncErr) {
+        logger.warn('Failed syncing to AmenityReservation in createBooking:', syncErr);
+      }
+
       let updatedWallet = null;
       let walletTxn = null;
       let paymentDoc = null;
@@ -608,21 +653,41 @@ export class AmenityBookingService {
   }
 
   _calculatePricing(amenity, startDateTime, endDateTime, numberOfPersons = 1) {
-    const isDaily = amenity.pricing?.pricingType === 'daily';
-    const durationMultiplier = isDaily ? 1 : ((endDateTime - startDateTime) / (1000 * 60 * 60));
-    const baseRate = amenity.pricing?.baseRate || amenity.ratePerHour || 0;
+    if (!amenity) {
+      return { baseAmount: 0, taxAmount: 0, discountAmount: 0, securityDeposit: 0, totalAmount: 0, refundAmount: 0, cancellationCharge: 0 };
+    }
+
+    const pConfig = amenity.pricingConfig || amenity.pricing || {};
+    const pricingType = (pConfig.pricingType || (amenity.pricing?.pricingType === 'daily' ? 'DAILY' : 'HOURLY')).toUpperCase();
+    const isDaily = pricingType === 'DAILY' || pricingType === 'DAILY_PRICING';
+    const durationHours = Math.max(1 / 60, (endDateTime - startDateTime) / (1000 * 60 * 60));
+    const durationDays = Math.max(1, Math.ceil(durationHours / 24));
+
+    const baseRate = Number(pConfig.baseRate !== undefined ? pConfig.baseRate : amenity.ratePerHour) || 0;
     
     const dayOfWeek = startDateTime.getDay();
     let multiplier = 1.0;
     if (dayOfWeek === 0 || dayOfWeek === 6) {
-      multiplier = amenity.pricing?.weekendRateMultiplier || 1.0;
+      multiplier = Number(pConfig.weekendRateMultiplier) || 1.0;
     }
     
-    const personMultiplier = isDaily ? 1 : (numberOfPersons || 1);
-    const baseAmount = baseRate * durationMultiplier * multiplier * personMultiplier;
-    const taxAmount = baseAmount * ((amenity.pricing?.taxPercentage || 0) / 100);
-    const securityDeposit = amenity.pricing?.securityDeposit || 0;
-    const totalAmount = baseAmount + taxAmount + securityDeposit;
+    const personMultiplier = isDaily ? 1 : (Number(numberOfPersons) || 1);
+    let baseAmount = 0;
+    if (pricingType === 'FREE') {
+      baseAmount = 0;
+    } else if (pricingType === 'DAILY') {
+      baseAmount = Math.round(durationDays * baseRate * multiplier * 100) / 100;
+    } else if (pricingType === 'FIXED_EVENT') {
+      baseAmount = Math.round(baseRate * multiplier * 100) / 100;
+    } else {
+      // HOURLY / default
+      baseAmount = Math.round(durationHours * baseRate * multiplier * personMultiplier * 100) / 100;
+    }
+
+    const taxPercentage = Number(pConfig.taxPercentage) || 0;
+    const taxAmount = Math.round(((baseAmount * taxPercentage) / 100) * 100) / 100;
+    const securityDeposit = pricingType === 'FREE' ? 0 : (Number(pConfig.securityDeposit) || 0);
+    const totalAmount = pricingType === 'FREE' ? 0 : Math.round((baseAmount + taxAmount + securityDeposit) * 100) / 100;
 
     return {
       baseAmount,
@@ -793,8 +858,58 @@ export class AmenityBookingService {
       const amenityService = (await import('../amenity/amenity.services.js')).default;
       const amenity = await amenityService.getAmenityById(booking.amenityId, orgId);
       
+      let rawBookingAmount = Number(
+        booking.pricingDetails?.totalAmount !== undefined
+          ? booking.pricingDetails.totalAmount
+          : booking.pricingDetails?.baseAmount !== undefined
+          ? booking.pricingDetails.baseAmount
+          : booking.totalPrice !== undefined
+          ? booking.totalPrice
+          : booking.amount
+      ) || 0;
+
+      const isPaidStatus = ['success', 'paid', 'captured', 'completed'].includes(String(booking.paymentStatus || '').toLowerCase());
+
+      if (rawBookingAmount <= 0 && isPaidStatus) {
+        try {
+          const Payment = (await import('../payment/payment.model.js')).default;
+          let paymentDoc = null;
+          if (booking.paymentId) {
+            paymentDoc = await Payment.findById(booking.paymentId);
+          }
+          if (!paymentDoc) {
+            paymentDoc = await Payment.findOne({
+              domain: 'AMENITY',
+              referenceId: booking._id,
+              status: 'success',
+            });
+          }
+          if (paymentDoc && Number(paymentDoc.amount) > 0) {
+            rawBookingAmount = Number(paymentDoc.amount);
+          }
+        } catch (pErr) {
+          logger.warn('Failed finding Payment record during cancelBooking:', pErr);
+        }
+
+        if (rawBookingAmount <= 0 && amenity) {
+          try {
+            const moment = (await import('moment-timezone')).default;
+            const TIMEZONE = 'Asia/Kolkata';
+            const bStart = moment.tz(`${booking.bookingDate}T${booking.startTime}`, 'YYYY-MM-DDTHH:mm', TIMEZONE).toDate();
+            let bEnd = moment.tz(`${booking.bookingDate}T${booking.endTime}`, 'YYYY-MM-DDTHH:mm', TIMEZONE).toDate();
+            if (bEnd < bStart) bEnd = moment(bEnd).add(1, 'days').toDate();
+            const calcPricing = this._calculatePricing(amenity, bStart, bEnd, booking.numberOfPersons || 1);
+            if (calcPricing.totalAmount > 0) {
+              rawBookingAmount = calcPricing.totalAmount;
+            }
+          } catch (cErr) {
+            logger.warn('Failed recalculating pricing snapshot during cancelBooking:', cErr);
+          }
+        }
+      }
+
       let refundPercentage = 100; // default to full refund if no rules
-      let refundAmount = booking.pricingDetails?.totalAmount || booking.totalPrice || 0;
+      let refundAmount = rawBookingAmount;
 
       // 2. Read cancellationRefundRules or administrative refund override
       const rawOverride = typeof options === 'number'
@@ -830,7 +945,7 @@ export class AmenityBookingService {
 
       // 3. Process Refund logic if payment was success
       let newPaymentStatus = booking.paymentStatus;
-      if (booking.paymentStatus === 'success') {
+      if (isPaidStatus) {
         const isWallet = booking.paymentMethod && booking.paymentMethod.toUpperCase() === 'WALLET';
         const targetUserId = booking.userId?._id || booking.userId;
 
@@ -872,7 +987,7 @@ export class AmenityBookingService {
             newPaymentStatus = 'refund_pending';
           }
         }
-      } else if (booking.paymentStatus === 'pending') {
+      } else if (['pending', 'payment_due'].includes(String(booking.paymentStatus || '').toLowerCase())) {
          newPaymentStatus = 'failed';
          refundAmount = 0;
          refundPercentage = 0;
