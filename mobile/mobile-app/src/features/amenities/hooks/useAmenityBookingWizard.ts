@@ -1090,7 +1090,6 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
       } catch (err: any) {
         setStepError(err?.message || 'Failed to create wallet recharge order.');
       }
-      }
     },
     [dispatch, facility?._id]
   );
