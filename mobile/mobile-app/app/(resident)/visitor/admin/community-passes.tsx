@@ -5,7 +5,6 @@ import { ScreenShell } from '@/components/ui/ScreenShell';
 import { Text } from '@/components/ui/text';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { PaginatedList } from '@/components/ui/PaginatedList';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { FAB } from '@/components/ui/FAB';
 import { VisitorPassCard } from '@/src/features/visitor/components/VisitorPassCard';
 import { VisitorPassDetailsModal } from '@/src/features/visitor/components/VisitorPassDetailsModal';
@@ -26,9 +25,7 @@ export default function AdminCommunityPassesScreen() {
     communityPasses,
     pagination,
     status,
-    actionStatus,
     loadCommunityPasses,
-    forceRevoke,
   } = useAdminVisitor();
 
   const {
@@ -47,7 +44,6 @@ export default function AdminCommunityPassesScreen() {
   const [typeSheetOpen, setTypeSheetOpen] = useState(false);
   const [selectedPass, setSelectedPass] = useState<VisitorPass | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-  const [revokeModalOpen, setRevokeModalOpen] = useState(false);
 
   const fetchPassesList = useCallback(
     (page = 1, append = false) => {
@@ -79,15 +75,6 @@ export default function AdminCommunityPassesScreen() {
       fetchPassesList(pagination.currentPage + 1, true);
     }
   }, [pagination, fetchPassesList]);
-
-  const handleConfirmForceRevoke = async () => {
-    if (selectedPass) {
-      await forceRevoke(selectedPass._id, 'Admin Force Revocation');
-      setRevokeModalOpen(false);
-      setSelectedPass(null);
-      fetchPassesList(1);
-    }
-  };
 
   const pendingWalkInCount = walkIns?.pendingList?.length || 0;
 
@@ -293,22 +280,8 @@ export default function AdminCommunityPassesScreen() {
           visible={detailsModalOpen}
           pass={selectedPass}
           onClose={() => setDetailsModalOpen(false)}
-          onRevokePress={(p) => {
-            setSelectedPass(p);
-            setRevokeModalOpen(true);
-          }}
-        />
-
-        {/* Force Revoke Confirmation Modal */}
-        <ConfirmationModal
-          visible={revokeModalOpen}
-          title="Force Revoke Pass?"
-          message={`Are you sure you want to revoke pass for ${selectedPass?.visitorName}?`}
-          variant="danger"
-          confirmLabel="Force Revoke"
-          onConfirm={handleConfirmForceRevoke}
-          onCancel={() => setRevokeModalOpen(false)}
-          loading={actionStatus === 'loading'}
+          revokeReason="Revoked by community admin"
+          onRevokePress={() => fetchPassesList(1)}
         />
       </View>
     </ScreenShell>

@@ -33,7 +33,8 @@ export const visitorAdminService = {
 
   // 7. Community Visitor Blacklist Management
   getBlacklist: async (orgId: string) => {
-    return await apiClient.get(`/blacklist/org/${orgId}`);
+    // The endpoint pages at 10 by default; the admin registry and its count need every entry.
+    return await apiClient.get(`/blacklist/org/${orgId}`, { params: { page: 1, limit: 500 } });
   },
 
   addToBlacklist: async (payload: {

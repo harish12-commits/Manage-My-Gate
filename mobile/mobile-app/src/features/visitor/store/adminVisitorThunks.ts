@@ -2,6 +2,8 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import visitorAdminService from '../services/visitorAdminService';
 import apiClient from '../../../services/apiClient';
 import { mapBackendWalkInToApprovalItem } from '../utils/mapBackendWalkInToApprovalItem';
+import { toListPass } from '../utils/mapBackendPassToHistoryItem';
+import { computeGateAnalytics, HourlyArrivalPoint, WeeklyDensityCell } from '../utils/computeGateAnalytics';
 
 export interface BlacklistVisitorItem {
   _id: string;
@@ -20,6 +22,8 @@ export interface VisitorAnalyticsData {
   totalBlacklistedCount: number;
   peakHour: string;
   categoryDistribution: Array<{ category: string; count: number }>;
+  hourlyArrivals: HourlyArrivalPoint[];
+  weeklyDensity: WeeklyDensityCell[];
 }
 
 export const fetchCommunityPasses = createAsyncThunk(
@@ -38,7 +42,7 @@ export const fetchCommunityPasses = createAsyncThunk(
       const totalRecords = typeof innerData?.totalRecords === 'number' ? innerData.totalRecords : dataArray.length;
 
       return {
-        data: dataArray,
+        data: dataArray.map(toListPass),
         totalRecords,
         page,
         limit,
@@ -58,30 +62,27 @@ export const fetchAdminAnalytics = createAsyncThunk(
         visitorAdminService.getGateAnalytics(orgId),
         visitorAdminService.getAllPendingWalkIns(orgId),
         visitorAdminService.getBlacklist(orgId),
-        apiClient.get(`/visitor-log/org/${orgId}?limit=1`),
+        // Recent logs (newest first) are the source for today's entries, hourly traffic and the weekly heatmap.
+        apiClient.get(`/visitor-log/org/${orgId}`, { params: { skip: 0, limit: 500 } }),
       ]);
 
-      const insideData = insideRes.status === 'fulfilled' ? (insideRes.value?.data?.data || insideRes.value?.data || []) : [];
-      const pendingData = pendingRes.status === 'fulfilled' ? (pendingRes.value?.data?.data || pendingRes.value?.data || []) : [];
-      const blacklistData = blacklistRes.status === 'fulfilled' ? (blacklistRes.value?.data?.data || blacklistRes.value?.data || []) : [];
-      const historyData = historyRes.status === 'fulfilled' ? (historyRes.value?.data?.data || historyRes.value?.data || {}) : {};
+      const unwrap = (res: PromiseSettledResult<any>, fallback: any) =>
+        res.status === 'fulfilled' ? (res.value?.data?.data ?? res.value?.data ?? fallback) : fallback;
+      const insideData = unwrap(insideRes, []);
+      const pendingData = unwrap(pendingRes, []);
+      const blacklistData = unwrap(blacklistRes, {});
+      const historyData = unwrap(historyRes, {});
 
-      const activeInsideCount = Array.isArray(insideData) ? insideData.length : 0;
-      const pendingApprovalsCount = Array.isArray(pendingData) ? pendingData.length : 0;
-      const totalBlacklistedCount = Array.isArray(blacklistData) ? blacklistData.length : 0;
-      const totalEntriesToday = typeof historyData?.totalRecords === 'number'
-        ? historyData.totalRecords
-        : (Array.isArray(historyData) ? historyData.length : 0);
+      const blacklistRows = Array.isArray(blacklistData) ? blacklistData : blacklistData?.data || [];
+      const historyRows = Array.isArray(historyData) ? historyData : historyData?.data || [];
 
       const analyticsData: VisitorAnalyticsData = {
-        totalEntriesToday,
-        activeInsideCount,
-        pendingApprovalsCount,
-        totalBlacklistedCount,
-        peakHour: '10:00 AM',
-        categoryDistribution: [],
+        activeInsideCount: Array.isArray(insideData) ? insideData.length : 0,
+        pendingApprovalsCount: Array.isArray(pendingData) ? pendingData.length : 0,
+        totalBlacklistedCount:
+          typeof blacklistData?.totalRecords === 'number' ? blacklistData.totalRecords : blacklistRows.length,
+        ...computeGateAnalytics(historyRows),
       };
-
       return analyticsData;
     } catch (error: any) {
       return rejectWithValue(error?.response?.data?.message || error?.message || 'Failed to fetch gate analytics');

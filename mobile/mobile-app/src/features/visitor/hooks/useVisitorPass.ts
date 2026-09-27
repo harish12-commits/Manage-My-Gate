@@ -121,8 +121,8 @@ export const useVisitorPass = () => {
   );
 
   const revokePass = useCallback(
-    (id: string) => {
-      return dispatch(updatePassStatus({ id, status: 'REVOKED' }));
+    (id: string, reason?: string) => {
+      return dispatch(updatePassStatus({ id, status: 'REVOKED', reason }));
     },
     [dispatch]
   );

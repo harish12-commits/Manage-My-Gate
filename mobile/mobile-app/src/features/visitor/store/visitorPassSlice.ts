@@ -2,11 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import visitorService from '../services/visitorService';
 import { WalkInApprovalItem } from '../mocks/visitorMocks';
 import { mapBackendWalkInToApprovalItem } from '../utils/mapBackendWalkInToApprovalItem';
-import { mapBackendPassToHistoryItem } from '../utils/mapBackendPassToHistoryItem';
-
-// Backend passes are nested (visitorDetails.name, shortKey, validity.*); list UIs read the flat
-// display fields. Keep the raw fields too, since cards also read villaId and passType.
-const toListPass = (raw: any): VisitorPass => ({ ...mapBackendPassToHistoryItem(raw), ...raw });
+import { toListPass } from '../utils/mapBackendPassToHistoryItem';
 
 import {
   fetchCommunityPasses,
@@ -196,9 +192,9 @@ export const fetchPassByCode = createAsyncThunk(
 
 export const updatePassStatus = createAsyncThunk(
   'visitorPass/updatePassStatus',
-  async ({ id, status }: { id: string; status: string }, { rejectWithValue }) => {
+  async ({ id, status, reason }: { id: string; status: string; reason?: string }, { rejectWithValue }) => {
     try {
-      const response = await visitorService.updatePassStatus(id, status);
+      const response = await visitorService.updatePassStatus(id, status, reason);
       const body = response && (response as any).success !== undefined ? response : (response as any)?.data;
       if (body?.data || body?._id) {
         return (body?.data || body) as any;

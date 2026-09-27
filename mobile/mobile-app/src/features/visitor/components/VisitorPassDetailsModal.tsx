@@ -18,6 +18,8 @@ export interface VisitorPassDetailsModalProps {
   pass: VisitorPass | null;
   onClose: () => void;
   onRevokePress?: (pass: VisitorPass) => void;
+  /** Recorded with the revocation, e.g. when an admin revokes a resident's pass. */
+  revokeReason?: string;
 }
 
 const mapPassStatusVariant = (status: string): StatusVariant => {
@@ -40,6 +42,7 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
   pass,
   onClose,
   onRevokePress,
+  revokeReason,
 }) => {
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
@@ -86,7 +89,7 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
     const targetId = pass._id || (pass as any).id || pass.code || '';
     setRevokeError(null);
     try {
-      const result: any = await revokePass(targetId);
+      const result: any = await revokePass(targetId, revokeReason);
       // The thunk resolves with a rejected action instead of throwing; keep the sheet open and say why.
       if (result?.meta?.requestStatus === 'rejected') {
         setRevokeError(String(result.payload || 'Could not revoke this pass. Please try again.'));
