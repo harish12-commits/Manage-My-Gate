@@ -624,14 +624,14 @@ export default function LoginScreen() {
         <View className="absolute inset-0 bg-black/20 dark:bg-black/45" pointerEvents="none" />
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={undefined}
           style={{ flex: 1 }}
         >
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,
-              paddingTop: Math.max(insets.top, 24) + 16,
-              paddingBottom: Math.max(insets.bottom, 20) + 40,
+              paddingTop: Math.max(insets.top, 24) + 12,
+              paddingBottom: Math.max(insets.bottom, 20) + 24,
             }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
