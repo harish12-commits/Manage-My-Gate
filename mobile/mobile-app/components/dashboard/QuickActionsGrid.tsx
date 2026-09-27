@@ -62,7 +62,10 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({
     <View className="gap-5 my-3">
       {/* Section Header with Customise Button */}
       <View className="flex-row items-center justify-between px-1">
-        <Text className="text-[20px] font-bold font-sans text-foreground tracking-tight">
+        <Text
+          style={{ fontFamily: 'HankenGrotesk_700Bold' }}
+          className="text-[20px] font-bold text-foreground tracking-tight"
+        >
           {t('quick_actions', 'Quick Actions')}
         </Text>
 
@@ -78,7 +81,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({
           accessibilityLabel={t('customise', 'Customise')}
         >
           <SlidersHorizontal size={13} color={isDark ? '#93C5FD' : '#172B70'} strokeWidth={2.4} />
-          <Text className="text-[13px] font-bold font-sans text-[#172B70] dark:text-[#93C5FD]">{t('customise', 'Customise')}</Text>
+          <Text className="text-[13px] font-bold text-[#172B70] dark:text-[#93C5FD]">{t('customise', 'Customise')}</Text>
         </TouchableOpacity>
       </View>
 
