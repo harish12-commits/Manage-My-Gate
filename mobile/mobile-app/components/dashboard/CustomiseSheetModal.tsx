@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Modal, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { View, Modal, TouchableOpacity, Pressable, ScrollView, Dimensions } from 'react-native';
 import { Text } from '../ui/text';
 import Animated, {
   useSharedValue,
@@ -96,6 +96,11 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
     onClose();
   };
 
+  const handleClose = () => {
+    sheetTranslateY.value = 0;
+    onClose();
+  };
+
   // Pan gesture on modal header for pull-down to dismiss
   const headerPanGesture = useMemo(
     () =>
@@ -155,18 +160,20 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
               </GestureDetector>
 
               <View className="px-5 pt-2 pb-4 border-b border-border">
-                <TouchableOpacity
-                  onPress={onClose}
-                  className="absolute right-4 top-1 size-10 rounded-full items-center justify-center active:bg-secondary"
+                <Pressable
+                  onPress={handleClose}
+                  className="absolute right-4 top-2 size-10 rounded-full items-center justify-center active:bg-secondary"
+                  style={{ zIndex: 50, elevation: 50 }}
                   accessibilityRole="button"
                   accessibilityLabel={t('close', 'Close')}
+                  hitSlop={12}
                 >
                   <X size={26} className="text-foreground" strokeWidth={2.5} />
-                </TouchableOpacity>
-                <Text className="text-center text-[25px] font-extrabold text-foreground tracking-tight">
+                </Pressable>
+                <Text className="px-12 text-center text-[23px] leading-7 font-extrabold text-foreground tracking-tight">
                   {t('customise_quick_actions', 'Customise Quick Actions')}
                 </Text>
-                <Text className="mt-2 px-7 text-center text-base leading-6 text-muted-foreground">
+                <Text className="mt-2 px-10 text-center text-base leading-6 text-muted-foreground">
                   {t('quick_actions_reorder_hint', 'Press and hold to arrange your first 7 actions')}
                 </Text>
               </View>
