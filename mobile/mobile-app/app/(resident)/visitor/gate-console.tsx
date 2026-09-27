@@ -227,7 +227,10 @@ export default function GateConsoleScreen() {
         (passData.validUntil && new Date(passData.validUntil).getTime() < Date.now());
       const requiresServerDecision = !isCurrentlyInside && !isRevoked && !isExpired;
 
-      const status: 'VERIFIED' | 'REJECTED' | 'EXPIRED' | 'PENDING' | 'REVOKED' = isRevoked
+      // A visitor already inside is a verified pass awaiting check-out, not a refusal.
+      const status: 'VERIFIED' | 'REJECTED' | 'EXPIRED' | 'PENDING' | 'REVOKED' = isCurrentlyInside
+        ? 'VERIFIED'
+        : isRevoked
         ? 'REVOKED'
         : isExpired
         ? 'EXPIRED'
