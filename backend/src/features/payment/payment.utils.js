@@ -68,6 +68,10 @@ export async function validateAuthoritativeAmount(domain, referenceId, requested
     if (options.orgId && invoiceOrgId && invoiceOrgId !== String(options.orgId)) {
       throw new HttpError(403, 'Cross-tenant payment forbidden: invoice belongs to a different community.');
     }
+    const invoiceUserId = (invoice.residentId || invoice.userId || invoice.targetUserId)?.toString();
+    if (options.userId && invoiceUserId && invoiceUserId !== String(options.userId)) {
+      throw new HttpError(403, 'Forbidden. This invoice belongs to another resident.');
+    }
 
     if (invoice.status === 'PAID') {
       throw new HttpError(400, 'Invoice has already been fully settled.');
@@ -101,6 +105,10 @@ export async function validateAuthoritativeAmount(domain, referenceId, requested
     const bookingOrgId = (booking.orgId || booking.communityId)?.toString();
     if (options.orgId && bookingOrgId && bookingOrgId !== String(options.orgId)) {
       throw new HttpError(403, 'Cross-tenant payment forbidden: amenity booking belongs to a different community.');
+    }
+    const bookingUserId = booking.userId?.toString();
+    if (options.userId && bookingUserId && bookingUserId !== String(options.userId)) {
+      throw new HttpError(403, 'Forbidden. This amenity booking belongs to another resident.');
     }
 
     if (['cancelled', 'rejected'].includes(booking.status)) {

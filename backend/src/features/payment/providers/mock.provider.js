@@ -42,6 +42,19 @@ export class MockPaymentProvider extends PaymentProviderInterface {
     };
   }
 
+  async getPaymentStatus({ paymentId, orderId, amount, currency = 'INR' }) {
+    return {
+      paymentId,
+      orderId,
+      amount,
+      amountInPaisa: Number(amount || 0) * 100,
+      currency,
+      status: 'captured',
+      captured: true,
+      method: 'mock',
+    };
+  }
+
   /**
    * Process Mock Refund
    */

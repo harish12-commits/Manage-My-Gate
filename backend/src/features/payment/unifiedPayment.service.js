@@ -273,6 +273,14 @@ export class UnifiedPaymentService {
       };
     }
 
+    const storedOrderId = payment.gatewayOrderId || payment.gatewayTransactionId;
+    if (!effectiveOrderId || effectiveOrderId !== storedOrderId) {
+      throw new HttpError(400, 'Payment order does not match the server-created order.');
+    }
+    if (!effectivePaymentId || !effectiveSignature) {
+      throw new HttpError(400, 'Payment ID and signature are required for verification.');
+    }
+
     const effectiveOrgId = orgId || payment.orgId;
     const activeGateway = payment.gateway || 'mock';
 
@@ -294,7 +302,7 @@ export class UnifiedPaymentService {
     } else {
       verification = await provider.verifySignature(
         {
-          orderId: effectiveOrderId || payment.gatewayOrderId || payment.gatewayTransactionId,
+          orderId: storedOrderId,
           paymentId: effectivePaymentId,
           signature: effectiveSignature,
         },
@@ -304,24 +312,40 @@ export class UnifiedPaymentService {
 
     // 5. Handle Verification Failure
     if (!verification.isValid) {
-      payment.status = 'failed';
-      payment.errorReason = 'Invalid payment gateway signature';
-      await payment.save();
-
-      paymentEventEmitter.emit(PAYMENT_FAILED, payment);
       logger.warn('payment.verification.failed', { paymentId: payment._id, orderId });
-
       throw new HttpError(400, 'Invalid payment gateway signature.');
     }
 
     logger.info('payment.verification.success', { paymentId: payment._id, razorpayPaymentId });
 
+    const gatewayPayment = activeGateway === 'mock'
+      ? await provider.getPaymentStatus({ paymentId: effectivePaymentId, orderId: storedOrderId, amount: payment.amount, currency: payment.currency }, config)
+      : await provider.getPaymentStatus({ paymentId: effectivePaymentId }, config);
+    if (gatewayPayment.orderId !== storedOrderId) {
+      throw new HttpError(400, 'Gateway payment belongs to a different order.');
+    }
+    if (Math.abs(Number(gatewayPayment.amount) - Number(payment.amount)) > 0.01) {
+      throw new HttpError(409, 'Gateway payment amount does not match the expected amount.');
+    }
+    if (String(gatewayPayment.currency || '').toUpperCase() !== String(payment.currency || '').toUpperCase()) {
+      throw new HttpError(409, 'Gateway payment currency does not match the expected currency.');
+    }
+    if (!gatewayPayment.captured) {
+      if (gatewayPayment.status === 'failed') {
+        payment.status = 'failed';
+        payment.errorReason = gatewayPayment.rawPayment?.error_description || 'Payment failed on gateway';
+        await payment.save();
+        paymentEventEmitter.emit(PAYMENT_FAILED, payment);
+      }
+      throw new HttpError(409, `Payment is not captured. Current gateway status: ${gatewayPayment.status || 'unknown'}.`);
+    }
+
     // 6. Execute Atomic Transactional Domain Settlement
     const settlementResult = await paymentSettlementService.settlePayment({
       paymentId: payment._id,
-      gatewayTransactionId: razorpayPaymentId,
-      gatewayOrderId: orderId || payment.gatewayOrderId,
-      paymentMethod: 'RAZORPAY',
+      gatewayTransactionId: effectivePaymentId,
+      gatewayOrderId: storedOrderId,
+      paymentMethod: gatewayPayment.method || 'RAZORPAY',
     });
 
     return {

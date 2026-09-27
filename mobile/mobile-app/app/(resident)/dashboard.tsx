@@ -115,10 +115,6 @@ export default function DashboardScreen() {
       router.navigate('/(resident)/admin/billing/assessments' as any);
       return;
     }
-    if (tileId === 'amenities_action_center') {
-      router.navigate('/(resident)/amenities/dashboard' as any);
-      return;
-    }
     if (tileId === 'billing_my_invoices') {
       router.navigate('/(resident)/billing/my-dues' as any);
       return;

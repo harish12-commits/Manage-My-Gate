@@ -119,6 +119,29 @@ export class RazorpayProvider extends PaymentProviderInterface {
     }
   }
 
+  async getPaymentStatus({ paymentId }, credentials) {
+    if (!paymentId) throw new HttpError(400, 'paymentId is required to fetch payment status.');
+    const response = await fetch(`https://api.razorpay.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+      method: 'GET',
+      headers: { Authorization: this.#getAuthHeader(credentials) },
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new HttpError(response.status || 500, data.error?.description || 'Failed to fetch Razorpay payment');
+    }
+    return {
+      paymentId: data.id,
+      orderId: data.order_id,
+      amountInPaisa: data.amount,
+      amount: toRupees(data.amount),
+      currency: data.currency,
+      status: data.status,
+      captured: data.captured === true || data.status === 'captured',
+      method: data.method,
+      rawPayment: data,
+    };
+  }
+
   /**
    * Process Razorpay Refund
    */

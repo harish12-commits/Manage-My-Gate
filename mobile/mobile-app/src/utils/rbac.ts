@@ -379,7 +379,6 @@ export const isFeatureAllowedForUser = (
       'amenities_maintenance',
       'amenities_scanner',
       'amenities_security_logs',
-      'amenities_action_center',
       'complaints_dashboard',
       'complaints_complaint_management',
       'complaints_staff',

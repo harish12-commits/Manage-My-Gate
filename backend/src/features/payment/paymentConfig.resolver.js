@@ -77,6 +77,7 @@ export class PaymentConfigResolver {
           const creds = await integrationHubService.getDecryptedCredentials(orgId, activeProvider);
           const keyId = (creds?.keyId || creds?.key_id || '').trim();
           const keySecret = (creds?.keySecret || creds?.key_secret || '').trim();
+          const webhookSecret = (creds?.webhookSecret || creds?.webhook_secret || '').trim();
 
           if (keyId && keySecret && !isPlaceholder(keyId) && !isPlaceholder(keySecret)) {
             logger.debug('Resolved payment credentials from Tier 1 (Tenant IntegrationHub)', {
@@ -89,6 +90,7 @@ export class PaymentConfigResolver {
               provider: activeProvider,
               keyId,
               keySecret,
+              webhookSecret: webhookSecret || null,
               isConfigured: true,
               source: 'integrationHub',
             };
@@ -107,6 +109,7 @@ export class PaymentConfigResolver {
         if (orgPaymentConfig) {
           const keyId = (orgPaymentConfig.keyId || orgPaymentConfig.key_id || '').trim();
           const keySecret = (orgPaymentConfig.keySecret || orgPaymentConfig.key_secret || '').trim();
+          const webhookSecret = (orgPaymentConfig.webhookSecret || orgPaymentConfig.webhook_secret || '').trim();
 
           if (keyId && keySecret && !isPlaceholder(keyId) && !isPlaceholder(keySecret)) {
             logger.debug('Resolved payment credentials from Tier 2 (Organization Record)', {
@@ -119,6 +122,7 @@ export class PaymentConfigResolver {
               provider: activeProvider,
               keyId,
               keySecret,
+              webhookSecret: webhookSecret || null,
               isConfigured: true,
               source: 'organization',
             };
@@ -150,6 +154,7 @@ export class PaymentConfigResolver {
 
         const keyId = (decryptedCreds.keyId || decryptedCreds.key_id || '').trim();
         const keySecret = (decryptedCreds.keySecret || decryptedCreds.key_secret || '').trim();
+        const webhookSecret = (decryptedCreds.webhookSecret || decryptedCreds.webhook_secret || '').trim();
 
         if (keyId && keySecret && !isPlaceholder(keyId) && !isPlaceholder(keySecret)) {
           logger.debug('Resolved payment credentials from Tier 3 (Global IntegrationHub)', {
@@ -161,6 +166,7 @@ export class PaymentConfigResolver {
             provider: activeProvider,
             keyId,
             keySecret,
+            webhookSecret: webhookSecret || null,
             isConfigured: true,
             source: 'globalIntegrationHub',
           };
@@ -194,6 +200,7 @@ export class PaymentConfigResolver {
         ? process.env.RAZORPAY_KEY_SECRET
         : process.env[`${activeProvider.toUpperCase()}_KEY_SECRET`]
     )?.trim();
+    const envWebhookSecret = activeProvider === 'razorpay' ? process.env.RAZORPAY_WEBHOOK_SECRET?.trim() : null;
 
     if (envKeyId && envKeySecret && !isPlaceholder(envKeyId) && !isPlaceholder(envKeySecret)) {
       logger.debug('Resolved payment credentials from Tier 4 (Environment Variables)', {
@@ -205,6 +212,7 @@ export class PaymentConfigResolver {
         provider: activeProvider,
         keyId: envKeyId,
         keySecret: envKeySecret,
+        webhookSecret: envWebhookSecret || null,
         isConfigured: true,
         source: 'env',
       };
