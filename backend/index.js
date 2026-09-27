@@ -19,6 +19,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Trust reverse proxy (Nginx / Docker ingress) to properly identify real client IPs from X-Forwarded-For
+app.set('trust proxy', 1);
+
 // Disable ETag generation to prevent 304 Not Modified empty-body responses on dynamic API endpoints
 app.set('etag', false);
 
