@@ -4,18 +4,20 @@ import { useSelector } from 'react-redux';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { VisitorPassWizard } from '@/src/features/visitor/components/wizard/VisitorPassWizard';
 import { useVisitorPass } from '@/src/features/visitor/hooks/useVisitorPass';
-import { selectActiveOrgId, selectAuthUser } from '@/src/features/auth/store/authSelectors';
+import { selectActiveOrgId, selectActiveVillaId, selectAuthUser } from '@/src/features/auth/store/authSelectors';
 
 export default function DeliveryPassScreen() {
   const router = useRouter();
   const authUser = useSelector(selectAuthUser);
   const activeOrgId = useSelector(selectActiveOrgId);
+  const activeVillaId = useSelector(selectActiveVillaId);
   const { createNewPass } = useVisitorPass();
 
   const roleContext = {
     role: 'RESIDENT' as const,
     orgId: activeOrgId,
     createdById: authUser?.id || authUser?._id,
+    villaId: activeVillaId || undefined,
   };
 
   return (

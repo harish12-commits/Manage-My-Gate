@@ -12,6 +12,7 @@
     "clean": "rm -rf .expo node_modules",
     "test": "jest",
     "test:coverage": "jest --coverage",
+    "test:e2e:visitor": "jest -c e2e/jest.e2e.config.js --runInBand --forceExit",
     "postinstall": "node scripts/patch-css-interop.js",
     "build:aab": "eas build --platform android --profile production",
     "build:android": "eas build --platform android --profile production",
@@ -113,6 +114,10 @@
     ],
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|lucide-react-native|@testing-library/.*|@rn-primitives/.*|immer|react-redux|@reduxjs/toolkit)"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "<rootDir>/e2e/"
     ]
   }
 }

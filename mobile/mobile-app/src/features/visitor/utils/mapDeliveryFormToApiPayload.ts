@@ -1,6 +1,7 @@
 import { DeliveryDetailsData } from '../components/delivery/DeliveryDetailsStep';
 import { DeliveryValidityData } from '../components/delivery/DeliveryValidityStep';
 import { UserAuthContext } from './mapGuestFormToApiPayload';
+import { toLocalDateKey } from './localDate';
 
 export interface ApiDeliveryVisitorPassPayload {
   orgId?: string;
@@ -100,7 +101,7 @@ export const mapDeliveryFormToApiPayload = (
     } else if (validity.validityDuration === 'CUSTOM') {
       const visitDateStr = validity.customVisitDate && validity.customVisitDate.trim()
         ? validity.customVisitDate.trim()
-        : now.toISOString().split('T')[0];
+        : toLocalDateKey(now);
       const start24 = convertTo24Hr(validity.customStartTime || '02:00 PM');
       const end24 = convertTo24Hr(validity.customEndTime || '06:00 PM');
 

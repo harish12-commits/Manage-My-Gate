@@ -47,3 +47,5 @@ yarn-error.*
 
 expo-env.d.ts
 # @end expo-cli
+# Visitor E2E harness artifacts
+e2e/.cache/

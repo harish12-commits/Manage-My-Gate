@@ -4,6 +4,7 @@ import { Text } from '@/components/ui/text';
 import { TextInput } from '@/components/forms/TextInput';
 import { Clock, Zap, Plus, Trash2, Calendar } from 'lucide-react-native';
 import { MOCK_WEEKDAYS } from '../../mocks/visitorMocks';
+import { toLocalDateKey } from '../../utils/localDate';
 
 export interface TimeSlotWindow {
   startTime: string; // e.g. "07:30 AM" or "07:30"
@@ -178,9 +179,9 @@ export const CabScheduleStep: React.FC<CabScheduleStepProps> = ({
             <View className="bg-card border border-border rounded-2xl p-4 gap-3">
               <TextInput
                 label="Visit Date (YYYY-MM-DD)"
-                placeholder={new Date().toISOString().split('T')[0]}
+                placeholder={toLocalDateKey()}
                 leftIcon={Calendar}
-                value={data.customVisitDate || new Date().toISOString().split('T')[0]}
+                value={data.customVisitDate || toLocalDateKey()}
                 onChangeText={(val) => onChange({ ...data, customVisitDate: val })}
               />
               <View className="flex-row items-center gap-3">

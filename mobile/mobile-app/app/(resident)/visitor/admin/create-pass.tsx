@@ -6,6 +6,7 @@ import { ScreenShell } from '@/components/ui/ScreenShell';
 import { Text } from '@/components/ui/text';
 import { VisitorPassWizard } from '@/src/features/visitor/components/wizard/VisitorPassWizard';
 import { AdminVillaFilterSheet } from '@/src/features/visitor/components/admin/AdminVillaFilterSheet';
+import { AdminPassSetupData } from '@/src/features/visitor/components/admin/AdminPassSetupStep';
 import { useAdminVisitor } from '@/src/features/visitor/hooks/useAdminVisitor';
 import { selectActiveOrgId, selectAuthUser } from '@/src/features/auth/store/authSelectors';
 import { PassTypeKey } from '@/src/features/visitor/mocks/visitorMocks';
@@ -18,8 +19,10 @@ export default function AdminCreatePassScreen() {
   const activeOrgId = useSelector(selectActiveOrgId);
   const { createAdminPass } = useAdminVisitor();
 
-  const [targetVillaId, setTargetVillaId] = useState<string | undefined>(undefined);
-  const [targetVillaName, setTargetVillaName] = useState<string>('Community Common Area');
+  // Single target shared by the header picker and the wizard's scope step, so what the
+  // header shows is always what the created pass targets.
+  const [adminScope, setAdminScope] = useState<AdminPassSetupData>({ scope: 'COMMUNITY' });
+  const targetVillaName = adminScope.scope === 'VILLA' && adminScope.villaName ? adminScope.villaName : 'Community Common Area';
   const [villaSheetOpen, setVillaSheetOpen] = useState(false);
 
   const initialType: PassTypeKey =
@@ -31,7 +34,7 @@ export default function AdminCreatePassScreen() {
     role: 'ADMIN' as const,
     orgId: activeOrgId,
     createdById: authUser?.id || authUser?._id,
-    villaId: targetVillaId,
+    villaId: adminScope.villaId,
   };
 
   return (
@@ -48,6 +51,8 @@ export default function AdminCreatePassScreen() {
             return await createAdminPass(payload);
           }}
           onClose={() => router.back()}
+          adminScope={adminScope}
+          onAdminScopeChange={setAdminScope}
           renderExtraStepHeader={() => (
             <View className="px-4 py-2.5 bg-muted/40 border-b border-border flex-row items-center justify-between">
               <View className="flex-row items-center gap-2">
@@ -71,11 +76,14 @@ export default function AdminCreatePassScreen() {
 
         <AdminVillaFilterSheet
           visible={villaSheetOpen}
-          selectedVillaId={targetVillaId}
+          selectedVillaId={adminScope.villaId}
           onClose={() => setVillaSheetOpen(false)}
-          onSelectVilla={(vId, vName) => {
-            setTargetVillaId(vId);
-            setTargetVillaName(vName || 'Community Common Area');
+          onSelectVilla={(villaId, villaName, residentId, residentName) => {
+            setAdminScope(
+              villaId
+                ? { scope: 'VILLA', villaId, villaName, residentId, residentName }
+                : { scope: 'COMMUNITY' }
+            );
           }}
         />
       </View>

@@ -39,6 +39,7 @@ import { ServiceDateRangeStep, ServiceDateRangeData } from '../service/ServiceDa
 import { ServiceWeekdayStep } from '../service/ServiceWeekdayStep';
 import { ServiceTimeWindowStep, ServiceTimeWindowData } from '../service/ServiceTimeWindowStep';
 import { ServicePassReviewStep } from '../service/ServicePassReviewStep';
+import { toLocalDateKey } from '../../utils/localDate';
 
 const STEP_DEFINITIONS: Record<PassTypeKey, { key: string; title: string }[]> = {
   GUEST: [
@@ -75,12 +76,19 @@ const STEP_DEFINITIONS: Record<PassTypeKey, { key: string; title: string }[]> = 
   ],
 };
 
+// Mirrors the backend rule for visitorDetails.phone: optional, but exactly 10 digits when given.
+const INVALID_PHONE_MESSAGE = 'Please enter a valid 10-digit phone number.';
+const isValidOptionalPhone = (phone?: string) => !phone?.trim() || /^\d{10}$/.test(phone.trim());
+
 interface VisitorPassWizardProps {
   initialType?: PassTypeKey;
   roleContext: PassPayloadContext;
   onSubmitPass: (payload: any) => Promise<any>;
   onClose: () => void;
   renderExtraStepHeader?: () => React.ReactNode;
+  /** Admin pass target, when the screen shows it outside the wizard (controlled). */
+  adminScope?: AdminPassSetupData;
+  onAdminScopeChange?: (scope: AdminPassSetupData) => void;
 }
 
 export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
@@ -89,6 +97,8 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
   onSubmitPass,
   onClose,
   renderExtraStepHeader,
+  adminScope: controlledAdminScope,
+  onAdminScopeChange,
 }) => {
   const [selectedPassType, setSelectedPassType] = useState<PassTypeKey>(initialType);
   const [typeSheetOpen, setTypeSheetOpen] = useState(false);
@@ -109,13 +119,15 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
   const baseStepIndex = isAdmin ? currentStepIndex - 1 : currentStepIndex;
 
   // Form states
-  const [adminScope, setAdminScope] = useState<AdminPassSetupData>({
+  const [internalAdminScope, setInternalAdminScope] = useState<AdminPassSetupData>({
     scope: 'COMMUNITY',
     villaId: roleContext.villaId,
   });
+  const adminScope = controlledAdminScope ?? internalAdminScope;
+  const setAdminScope = onAdminScopeChange ?? setInternalAdminScope;
   const [guestDetails, setGuestDetails] = useState<GuestDetailsData>({ visitorName: '', phone: '', purpose: '' });
   const [guestSchedule, setGuestSchedule] = useState<GuestScheduleData>({
-    visitDate: new Date().toISOString().split('T')[0],
+    visitDate: toLocalDateKey(),
     timeSlot: 'NOW',
     customStartTime: '02:00 PM',
     customEndTime: '06:00 PM',
@@ -125,7 +137,7 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
   const [groupDetails, setGroupDetails] = useState<GroupVisitDetailsData>({
     eventTitle: '',
     purpose: '',
-    visitDate: new Date().toISOString().split('T')[0],
+    visitDate: toLocalDateKey(),
     timePreset: 'FULL_DAY',
     startTime: '07:00 AM',
     endTime: '11:59 PM',
@@ -139,7 +151,7 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
   const [cabSchedule, setCabSchedule] = useState<CabScheduleData>({
     usageType: 'ONE_TIME',
     arrivalWindow: 'IMMEDIATE',
-    customVisitDate: new Date().toISOString().split('T')[0],
+    customVisitDate: toLocalDateKey(),
     customStartTime: '02:00 PM',
     customEndTime: '06:00 PM',
     selectedWeekdays: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
@@ -152,7 +164,7 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
   const [deliveryValidity, setDeliveryValidity] = useState<DeliveryValidityData>({
     usageType: 'ONE_TIME',
     validityDuration: 'ONE_HOUR',
-    customVisitDate: new Date().toISOString().split('T')[0],
+    customVisitDate: toLocalDateKey(),
     customStartTime: '02:00 PM',
     customEndTime: '06:00 PM',
   });
@@ -160,8 +172,8 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
   const [staffDetails, setStaffDetails] = useState<StaffDetailsData>({ staffName: '', phone: '', notes: '' });
   const [serviceCategory, setServiceCategory] = useState<string>('cleaning');
   const [serviceDateRange, setServiceDateRange] = useState<ServiceDateRangeData>({
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+    startDate: toLocalDateKey(),
+    endDate: toLocalDateKey(new Date(Date.now() + 30 * 86400000)),
   });
   const [serviceWeekdays, setServiceWeekdays] = useState<string[]>(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']);
   const [serviceTimeWindow, setServiceTimeWindow] = useState<ServiceTimeWindowData>({
@@ -190,6 +202,10 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
           setSubmitError('Please enter the guest name.');
           return;
         }
+        if (!isValidOptionalPhone(guestDetails.phone)) {
+          setSubmitError(INVALID_PHONE_MESSAGE);
+          return;
+        }
       } else if (selectedPassType === 'GROUP') {
         if (!groupDetails.eventTitle.trim()) {
           setSubmitError('Please enter the event / gathering title.');
@@ -198,6 +214,10 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
       } else if (selectedPassType === 'SERVICE') {
         if (!staffDetails.staffName.trim()) {
           setSubmitError('Please enter the service staff / contractor name.');
+          return;
+        }
+        if (!isValidOptionalPhone(staffDetails.phone)) {
+          setSubmitError(INVALID_PHONE_MESSAGE);
           return;
         }
       }
@@ -247,9 +267,12 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
         staffDetails, serviceCategory, serviceDateRange, serviceWeekdays, serviceTimeWindow,
       };
 
+      // Admins choose the pass scope; residents always issue passes for their active unit.
       const enrichedRoleContext: PassPayloadContext = {
         ...roleContext,
-        villaId: adminScope.scope === 'VILLA' ? adminScope.villaId : undefined,
+        villaId: isAdmin
+          ? (adminScope.scope === 'VILLA' ? adminScope.villaId : undefined)
+          : roleContext.villaId,
       };
 
       const payload = mapFormToApiPayloadStrategy(selectedPassType, formData, enrichedRoleContext);

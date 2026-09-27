@@ -143,7 +143,9 @@ export const createPass = createAsyncThunk(
       const body = response && (response as any).success !== undefined ? response : (response as any)?.data;
       return (body?.data || body) as any;
     } catch (error: any) {
-      return rejectWithValue(error?.response?.data?.message || error?.message || 'Failed to create visitor pass');
+      const data = error?.response?.data;
+      // Validation failures carry the specific field problem in details; prefer it over the generic summary.
+      return rejectWithValue(data?.details?.[0]?.message || data?.message || error?.message || 'Failed to create visitor pass');
     }
   }
 );

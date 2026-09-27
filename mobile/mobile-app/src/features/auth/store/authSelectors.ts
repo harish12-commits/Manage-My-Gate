@@ -20,6 +20,12 @@ export const selectCurrentUserId = (state: RootState): string => {
   return '';
 };
 
+/** The unit a resident is currently acting for (kept in sync by the villa switcher). */
+export const selectActiveVillaId = (state: RootState): string => {
+  const user = selectAuthUser(state);
+  return user?.activeVillaId || user?.villaId || '';
+};
+
 export const selectActiveOrgId = (state: RootState): string => {
   const user = selectAuthUser(state);
   if (!user) return '';
