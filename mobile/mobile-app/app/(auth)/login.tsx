@@ -829,8 +829,9 @@ export default function LoginScreen() {
                             autoCapitalize="none"
                             autoCorrect={false}
                             keyboardType="email-address"
-                            className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] shadow-none backdrop-blur-md"
-                            inputClassName="text-white text-[13.5px] font-medium"
+                            className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] py-0 shadow-none backdrop-blur-md"
+                            inputClassName="text-white text-[16px] font-bold"
+                            style={{ fontSize: 16, fontWeight: '700', fontFamily: 'HankenGrotesk_700Bold', color: '#FFFFFF' }}
                             leftIcon={
                               <Animated.View style={{ transform: [{ scale: loginIconScale }] }}>
                                 <Mail size={18} color="rgba(255, 255, 255, 0.85)" />
@@ -876,8 +877,9 @@ export default function LoginScreen() {
                             }}
                             placeholder={t('enter_password', 'Enter your password')}
                             placeholderTextColor="rgba(255, 255, 255, 0.65)"
-                            className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] shadow-none backdrop-blur-md"
-                            inputClassName="text-white text-[13.5px] font-medium"
+                            className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] py-0 shadow-none backdrop-blur-md"
+                            inputClassName="text-white text-[16px] font-bold"
+                            style={{ fontSize: 16, fontWeight: '700', fontFamily: 'HankenGrotesk_700Bold', color: '#FFFFFF' }}
                             leftIcon={
                               <Animated.View style={{ transform: [{ scale: passwordIconScale }] }}>
                                 <Lock size={18} color="rgba(255, 255, 255, 0.85)" />
@@ -1007,8 +1009,10 @@ export default function LoginScreen() {
                           placeholder="98765 43210"
                           placeholderTextColor="rgba(255, 255, 255, 0.65)"
                           labelClassName="text-xs font-semibold text-white mb-1.5"
-                          className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] shadow-none backdrop-blur-md"
-                          inputClassName="text-white text-[13.5px]"
+                          className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] py-0 shadow-none backdrop-blur-md"
+                          inputClassName="text-white text-[16px] font-bold"
+                          codeClassName="text-white font-bold"
+                          style={{ fontSize: 16, fontWeight: '700', fontFamily: 'HankenGrotesk_700Bold', color: '#FFFFFF' }}
                           value={value}
                           onChangeText={onChange}
                           error={phoneForm.formState.errors.phone?.message}

@@ -49,6 +49,8 @@ export interface PhoneInputProps {
   className?: string;
   labelClassName?: string;
   inputClassName?: string;
+  codeClassName?: string;
+  style?: any;
   helperText?: string;
 }
 
@@ -64,6 +66,8 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   className,
   labelClassName,
   inputClassName,
+  codeClassName,
+  style,
   helperText,
 }) => {
   const [selectedCountry, setSelectedCountry] = useState<CountryOption>(COUNTRIES[0]); // Default India +91
@@ -164,26 +168,42 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           accessibilityLabel={`Selected country ${selectedCountry.name}, dial code ${selectedCountry.dialCode}. Tap to change.`}
         >
           <Text className="text-base me-1">{selectedCountry.flag}</Text>
-          <Text className="text-xs font-bold text-foreground me-1">
+          <Text className={cn('text-xs font-bold text-foreground me-1', codeClassName)}>
             {selectedCountry.dialCode}
           </Text>
           <ChevronDown size={14} className="text-muted-foreground" />
         </TouchableOpacity>
 
         {/* National Number Input */}
-        <RNTextInput
-          className={cn('flex-1 text-sm font-sans text-foreground self-stretch min-h-[44px] py-3', inputClassName)}
-          style={{ outlineStyle: 'none' } as any}
-          keyboardType="phone-pad"
-          placeholder={placeholder}
-          placeholderTextColor={placeholderTextColor || '#737c88'}
-          value={nationalNumber}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onChangeText={handleNumberChange}
-          maxLength={selectedCountry.digitsLength}
-          accessibilityLabel={label}
-        />
+        {(() => {
+          const hasFontFamily = Boolean(
+            inputClassName &&
+              (inputClassName.includes('font-sans') ||
+                inputClassName.includes('font-medium') ||
+                inputClassName.includes('font-semibold') ||
+                inputClassName.includes('font-bold') ||
+                inputClassName.includes('font-mono'))
+          );
+          return (
+            <RNTextInput
+              className={cn(
+                'flex-1 text-sm text-foreground self-stretch min-h-[44px] py-3',
+                !hasFontFamily && 'font-sans',
+                inputClassName
+              )}
+              style={[{ outlineStyle: 'none' } as any, style]}
+              keyboardType="phone-pad"
+              placeholder={placeholder}
+              placeholderTextColor={placeholderTextColor || '#737c88'}
+              value={nationalNumber}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              onChangeText={handleNumberChange}
+              maxLength={selectedCountry.digitsLength}
+              accessibilityLabel={label}
+            />
+          );
+        })()}
 
         {isComplete && !error && (
           <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 ms-2" />

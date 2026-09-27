@@ -138,6 +138,14 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
 
     const translatedPlaceholder = props.placeholder ? translateText(props.placeholder) : undefined;
     const translatedLabel = label ? translateText(label) : undefined;
+    const hasFontFamily = Boolean(
+      inputClassName &&
+        (inputClassName.includes('font-sans') ||
+          inputClassName.includes('font-medium') ||
+          inputClassName.includes('font-semibold') ||
+          inputClassName.includes('font-bold') ||
+          inputClassName.includes('font-mono'))
+    );
 
     return (
       <View className={cn('w-full', containerClassName)}>
@@ -187,7 +195,8 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
             onFocus={handleFocus}
             onBlur={handleBlur}
             className={cn(
-              'flex-1 text-[13.5px] font-sans text-foreground self-stretch',
+              'flex-1 text-[13.5px] text-foreground self-stretch',
+              !hasFontFamily && 'font-sans',
               props.multiline ? 'py-0 min-h-[50px]' : 'py-1.5 min-h-[38px]',
               inputClassName
             )}
