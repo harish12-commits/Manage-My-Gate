@@ -64,6 +64,11 @@ export class VisitorPassController {
         throw new HttpError(403, 'Forbidden. This pass belongs to another community.');
       }
       assertPassAccess(existing, req.user);
+      // Gate staff may read any pass to verify it, but only its owner or a manager may change it.
+      const isOwner = String(existing.createdById?._id || existing.createdById) === String(getActorId(req.user));
+      if (!isOwner && !isVisitorManager(req.user)) {
+        throw new HttpError(403, 'Forbidden. Only the resident who issued this pass or a community manager can change it.');
+      }
       let data;
       if (status === 'REVOKED') {
         data = await visitorPassService.revokePass(id, null, { actorId: getActorId(req.user), reason: req.body.reason });

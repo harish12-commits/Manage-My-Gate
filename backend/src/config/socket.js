@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import logger from '../utils/logger.utils.js';
+import { canJoinRoom } from './socketRoomPolicy.js';
 import { initRoleSocket } from '../features/role/role.socket.js';
 import { initUserSocket } from '../features/user/user.socket.js';
 import { setupPaymentSocketListeners } from '../features/payment/payment.socket.js';
@@ -72,13 +73,21 @@ export const initSocket = async (httpServer) => {
     logger.info(`Socket client connected: ${socket.id}`);
 
     // Join room event boilerplate
-    socket.on('join_room', (room) => {
+    socket.on('join_room', async (room) => {
       if (!room) {
         logger.warn(`Socket ${socket.id} attempted to join empty room.`);
         return;
       }
-      logger.info(`Socket ${socket.id} is joining room: ${room}`);
-      socket.join(room);
+      try {
+        if (!(await canJoinRoom(socket, String(room)))) {
+          logger.warn(`Socket ${socket.id} was refused room: ${room}`);
+          return;
+        }
+        logger.info(`Socket ${socket.id} is joining room: ${room}`);
+        socket.join(room);
+      } catch (error) {
+        logger.error(`Failed to authorise socket ${socket.id} for room ${room}:`, error);
+      }
     });
 
     // Disconnect event boilerplate

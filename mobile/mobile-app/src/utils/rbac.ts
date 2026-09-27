@@ -94,7 +94,8 @@ export const checkIsSecurityRole = (user: UserLike | null | undefined): boolean 
 const PERMISSION_SYNONYMS: Record<string, string[]> = {
   // Visitor & Gate Security
   'visitor:guard': ['visitor:guard', 'visitor.guard', 'visitor:admin', 'visitor', 'gate:console', 'visitor_gate_console'],
-  'visitor:admin': ['visitor:admin', 'visitor.admin', 'visitor:guard', 'visitor', 'visitor_admin_dashboard', 'visitor_community_passes', 'visitor_admin_logs', 'visitor_gate_console'],
+  // Admin consoles need an admin grant: a guard's visitor:guard / gate-console grant must not unlock them.
+  'visitor:admin': ['visitor:admin', 'visitor.admin', 'visitor', 'visitor_admin_dashboard', 'visitor_community_passes', 'visitor_admin_logs'],
   'visitor:resident': ['visitor:resident', 'visitor.resident', 'visitor', 'visitor_resident_passes', 'visitor_passes', 'visitor:view', 'visitor:read', 'visitor_gate_console'],
 
   // Notice Board
@@ -222,9 +223,9 @@ const FALLBACK_SECURITY_FEATURE_IDS = new Set([
   'admin_villas',
 ]);
 
+// visitor:admin is deliberately absent: it would unlock admin consoles (blacklist, community passes) for guards.
 const FALLBACK_SECURITY_PERMISSIONS = new Set([
   'visitor:guard',
-  'visitor:admin',
   'visitor:resident',
   'amenities:scanner',
   'amenities:security_logs',

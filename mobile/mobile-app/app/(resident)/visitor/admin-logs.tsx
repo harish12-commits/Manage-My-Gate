@@ -13,13 +13,15 @@ import { useAdminVisitor } from '@/src/features/visitor/hooks/useAdminVisitor';
 import visitorService from '@/src/features/visitor/services/visitorService';
 import { mapBackendPassToHistoryItem } from '@/src/features/visitor/utils/mapBackendPassToHistoryItem';
 import { mapBackendLogToGateLogItem } from '@/src/features/visitor/utils/mapBackendLogToGateLogItem';
-import { selectActiveOrgId } from '@/src/features/auth/store/authSelectors';
+import { selectActiveOrgId, selectAuthUser } from '@/src/features/auth/store/authSelectors';
+import { isFeatureAllowedForUser } from '@/src/utils/rbac';
+import { Redirect } from 'expo-router';
 import { downloadCSVFile } from '@/src/utils/downloadHelper';
 import { useTranslation } from '@/src/utils/i18n';
 
 const PAGE_SIZE = 10;
 
-export default function AdminGateLogsScreen() {
+function AdminGateLogsContent() {
   const { t } = useTranslation();
   const activeOrgId = useSelector(selectActiveOrgId);
   const { actionStatus, forceCheckout } = useAdminVisitor();
@@ -289,4 +291,14 @@ export default function AdminGateLogsScreen() {
       />
     </ScreenShell>
   );
+}
+
+/** The audit log is an admin console; deep links must not bypass the role. */
+export default function AdminGateLogsScreen() {
+  const authUser = useSelector(selectAuthUser);
+  const hasAdminAccess = isFeatureAllowedForUser({ id: 'visitor_admin_logs', permission: 'visitor:admin' }, authUser);
+  if (authUser && !hasAdminAccess) {
+    return <Redirect href="/(resident)/dashboard" />;
+  }
+  return <AdminGateLogsContent />;
 }
