@@ -1012,6 +1012,11 @@ export default function LoginScreen() {
                           className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] py-0 shadow-none backdrop-blur-md"
                           inputClassName="text-white text-[16px] font-bold"
                           codeClassName="text-white font-bold"
+                          dividerClassName="border-white/30"
+                          chevronColor="rgba(255, 255, 255, 0.85)"
+                          showCount={false}
+                          helperContainerClassName="bg-black/40 border border-white/25 px-2.5 py-1 rounded-lg self-start mt-1.5 backdrop-blur-md"
+                          helperClassName="text-xs font-bold text-white"
                           style={{ fontSize: 16, fontWeight: '700', fontFamily: 'HankenGrotesk_700Bold', color: '#FFFFFF' }}
                           value={value}
                           onChangeText={onChange}

@@ -195,14 +195,17 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
             onFocus={handleFocus}
             onBlur={handleBlur}
             className={cn(
-              'flex-1 text-[13.5px] text-foreground self-stretch',
+              'flex-1 text-[13.5px] text-foreground self-stretch outline-none focus:outline-none focus-visible:outline-none',
               !hasFontFamily && 'font-sans',
               props.multiline ? 'py-0 min-h-[50px]' : 'py-1.5 min-h-[38px]',
               inputClassName
             )}
             style={[
               {
+                outline: 'none',
                 outlineStyle: 'none',
+                outlineWidth: 0,
+                outlineColor: 'transparent',
                 paddingHorizontal: 4,
                 paddingVertical: Platform.OS === 'ios' ? 4 : 2,
                 textAlign: (props.style as any)?.textAlign || 'left',

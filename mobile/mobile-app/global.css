@@ -33,6 +33,27 @@
     text-align: center;
   }
 
+  /* Remove default browser focus outline / ring on inputs and textareas */
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    outline: none !important;
+    outline-width: 0 !important;
+    box-shadow: none !important;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none !important;
+    outline-width: 0 !important;
+    box-shadow: none !important;
+  }
+
   /* Arabic typography scale enhancement for readability */
   html[lang="ar"], body[lang="ar"], [data-lang="ar"] {
     font-size: 112%;

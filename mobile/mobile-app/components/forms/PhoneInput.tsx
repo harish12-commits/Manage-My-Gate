@@ -50,6 +50,11 @@ export interface PhoneInputProps {
   labelClassName?: string;
   inputClassName?: string;
   codeClassName?: string;
+  dividerClassName?: string;
+  chevronColor?: string;
+  showCount?: boolean;
+  helperContainerClassName?: string;
+  helperClassName?: string;
   style?: any;
   helperText?: string;
 }
@@ -67,6 +72,11 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   labelClassName,
   inputClassName,
   codeClassName,
+  dividerClassName,
+  chevronColor,
+  showCount = false,
+  helperContainerClassName,
+  helperClassName,
   style,
   helperText,
 }) => {
@@ -130,7 +140,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
               <Text className="text-destructive font-bold"> *</Text>
             )}
           </Text>
-          {currentLength > 0 && (
+          {showCount && currentLength > 0 && (
             <View className="flex-row items-center gap-1">
               {isComplete ? (
                 <View className="flex-row items-center gap-1">
@@ -162,7 +172,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         {/* Country Picker Trigger */}
         <TouchableOpacity
           onPress={() => setIsPickerVisible(true)}
-          className="flex-row items-center me-2.5 pe-2.5 border-e border-border/80"
+          className={cn("flex-row items-center me-2.5 pe-2.5 border-e border-border/80", dividerClassName)}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={`Selected country ${selectedCountry.name}, dial code ${selectedCountry.dialCode}. Tap to change.`}
@@ -171,7 +181,11 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           <Text className={cn('text-xs font-bold text-foreground me-1', codeClassName)}>
             {selectedCountry.dialCode}
           </Text>
-          <ChevronDown size={14} className="text-muted-foreground" />
+          <ChevronDown
+            size={14}
+            color={chevronColor || undefined}
+            className={chevronColor ? undefined : 'text-muted-foreground'}
+          />
         </TouchableOpacity>
 
         {/* National Number Input */}
@@ -187,11 +201,19 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           return (
             <RNTextInput
               className={cn(
-                'flex-1 text-sm text-foreground self-stretch min-h-[44px] py-3',
+                'flex-1 text-sm text-foreground self-stretch min-h-[44px] py-3 outline-none focus:outline-none focus-visible:outline-none',
                 !hasFontFamily && 'font-sans',
                 inputClassName
               )}
-              style={[{ outlineStyle: 'none' } as any, style]}
+              style={[
+                {
+                  outline: 'none',
+                  outlineStyle: 'none',
+                  outlineWidth: 0,
+                  outlineColor: 'transparent',
+                } as any,
+                style,
+              ]}
               keyboardType="phone-pad"
               placeholder={placeholder}
               placeholderTextColor={placeholderTextColor || '#737c88'}
@@ -218,9 +240,11 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
       )}
 
       {!error && isIncomplete && (
-        <Text className="mt-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium ms-1">
-          Enter {selectedCountry.digitsLength - currentLength} more digit{selectedCountry.digitsLength - currentLength > 1 ? 's' : ''} to complete.
-        </Text>
+        <View className={cn('flex-row items-center mt-1.5 ms-1 gap-1', helperContainerClassName)}>
+          <Text className={cn('text-[11px] text-amber-600 dark:text-amber-400 font-medium', helperClassName)}>
+            Enter {selectedCountry.digitsLength - currentLength} more digit{selectedCountry.digitsLength - currentLength > 1 ? 's' : ''} to complete.
+          </Text>
+        </View>
       )}
 
       {!error && !isIncomplete && Boolean(helperText) && (
