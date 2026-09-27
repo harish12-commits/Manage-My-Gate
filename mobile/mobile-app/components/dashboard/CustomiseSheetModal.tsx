@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Modal, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Text } from '../ui/text';
 import Animated, {
@@ -9,11 +9,9 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Sparkles, X } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import CustomiseDeckZone from './CustomiseDeckZone';
-import CustomiseAvailableZone, { AvailableFeatureCardItem } from './CustomiseAvailableZone';
-import FeatureIcon from '../ui/FeatureIcon';
+import CustomiseAvailableZone from './CustomiseAvailableZone';
 import { useAuth } from '../../src/features/auth/hooks/useAuth';
 import { isFeatureAllowedForUser, getDefaultQuickActionsForUser } from '../../src/utils/rbac';
 import { useTranslation } from '../../src/utils/i18n';
@@ -47,7 +45,7 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
   onSave,
 }) => {
   const { user } = useAuth();
-  const { t, tFeatureName, language } = useTranslation();
+  const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -74,14 +72,6 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
   }, [activeFeatureIds, defaultRoleQuickActions, user]);
 
   const [selectedIds, setSelectedIds] = useState<string[]>(sanitizedActiveIds);
-  const [deckHeight, setDeckHeight] = useState(190);
-
-  // Drag & drop floating state
-  const [draggingFeature, setDraggingFeature] = useState<AvailableFeatureCardItem | null>(null);
-  const [isOverDeck, setIsOverDeck] = useState(false);
-  const dragX = useSharedValue(0);
-  const dragY = useSharedValue(0);
-
   // Pull down to dismiss sheet transform
   const sheetTranslateY = useSharedValue(0);
 
@@ -101,46 +91,9 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
     if (onToggleFeature) onToggleFeature(id);
   };
 
-  const handleReorder = (fromIndex: number, toIndex: number) => {
-    setSelectedIds((prev) => {
-      const copy = [...prev];
-      const [removed] = copy.splice(fromIndex, 1);
-      copy.splice(toIndex, 0, removed);
-      return copy;
-    });
-  };
-
   const handleSave = () => {
     if (onSave) onSave(selectedIds.slice(0, MAX_QUICK_ACTIONS));
     onClose();
-  };
-
-  // Drag handlers from available cards
-  const handleDragStart = (feature: AvailableFeatureCardItem, absX: number, absY: number) => {
-    dragX.value = absX - 38;
-    dragY.value = absY - 38;
-    setDraggingFeature(feature);
-  };
-
-  const handleDragMove = (absX: number, absY: number) => {
-    dragX.value = absX - 38;
-    dragY.value = absY - 38;
-
-    // Deck is pinned at top of the bottom sheet
-    const sheetTop = SCREEN_HEIGHT - SHEET_HEIGHT;
-    const deckZoneThreshold = sheetTop + 54 + deckHeight + 40;
-    setIsOverDeck(absY > 0 && absY < deckZoneThreshold);
-  };
-
-  const handleDragEnd = (feature: AvailableFeatureCardItem, absX: number, absY: number) => {
-    const sheetTop = SCREEN_HEIGHT - SHEET_HEIGHT;
-    const deckZoneThreshold = sheetTop + 54 + deckHeight + 40;
-
-    if (absY > 0 && absY < deckZoneThreshold && !selectedIds.includes(feature.id) && selectedIds.length < MAX_QUICK_ACTIONS) {
-      setSelectedIds((prev) => [...prev, feature.id]);
-    }
-    setDraggingFeature(null);
-    setIsOverDeck(false);
   };
 
   // Pan gesture on modal header for pull-down to dismiss
@@ -170,25 +123,6 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
   const animatedSheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: sheetTranslateY.value }],
   }));
-
-  const animatedDragPreviewStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: dragX.value },
-      { translateY: dragY.value },
-      { scale: 1.12 },
-    ],
-    opacity: 0.95,
-  }));
-
-  // Active selected items (up to seven, strictly permitted)
-  const activeItems = useMemo(() => {
-    return selectedIds
-      .map((id) => ALL_AVAILABLE_FEATURES.find((f) => f.id === id))
-      .filter((item): item is typeof ALL_AVAILABLE_FEATURES[0] =>
-        Boolean(item && isFeatureAllowedForUser(item, user))
-      )
-      .slice(0, MAX_QUICK_ACTIONS);
-  }, [selectedIds, user]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -241,45 +175,16 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
               </View>
             </GestureDetector>
 
-            {/* Pinned active selection zone, always visible at the top of the sheet. */}
-            <View
-              style={{ backgroundColor: isDark ? '#292524' : '#F5F5F4' }}
-              onLayout={(e) => setDeckHeight(e.nativeEvent.layout.height)}
-            >
-              <CustomiseDeckZone
-                activeItems={activeItems}
-                maxCapacity={MAX_QUICK_ACTIONS}
-                onRemoveItem={toggleSelect}
-                onReorderItem={handleReorder}
-                isDropTargetActive={isOverDeck || (Boolean(draggingFeature) && selectedIds.length < MAX_QUICK_ACTIONS)}
-              />
-            </View>
-
-            {/* Divider Sub-header */}
-            <View
-              style={{ backgroundColor: isDark ? '#292524' : '#F5F5F4' }}
-              className="px-4 py-2.5 border-b border-border flex-row items-center justify-between"
-            >
-              <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                {t('available_actions', 'Available Actions')}
-              </Text>
-              <Sparkles size={14} color="#C2410C" />
-            </View>
-
-            {/* Scrollable Available Features Body */}
+            {/* One grid: starred tiles are selected Quick Actions; all other actions remain selectable here. */}
             <ScrollView
-              style={{ flex: 1, backgroundColor: isDark ? '#1C1917' : '#FFFFFF' }}
-              contentContainerStyle={{ paddingBottom: 18, backgroundColor: isDark ? '#1C1917' : '#FFFFFF' }}
+              style={{ flex: 1, backgroundColor: isDark ? '#1C1917' : '#F5F3EF' }}
+              contentContainerStyle={{ paddingBottom: 18, backgroundColor: isDark ? '#1C1917' : '#F5F3EF' }}
               showsVerticalScrollIndicator={false}
-              scrollEnabled={!draggingFeature}
             >
               <CustomiseAvailableZone
                 features={availableFeaturesForUser}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
-                onDragStart={handleDragStart}
-                onDragMove={handleDragMove}
-                onDragEnd={handleDragEnd}
               />
             </ScrollView>
 
@@ -302,47 +207,6 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
               </TouchableOpacity>
             </View>
           </Animated.View>
-
-          {/* Floating Card Drag Preview: Never clipped, floats directly under user's finger */}
-          {draggingFeature ? (
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                {
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: 76,
-                  height: 76,
-                  borderRadius: 20,
-                  backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
-                  borderWidth: 2.5,
-                  borderColor: '#FF6A00',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 10 },
-                  shadowOpacity: 0.45,
-                  shadowRadius: 14,
-                  elevation: 24,
-                  zIndex: 99999,
-                },
-                animatedDragPreviewStyle,
-              ]}
-            >
-              <FeatureIcon
-                iconName={draggingFeature.iconName}
-                color={draggingFeature.colorIcon || '#FF6A00'}
-                size={30}
-              />
-              <Text
-                numberOfLines={1}
-                className="text-[9px] font-bold font-sans text-foreground text-center mt-1 px-1"
-              >
-                {tFeatureName(draggingFeature.id, draggingFeature.name)}
-              </Text>
-            </Animated.View>
-          ) : null}
         </View>
       </GestureHandlerRootView>
     </Modal>

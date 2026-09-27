@@ -82,8 +82,8 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* 3-column grid gives each mobile action a more comfortable visual target. */}
-      <View className="flex-row flex-wrap justify-start gap-x-[2.6%] gap-y-4">
+      {/* Four quick actions per row keeps the dashboard aligned with the customiser. */}
+      <View className="flex-row flex-wrap justify-start gap-x-[2%] gap-y-4">
         {displayFeatures.map((tile) => {
           const meta = ALL_AVAILABLE_FEATURES.find((f) => f.id === tile.id);
           const iconName = meta?.iconName || tile.iconName;
@@ -94,8 +94,8 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({
           return (
             <ActionTile
               key={tile.id}
-              containerClassName="w-[31.6%]"
-              icon={<FeatureIcon iconName={iconName} color={colorIcon} size={34} strokeWidth={2.0} />}
+              containerClassName="w-[23.5%]"
+              icon={<FeatureIcon iconName={iconName} color={colorIcon} size={30} strokeWidth={2.0} />}
               label={tFeatureName(tile.id, meta?.name || tile.name)}
               subtitle={tFeatureSubtitle(tile.id, meta?.subtitle || tile.subtitle)}
               metaValue={tFeatureSubtitle(tile.id, meta?.subtitle || tile.subtitle)}
