@@ -26,6 +26,7 @@ export interface TextInputProps extends RNTextInputProps {
   onClear?: () => void;
   leftIcon?: LucideIcon | React.ReactNode;
   rightIcon?: LucideIcon | React.ReactNode;
+  rightIconColor?: string;
   onRightIconPress?: () => void;
   containerClassName?: string;
   labelClassName?: string;
@@ -49,6 +50,7 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
       onClear,
       leftIcon,
       rightIcon,
+      rightIconColor,
       onRightIconPress,
       containerClassName,
       labelClassName,
@@ -105,7 +107,8 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
         >
           <IconComponent
             size={18}
-            className="text-muted-foreground"
+            className={rightIconColor ? undefined : 'text-muted-foreground'}
+            color={rightIconColor}
             onPress={!isLeft ? onRightIconPress : undefined}
           />
         </View>

@@ -44,7 +44,11 @@ export interface PhoneInputProps {
   onChangeText?: (fullPhoneNumber: string) => void;
   error?: string;
   placeholder?: string;
+  placeholderTextColor?: string;
   containerClassName?: string;
+  className?: string;
+  labelClassName?: string;
+  inputClassName?: string;
   helperText?: string;
 }
 
@@ -55,7 +59,11 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   onChangeText,
   error,
   placeholder = '99887 76655',
+  placeholderTextColor,
   containerClassName,
+  className,
+  labelClassName,
+  inputClassName,
   helperText,
 }) => {
   const [selectedCountry, setSelectedCountry] = useState<CountryOption>(COUNTRIES[0]); // Default India +91
@@ -112,7 +120,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
     <View className={cn('w-full', containerClassName)}>
       {Boolean(label) && (
         <View className="flex-row items-center justify-between mb-1.5">
-          <Text className="text-sm font-medium text-foreground">
+          <Text className={cn('text-sm font-medium text-foreground', labelClassName)}>
             {label}
             {required && !label?.includes('*') && (
               <Text className="text-destructive font-bold"> *</Text>
@@ -143,7 +151,8 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           isFocused && !error && 'border-primary ring-2 ring-primary/20',
           isIncomplete && !error && 'border-amber-500/80 bg-amber-500/5',
           isComplete && !error && 'border-emerald-500/80 bg-emerald-500/5',
-          Boolean(error) && 'border-destructive bg-destructive/5 ring-1 ring-destructive/20'
+          Boolean(error) && 'border-destructive bg-destructive/5 ring-1 ring-destructive/20',
+          className
         )}
       >
         {/* Country Picker Trigger */}
@@ -163,11 +172,11 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
 
         {/* National Number Input */}
         <RNTextInput
-          className="flex-1 text-sm font-sans text-foreground self-stretch min-h-[44px] py-3"
+          className={cn('flex-1 text-sm font-sans text-foreground self-stretch min-h-[44px] py-3', inputClassName)}
           style={{ outlineStyle: 'none' } as any}
           keyboardType="phone-pad"
           placeholder={placeholder}
-          placeholderTextColor="#737c88"
+          placeholderTextColor={placeholderTextColor || '#737c88'}
           value={nationalNumber}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}

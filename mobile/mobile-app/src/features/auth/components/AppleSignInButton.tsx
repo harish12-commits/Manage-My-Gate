@@ -9,20 +9,17 @@ export interface AppleSignInButtonProps {
   onSuccess?: (data: any) => void;
   onError?: (error: string) => void;
   disabled?: boolean;
-  variant?: 'full' | 'compact';
+  variant?: 'full' | 'compact' | 'glass';
   className?: string;
   style?: any;
 }
 
 export function AppleSignInButton(props: AppleSignInButtonProps = {}) {
-  const { disabled = false, variant = 'compact', className = '', style, ...authOptions } = props;
+  const { disabled = false, variant = 'glass', className = '', style, ...authOptions } = props;
   const { handleAppleSignIn, loading, isAvailable } = useAppleAuthSession(authOptions);
 
-  // Apple provides its approved system control on iOS. Android and web still
-  // show a standards-compliant Apple entry point so the auth choice is never
-  // silently removed from a mobile preview. Their press handler explains the
-  // required Services ID setup until the hosted Apple OAuth flow is enabled.
-  if (Platform.OS !== 'ios' || !isAvailable) {
+  // If glass variant requested or on non-iOS/unavailable, render the custom glass button
+  if (variant === 'glass' || Platform.OS !== 'ios' || !isAvailable) {
     return (
       <SocialAuthButton
         provider="apple"

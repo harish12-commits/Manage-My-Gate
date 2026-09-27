@@ -6,7 +6,7 @@ import { useColorScheme } from 'nativewind';
 export interface SocialAuthButtonProps {
   provider: 'google' | 'apple' | 'microsoft';
   onPress?: () => void;
-  variant?: 'full' | 'compact';
+  variant?: 'full' | 'compact' | 'glass';
   className?: string;
   loading?: boolean;
   disabled?: boolean;
@@ -93,6 +93,7 @@ export const SocialAuthButton = ({
 
   const isGoogle = provider === 'google';
   const isApple = provider === 'apple';
+  const isGlass = variant === 'glass';
   const providerName = isGoogle ? 'Google' : isApple ? 'Apple' : 'Microsoft';
   const buttonLabel = isApple
     ? variant === 'full'
@@ -101,8 +102,8 @@ export const SocialAuthButton = ({
     : variant === 'full'
     ? `Sign in with ${providerName}`
     : providerName;
-  const contentClass = 'text-[#1C1917] dark:text-white';
-  const indicatorColor = isGoogle ? '#4285F4' : isApple ? (colorScheme === 'dark' ? '#FFFFFF' : '#1C1917') : '#00A4EF';
+  const contentClass = isGlass ? 'text-white' : 'text-[#1C1917] dark:text-white';
+  const indicatorColor = isGlass ? '#FFFFFF' : isGoogle ? '#4285F4' : isApple ? (colorScheme === 'dark' ? '#FFFFFF' : '#1C1917') : '#00A4EF';
 
   return (
     <>
@@ -116,20 +117,24 @@ export const SocialAuthButton = ({
           accessibilityRole="button"
           accessibilityLabel={buttonLabel}
           accessibilityHint={`Continue authentication with ${providerName}`}
-          className={`h-12 bg-white/75 dark:bg-[#1C1917]/75 border border-white/80 dark:border-white/20 rounded-xl flex-row items-center justify-center gap-2 shadow-2xs backdrop-blur-sm active:bg-white/90 dark:active:bg-[#292524] ${disabled || loading ? 'opacity-60' : ''} ${className}`}
+          className={`h-[50px] rounded-2xl flex-row items-center justify-center gap-2.5 shadow-2xs backdrop-blur-md active:bg-white/30 ${
+            isGlass
+              ? 'bg-white/20 dark:bg-white/15 border border-white/35'
+              : 'bg-white/75 dark:bg-[#1C1917]/75 border border-white/80 dark:border-white/20'
+          } ${disabled || loading ? 'opacity-60' : ''} ${className}`}
         >
         {loading ? (
           <ActivityIndicator size="small" color={indicatorColor} />
         ) : (
           <>
             {isGoogle ? (
-              <GoogleIcon size={18} />
+              <GoogleIcon size={19} />
             ) : isApple ? (
-              <AppleIcon size={18} />
+              <AppleIcon size={19} color={isGlass ? '#FFFFFF' : undefined} />
             ) : (
-              <MicrosoftIcon size={18} />
+              <MicrosoftIcon size={19} />
             )}
-            <Text className={`text-xs font-bold ${contentClass}`}>
+            <Text className={`text-sm font-semibold font-sans ${contentClass}`}>
               {buttonLabel}
             </Text>
           </>
