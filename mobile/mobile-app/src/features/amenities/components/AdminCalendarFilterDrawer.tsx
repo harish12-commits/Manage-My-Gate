@@ -12,6 +12,7 @@ import {
   Tag,
   CircleDollarSign,
 } from 'lucide-react-native';
+import { useTranslation } from '@/src/utils/i18n';
 
 export interface CalendarFilterState {
   facilityIds: string[]; // multi-select; empty or ['All'] means All
@@ -31,28 +32,6 @@ export interface AdminCalendarFilterDrawerProps {
   availableResources?: Array<{ _id: string; name: string; facilityId?: string }>;
 }
 
-const AVAILABILITY_OPTIONS = [
-  { id: 'ALL', label: 'All Availability' },
-  { id: 'AVAILABLE', label: 'Available' },
-  { id: 'PARTIALLY_AVAILABLE', label: 'Partially Available' },
-  { id: 'FULLY_BOOKED', label: 'Fully Booked' },
-];
-
-const STATUS_OPTIONS = [
-  { id: 'CONFIRMED', label: 'Confirmed' },
-  { id: 'CHECKED_IN', label: 'Checked In' },
-  { id: 'COMPLETED', label: 'Completed' },
-  { id: 'CANCELLED', label: 'Cancelled' },
-];
-
-const PAYMENT_OPTIONS = [
-  { id: 'PAID', label: 'Paid' },
-  { id: 'PARTIALLY_PAID', label: 'Partially Paid' },
-  { id: 'PENDING', label: 'Pending' },
-  { id: 'NOT_REQUIRED', label: 'Not Required' },
-  { id: 'REFUNDED', label: 'Refunded' },
-];
-
 export function AdminCalendarFilterDrawer({
   visible,
   onClose,
@@ -62,6 +41,30 @@ export function AdminCalendarFilterDrawer({
   amenities,
   availableResources = [],
 }: AdminCalendarFilterDrawerProps) {
+  const { t } = useTranslation();
+
+  const availabilityOptions = useMemo(() => [
+    { id: 'ALL', label: t('all_availability', 'All Availability') },
+    { id: 'AVAILABLE', label: t('status_available', 'Available') },
+    { id: 'PARTIALLY_AVAILABLE', label: t('partially_available', 'Partially Available') },
+    { id: 'FULLY_BOOKED', label: t('fully_booked', 'Fully Booked') },
+  ], [t]);
+
+  const statusOptions = useMemo(() => [
+    { id: 'CONFIRMED', label: t('status_confirmed', 'Confirmed') },
+    { id: 'CHECKED_IN', label: t('status_checked_in', 'Checked In') },
+    { id: 'COMPLETED', label: t('status_completed', 'Completed') },
+    { id: 'CANCELLED', label: t('status_cancelled', 'Cancelled') },
+  ], [t]);
+
+  const paymentOptions = useMemo(() => [
+    { id: 'PAID', label: t('status_paid', 'Paid') },
+    { id: 'PARTIALLY_PAID', label: t('status_partially_paid', 'Partially Paid') },
+    { id: 'PENDING', label: t('status_pending', 'Pending') },
+    { id: 'NOT_REQUIRED', label: t('status_not_required', 'Not Required') },
+    { id: 'REFUNDED', label: t('status_refunded', 'Refunded') },
+  ], [t]);
+
   const [draft, setDraft] = useState<CalendarFilterState>(filters);
   const [facilitySearch, setFacilitySearch] = useState('');
 
@@ -191,7 +194,7 @@ export function AdminCalendarFilterDrawer({
         <RNTextInput
           value={facilitySearch}
           onChangeText={setFacilitySearch}
-          placeholder="Search facility or feature..."
+          placeholder={t('search_facility_or_feature', 'Search facility or feature...')}
           placeholderTextColor="#9ca3af"
           className="flex-1 text-xs text-foreground font-sans p-0"
         />
@@ -205,7 +208,7 @@ export function AdminCalendarFilterDrawer({
       {/* Quick All Chip */}
       <View className="flex-row flex-wrap gap-2">
         <Chip
-          label="All Facilities"
+          label={t('all_facilities', 'All Facilities')}
           selected={isAllFacilities}
           onPress={() => handleToggleFacility('All')}
           className="py-1.5 px-3"
@@ -234,11 +237,11 @@ export function AdminCalendarFilterDrawer({
       {applicableResources.length > 0 && (
         <View className="gap-2 pt-2 border-t border-border/40 mt-1">
           <Text className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-sans">
-            Resources
+            {t('resources', 'Resources')}
           </Text>
           <View className="flex-row flex-wrap gap-2">
             <Chip
-              label="All Resources"
+              label={t('all_resources', 'All Resources')}
               selected={draft.resourceIds.length === 0}
               onPress={() => handleToggleResource('All')}
               className="py-1.5 px-3"
@@ -264,7 +267,7 @@ export function AdminCalendarFilterDrawer({
   const categoryConfigs: FilterCategoryConfig[] = useMemo(() => [
     {
       id: 'facilities',
-      label: 'Facilities',
+      label: t('facilities', 'Facilities'),
       icon: Layers,
       type: 'custom',
       selectedCount: (isAllFacilities ? 0 : specificFacilityIds.length) + draft.resourceIds.length,
@@ -272,45 +275,45 @@ export function AdminCalendarFilterDrawer({
     },
     {
       id: 'availability',
-      label: 'Availability Status',
+      label: t('availability_status', 'Availability Status'),
       icon: Boxes,
       type: 'radio',
-      options: AVAILABILITY_OPTIONS,
+      options: availabilityOptions,
       selectedValues: draft.availability,
       selectedCount: draft.availability !== 'ALL' ? 1 : 0,
       onOptionSelect: (val) => setDraft((p) => ({ ...p, availability: val })),
     },
     {
       id: 'bookingStatus',
-      label: 'Booking Status',
+      label: t('booking_status', 'Booking Status'),
       icon: Tag,
       type: 'checkbox',
-      options: STATUS_OPTIONS,
+      options: statusOptions,
       selectedValues: draft.bookingStatuses,
       selectedCount: draft.bookingStatuses.length,
       onOptionToggle: handleToggleBookingStatus,
     },
     {
       id: 'paymentStatus',
-      label: 'Payment Status',
+      label: t('payment_status', 'Payment Status'),
       icon: CircleDollarSign,
       type: 'checkbox',
-      options: PAYMENT_OPTIONS,
+      options: paymentOptions,
       selectedValues: draft.paymentStatuses,
       selectedCount: draft.paymentStatuses.length,
       onOptionToggle: handleTogglePaymentStatus,
     },
-  ], [draft, isAllFacilities, specificFacilityIds, facilitySearch, amenities, applicableResources]);
+  ], [draft, isAllFacilities, specificFacilityIds, facilitySearch, amenities, applicableResources, availabilityOptions, statusOptions, paymentOptions, t]);
 
   return (
     <GlobalFilterPanel
       visible={visible}
       onClose={onClose}
-      title="Filter Calendar Schedule"
+      title={t('filter_calendar_schedule', 'Filter Calendar Schedule')}
       categories={categoryConfigs}
       onApply={handleApply}
       onClearAll={handleReset}
-      applyLabel={currentSelectionCount > 0 ? `Apply Filters (${currentSelectionCount})` : 'Apply Filters'}
+      applyLabel={currentSelectionCount > 0 ? `${t('apply_filters', 'Apply Filters')} (${currentSelectionCount})` : t('apply_filters', 'Apply Filters')}
       totalActiveCount={currentSelectionCount}
     />
   );

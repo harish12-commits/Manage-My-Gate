@@ -19,7 +19,7 @@ export default function DeliveryPassScreen() {
   };
 
   return (
-    <ScreenShell title="Delivery Entry Pass" subtitle="Pre-approve courier & food delivery access">
+    <ScreenShell title="Delivery Entry Pass" subtitle="Pre-approve courier & food delivery access" hideHeader hideBottomNav>
       <VisitorPassWizard
         initialType="DELIVERY"
         roleContext={roleContext}

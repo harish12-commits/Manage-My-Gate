@@ -143,6 +143,7 @@ export default function AdminAmenityMasterScreen() {
           onLoadMore={handleLoadMore}
           onRefresh={loadData}
           loading={loading && facilities.length === 0}
+          paginationSummary
           ListHeaderComponent={renderHeader()}
           emptyIcon="Building2"
           emptyTitle="No Amenity Records Found"

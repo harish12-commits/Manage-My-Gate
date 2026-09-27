@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, ScrollView, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { KPICard } from '@/components/ui/KPICard';
@@ -277,27 +277,36 @@ export default function VillaManagementScreen() {
             />
           </View>
         ) : (
-          <ScrollView
-            className="flex-1 px-4 pt-3"
-            contentContainerStyle={{ paddingBottom: 110 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Top Directory Header */}
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-xs font-bold text-muted-foreground uppercase">
-                {t('unit_directory', 'Unit Directory')} ({villas.length})
-              </Text>
-            </View>
-
-            {/* Render Villa Cards */}
-            {villas.map((villa: Villa) => (
+          <FlatList
+            data={villas}
+            keyExtractor={(villa: Villa) => villa._id}
+            renderItem={({ item }: { item: Villa }) => (
               <VillaCard
-                key={villa._id}
-                villa={villa}
+                villa={item}
                 onPress={handleCardPress}
               />
-            ))}
-          </ScrollView>
+            )}
+            ListHeaderComponent={
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-xs font-bold text-muted-foreground uppercase">
+                  {t('unit_directory', 'Unit Directory')} ({villas.length})
+                </Text>
+              </View>
+            }
+            contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 110 }}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={loading}
+                onRefresh={() => {
+                  fetchVillas();
+                  fetchStats();
+                }}
+                colors={['#0d9488']}
+                tintColor="#0d9488"
+              />
+            }
+          />
         )}
       </View>
 

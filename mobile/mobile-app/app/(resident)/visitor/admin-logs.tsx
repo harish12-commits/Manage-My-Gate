@@ -246,6 +246,7 @@ export default function AdminGateLogsScreen() {
             limit: pagination.limit,
           }}
           onLoadMore={handleLoadMore}
+          paginationSummary
           onRefresh={handleRefresh}
           refreshing={refreshing}
           loading={status === 'loading' && !refreshing && !loadingMore && communityPasses.length === 0}

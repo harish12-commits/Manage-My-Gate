@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, RefreshControl } from 'react-native';
+import { View, ScrollView, RefreshControl, Platform } from 'react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { TabBar } from '@/components/ui/TabBar';
 import { KPIRow } from '@/components/ui/KPIRow';
@@ -13,9 +13,9 @@ import { selectActiveOrgId, selectAuthUser } from '@/src/features/auth/store/aut
 import { useTranslation } from '@/src/utils/i18n';
 
 const ADMIN_WALK_IN_TABS = [
-  { key: 'PENDING', label: 'Pending Approvals' },
-  { key: 'REGISTER', label: 'Walk-In Desk' },
-  { key: 'INSIDE', label: 'Visitors Inside' },
+  { key: 'PENDING', label: 'Pending' },
+  { key: 'REGISTER', label: 'Register' },
+  { key: 'INSIDE', label: 'Inside' },
 ];
 
 export default function AdminWalkInConsoleScreen() {
@@ -165,6 +165,9 @@ export default function AdminWalkInConsoleScreen() {
             className="flex-1"
             contentContainerClassName="px-4 gap-4 pb-28 pt-2"
             showsVerticalScrollIndicator={false}
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} />}
           >
             {/* Extracted Reusable Walk-In Registration Card */}

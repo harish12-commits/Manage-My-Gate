@@ -42,7 +42,7 @@ export const ServiceWeekdayStep: React.FC<ServiceWeekdayStepProps> = ({
         <TouchableOpacity
           onPress={toggleAll}
           activeOpacity={0.7}
-          className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full"
+          className="min-h-11 bg-primary/10 border border-primary/20 px-3 py-2 rounded-full items-center justify-center"
         >
           <Text className="text-xs font-bold text-primary">
             {isAllSelected ? 'Deselect All' : 'Select All Days'}

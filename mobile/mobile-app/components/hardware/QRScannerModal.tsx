@@ -58,31 +58,35 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent statusBarTranslucent={true} onRequestClose={onClose}>
+    <Modal visible={visible} animationType="fade" transparent={false} statusBarTranslucent={true} onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        <View className="flex-1 bg-black/80 justify-center p-4 items-center">
-          <View className="bg-card w-full rounded-3xl p-4 gap-4 max-w-md border border-border shadow-2xl overflow-hidden">
-          {/* Header */}
-          <View className="flex-row items-center justify-between border-b border-border pb-3">
+        <View className="flex-1 bg-black pt-12">
+          {/* Camera-first header */}
+          <View className="px-5 pb-4 flex-row items-center justify-between">
             <View className="flex-row items-center gap-2">
-              <ScanLine size={20} className="text-primary" />
-              <Text className="text-base font-extrabold text-foreground">{title}</Text>
+              <View className="w-10 h-10 rounded-full bg-primary items-center justify-center">
+                <ScanLine size={21} color="#FFFFFF" />
+              </View>
+              <View>
+                <Text className="text-base font-extrabold text-white">{title}</Text>
+                <Text className="text-xs text-white/60">Point camera at the facility pass</Text>
+              </View>
             </View>
             <Pressable
               onPress={onClose}
-              className="p-1.5 rounded-full bg-secondary active:opacity-70"
+              className="p-2.5 rounded-full bg-white/15 active:bg-white/25"
               accessibilityRole="button"
               accessibilityLabel="Close scanner"
             >
-              <X size={16} className="text-muted-foreground" />
+              <X size={19} color="#FFFFFF" />
             </Pressable>
           </View>
 
-          {/* Camera / Permission Body */}
-          <View className="h-72 w-full bg-black rounded-2xl overflow-hidden relative border border-border justify-center items-center">
+          {/* Full-width live viewfinder */}
+          <View className="flex-1 mx-4 mb-4 bg-zinc-900 rounded-3xl overflow-hidden relative border border-white/15 justify-center items-center">
             {!permission ? (
               <Text className="text-white text-xs">Checking camera status...</Text>
             ) : !permission.granted ? (
@@ -121,26 +125,29 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
             )}
           </View>
 
-          {/* Manual Code Fallback */}
-          <View className="flex-row items-center gap-2">
-            <View className="flex-1">
+          {/* Manual fallback stays outside the camera frame and above the keyboard. */}
+          <View className="bg-card rounded-t-3xl px-5 pt-4 pb-8 gap-2 border-t border-border">
+            <Text className="text-xs font-semibold text-muted-foreground">Having trouble scanning?</Text>
+            <View className="flex-row items-center gap-2">
+              <View className="flex-1 min-w-0">
               <TextInput
                 value={manualCode}
                 onChangeText={setManualCode}
                 placeholder="Or enter pass/ref code..."
                 autoCapitalize="characters"
               />
+              </View>
+              <Button
+                variant="default"
+                onPress={handleManualScan}
+                disabled={!manualCode.trim()}
+                className="h-11 px-4 rounded-xl"
+                accessibilityRole="button"
+                accessibilityLabel="Verify code manually"
+              >
+                Verify
+              </Button>
             </View>
-            <Button
-              variant="default"
-              onPress={handleManualScan}
-              disabled={!manualCode.trim()}
-              accessibilityRole="button"
-              accessibilityLabel="Verify code manually"
-            >
-              Verify
-            </Button>
-          </View>
           </View>
         </View>
       </KeyboardAvoidingView>

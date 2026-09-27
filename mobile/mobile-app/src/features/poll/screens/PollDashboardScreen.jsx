@@ -11,7 +11,6 @@ import { ActionGrid } from '@/components/ui/ActionGrid';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { FAB } from '@/components/ui/FAB';
 
 import { usePolls } from '../hooks/usePolls.js';
 import { usePollSocket } from '../hooks/usePollSocket';
@@ -25,13 +24,13 @@ import { checkIsAdmin } from '@/src/utils/rbac';
  * Features Visitor Management standard UI:
  * - Rounded headerRight "Create Poll" button
  * - Universal KPI statistics strip
- * - Universal 3-column ActionGrid (Create Poll, Active Polls, My Polls)
- * - Canonical SectionHeader with "Create Poll" CTA
- * - Prominent Floating Action Button (FAB) for instant poll creation
+ * - Universal 3-column ActionGrid for poll views
+ * - One consistent header-level "Create Poll" action
  */
 export default function PollDashboardScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('active');
+  const [pageByTab, setPageByTab] = useState({ active: 1, closed: 1, my: 1 });
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [votingPollIds, setVotingPollIds] = useState({});
 
@@ -62,8 +61,8 @@ export default function PollDashboardScreen() {
   usePollSocket(isCommunityAdmin ? activeTab : 'active');
 
   const loadData = useCallback(
-    (tab) => {
-      const params = { page: 1, limit: 20 };
+    (tab, page = 1) => {
+      const params = { page, limit: 20 };
       if (!isCommunityAdmin || tab === 'active') {
         loadActivePolls(params);
       } else if (tab === 'closed') {
@@ -88,6 +87,8 @@ export default function PollDashboardScreen() {
   }, [activeTab, isCommunityAdmin, loadData]);
 
   const handleRefresh = () => {
+    const listKey = !isCommunityAdmin ? 'active' : activeTab;
+    setPageByTab((current) => ({ ...current, [listKey]: 1 }));
     loadData(isCommunityAdmin ? activeTab : 'active');
   };
 
@@ -172,6 +173,19 @@ export default function PollDashboardScreen() {
   const currentList = getCurrentData();
   const isLoading = getCurrentLoading();
   const totalCount = getCurrentTotal();
+  const activeListKey = !isCommunityAdmin ? 'active' : activeTab;
+  const currentPagination = {
+    currentPage: pageByTab[activeListKey] || 1,
+    totalPages: Math.max(1, Math.ceil(totalCount / 20)),
+    limit: 20,
+  };
+
+  const handleLoadMore = () => {
+    if (isLoading || currentPagination.currentPage >= currentPagination.totalPages) return;
+    const nextPage = currentPagination.currentPage + 1;
+    setPageByTab((current) => ({ ...current, [activeListKey]: nextPage }));
+    loadData(isCommunityAdmin ? activeTab : 'active', nextPage);
+  };
 
   const tabs = [
     { key: 'active', label: 'Active Polls' },
@@ -220,14 +234,6 @@ export default function PollDashboardScreen() {
   // Visitor Management style ActionGrid items (Community Admin only)
   const pollActions = useMemo(() => [
     {
-      id: 'create_poll',
-      name: 'Create Poll',
-      iconName: 'Plus',
-      colorBg: 'bg-emerald-500/10',
-      colorIcon: '#10b981',
-      onPress: () => router.push('/(resident)/community-engagement/create?type=POLL'),
-    },
-    {
       id: 'active_polls',
       name: 'Active Polls',
       iconName: 'BarChart3',
@@ -236,6 +242,16 @@ export default function PollDashboardScreen() {
       badge: activeTotal > 0 ? activeTotal : undefined,
       badgeColor: 'bg-blue-600',
       onPress: () => setActiveTab('active'),
+    },
+    {
+      id: 'closed_polls',
+      name: 'Closed Polls',
+      iconName: 'Clock',
+      colorBg: activeTab === 'closed' ? 'bg-slate-500/20' : 'bg-slate-500/10',
+      colorIcon: '#64748b',
+      badge: closedTotal > 0 ? closedTotal : undefined,
+      badgeColor: 'bg-slate-600',
+      onPress: () => setActiveTab('closed'),
     },
     {
       id: 'my_polls',
@@ -247,7 +263,7 @@ export default function PollDashboardScreen() {
       badgeColor: 'bg-purple-600',
       onPress: () => setActiveTab('my'),
     },
-  ], [activeTab, activeTotal, myTotal]);
+  ], [activeTab, activeTotal, closedTotal, myTotal]);
 
   // Visitor Management style ListHeaderComponent
   const renderHeader = () => (
@@ -265,7 +281,10 @@ export default function PollDashboardScreen() {
         <TabBar
           tabs={tabs}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            setPageByTab((current) => ({ ...current, [tab]: 1 }));
+          }}
           variant="pill"
         />
       )}
@@ -273,8 +292,6 @@ export default function PollDashboardScreen() {
       {/* Section Header */}
       <SectionHeader
         title={!isCommunityAdmin || activeTab === 'active' ? 'Active Polls' : activeTab === 'closed' ? 'Closed Polls' : 'My Created Polls'}
-        actionLabel={isCommunityAdmin && canCreate ? 'Create Poll' : undefined}
-        onAction={isCommunityAdmin && canCreate ? () => router.push('/(resident)/community-engagement/create?type=POLL') : undefined}
         className="px-0 bg-transparent dark:bg-transparent"
       />
     </View>
@@ -318,6 +335,7 @@ export default function PollDashboardScreen() {
           loading={isLoading && currentList.length === 0}
           onRefresh={handleRefresh}
           refreshing={isLoading}
+          onLoadMore={handleLoadMore}
           ListHeaderComponent={renderHeader()}
           emptyIcon="BarChart2"
           emptyTitle={`No ${!isCommunityAdmin || activeTab === 'active' ? 'Active Polls' : activeTab === 'closed' ? 'Closed Polls' : 'Polls Created'}`}
@@ -330,22 +348,13 @@ export default function PollDashboardScreen() {
           }
           contentContainerClassName="px-4 pt-3 pb-28 gap-3"
           pagination={{
-            currentPage: 1,
-            totalPages: Math.ceil(totalCount / 20) || 1,
+            currentPage: currentPagination.currentPage,
+            totalPages: currentPagination.totalPages,
             totalRecords: totalCount,
-            limit: 20,
+            limit: currentPagination.limit,
           }}
+          paginationSummary
         />
-
-        {/* Primary Action: Floating Action Button matching Visitor Management standard - Community Admin only */}
-        {isCommunityAdmin && canCreate && (
-          <FAB
-            iconName="Plus"
-            label="Create Poll"
-            onPress={() => router.push('/(resident)/community-engagement/create?type=POLL')}
-            accessibilityLabel="Create Poll"
-          />
-        )}
       </View>
 
       {/* Create Poll Modal */}

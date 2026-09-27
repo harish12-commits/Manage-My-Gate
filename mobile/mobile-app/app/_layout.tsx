@@ -15,7 +15,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { store } from '../src/store/store';
-import { View, ActivityIndicator, I18nManager } from 'react-native';
+import { View, ActivityIndicator, I18nManager, TouchableOpacity, Linking, Platform } from 'react-native';
+import { AlertTriangle, Mail } from 'lucide-react-native';
+import { Text } from '@/components/ui/text';
 
 // Enforce standard Left-to-Right layout across all languages (including Arabic)
 try {
@@ -33,6 +35,7 @@ import {
   HankenGrotesk_500Medium,
   HankenGrotesk_600SemiBold,
   HankenGrotesk_700Bold,
+  HankenGrotesk_800ExtraBold,
 } from '@expo-google-fonts/hanken-grotesk';
 import storage from '../src/utils/storage';
 import i18n, { I18nProvider } from '../src/utils/i18n';
@@ -47,9 +50,48 @@ import { GlobalNotificationPresenter } from '@/components/feedback/GlobalNotific
 // Prevent splash screen from auto-hiding before asset loading is complete
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-export {
-  ErrorBoundary,
-} from 'expo-router';
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  const handleContactDev = () => {
+    const subject = encodeURIComponent('Nahom App Crash Report');
+    const body = encodeURIComponent(
+      `Hi Nahom Developer Team,\n\nI encountered a crash in the app:\n\nError: ${error?.message || 'Unknown'}\n\nStack Trace:\n${error?.stack || 'None'}\n\nPlatform: ${Platform.OS}\nDate: ${new Date().toISOString()}`
+    );
+    Linking.openURL(`mailto:developer@managemygate.com?subject=${subject}&body=${body}`);
+  };
+
+  return (
+    <View className="flex-1 items-center justify-center p-6 bg-background">
+      <View className="w-14 h-14 rounded-2xl bg-destructive/10 border border-destructive/20 items-center justify-center mb-4">
+        <AlertTriangle size={28} className="text-destructive" />
+      </View>
+      <Text className="text-lg font-bold text-foreground text-center mb-1">
+        Something Went Wrong
+      </Text>
+      <Text className="text-xs text-muted-foreground text-center mb-6 leading-relaxed max-w-xs">
+        {error?.message || 'An unexpected error occurred in the application.'}
+      </Text>
+      <View className="flex-row items-center gap-3 w-full max-w-xs">
+        <TouchableOpacity
+          onPress={retry}
+          className="flex-1 py-2.5 rounded-xl bg-primary items-center justify-center active:opacity-80"
+          accessibilityRole="button"
+          accessibilityLabel="Try Again"
+        >
+          <Text className="text-xs font-bold text-primary-foreground">Try Again</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleContactDev}
+          className="flex-1 py-2.5 rounded-xl bg-secondary border border-border items-center justify-center flex-row gap-1.5 active:opacity-80"
+          accessibilityRole="button"
+          accessibilityLabel="Email App Developer"
+        >
+          <Mail size={14} className="text-foreground" />
+          <Text className="text-xs font-bold text-foreground">Contact Dev</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
 
 // AuthRouteGuard runs inside Provider/ThemeProvider context
 function AuthRouteGuard() {
@@ -225,6 +267,7 @@ export default function RootLayout() {
     HankenGrotesk_500Medium,
     HankenGrotesk_600SemiBold,
     HankenGrotesk_700Bold,
+    HankenGrotesk_800ExtraBold,
   });
 
   useEffect(() => {
@@ -235,7 +278,7 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colorScheme === 'dark' ? '#09090b' : '#FFF8EF' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colorScheme === 'dark' ? '#131316' : '#FFF8EF' }}>
         <ActivityIndicator size="large" color="#F45A0A" />
       </View>
     );
@@ -248,7 +291,10 @@ export default function RootLayout() {
           <Provider store={store}>
             <I18nProvider>
               <BottomSheetModalProvider>
-                <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                <StatusBar
+                  style={colorScheme === 'dark' ? 'light' : 'dark'}
+                  backgroundColor={colorScheme === 'dark' ? '#131316' : '#FFF8EF'}
+                />
                 <Stack screenOptions={{ headerShown: false }} />
                 <AuthRouteGuard />
                 <GlobalNotificationPresenter />

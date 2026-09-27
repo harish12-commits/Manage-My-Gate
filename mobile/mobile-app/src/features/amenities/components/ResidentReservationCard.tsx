@@ -168,10 +168,14 @@ export function ResidentReservationCard({
     reservation.completionStatus !== 'COMPLETED' &&
     reservation.accessStatus !== 'CHECKED_OUT';
 
+  // Only reservations for which the server generated a credential may expose
+  // the pass action. This prevents an approval-pending booking from presenting
+  // an unusable or fabricated barcode.
   const canShowQR =
     reservation.bookingStatus !== 'CANCELLED' &&
     reservation.bookingStatus !== 'REJECTED' &&
-    reservation.completionStatus !== 'ABANDONED';
+    (reservation.accessStatus === 'PASS_GENERATED' ||
+      reservation.accessStatus === 'CHECKED_IN');
 
   const handleCardPress = () => {
     if (onPress) {
@@ -192,8 +196,8 @@ export function ResidentReservationCard({
       title={facilityName}
       subtitle={subtitle}
       leftIcon="QrCode"
-      leftIconBgColor="rgba(23, 43, 112, 0.12)"
-      leftIconColor="#172B70"
+      leftIconBgColor="rgba(234, 88, 12, 0.12)"
+      leftIconColor="#EA580C"
       status={{
         label: formatBookingStatusLabel(reservation.bookingStatus),
         variant: getBookingStatusVariant(reservation.bookingStatus),

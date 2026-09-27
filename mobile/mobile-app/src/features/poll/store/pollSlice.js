@@ -7,7 +7,7 @@ export const fetchActivePolls = createAsyncThunk(
   async (params = {}, { rejectWithValue }) => {
     try {
       const response = await pollService.getActivePolls(params);
-      return response.data;
+      return { payload: response.data, page: Number(params.page) || 1 };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch active polls');
     }
@@ -19,7 +19,7 @@ export const fetchClosedPolls = createAsyncThunk(
   async (params = {}, { rejectWithValue }) => {
     try {
       const response = await pollService.getClosedPolls(params);
-      return response.data;
+      return { payload: response.data, page: Number(params.page) || 1 };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch closed polls');
     }
@@ -31,7 +31,7 @@ export const fetchMyPolls = createAsyncThunk(
   async (params = {}, { rejectWithValue }) => {
     try {
       const response = await pollService.getMyPolls(params);
-      return response.data;
+      return { payload: response.data, page: Number(params.page) || 1 };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch your polls');
     }
@@ -207,6 +207,10 @@ const extractPollsTotal = (payload, fallbackLength = 0) => {
   );
 };
 
+const mergePollPage = (current, incoming, page) => page > 1
+  ? [...current, ...incoming.filter((poll) => !current.some((existing) => String(existing._id || existing.id) === String(poll._id || poll.id)))]
+  : incoming;
+
 export const pollSlice = createSlice({
   name: 'poll',
   initialState,
@@ -297,9 +301,10 @@ export const pollSlice = createSlice({
       })
       .addCase(fetchActivePolls.fulfilled, (state, action) => {
         state.activePolls.loading = false;
-        const list = extractPollsList(action.payload);
-        state.activePolls.data = list;
-        state.activePolls.total = extractPollsTotal(action.payload, list.length);
+        const result = action.payload?.payload ? action.payload : { payload: action.payload, page: 1 };
+        const list = extractPollsList(result.payload);
+        state.activePolls.data = mergePollPage(state.activePolls.data, list, result.page);
+        state.activePolls.total = extractPollsTotal(result.payload, list.length);
       })
       .addCase(fetchActivePolls.rejected, (state, action) => {
         state.activePolls.loading = false;
@@ -313,9 +318,10 @@ export const pollSlice = createSlice({
       })
       .addCase(fetchClosedPolls.fulfilled, (state, action) => {
         state.closedPolls.loading = false;
-        const list = extractPollsList(action.payload);
-        state.closedPolls.data = list;
-        state.closedPolls.total = extractPollsTotal(action.payload, list.length);
+        const result = action.payload?.payload ? action.payload : { payload: action.payload, page: 1 };
+        const list = extractPollsList(result.payload);
+        state.closedPolls.data = mergePollPage(state.closedPolls.data, list, result.page);
+        state.closedPolls.total = extractPollsTotal(result.payload, list.length);
       })
       .addCase(fetchClosedPolls.rejected, (state, action) => {
         state.closedPolls.loading = false;
@@ -329,9 +335,10 @@ export const pollSlice = createSlice({
       })
       .addCase(fetchMyPolls.fulfilled, (state, action) => {
         state.myPolls.loading = false;
-        const list = extractPollsList(action.payload);
-        state.myPolls.data = list;
-        state.myPolls.total = extractPollsTotal(action.payload, list.length);
+        const result = action.payload?.payload ? action.payload : { payload: action.payload, page: 1 };
+        const list = extractPollsList(result.payload);
+        state.myPolls.data = mergePollPage(state.myPolls.data, list, result.page);
+        state.myPolls.total = extractPollsTotal(result.payload, list.length);
       })
       .addCase(fetchMyPolls.rejected, (state, action) => {
         state.myPolls.loading = false;

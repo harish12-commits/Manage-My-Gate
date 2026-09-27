@@ -191,6 +191,7 @@ export default function DiscoverAmenitiesScreen() {
           onLoadMore={handleLoadMore}
           onRefresh={handleRefresh}
           loading={loading}
+          paginationSummary
           ListHeaderComponent={renderHeader()}
           emptyIcon="Building2"
           emptyTitle={searchQuery ? t('no_matching_amenities', 'No Matching Amenities') : t('no_amenities_found', 'No Amenities Found')}

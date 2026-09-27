@@ -49,7 +49,7 @@ export const CabVehicleStep: React.FC<CabVehicleStepProps> = ({
                   key={type.id}
                   onPress={() => onChange({ ...data, vehicleType: type.id as any })}
                   activeOpacity={0.8}
-                  className={`flex-1 py-2.5 px-2 rounded-xl border items-center gap-1 ${
+                  className={`flex-1 min-h-11 py-2.5 px-2 rounded-xl border items-center justify-center gap-1 ${
                     isSelected
                       ? 'bg-primary/10 border-primary'
                       : 'bg-background border-border'

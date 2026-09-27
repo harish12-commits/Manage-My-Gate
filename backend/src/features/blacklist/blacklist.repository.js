@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 import Blacklist from './blacklist.model.js';
 
+const normalizePhone = (value) => String(value || '').replace(/\D/g, '');
+const normalizeIdProof = (value) => String(value || '').replace(/[\s-]/g, '').toUpperCase();
+const normalizeName = (value) => String(value || '').trim().replace(/\s+/g, ' ');
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export class BlacklistRepository {
   /**
    * Add a profile to the blacklist database using an optional session.
@@ -24,17 +29,22 @@ export class BlacklistRepository {
   }
 
   /**
-   * Find blacklist entry by name or phone/plate.
+   * Find blacklist entry by any identifying value supplied for a visitor.
    * @param {string} orgId - Organization context.
    * @param {Object} criteria - Search parameters.
    * @returns {Promise<Object|null>} Match document.
    */
-  async findMatch(orgId, { name, phone, plate }) {
+  async findMatch(orgId, { name, phone, idProofNumber, plate }) {
     const query = { orgId: new mongoose.Types.ObjectId(orgId) };
     const matches = [];
 
-    if (name && name.trim() && name.trim() !== '—') matches.push({ name: new RegExp(`^${name.trim()}$`, 'i') });
-    if (phone && phone.trim() && phone.trim() !== '—') matches.push({ phone: phone.trim() });
+    const normalizedName = normalizeName(name);
+    const normalizedPhone = normalizePhone(phone);
+    const normalizedIdProof = normalizeIdProof(idProofNumber);
+
+    if (normalizedName && normalizedName !== '—') matches.push({ name: new RegExp(`^${escapeRegex(normalizedName)}$`, 'i') });
+    if (normalizedPhone && normalizedPhone !== '—') matches.push({ phone: normalizedPhone });
+    if (normalizedIdProof && normalizedIdProof !== '—') matches.push({ idProofNumber: normalizedIdProof });
     if (plate && plate.trim() && plate.trim() !== '—') matches.push({ plate: plate.trim().toUpperCase() });
 
     if (matches.length === 0) return null;

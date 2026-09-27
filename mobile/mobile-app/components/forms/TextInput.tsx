@@ -151,7 +151,10 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
       <View className={cn('w-full', containerClassName)}>
         {Boolean(translatedLabel) && (
           <View className="flex-row items-center justify-between mb-1.5">
-            <Text className={cn('text-[13.5px] font-bold font-sans text-foreground', labelClassName)}>
+            <Text
+              className={cn('text-[13.5px] font-bold font-sans text-foreground', labelClassName)}
+              style={{ fontWeight: 'bold' }}
+            >
               {translatedLabel}
               {required && !label?.includes('*') && (
                 <Text className="text-destructive font-bold"> *</Text>

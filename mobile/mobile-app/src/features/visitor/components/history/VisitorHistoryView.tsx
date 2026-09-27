@@ -43,10 +43,11 @@ export const VisitorHistoryView: React.FC = () => {
         page,
         limit: 10,
         statuses: activeTab,
+        search: search.trim() || undefined,
         append,
       });
     },
-    [fetchPasses, activeTab]
+    [fetchPasses, activeTab, search]
   );
 
   useEffect(() => {
@@ -137,6 +138,7 @@ export const VisitorHistoryView: React.FC = () => {
         }}
         onLoadMore={handleLoadMore}
         onRefresh={handleRefresh}
+        paginationSummary
         refreshing={refreshing}
         loading={isLoadingInitial}
         ListHeaderComponent={renderHeader()}

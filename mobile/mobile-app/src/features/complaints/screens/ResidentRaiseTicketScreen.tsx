@@ -895,7 +895,7 @@ export function ResidentRaiseTicketScreen() {
             size="lg"
             loading={isSubmitting}
             onPress={handleNextStep}
-            className="flex-1"
+            className={`flex-1 ${step === 3 ? 'bg-emerald-600 active:bg-emerald-700 border-0' : ''}`}
           >
             {step === 3 ? (isSubmitting ? 'Submitting...' : 'Submit Ticket →') : 'Continue →'}
           </Button>

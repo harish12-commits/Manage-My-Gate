@@ -150,13 +150,13 @@ export function ResidentMyDuesScreen() {
           {/* Portfolio Liability Hero Banner */}
           <View className="p-4 pb-2">
             <View className="bg-card border border-border rounded-2xl p-5">
-              <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Total Outstanding Dues
+              <View className="flex-row items-center justify-between mb-2 gap-2">
+                <Text numberOfLines={1} className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex-1 min-w-0">
+                  {t('total_outstanding_dues', 'Total Outstanding Dues')}
                 </Text>
-                <View className="flex-row items-center bg-primary/10 px-2.5 py-1 rounded-full">
-                  <Icon as={CreditCard} size={12} className="text-primary me-1" />
-                  <Text className="text-xs font-semibold text-primary">Active Portfolio</Text>
+                <View className="flex-row items-center bg-primary/10 px-2.5 py-1 rounded-full shrink-0">
+                  <Icon as={CreditCard} size={12} className="text-primary me-1 shrink-0" />
+                  <Text className="text-xs font-semibold text-primary">{t('active_portfolio', 'Active Portfolio')}</Text>
                 </View>
               </View>
 
@@ -165,14 +165,16 @@ export function ResidentMyDuesScreen() {
               </Text>
 
               {/* Digital Wallet Pill Widget */}
-              <View className="flex-row items-center justify-between bg-muted/50 border border-border/60 rounded-xl p-3">
-                <View className="flex-row items-center">
-                  <View className="w-8 h-8 rounded-lg bg-emerald-500/10 items-center justify-center me-2.5">
+              <View className="flex-row items-center justify-between bg-muted/50 border border-border/60 rounded-xl p-3 gap-2">
+                <View className="flex-row items-center flex-1 min-w-0 me-2">
+                  <View className="w-8 h-8 rounded-lg bg-emerald-500/10 items-center justify-center me-2.5 shrink-0">
                     <Icon as={Wallet} size={18} className="text-emerald-600 dark:text-emerald-400" />
                   </View>
-                  <View>
-                    <Text className="text-xs text-muted-foreground font-medium">Digital Wallet</Text>
-                    <Text className="text-sm font-bold text-foreground">
+                  <View className="flex-1 min-w-0">
+                    <Text numberOfLines={1} className="text-xs text-muted-foreground font-medium truncate">
+                      {t('digital_wallet', 'Digital Wallet')}
+                    </Text>
+                    <Text numberOfLines={1} className="text-sm font-bold text-foreground">
                       ₹{walletBalance.toLocaleString('en-IN')}
                     </Text>
                   </View>
@@ -182,30 +184,35 @@ export function ResidentMyDuesScreen() {
                   variant="outline"
                   size="sm"
                   onPress={handleOpenWalletScreen}
-                  accessibilityLabel="Manage Digital Wallet"
+                  accessibilityLabel={t('manage_digital_wallet', 'Manage Digital Wallet')}
                   accessibilityRole="button"
+                  className="shrink-0 px-3 h-9"
                 >
-                  View Wallet
+                  {t('view_wallet', 'View Wallet')}
                 </Button>
               </View>
 
               {/* Payment & Invoice History Button */}
               <Pressable
                 onPress={handleOpenPaymentHistory}
-                className="mt-3 flex-row items-center justify-between bg-muted/40 border border-border/50 rounded-xl p-3 active:bg-muted/70"
+                className="mt-3 flex-row items-center justify-between bg-muted/40 border border-border/50 rounded-xl p-3 active:bg-muted/70 gap-2"
                 accessibilityRole="button"
-                accessibilityLabel="View Payment and Invoice History"
+                accessibilityLabel={t('payment_and_invoice_history', 'View Payment and Invoice History')}
               >
-                <View className="flex-row items-center">
-                  <View className="w-8 h-8 rounded-lg bg-primary/10 items-center justify-center me-2.5">
+                <View className="flex-row items-center flex-1 min-w-0 me-2">
+                  <View className="w-8 h-8 rounded-lg bg-primary/10 items-center justify-center me-2.5 shrink-0">
                     <Icon as={Receipt} size={18} className="text-primary" />
                   </View>
-                  <View>
-                    <Text className="text-xs font-bold text-foreground">Payment & Invoice History</Text>
-                    <Text className="text-xs text-muted-foreground">View past receipts & settled fees</Text>
+                  <View className="flex-1 min-w-0">
+                    <Text numberOfLines={1} className="text-xs font-bold text-foreground truncate">
+                      {t('payment_and_invoice_history', 'Payment & Invoice History')}
+                    </Text>
+                    <Text numberOfLines={1} className="text-xs text-muted-foreground mt-0.5 truncate">
+                      {t('view_past_receipts_and_settled_fees', 'View past receipts & settled fees')}
+                    </Text>
                   </View>
                 </View>
-                <Icon as={ChevronRight} size={16} className="text-muted-foreground" />
+                <Icon as={ChevronRight} size={16} className="text-muted-foreground shrink-0" />
               </Pressable>
             </View>
           </View>
@@ -214,13 +221,13 @@ export function ResidentMyDuesScreen() {
           {isClearing ? (
             <View className="px-4 py-2">
               <View className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex-row items-center">
-                <Icon as={Clock} size={20} className="text-blue-600 dark:text-blue-400 me-3" />
-                <View className="flex-1">
+                <Icon as={Clock} size={20} className="text-blue-600 dark:text-blue-400 me-3 shrink-0" />
+                <View className="flex-1 min-w-0">
                   <Text className="text-xs font-bold text-blue-900 dark:text-blue-200">
-                    Payment Clearance In Progress
+                    {t('payment_clearance_in_progress', 'Payment Clearance In Progress')}
                   </Text>
                   <Text className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
-                    Payment of ₹{clearingAmount.toLocaleString('en-IN')} is clearing via Reference {clearingRef}. Awaiting admin verification.
+                    Payment of ₹{clearingAmount.toLocaleString('en-IN')} is clearing via Reference {clearingRef}. {t('awaiting_admin_verification', 'Awaiting admin verification.')}
                   </Text>
                 </View>
               </View>
@@ -231,15 +238,15 @@ export function ResidentMyDuesScreen() {
           <View className="px-4 pt-2">
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                Maintenance Invoices ({duesList.length})
+                {t('maintenance_invoices', 'Maintenance Invoices')} ({duesList.length})
               </Text>
             </View>
 
             {duesList.length === 0 ? (
               <EmptyState
                 icon={CheckCircle2}
-                title="All Dues Settled!"
-                description="No outstanding invoices."
+                title={t('all_dues_settled', 'All Dues Settled!')}
+                description={t('no_outstanding_invoices', 'No outstanding invoices.')}
               />
             ) : (
               <View className="gap-3">
@@ -279,27 +286,27 @@ export function ResidentMyDuesScreen() {
                       accessibilityLabel={`View Invoice ${invNo} for ${unitStr}`}
                       className="bg-card border border-border rounded-xl p-4 active:bg-muted/40"
                     >
-                      <View className="flex-row items-start justify-between mb-3">
-                        <View className="flex-row items-center flex-1 me-2">
-                          <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center me-3">
+                      <View className="flex-row items-start justify-between mb-3 gap-2">
+                        <View className="flex-row items-center flex-1 min-w-0 me-2">
+                          <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center me-3 shrink-0">
                             <Icon as={Receipt} size={20} className="text-primary" />
                           </View>
-                          <View className="flex-1">
-                            <Text className="text-foreground font-bold text-base truncate">
+                          <View className="flex-1 min-w-0">
+                            <Text numberOfLines={1} className="text-foreground font-bold text-base truncate">
                               {item.assessmentName || 'Maintenance Assessment'}
                             </Text>
-                            <Text className="text-muted-foreground text-xs font-medium mt-0.5">
+                            <Text numberOfLines={1} className="text-muted-foreground text-xs font-medium mt-0.5 truncate">
                               #{invNo} • {unitStr} • {periodStr}
                             </Text>
                           </View>
                         </View>
 
-                        <StatusBadge label={statusLabel} variant={statusVariant} dot />
+                        <StatusBadge label={statusLabel} variant={statusVariant} dot className="shrink-0" />
                       </View>
 
-                      <View className="border-t border-border/50 pt-3 flex-row items-center justify-between">
+                      <View className="border-t border-border/50 pt-3 gap-3">
                         <View>
-                          <Text className="text-xs text-muted-foreground">Remaining Liability</Text>
+                          <Text className="text-xs text-muted-foreground">{t('remaining_liability', 'Remaining Liability')}</Text>
                           <Text className="text-lg font-extrabold text-foreground">
                             {formattedDue}
                           </Text>
@@ -311,18 +318,19 @@ export function ResidentMyDuesScreen() {
                             size="sm"
                             onPress={() => setQrInvoice(mappedInvoice)}
                             accessibilityLabel={`Show QR for invoice ${invNo}`}
-                            className="px-2.5"
+                            className="flex-1 min-w-0 h-10 px-2"
                           >
                             <Icon as={QrCode} size={14} className="text-primary me-1" />
-                            <Text className="text-xs font-semibold text-primary">QR</Text>
+                            <Text className="text-xs font-semibold text-primary">{t('qr', 'QR')}</Text>
                           </Button>
 
                           <Button
                             variant="secondary"
                             size="sm"
                             onPress={() => handleViewInvoiceDetails(invoiceId)}
+                            className="flex-1 min-w-0 h-10"
                           >
-                            Details
+                            {t('details', 'Details')}
                           </Button>
 
                           {!isPendingVerification ? (
@@ -330,13 +338,14 @@ export function ResidentMyDuesScreen() {
                               variant="default"
                               size="sm"
                               onPress={() => setCheckoutInvoice(mappedInvoice)}
+                              className="flex-[1.35] min-w-0 h-10"
                             >
-                              Pay Now
+                              {t('pay_now', 'Pay Now')}
                             </Button>
                           ) : (
-                            <View className="bg-blue-500/10 px-2.5 py-1 rounded-lg">
+                            <View className="bg-blue-500/10 px-2.5 py-1 rounded-lg shrink-0">
                               <Text className="text-blue-600 dark:text-blue-400 text-xs font-semibold">
-                                Pending
+                                {t('status_pending', 'Pending')}
                               </Text>
                             </View>
                           )}
@@ -354,26 +363,26 @@ export function ResidentMyDuesScreen() {
             <View className="px-4 pt-4">
               <View className="flex-row items-center justify-between mb-2">
                 <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Tenant Arrears ({activeDues.secondaryCompliance.length})
+                  {t('tenant_arrears', 'Tenant Arrears')} ({activeDues.secondaryCompliance.length})
                 </Text>
               </View>
 
               <View className="bg-card border border-border rounded-xl p-4 gap-3">
                 {activeDues.secondaryCompliance.map((arrear: any, idx: number) => (
                   <View key={arrear._id || idx} className="flex-row items-center justify-between">
-                    <View className="flex-row items-center flex-1 me-2">
-                      <View className="w-9 h-9 rounded-full bg-primary/10 items-center justify-center me-3">
+                    <View className="flex-row items-center flex-1 min-w-0 me-2">
+                      <View className="w-9 h-9 rounded-full bg-primary/10 items-center justify-center me-3 shrink-0">
                         <Text className="font-bold text-primary text-sm">
                           {(arrear.tenantName || 'T').charAt(0)}
                         </Text>
                       </View>
-                      <View className="flex-1">
-                        <Text className="font-bold text-sm text-foreground">{arrear.tenantName}</Text>
-                        <Text className="text-xs text-muted-foreground">{arrear.unit || arrear.unitNumber || 'Leased Unit'}</Text>
+                      <View className="flex-1 min-w-0">
+                        <Text numberOfLines={1} className="font-bold text-sm text-foreground truncate">{arrear.tenantName}</Text>
+                        <Text numberOfLines={1} className="text-xs text-muted-foreground truncate">{arrear.unit || arrear.unitNumber || t('leased_unit', 'Leased Unit')}</Text>
                       </View>
                     </View>
 
-                    <View className="items-end">
+                    <View className="items-end shrink-0">
                       <Text className="font-extrabold text-sm text-foreground">
                         ₹{(arrear.amountDue || arrear.amount || 0).toLocaleString('en-IN')}
                       </Text>
@@ -383,9 +392,9 @@ export function ResidentMyDuesScreen() {
                 ))}
 
                 <View className="border-t border-border/50 pt-2.5 flex-row items-center">
-                  <Icon as={ShieldAlert} size={14} className="text-amber-600 dark:text-amber-400 me-2" />
+                  <Icon as={ShieldAlert} size={14} className="text-amber-600 dark:text-amber-400 me-2 shrink-0" />
                   <Text className="text-xs text-muted-foreground flex-1">
-                    As the owner, you may be held liable if tenant dues remain unpaid beyond 30 days.
+                    {t('tenant_arrears_owner_notice', 'As the owner, you may be held liable if tenant dues remain unpaid beyond 30 days.')}
                   </Text>
                 </View>
               </View>
@@ -467,4 +476,3 @@ export function ResidentMyDuesScreen() {
 }
 
 export default ResidentMyDuesScreen;
-

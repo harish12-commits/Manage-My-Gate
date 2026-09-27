@@ -27,6 +27,13 @@ export const createBlacklistRules = [
     .isString()
     .withMessage('Phone must be a string')
     .trim(),
+  body('idProofNumber')
+    .optional()
+    .isString()
+    .withMessage('Government ID number must be a string')
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Government ID number cannot exceed 100 characters'),
   body('plate')
     .optional()
     .isString()
@@ -53,6 +60,10 @@ export const checkMatchRules = [
     .isString()
     .trim(),
   query('phone')
+    .optional()
+    .isString()
+    .trim(),
+  query('idProofNumber')
     .optional()
     .isString()
     .trim(),

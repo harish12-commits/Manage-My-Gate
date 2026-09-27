@@ -35,8 +35,8 @@ export const mapBackendPassToHistoryItem = (backendPass: any): ExtendedVisitorPa
     passType = 'GUEST';
   }
 
-  let visitorName = backendPass.visitorDetails?.name || '';
-  let phone = backendPass.visitorDetails?.phone || '';
+  let visitorName = backendPass.visitorDetails?.name || backendPass.visitorName || '';
+  let phone = backendPass.visitorDetails?.phone || backendPass.phone || '';
   let provider: string | undefined = undefined;
   let vehicleNo: string | undefined = backendPass.vehicleDetails?.number || undefined;
   let guestCount: number | undefined = undefined;

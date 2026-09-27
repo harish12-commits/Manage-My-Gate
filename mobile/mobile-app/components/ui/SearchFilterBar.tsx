@@ -153,7 +153,9 @@ export const SearchFilterBar = React.forwardRef<View, SearchFilterBarProps>(
               placeholder={translateText(searchPlaceholder)}
               placeholderTextColor={placeholderColor}
               className={cn(
-                'flex-1 text-foreground text-sm font-sans p-0 bg-transparent h-full',
+                // Search prompts can be much longer than the available phone width.
+                // A compact type scale keeps the full prompt useful instead of clipping it.
+                'flex-1 min-w-0 text-foreground text-[12px] font-sans p-0 bg-transparent h-full',
                 Platform.select({
                   web: 'outline-none',
                 })
@@ -161,6 +163,7 @@ export const SearchFilterBar = React.forwardRef<View, SearchFilterBarProps>(
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="search"
+              numberOfLines={1}
             />
             {searchValue.length > 0 && (
               <Pressable

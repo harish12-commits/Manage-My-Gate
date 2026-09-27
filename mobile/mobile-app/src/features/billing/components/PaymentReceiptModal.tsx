@@ -162,7 +162,13 @@ export function PaymentReceiptModal({
             <View className="w-12 h-12 rounded-full bg-destructive/20 items-center justify-center mb-2">
               <Icon as={AlertCircle} size={28} className="text-destructive" />
             </View>
-            <Text className="font-extrabold text-lg text-foreground text-center">
+            <Text
+              className="font-extrabold text-lg text-foreground text-center"
+              // Keep the receipt-state heading distinct from the explanatory
+              // sentence below. The automatic raw-text translator otherwise
+              // resolves this heading to the same sentence as the status pill.
+              skipTranslate
+            >
               Payment Submission Rejected
             </Text>
             <Text className="text-xs text-muted-foreground text-center mt-1">

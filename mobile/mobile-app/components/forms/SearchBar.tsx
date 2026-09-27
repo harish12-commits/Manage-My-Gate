@@ -68,9 +68,10 @@ export const SearchBar = ({
         placeholderTextColor="#737c88"
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className="flex-1 text-[15px] font-sans text-foreground self-stretch min-h-[42px] py-2"
+        className="flex-1 min-w-0 text-[12px] font-sans text-foreground self-stretch min-h-[42px] py-2"
         style={{ outlineStyle: 'none' } as any}
         returnKeyType="search"
+        numberOfLines={1}
         onSubmitEditing={onSubmitEditing}
         accessibilityRole="search"
         accessibilityLabel={displayPlaceholder}

@@ -19,7 +19,7 @@ export default function StaffPassScreen() {
   };
 
   return (
-    <ScreenShell title="Daily Staff Pass" subtitle="Recurring access for domestic help & daily staff">
+    <ScreenShell title="Daily Staff Pass" subtitle="Recurring access for domestic help & daily staff" hideHeader hideBottomNav>
       <VisitorPassWizard
         initialType="SERVICE"
         roleContext={roleContext}

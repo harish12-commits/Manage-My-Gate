@@ -212,6 +212,9 @@ export const getPasses = createAsyncThunk(
       if (params?.statuses) {
         queryParams.statuses = params.statuses;
       }
+      if (params?.search) {
+        queryParams.search = params.search;
+      }
 
       const response = await visitorService.getPasses(orgId, queryParams);
       const body = response && (response as any).success !== undefined ? response : (response as any)?.data;

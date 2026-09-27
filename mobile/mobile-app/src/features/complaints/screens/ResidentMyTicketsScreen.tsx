@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { View, Alert } from 'react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { Text } from '@/components/ui/text';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
+import { PaginatedList } from '@/components/ui/PaginatedList';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
@@ -12,13 +13,13 @@ import { ComplaintCard } from '../components/ComplaintCard';
 import { ComplaintDetailSheet } from '../components/ComplaintDetailSheet';
 import { ComplaintFilterDrawer, ComplaintFilterValues } from '../components/ComplaintFilterDrawer';
 import { Complaint } from '../types';
-import { getStatusTabStyle } from '@/components/ui/statusTabColors';
 import { useTranslation } from '@/src/utils/i18n';
 
 export function ResidentMyTicketsScreen() {
   const { t } = useTranslation();
   const {
     complaints,
+    pagination,
     isLoading,
     error,
     fetchComplaints,
@@ -30,7 +31,6 @@ export function ResidentMyTicketsScreen() {
   } = useComplaints();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatusTab, setSelectedStatusTab] = useState<string>('ALL');
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [drawerFilters, setDrawerFilters] = useState<ComplaintFilterValues>({
@@ -43,30 +43,21 @@ export function ResidentMyTicketsScreen() {
   const [cancelTicketId, setCancelTicketId] = useState<string | null>(null);
 
   const loadData = useCallback(() => {
-    fetchComplaints();
+    fetchComplaints({ page: 1, limit: 20 });
   }, [fetchComplaints]);
+
+  const loadMore = useCallback(() => {
+    if (!isLoading && pagination.currentPage < pagination.totalPages) {
+      fetchComplaints({ page: pagination.currentPage + 1, limit: pagination.limit || 20 });
+    }
+  }, [fetchComplaints, isLoading, pagination]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Calculated Metrics for Filter Counts
-  const metrics = useMemo(() => {
-    const total = complaints.length;
-    const inProgress = complaints.filter((c: any) =>
-      ['Assigned', 'In Progress', 'Accepted'].includes(c.status)
-    ).length;
-    const actionNeeded = complaints.filter((c: any) =>
-      ['Work Completed', 'Waiting For Resident Confirmation'].includes(c.status)
-    ).length;
-    const resolved = complaints.filter((c: any) =>
-      ['Closed', 'Completed'].includes(c.status)
-    ).length;
-
-    return { total, inProgress, actionNeeded, resolved };
-  }, [complaints]);
-
-  // Filtered List based on Search Query, Tab Filter & Drawer Filters
+  // The filter drawer is the single source of truth for ticket filters.
+  // Keeping status controls there avoids duplicate, conflicting states.
   const filteredTickets = useMemo(() => {
     return complaints.filter((item: Complaint) => {
       // 1. Search Query Filter
@@ -78,35 +69,34 @@ export function ResidentMyTicketsScreen() {
         if (!matchesNumber && !matchesTitle && !matchesCat) return false;
       }
 
-      // 2. Tab Filter
-      if (selectedStatusTab === 'OPEN') {
-        if (!['Submitted', 'Open', 'Waiting For Assignment'].includes(item.status)) return false;
-      } else if (selectedStatusTab === 'IN_PROGRESS') {
-        if (!['Assigned', 'In Progress', 'Accepted'].includes(item.status)) return false;
-      } else if (selectedStatusTab === 'ACTION_NEEDED') {
-        if (!['Work Completed', 'Waiting For Resident Confirmation'].includes(item.status)) return false;
-      } else if (selectedStatusTab === 'COMPLETED') {
-        if (!['Closed', 'Completed'].includes(item.status)) return false;
-      }
-
-      // 3. Drawer Priority Filter
+      // 2. Drawer Priority Filter
       if (drawerFilters.priority && drawerFilters.priority !== 'ALL') {
         if (item.priority?.toLowerCase() !== drawerFilters.priority.toLowerCase()) return false;
       }
 
-      // 4. Drawer Category Filter
+      // 3. Drawer Category Filter
       if (drawerFilters.category && drawerFilters.category !== 'ALL') {
         if (item.category?.toLowerCase() !== drawerFilters.category.toLowerCase()) return false;
       }
 
-      // 5. Drawer Status Filter
+      // 4. Drawer Status Filter. Drawer values represent lifecycle groups,
+      // rather than raw backend status strings.
       if (drawerFilters.status && drawerFilters.status !== 'ALL') {
-        if (item.status?.toLowerCase() !== drawerFilters.status.toLowerCase()) return false;
+        const status = String(item.status || '').toUpperCase();
+        const statusGroups: Record<string, string[]> = {
+          UNASSIGNED: ['SUBMITTED', 'OPEN', 'WAITING FOR ASSIGNMENT'],
+          ASSIGNED: ['ASSIGNED', 'ACCEPTED', 'WAITING FOR ACCEPTANCE'],
+          IN_PROGRESS: ['IN PROGRESS'],
+          ESCALATED: ['ESCALATED'],
+          COMPLETED: ['CLOSED', 'COMPLETED', 'WORK COMPLETED'],
+        };
+        const allowedStatuses = statusGroups[drawerFilters.status] || [drawerFilters.status.toUpperCase()];
+        if (!allowedStatuses.includes(status)) return false;
       }
 
       return true;
     });
-  }, [complaints, searchQuery, selectedStatusTab, drawerFilters]);
+  }, [complaints, searchQuery, drawerFilters]);
 
   const activeDrawerCount =
     (drawerFilters.status !== 'ALL' && drawerFilters.status ? 1 : 0) +
@@ -152,14 +142,6 @@ export function ResidentMyTicketsScreen() {
     }
   };
 
-  const filterTabs = [
-    { label: t('all', 'All'), value: 'ALL', count: metrics.total },
-    { label: t('open', 'Open'), value: 'OPEN' },
-    { label: t('in_progress', 'In Progress'), value: 'IN_PROGRESS', count: metrics.inProgress },
-    { label: t('action_needed', 'Action Needed'), value: 'ACTION_NEEDED', count: metrics.actionNeeded },
-    { label: t('completed', 'Completed'), value: 'COMPLETED', count: metrics.resolved },
-  ];
-
   return (
     <ScreenShell
       title={t('track_my_tickets', 'Track My Tickets')}
@@ -174,17 +156,17 @@ export function ResidentMyTicketsScreen() {
           </View>
         ) : null}
 
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 110 }}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          scrollEventThrottle={16}
-          alwaysBounceVertical={true}
-          bounces={true}
-          showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadData} tintColor="#FF6A00" colors={['#FF6A00']} />}
-        >
+        <PaginatedList<Complaint>
+          data={filteredTickets}
+          pagination={pagination}
+          loading={isLoading}
+          refreshing={isLoading && complaints.length > 0}
+          onRefresh={loadData}
+          onLoadMore={loadMore}
+          paginationSummary
+          contentContainerClassName="pb-28"
+          ListHeaderComponent={
+            <>
           {/* SECTION 1: SEARCH BAR */}
           <SearchFilterBar
             searchValue={searchQuery}
@@ -194,69 +176,30 @@ export function ResidentMyTicketsScreen() {
             activeFilterCount={activeDrawerCount}
           />
 
-          {/* SECTION 2: HORIZONTAL FILTER CHIPS */}
-          <View className="px-4 py-1.5">
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2 py-1">
-              {filterTabs.map((tab) => {
-                const isActive = selectedStatusTab === tab.value;
-                const statusStyle = getStatusTabStyle(tab.value || tab.label, isActive);
-                return (
-                  <TouchableOpacity
-                    key={tab.value}
-                    activeOpacity={0.8}
-                    onPress={() => setSelectedStatusTab(tab.value)}
-                    className={`px-3.5 py-1.5 rounded-full border flex-row items-center me-1.5 ${statusStyle.containerClass}`}
-                  >
-                    <Text
-                      className={`text-xs ${statusStyle.textClass}`}
-                    >
-                      {tab.label}
-                    </Text>
-
-                    {tab.count !== undefined && tab.count > 0 ? (
-                      <View
-                        className={`ms-1.5 px-1.5 py-0.2 rounded-full ${
-                          isActive ? 'bg-white/20' : 'bg-muted'
-                        }`}
-                      >
-                        <Text
-                          className={`text-[10px] font-bold ${
-                            isActive ? 'text-primary-foreground' : 'text-muted-foreground'
-                          }`}
-                        >
-                          {tab.count}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-
-          {/* SECTION 3: TICKET LIST OR EMPTY STATE */}
-          <View className="px-4 pt-2">
-            {filteredTickets.length === 0 ? (
-              <View className="pt-6">
+            </>
+          }
+          renderItem={(ticket) => (
+            <View className="px-4">
+              <ComplaintCard
+                complaint={ticket}
+                onPress={() => setSelectedComplaint(ticket)}
+                onConfirmPress={() => setSelectedComplaint(ticket)}
+                onCancelPress={() => setCancelTicketId(ticket._id)}
+              />
+            </View>
+          )}
+          ListEmptyComponent={
+            !isLoading ? (
+              <View className="px-4 pt-6">
                 <EmptyState
                   icon={CheckCircle2}
                   title={t('no_tickets_found', 'No Tickets Found')}
                   description={t('no_tickets_desc', 'You have no maintenance requests matching your selected search filter.')}
                 />
               </View>
-            ) : (
-              filteredTickets.map((ticket: Complaint) => (
-                <ComplaintCard
-                  key={ticket._id}
-                  complaint={ticket}
-                  onPress={() => setSelectedComplaint(ticket)}
-                  onConfirmPress={() => setSelectedComplaint(ticket)}
-                  onCancelPress={() => setCancelTicketId(ticket._id)}
-                />
-              ))
-            )}
-          </View>
-        </ScrollView>
+            ) : null
+          }
+        />
 
         {/* TICKET DETAILS DRAWER SHEET */}
         <ComplaintDetailSheet

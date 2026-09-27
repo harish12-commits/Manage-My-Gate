@@ -219,7 +219,7 @@ export const DeliveryValidityStep: React.FC<DeliveryValidityStepProps> = ({
             <TouchableOpacity
               onPress={toggleAllWeekdays}
               activeOpacity={0.7}
-              className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full shrink-0"
+              className="min-h-11 bg-primary/10 border border-primary/20 px-3 py-2 rounded-full shrink-0 items-center justify-center"
             >
               <Text className="text-xs font-bold text-primary">
                 {isAllSelected ? 'Deselect All' : 'Select All'}
@@ -269,7 +269,7 @@ export const DeliveryValidityStep: React.FC<DeliveryValidityStepProps> = ({
               <TouchableOpacity
                 onPress={addTimeSlot}
                 activeOpacity={0.7}
-                className="flex-row items-center gap-1 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full shrink-0"
+              className="min-h-11 flex-row items-center justify-center gap-1 bg-primary/10 border border-primary/20 px-3 py-2 rounded-full shrink-0"
               >
                 <Plus size={13} className="text-primary" />
                 <Text className="text-xs font-bold text-primary">Add Window</Text>
@@ -289,7 +289,7 @@ export const DeliveryValidityStep: React.FC<DeliveryValidityStepProps> = ({
                     <TouchableOpacity
                       onPress={() => removeTimeSlot(index)}
                       activeOpacity={0.7}
-                      className="px-2 py-1 rounded-lg bg-destructive/10 border border-destructive/20 flex-row items-center gap-1"
+                      className="min-h-11 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/20 flex-row items-center justify-center gap-1"
                     >
                       <Trash2 size={12} className="text-destructive" />
                       <Text className="text-xs font-bold text-destructive">Remove</Text>

@@ -46,6 +46,7 @@ import { PaymentReceiptModal } from '../components/PaymentReceiptModal';
 import { InvoiceQRModal } from '../components/InvoiceQRModal';
 import { generateInvoiceHtml, exportInvoiceHtmlDocument } from '../utils/invoicePdfUtility';
 import { getImageUrl } from '@/src/utils/imageUrl';
+import { useTranslation } from '@/src/utils/i18n';
 
 const getMethodMeta = (method?: string) => {
   const m = (method || 'BANK_TRANSFER').toUpperCase();
@@ -119,6 +120,7 @@ const isImageProof = (url?: string | null) => {
 
 export function InvoiceDetailsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ id: string }>();
   const invoiceId = params?.id || '';
 
@@ -637,8 +639,10 @@ export function InvoiceDetailsScreen() {
               <DetailRow label="Invoice Number" value={invNo} copyable />
               <DetailRow label="Resident Account" value={residentStr} />
               <DetailRow label="Unit / Villa" value={unitStr} />
-              <DetailRow label="Billing Cycle" value={periodStr} />
-              <DetailRow label="Payment Status" value={statusLabel} />
+              <DetailRow
+                label={t('payment_status', 'Payment Status')}
+                value={<StatusBadge label={statusLabel} variant={statusVariant} size="sm" />}
+              />
               {invoice?.createdAt || invoice?.date ? (
                 <DetailRow
                   label="Created Date"

@@ -126,9 +126,10 @@ export default function AdminVisitorDashboardScreen() {
       onRetry={loadData}
       headerRight={
         <Button
+          variant="default"
           size="sm"
           onPress={() => router.push('/(resident)/visitor/admin/create-pass' as any)}
-          className="flex-row items-center gap-1 px-2.5 py-1 h-8 rounded-full bg-emerald-600 active:bg-emerald-700"
+          className="flex-row items-center gap-1 px-3 rounded-full bg-emerald-600 active:bg-emerald-700 border-0"
           accessibilityRole="button"
           accessibilityLabel={t('create_pass', 'Create Pass')}
         >

@@ -209,9 +209,10 @@ export default function AdminCommunityPassesScreen() {
       subtitle={t('master_pass_registry_villa_level_securit', 'Master pass registry & villa-level security filters')}
       headerRight={
         <Button
+          variant="default"
           size="sm"
           onPress={() => setTypeSheetOpen(true)}
-          className="flex-row items-center gap-1 px-2.5 py-1 h-8 rounded-full bg-emerald-600 active:bg-emerald-700"
+          className="flex-row items-center gap-1 px-3 rounded-full bg-emerald-600 active:bg-emerald-700 border-0"
           accessibilityRole="button"
           accessibilityLabel={t('new_pass', 'New Pass')}
         >
@@ -228,6 +229,7 @@ export default function AdminCommunityPassesScreen() {
           loading={status === 'loading'}
           onRefresh={handleRefresh}
           onLoadMore={handleLoadMore}
+          paginationSummary
           ListHeaderComponent={renderHeader()}
           emptyIcon="QrCode"
           emptyTitle="No Community Passes Found"

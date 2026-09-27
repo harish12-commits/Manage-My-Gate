@@ -193,7 +193,7 @@ export function ResidentReservationDetailView({
         className="bg-card border border-border"
       >
         <DetailRow
-          label="Booking Status"
+          label={t('booking_status', 'Booking Status')}
           value={
             <StatusBadge
               label={formatBookingStatusLabel(reservation.bookingStatus)}
@@ -202,7 +202,7 @@ export function ResidentReservationDetailView({
           }
         />
         <DetailRow
-          label="Payment Status"
+          label={t('payment_status', 'Payment Status')}
           value={
             <StatusBadge
               label={formatPaymentStatusLabel(reservation.paymentStatus)}
@@ -211,7 +211,7 @@ export function ResidentReservationDetailView({
           }
         />
         <DetailRow
-          label="Approval Status"
+          label={t('approval_status', 'Approval Status')}
           value={
             <StatusBadge
               label={formatApprovalStatusLabel(reservation.approvalStatus)}
@@ -220,7 +220,7 @@ export function ResidentReservationDetailView({
           }
         />
         <DetailRow
-          label="Access Status"
+          label={t('access_status', 'Access Status')}
           value={
             <StatusBadge
               label={formatAccessStatusLabel(reservation.accessStatus)}
@@ -229,7 +229,7 @@ export function ResidentReservationDetailView({
           }
         />
         <DetailRow
-          label="Completion Status"
+          label={t('completion_status', 'Completion Status')}
           value={
             <StatusBadge
               label={formatCompletionStatusLabel(reservation.completionStatus)}
@@ -324,7 +324,7 @@ export function ResidentReservationDetailView({
           }
         />
         <DetailRow
-          label="Payment Status"
+          label={t('payment_status', 'Payment Status')}
           value={
             <StatusBadge
               label={reservation.paymentStatus}

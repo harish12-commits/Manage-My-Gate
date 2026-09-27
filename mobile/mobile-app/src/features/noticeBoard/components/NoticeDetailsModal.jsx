@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge, getStatusVariant } from '@/components/ui/StatusBadge';
 import { DetailRow } from '@/components/ui/DetailRow';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { useTranslation } from '@/src/utils/i18n';
 import {
   Pin,
   Globe,
@@ -34,6 +35,7 @@ export function NoticeDetailsModal({
   canDelete = false,
 }) {
   const router = useRouter();
+  const { t, translateText } = useTranslation();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   if (!notice) return null;
@@ -68,13 +70,13 @@ export function NoticeDetailsModal({
   const targetType = notice.targetAudience?.targetType || 'ALL';
   const targetLabel =
     targetType === 'ALL'
-      ? 'All Community Residents'
+      ? t('all_community_residents', 'All Community Residents')
       : targetType === 'BLOCK'
-      ? `Specific Blocks (${notice.targetAudience?.blocks?.join(', ') || 'N/A'})`
+      ? `${t('specific_blocks', 'Specific Blocks')} (${notice.targetAudience?.blocks?.join(', ') || t('n_a', 'N/A')})`
       : targetType === 'ROLE'
-      ? `Specific Roles (${notice.targetAudience?.roles?.join(', ') || 'N/A'})`
+      ? `${t('specific_roles', 'Specific Roles')} (${notice.targetAudience?.roles?.join(', ') || t('n_a', 'N/A')})`
       : targetType === 'USER'
-      ? 'Specific Users'
+      ? t('specific_users', 'Specific Users')
       : targetType;
 
   return (
@@ -82,7 +84,7 @@ export function NoticeDetailsModal({
       <BottomSheet
         visible={visible && !deleteConfirmOpen}
         onClose={onClose}
-        title="Notice Administration"
+        title={t('notice_administration', 'Notice Administration')}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -96,12 +98,12 @@ export function NoticeDetailsModal({
                 {isPinned && (
                   <View className="bg-primary/15 px-2 py-0.5 rounded-md flex-row items-center gap-1">
                     <Pin size={12} className="text-primary" />
-                    <Text className="text-[11px] font-bold text-primary">PINNED</Text>
+                    <Text className="text-[11px] font-bold text-primary">{t('pinned', 'PINNED')}</Text>
                   </View>
                 )}
               </View>
               <StatusBadge
-                label={status}
+                label={t(`status_${status.toLowerCase()}`, status)}
                 variant={getNoticeStatusVariant(status)}
                 size="sm"
               />
@@ -130,7 +132,7 @@ export function NoticeDetailsModal({
               >
                 <Pin size={13} className={isPinned ? 'text-primary-foreground' : 'text-foreground'} />
                 <Text className={`text-xs font-bold ${isPinned ? 'text-primary-foreground' : 'text-foreground'}`}>
-                  {isPinned ? 'Unpin' : 'Pin'}
+                  {isPinned ? t('unpin', 'Unpin') : t('pin', 'Pin')}
                 </Text>
               </Button>
             )}
@@ -144,7 +146,7 @@ export function NoticeDetailsModal({
                 accessibilityLabel="Publish Notice"
               >
                 <Globe size={13} className="text-foreground" />
-                <Text className="text-xs font-bold text-foreground">Publish</Text>
+                <Text className="text-xs font-bold text-foreground">{t('publish', 'Publish')}</Text>
               </Button>
             )}
 
@@ -157,7 +159,7 @@ export function NoticeDetailsModal({
                 accessibilityLabel="Archive Notice"
               >
                 <Archive size={13} className="text-foreground" />
-                <Text className="text-xs font-bold text-foreground">Archive</Text>
+                <Text className="text-xs font-bold text-foreground">{t('archive', 'Archive')}</Text>
               </Button>
             )}
 
@@ -176,7 +178,7 @@ export function NoticeDetailsModal({
                 accessibilityLabel="Edit Notice"
               >
                 <Edit size={13} className="text-foreground" />
-                <Text className="text-xs font-bold text-foreground">Edit</Text>
+                <Text className="text-xs font-bold text-foreground">{t('edit', 'Edit')}</Text>
               </Button>
             )}
 
@@ -189,7 +191,7 @@ export function NoticeDetailsModal({
                 accessibilityLabel="Delete Notice"
               >
                 <Trash2 size={13} color="#ffffff" />
-                <Text className="text-xs font-bold text-white">Delete</Text>
+                <Text className="text-xs font-bold text-white">{t('delete', 'Delete')}</Text>
               </Button>
             )}
           </View>
@@ -197,18 +199,18 @@ export function NoticeDetailsModal({
           {/* Specification Details */}
           <View className="bg-card border border-border/70 rounded-2xl p-4 gap-1">
             <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-              Notice Details
+              {t('notice_details', 'Notice Details')}
             </Text>
             <DetailRow
-              label="Category"
+              label={t('category', 'Category')}
               value={notice.category || 'General'}
               iconName="Tag"
             />
             <DetailRow
-              label="Priority"
+              label={t('priority', 'Priority')}
               value={
                 <StatusBadge
-                  label={notice.priority || 'Normal'}
+                  label={t(`priority_${(notice.priority || 'Normal').toLowerCase()}`, notice.priority || 'Normal')}
                   variant={getStatusVariant(notice.priority || 'Normal')}
                   size="sm"
                 />
@@ -216,32 +218,32 @@ export function NoticeDetailsModal({
               iconName="AlertCircle"
             />
             <DetailRow
-              label="Target Audience"
+              label={t('target_audience', 'Target Audience')}
               value={targetLabel}
               iconName="Users"
             />
             <DetailRow
-              label="Created"
-              value={formattedDate(notice.createdAt) || 'N/A'}
+              label={t('created', 'Created')}
+              value={formattedDate(notice.createdAt) || t('n_a', 'N/A')}
               iconName="Calendar"
             />
             {notice.scheduleDate && (
               <DetailRow
-                label="Scheduled For"
+                label={t('scheduled_for', 'Scheduled For')}
                 value={formattedDate(notice.scheduleDate)}
                 iconName="Clock"
               />
             )}
             {notice.expiryDate && (
               <DetailRow
-                label="Expires On"
+                label={t('expires_on', 'Expires On')}
                 value={formattedDate(notice.expiryDate)}
                 iconName="Clock"
               />
             )}
             <DetailRow
-              label="Author"
-              value={notice.author?.name || notice.createdBy?.name || 'Community Admin'}
+              label={t('author', 'Author')}
+              value={notice.author?.name || notice.createdBy?.name || t('community_admin', 'Community Admin')}
               iconName="UserCheck"
               isLast={true}
             />
@@ -261,7 +263,7 @@ export function NoticeDetailsModal({
             className="flex-row items-center justify-center gap-2 rounded-xl"
             accessibilityLabel="View Full Screen Notice"
           >
-            <Text className="text-sm font-semibold text-foreground">Open Full Screen Notice</Text>
+            <Text className="text-sm font-semibold text-foreground">{t('open_fullscreen_notice', 'Open Full Screen Notice')}</Text>
             <ExternalLink size={15} className="text-foreground" />
           </Button>
         </ScrollView>
@@ -270,10 +272,11 @@ export function NoticeDetailsModal({
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         visible={deleteConfirmOpen}
-        title="Delete Notice?"
+        title={t('delete_notice_confirm', 'Delete Notice?')}
         message={`Are you sure you want to permanently remove "${notice.title}"? This cannot be undone.`}
         variant="danger"
-        confirmLabel="Delete Notice"
+        confirmLabel={t('delete_notice', 'Delete Notice')}
+        cancelLabel={t('cancel', 'Cancel')}
         onConfirm={() => {
           setDeleteConfirmOpen(false);
           onClose();

@@ -39,7 +39,12 @@ export default function InviteVisitorScreen() {
   };
 
   return (
-    <ScreenShell title="Invite Visitor" subtitle="Pre-approve guest entry & generate QR passes">
+    <ScreenShell
+      title="Invite Visitor"
+      subtitle="Pre-approve guest entry & generate QR passes"
+      hideHeader
+      hideBottomNav
+    >
       <VisitorPassWizard
         initialType={initialType}
         roleContext={roleContext}

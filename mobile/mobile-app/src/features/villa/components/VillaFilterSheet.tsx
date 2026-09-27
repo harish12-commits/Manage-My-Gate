@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { GlobalFilterPanel, FilterCategoryConfig } from '@/components/ui/GlobalFilterPanel';
 import { Layers, Building2 } from 'lucide-react-native';
 import { useTranslation } from '@/src/utils/i18n';
@@ -27,8 +27,23 @@ export const VillaFilterSheet: React.FC<VillaFilterSheetProps> = ({
   onClearAll,
 }) => {
   const { t } = useTranslation();
+  const [draftStatus, setDraftStatus] = useState(selectedStatus);
+  const [draftBlock, setDraftBlock] = useState(selectedBlock);
 
-  const totalActiveCount = (selectedStatus ? 1 : 0) + (selectedBlock ? 1 : 0);
+  useEffect(() => {
+    if (visible) {
+      setDraftStatus(selectedStatus);
+      setDraftBlock(selectedBlock);
+    }
+  }, [visible, selectedStatus, selectedBlock]);
+
+  const totalActiveCount = (draftStatus ? 1 : 0) + (draftBlock ? 1 : 0);
+
+  const handleApply = () => {
+    if (draftStatus !== selectedStatus) onSelectStatus(draftStatus);
+    if (draftBlock !== selectedBlock) onSelectBlock?.(draftBlock);
+    onClose();
+  };
 
   const categoryConfigs: FilterCategoryConfig[] = useMemo(() => {
     const categories: FilterCategoryConfig[] = [
@@ -44,11 +59,9 @@ export const VillaFilterSheet: React.FC<VillaFilterSheetProps> = ({
             label: t(st, st),
           })),
         ],
-        selectedValues: selectedStatus,
-        selectedCount: selectedStatus ? 1 : 0,
-        onOptionSelect: (val) => {
-          onSelectStatus(val);
-        },
+        selectedValues: draftStatus,
+        selectedCount: draftStatus ? 1 : 0,
+        onOptionSelect: setDraftStatus,
       },
     ];
 
@@ -65,16 +78,14 @@ export const VillaFilterSheet: React.FC<VillaFilterSheetProps> = ({
             label: `${t('block', 'Block')} ${blk}`,
           })),
         ],
-        selectedValues: selectedBlock,
-        selectedCount: selectedBlock ? 1 : 0,
-        onOptionSelect: (val) => {
-          onSelectBlock(val);
-        },
+        selectedValues: draftBlock,
+        selectedCount: draftBlock ? 1 : 0,
+        onOptionSelect: setDraftBlock,
       });
     }
 
     return categories;
-  }, [availableStatuses, selectedStatus, onSelectStatus, availableBlocks, selectedBlock, onSelectBlock, t]);
+  }, [availableStatuses, draftStatus, availableBlocks, draftBlock, onSelectBlock, t]);
 
   return (
     <GlobalFilterPanel
@@ -82,8 +93,10 @@ export const VillaFilterSheet: React.FC<VillaFilterSheetProps> = ({
       onClose={onClose}
       title={t('filter_units', 'Filter Units')}
       categories={categoryConfigs}
-      onApply={onClose}
+      onApply={handleApply}
       onClearAll={() => {
+        setDraftStatus('');
+        setDraftBlock('');
         onClearAll();
         onClose();
       }}

@@ -107,8 +107,8 @@ export const EngagementCard: React.FC<EngagementCardProps> = ({
       subtitle={getSubtitleDisplay()}
       titleLines={2}
       leftIcon={isNotice ? 'Megaphone' : 'BarChart3'}
-      leftIconBgColor={isNotice ? 'rgba(234, 88, 12, 0.1)' : 'rgba(23, 43, 112, 0.1)'}
-      leftIconColor={isNotice ? '#EA580C' : '#172B70'}
+      leftIconBgColor="rgba(234, 88, 12, 0.1)"
+      leftIconColor="#EA580C"
       status={{
         label: t(`status_${item.status.toLowerCase()}`, item.status),
         variant: getStatusBadgeVariant(item.status, item.priority),

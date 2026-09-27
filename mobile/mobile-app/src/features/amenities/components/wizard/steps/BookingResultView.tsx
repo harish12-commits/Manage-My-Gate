@@ -21,6 +21,7 @@ import {
   formatReservationTimeRange,
 } from '../../../utils/amenityStateHelpers';
 import { CheckCircle2, AlertCircle, Clock, QrCode, Share2 } from 'lucide-react-native';
+import { useTranslation } from '@/src/utils/i18n';
 
 export interface BookingResultViewProps {
   facility: AmenityFacility;
@@ -39,6 +40,8 @@ export function BookingResultView({
   onDone,
   onViewBookings,
 }: BookingResultViewProps) {
+  const { t } = useTranslation();
+
   if (!reservation) {
     return (
       <View className="items-center justify-center p-6">
@@ -170,10 +173,10 @@ export function BookingResultView({
 
       {/* Five Orthogonal Reservation Dimensions */}
       <DetailSection
-        title="Authoritative Reservation States"
+        title={t('authoritative_reservation_states', 'Authoritative Reservation States')}
         className="border border-border bg-card">
         <DetailRow
-          label="Booking Status"
+          label={t('booking_status', 'Booking Status')}
           value={
             <StatusBadge
               label={formatBookingStatusLabel(reservation.bookingStatus)}
@@ -182,7 +185,7 @@ export function BookingResultView({
           }
         />
         <DetailRow
-          label="Payment Status"
+          label={t('payment_status', 'Payment Status')}
           value={
             <StatusBadge
               label={formatPaymentStatusLabel(reservation.paymentStatus)}
@@ -197,7 +200,7 @@ export function BookingResultView({
           }
         />
         <DetailRow
-          label="Approval Status"
+          label={t('approval_status', 'Approval Status')}
           value={
             <StatusBadge
               label={formatApprovalStatusLabel(reservation.approvalStatus)}
@@ -213,7 +216,7 @@ export function BookingResultView({
           }
         />
         <DetailRow
-          label="Access Status"
+          label={t('access_status', 'Access Status')}
           value={
             <StatusBadge
               label={formatAccessStatusLabel(reservation.accessStatus)}
@@ -229,7 +232,7 @@ export function BookingResultView({
           }
         />
         <DetailRow
-          label="Completion Status"
+          label={t('completion_status', 'Completion Status')}
           value={
             <StatusBadge
               label={formatCompletionStatusLabel(reservation.completionStatus)}

@@ -20,7 +20,7 @@ import {
 import { ResidentReservationCard } from '@/src/features/amenities/components/ResidentReservationCard';
 import { ResidentCancelModal } from '@/src/features/amenities/components/ResidentCancelModal';
 import { AmenityPassDetailsModal } from '@/src/features/amenities/components/AmenityPassDetailsModal';
-import { AmenityReservation } from '@/src/features/amenities/types/amenityDomain.types';
+import { AmenityAccessPass, AmenityReservation } from '@/src/features/amenities/types/amenityDomain.types';
 import { useAuth } from '@/src/features/auth/hooks/useAuth';
 import { isFeatureAllowedForUser } from '@/src/utils/rbac';
 import { useTranslation } from '@/src/utils/i18n';
@@ -58,11 +58,13 @@ export default function MyBookingsScreen() {
     cancelTarget,
     setCancelTarget,
     cancelReservation,
+    fetchPassesByReservation,
     refresh,
     loadMore,
   } = useResidentReservations();
 
   const [selectedPassReservation, setSelectedPassReservation] = React.useState<AmenityReservation | null>(null);
+  const [selectedAccessPass, setSelectedAccessPass] = React.useState<AmenityAccessPass | null>(null);
   const [passModalOpen, setPassModalOpen] = React.useState(false);
 
   // Canonical presentation category tabs
@@ -90,15 +92,29 @@ export default function MyBookingsScreen() {
     }
   };
 
+  const handleShowPass = async (reservation: AmenityReservation) => {
+    setSelectedPassReservation(reservation);
+    setSelectedAccessPass(null);
+    setPassModalOpen(true);
+
+    try {
+      // A pass is an authoritative, server-issued credential.  Never render a
+      // locally invented barcode when the booking is still awaiting approval.
+      const passes = await fetchPassesByReservation(reservation._id);
+      const pass = passes.find((item: AmenityAccessPass) => String(item.reservationId) === String(reservation._id)) || passes[0] || null;
+      setSelectedAccessPass(pass);
+    } catch {
+      // The sheet explains that an access pass has not yet been issued.
+      setSelectedAccessPass(null);
+    }
+  };
+
   const renderReservationItem = (item: AmenityReservation) => (
     <ResidentReservationCard
       key={`${item._id}-${language}`}
       reservation={item}
       onPress={handleCardPress}
-      onShowQR={(reservation) => {
-        setSelectedPassReservation(reservation);
-        setPassModalOpen(true);
-      }}
+      onShowQR={handleShowPass}
       onCancelPress={setCancelTarget}
       testID={`reservation-card-${item._id}`}
     />
@@ -154,6 +170,7 @@ export default function MyBookingsScreen() {
           onRefresh={refresh}
           loading={loading}
           refreshing={isRefreshing}
+          paginationSummary
           ListHeaderComponent={renderHeader()}
           emptyIcon="CalendarX"
           emptyTitle={t('no_bookings_found', 'No Bookings Found')}
@@ -166,9 +183,11 @@ export default function MyBookingsScreen() {
       <AmenityPassDetailsModal
         visible={passModalOpen}
         reservation={selectedPassReservation}
+        accessPass={selectedAccessPass}
         onClose={() => {
           setPassModalOpen(false);
           setSelectedPassReservation(null);
+          setSelectedAccessPass(null);
         }}
         onCancelPress={(target) => {
           setPassModalOpen(false);

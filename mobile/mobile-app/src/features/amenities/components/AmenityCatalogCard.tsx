@@ -115,9 +115,9 @@ export function AmenityCatalogCard({
           )}
 
           {/* Top Badges Row */}
-          <View className="absolute top-3 inset-x-3 flex-row justify-between items-center z-10">
+          <View className="absolute top-3 inset-x-3 flex-row justify-between items-center gap-2 z-10">
             {/* Archetype Pill */}
-            <View className="bg-black/60 px-2.5 py-1 rounded-full flex-row items-center gap-1.5 border border-white/20 shadow-xs">
+            <View className="flex-1 min-w-0 bg-black/60 px-2.5 py-1 rounded-full flex-row items-center gap-1.5 border border-white/20 shadow-xs">
               {rawArchetype === 'INVENTORY_TOOLS' ? (
                 <Wrench size={11} color="#10b981" />
               ) : rawArchetype === 'ROOM_RESOURCE' ? (
@@ -125,7 +125,7 @@ export function AmenityCatalogCard({
               ) : (
                 <Sparkles size={11} color="#f59e0b" />
               )}
-              <Text className="text-[11px] font-bold text-white uppercase tracking-wider">
+              <Text className="flex-1 min-w-0 text-[11px] font-bold text-white uppercase tracking-wider" numberOfLines={1}>
                 {translateText(archetypeMeta.label)}
               </Text>
             </View>
@@ -136,6 +136,7 @@ export function AmenityCatalogCard({
               variant={statusMeta.variant}
               dot={statusMeta.pulseDot}
               size="sm"
+              className="shrink-0"
             />
           </View>
 
@@ -154,12 +155,12 @@ export function AmenityCatalogCard({
         <View className="p-3.5 pb-2">
           {/* Title & Location */}
           <View className="mb-1.5">
-            <Text className="text-base font-bold text-foreground tracking-tight">
+            <Text className="text-base font-bold text-foreground tracking-tight" numberOfLines={2}>
               {translateText(amenity.name)}
             </Text>
-            <View className="flex-row items-center gap-1 mt-0.5">
-              <MapPin size={12} className="text-muted-foreground" />
-              <Text className="text-xs font-medium text-muted-foreground">
+            <View className="flex-row items-center gap-1 mt-0.5 min-w-0">
+              <MapPin size={12} className="text-muted-foreground shrink-0" />
+              <Text className="flex-1 min-w-0 text-xs font-medium text-muted-foreground" numberOfLines={1}>
                 {translateText(locationDisplay)}
               </Text>
             </View>
@@ -226,18 +227,21 @@ export function AmenityCatalogCard({
             size="default"
             disabled={!bookableCheck.canBook}
             onPress={() => onBookClick(amenity._id)}
-            className="w-full h-9 rounded-xl flex-row items-center justify-center gap-2 shadow-xs"
+            className={cn(
+              'w-full h-9 rounded-xl flex-row items-center justify-center gap-2 shadow-xs',
+              bookableCheck.canBook && 'bg-emerald-600 active:bg-emerald-700 border-0'
+            )}
             accessibilityRole="button"
             accessibilityLabel={`Book ${amenity.name}`}
           >
             <CalendarCheck
               size={15}
-              className={bookableCheck.canBook ? 'text-primary-foreground' : 'text-muted-foreground'}
+              className={bookableCheck.canBook ? 'text-white' : 'text-muted-foreground'}
             />
             <Text
               className={cn(
                 'text-xs font-bold',
-                bookableCheck.canBook ? 'text-primary-foreground' : 'text-muted-foreground'
+                bookableCheck.canBook ? 'text-white' : 'text-muted-foreground'
               )}
             >
               {rawStatus === 'MAINTENANCE'

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, Alert, Platform } from 'react-native';
+import { View, Alert, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Users, Lock, BarChart2, ShieldCheck, Calendar, CheckSquare } from 'lucide-react-native';
 
@@ -159,8 +159,9 @@ export default function PollDetailScreen() {
       title={t('poll_details', 'Poll Details')}
       subtitle={translateText(poll.question)}
       iconName="BarChart2"
+      scrollable
     >
-      <ScrollView className="flex-1 px-4 py-4" contentContainerStyle={{ paddingBottom: 60 }}>
+      <View className="px-4 py-4">
         {/* Top Poll Card Header */}
         <View className="bg-card rounded-2xl border border-border p-4 mb-4 shadow-sm">
           <View className="flex-row justify-between items-start mb-2">
@@ -184,18 +185,18 @@ export default function PollDetailScreen() {
           <View className="flex-row flex-wrap gap-1.5 mt-2 pt-2 border-t border-border/40">
             <View className="bg-muted/60 px-2 py-0.5 rounded-md border border-border/40">
               <Text className="text-[10px] text-muted-foreground font-medium">
-                Audience: {poll.targetAudience?.targetType || 'ALL RESIDENTS'}
+                {t('audience', 'Audience')}: {poll.targetAudience?.targetType || t('all_community_residents', 'ALL RESIDENTS')}
               </Text>
             </View>
             <View className="bg-muted/60 px-2 py-0.5 rounded-md border border-border/40">
               <Text className="text-[10px] text-muted-foreground font-medium">
-                Ends: {poll.endDate ? new Date(poll.endDate).toLocaleDateString() : 'No expiry set'}
+                {t('ends', 'Ends')}: {poll.endDate ? new Date(poll.endDate).toLocaleDateString() : t('no_expiry_set', 'No expiry set')}
               </Text>
             </View>
             {hasVoted && (
               <View className="bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
                 <Text className="text-[10px] text-primary font-bold">
-                  ✓ You Voted
+                  ✓ {t('you_voted', 'You Voted')}
                 </Text>
               </View>
             )}
@@ -205,11 +206,11 @@ export default function PollDetailScreen() {
         {/* Draft Poll Notice Callout */}
         {poll.status === 'Draft' && (
           <View className="bg-amber-500/10 rounded-2xl border border-amber-500/20 p-4 mb-4 flex-row items-center gap-3">
-            <Lock size={20} className="text-amber-600 dark:text-amber-400" />
-            <View className="flex-1">
-              <Text className="text-sm font-bold text-foreground">Draft Poll (Not Published)</Text>
+            <Lock size={20} className="text-amber-600 dark:text-amber-400 shrink-0" />
+            <View className="flex-1 min-w-0">
+              <Text className="text-sm font-bold text-foreground">{t('draft_poll_not_published', 'Draft Poll (Not Published)')}</Text>
               <Text className="text-xs text-muted-foreground mt-0.5">
-                This poll is currently saved as a draft. Voting will open once it is published.
+                {t('draft_poll_desc', 'This poll is currently saved as a draft. Voting will open once it is published.')}
               </Text>
             </View>
             {isCommunityAdmin && (
@@ -223,7 +224,7 @@ export default function PollDetailScreen() {
                   })
                 }
               >
-                Edit Poll
+                <Text className="text-xs font-semibold">{t('edit_poll', 'Edit Poll')}</Text>
               </Button>
             )}
           </View>
@@ -252,11 +253,11 @@ export default function PollDetailScreen() {
         {/* Already Voted Notice */}
         {!isClosed && hasVoted && (
           <View className="bg-primary/10 rounded-2xl border border-primary/20 p-4 mb-4 flex-row items-center gap-3">
-            <ShieldCheck size={24} color="#2563eb" />
-            <View className="flex-1">
-              <Text className="text-sm font-bold text-foreground">Your Vote Has Been Recorded</Text>
+            <ShieldCheck size={24} color="#2563eb" className="shrink-0" />
+            <View className="flex-1 min-w-0">
+              <Text className="text-sm font-bold text-foreground">{t('your_vote_recorded', 'Your Vote Has Been Recorded')}</Text>
               <Text className="text-xs text-muted-foreground mt-0.5">
-                Thank you for participating in this community decision.
+                {t('thank_you_voting_desc', 'Thank you for participating in this community decision.')}
               </Text>
             </View>
           </View>
@@ -265,11 +266,11 @@ export default function PollDetailScreen() {
         {/* Closed Poll Notice */}
         {isClosed && (
           <View className="bg-muted/60 rounded-2xl border border-border p-4 mb-4 flex-row items-center gap-3">
-            <Lock size={20} color="#64748b" />
-            <View className="flex-1">
-              <Text className="text-sm font-bold text-foreground">Poll Closed</Text>
+            <Lock size={20} color="#64748b" className="shrink-0" />
+            <View className="flex-1 min-w-0">
+              <Text className="text-sm font-bold text-foreground">{t('poll_closed', 'Poll Closed')}</Text>
               <Text className="text-xs text-muted-foreground mt-0.5">
-                Voting has concluded for this poll.
+                {t('poll_closed_desc', 'Voting has concluded for this poll.')}
               </Text>
             </View>
           </View>
@@ -282,9 +283,9 @@ export default function PollDetailScreen() {
           ) : (
             <View className="bg-card rounded-2xl border border-border p-4 mb-4 items-center justify-center py-8">
               <Lock size={28} color="#94a3b8" />
-              <Text className="text-sm font-bold text-foreground mt-2">Results are Hidden</Text>
+              <Text className="text-sm font-bold text-foreground mt-2">{t('results_are_hidden', 'Results are Hidden')}</Text>
               <Text className="text-xs text-muted-foreground text-center mt-1 px-4">
-                Results are restricted to community administrators.
+                {t('results_restricted_admin', 'Results are restricted to community administrators.')}
               </Text>
             </View>
           )
@@ -292,30 +293,30 @@ export default function PollDetailScreen() {
 
         {/* Governance & Rules DetailSection (Restricted strictly to Community Admin) */}
         {isCommunityAdmin && (
-          <DetailSection title="Poll Governance Rules" iconName="Shield">
+          <DetailSection title={t('poll_governance_rules', 'Poll Governance Rules')} iconName="Shield">
             <DetailRow
-              label="Ballot Selection"
+              label={t('ballot_selection', 'Ballot Selection')}
               value={
                 poll.choiceType === 'MULTIPLE_CHOICE'
-                  ? `Multiple Choice (Max ${poll.maxChoices || 1})`
-                  : 'Single Choice'
+                  ? `${t('multiple_choice', 'Multiple Choice')} (Max ${poll.maxChoices || 1})`
+                  : t('single_choice', 'Single Choice')
               }
             />
             <DetailRow
-              label="Voting Policy"
-              value={poll.votingMode === 'ONE_PER_UNIT' ? 'One Vote Per Villa / Unit' : 'One Vote Per Registered Resident'}
+              label={t('voting_policy', 'Voting Policy')}
+              value={poll.votingMode === 'ONE_PER_UNIT' ? t('one_vote_per_unit', 'One Vote Per Unit') : t('one_vote_per_person', 'One Vote Per Person')}
             />
             <DetailRow
-              label="Results Visibility"
-              value={poll.resultsVisibility}
+              label={t('results_visibility', 'Results Visibility')}
+              value={t(poll.resultsVisibility?.toLowerCase(), poll.resultsVisibility)}
             />
             <DetailRow
-              label="Quorum Required"
+              label={t('quorum_required', 'Quorum Required')}
               value={`${poll.quorumPercentage || 0}%`}
             />
             <DetailRow
-              label="Anonymous Ballot"
-              value={poll.isAnonymous ? 'Yes (Encrypted)' : 'No (Public Turnout)'}
+              label={t('anonymous_ballot', 'Anonymous Ballot')}
+              value={poll.isAnonymous ? `${t('yes', 'Yes')} (${t('encrypted', 'Encrypted')})` : `${t('no', 'No')} (${t('public', 'Public')})`}
               isLast
             />
           </DetailSection>
@@ -327,29 +328,31 @@ export default function PollDetailScreen() {
             {canViewVoters && (
               <Button
                 variant="outline"
-                size="md"
+                size="lg"
                 onPress={handleOpenVoters}
+                className="w-full"
                 accessibilityRole="button"
                 accessibilityLabel="View Voter Turnout"
               >
-                View Voter Turnout
+                <Text className="font-bold text-foreground text-sm">{t('view_voter_turnout', 'View Voter Turnout')}</Text>
               </Button>
             )}
 
             {!isClosed && (canClose || isCreator) && (
               <Button
                 variant="destructive"
-                size="md"
+                size="lg"
                 onPress={() => setCloseConfirmOpen(true)}
+                className="w-full"
                 accessibilityRole="button"
                 accessibilityLabel="Close Poll"
               >
-                Close Poll Now
+                <Text className="font-bold text-white text-sm">{t('close_poll_now', 'Close Poll Now')}</Text>
               </Button>
             )}
           </View>
         )}
-      </ScrollView>
+      </View>
 
       {/* Voter Turnout Modal */}
       <PollVotersModal
@@ -363,9 +366,10 @@ export default function PollDetailScreen() {
       {/* Confirmation Modal for closing poll */}
       <ConfirmationModal
         visible={closeConfirmOpen}
-        title="Close Poll"
-        message="Are you sure you want to close this poll? No further votes can be submitted once closed."
-        confirmLabel="Close Poll"
+        title={t('close_poll', 'Close Poll')}
+        message={t('close_poll_confirm_desc', 'Are you sure you want to close this poll? No further votes can be submitted once closed.')}
+        confirmLabel={t('close_poll', 'Close Poll')}
+        cancelLabel={t('cancel', 'Cancel')}
         variant="danger"
         loading={closeLoading}
         onConfirm={handleConfirmClose}

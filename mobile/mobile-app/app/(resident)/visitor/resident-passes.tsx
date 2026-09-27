@@ -85,6 +85,7 @@ export default function ResidentPassesScreen() {
         page,
         append,
         statuses: activeStatusFilter === 'ALL' ? 'PENDING,ACTIVE,REVOKED,EXPIRED' : activeStatusFilter,
+        search: search.trim() || undefined,
       });
     }
     fetchActiveVisitors();
@@ -248,8 +249,11 @@ export default function ResidentPassesScreen() {
     </View>
   );
 
-  const activeLoading = (isAdmin && adminViewScope === 'COMMUNITY' ? adminStatus : status) === 'loading';
-  const activePaginationData = isAdmin && adminViewScope === 'COMMUNITY' ? adminPagination : pagination;
+  // Admin scopes are both backed by the community-pass endpoint. Keeping the
+  // data, loading state, and pagination source together prevents skipped or
+  // duplicated pages when switching between All Passes and Community Only.
+  const activeLoading = (isAdmin ? adminStatus : status) === 'loading';
+  const activePaginationData = isAdmin ? adminPagination : pagination;
 
   return (
     <ScreenShell
@@ -268,6 +272,7 @@ export default function ResidentPassesScreen() {
         loading={activeLoading}
         onRefresh={handleRefresh}
         onLoadMore={handleLoadMore}
+        paginationSummary
         ListHeaderComponent={renderHeader()}
         emptyIcon="QrCode"
         emptyTitle="No Visitor Passes Found"

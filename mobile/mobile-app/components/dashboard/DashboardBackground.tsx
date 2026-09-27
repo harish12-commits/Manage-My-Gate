@@ -48,9 +48,9 @@ export const DashboardBackground: React.FC<DashboardBackgroundProps> = memo(
             </LinearGradient>
 
             <LinearGradient id="darkBaseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#0B0F19" stopOpacity="1" />
-              <Stop offset="50%" stopColor="#0E1424" stopOpacity="1" />
-              <Stop offset="100%" stopColor="#080C14" stopOpacity="1" />
+              <Stop offset="0%" stopColor="#26262A" stopOpacity="1" />
+              <Stop offset="50%" stopColor="#1B1B1F" stopOpacity="1" />
+              <Stop offset="100%" stopColor="#131316" stopOpacity="1" />
             </LinearGradient>
 
             {/* Ambient Lighting Orbs */}
@@ -62,8 +62,8 @@ export const DashboardBackground: React.FC<DashboardBackgroundProps> = memo(
 
             <RadialGradient id="darkWarmAura" cx="85%" cy="12%" r="55%">
               <Stop offset="0%" stopColor="#FF6A00" stopOpacity="0.08" />
-              <Stop offset="55%" stopColor="#172B70" stopOpacity="0.04" />
-              <Stop offset="100%" stopColor="#0B0F19" stopOpacity="0" />
+              <Stop offset="55%" stopColor="#3A3A40" stopOpacity="0.04" />
+              <Stop offset="100%" stopColor="#131316" stopOpacity="0" />
             </RadialGradient>
 
             <RadialGradient id="lightCoolAura" cx="12%" cy="8%" r="60%">
@@ -73,9 +73,9 @@ export const DashboardBackground: React.FC<DashboardBackgroundProps> = memo(
             </RadialGradient>
 
             <RadialGradient id="darkCoolAura" cx="15%" cy="65%" r="50%">
-              <Stop offset="0%" stopColor="#245FA8" stopOpacity="0.07" />
-              <Stop offset="60%" stopColor="#51418F" stopOpacity="0.03" />
-              <Stop offset="100%" stopColor="#0B0F19" stopOpacity="0" />
+              <Stop offset="0%" stopColor="#F97316" stopOpacity="0.05" />
+              <Stop offset="60%" stopColor="#3A3A40" stopOpacity="0.03" />
+              <Stop offset="100%" stopColor="#131316" stopOpacity="0" />
             </RadialGradient>
           </Defs>
 

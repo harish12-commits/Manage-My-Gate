@@ -142,12 +142,12 @@ export default function VisitorDashboardScreen() {
           variant="default"
           size="sm"
           onPress={() => setInviteSheetOpen(true)}
-          className="flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full shadow-2xs"
+          className="flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full shadow-2xs bg-emerald-600 active:bg-emerald-700 border-0"
           accessibilityRole="button"
-          accessibilityLabel="Issue Visitor Pass"
+          accessibilityLabel="Invite Visitor"
         >
           <Plus size={14} color="#ffffff" strokeWidth={2.4} />
-          <Text className="text-xs font-bold text-primary-foreground">{t('issue_pass', 'Issue')}</Text>
+          <Text className="text-xs font-bold text-white">{t('invite_visitor', 'Invite')}</Text>
         </Button>
       }
     >

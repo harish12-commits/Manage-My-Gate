@@ -141,6 +141,7 @@ export function useResidentAmenities(initialArchetype?: AmenityArchetype) {
         const res = await amenityManagementService.getFacilityById(facilityId);
         const rawFac = res?.data || res;
         const fac = normalizeFacilityFromApi(rawFac);
+        setSelectedFacility(fac);
         const actualFacId = fac._id || (fac as any).id || facilityId;
         if ((fac.archetype === 'ROOM_RESOURCE' || fac.archetype === 'INVENTORY_TOOLS') && actualFacId) {
           await loadResources(String(actualFacId));

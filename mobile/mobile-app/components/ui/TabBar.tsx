@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { View, Pressable, Platform } from 'react-native';
+import { View, Pressable, Platform, ScrollView } from 'react-native';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Text } from './text';
+import { Icon } from './icon';
 import { cn } from '../../lib/utils';
 import { getStatusSemanticType, getStatusTabStyle } from './statusTabColors';
 
@@ -83,6 +84,7 @@ export interface TabItem {
   key: string;
   label: string;
   badge?: number;
+  icon?: any;
 }
 
 export interface TabBarProps extends VariantProps<typeof tabBarVariants> {
@@ -105,18 +107,22 @@ export const TabBar = React.forwardRef<View, TabBarProps>(
     },
     ref
   ) => {
-    return (
-      <View
-        ref={ref}
-        className={cn(tabBarVariants({ variant }), className)}
-        {...props}
-      >
-        {tabs.map((tab) => {
+    // Preserve familiar pill treatment, but let dense filters scroll horizontally.
+    const isScrollable = tabs.length > 3;
+
+    // Check if the tabs are lifecycle status tabs (ACTIVE, PENDING, EXPIRED, etc.)
+    const hasStatusTabs = tabs.some((t) => {
+      const s = getStatusSemanticType(t.key || t.label);
+      return s !== 'default' && s !== 'all';
+    });
+
+    const renderTabs = () => tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           const hasBadge = typeof tab.badge === 'number' && tab.badge > 0;
           const semantic = getStatusSemanticType(tab.key || tab.label);
-          const isStatusTab = semantic !== 'default';
+          const isStatusTab = hasStatusTabs && semantic !== 'default';
           const statusStyle = isStatusTab ? getStatusTabStyle(tab.key || tab.label, isActive) : null;
+          const TabIcon = tab.icon;
 
           return (
             <Pressable
@@ -124,15 +130,35 @@ export const TabBar = React.forwardRef<View, TabBarProps>(
               onPress={() => onTabChange(tab.key)}
               className={cn(
                 tabItemVariants({ variant, isActive }),
+                isScrollable && variant === 'pill' && 'flex-none px-4 py-2 shrink-0 min-w-[56px]',
+                Platform.select({ web: isScrollable ? 'whitespace-nowrap shrink-0' : undefined }),
                 isStatusTab && variant === 'pill' && isActive && `${statusStyle?.containerClass} shadow-xs`
               )}
               accessibilityRole="tab"
               accessibilityState={{ selected: isActive }}
               accessibilityLabel={tab.label}
             >
+              {TabIcon && (
+                <Icon
+                  as={TabIcon}
+                  size={14}
+                  className={cn(
+                    'me-1.5 shrink-0',
+                    isActive
+                      ? isStatusTab
+                        ? statusStyle?.textClass
+                        : 'text-primary'
+                      : 'text-muted-foreground'
+                  )}
+                />
+              )}
+
               <Text
+                numberOfLines={1}
                 className={cn(
                   tabTextVariants({ variant, isActive }),
+                  isScrollable && 'text-xs',
+                  Platform.select({ web: 'whitespace-nowrap' }),
                   isStatusTab && isActive && statusStyle?.textClass
                 )}
               >
@@ -140,7 +166,7 @@ export const TabBar = React.forwardRef<View, TabBarProps>(
               </Text>
 
               {hasBadge && (
-                <View className="absolute top-1 right-2 min-w-[18px] h-[18px] rounded-full bg-destructive items-center justify-center px-1">
+                <View className="ms-1.5 min-w-[18px] h-[18px] rounded-full bg-destructive items-center justify-center px-1">
                   <Text className="text-white text-[10px] font-bold leading-none text-center">
                     {tab.badge! > 99 ? '99+' : tab.badge}
                   </Text>
@@ -148,7 +174,24 @@ export const TabBar = React.forwardRef<View, TabBarProps>(
               )}
             </Pressable>
           );
-        })}
+        });
+
+    return (
+      <View
+        ref={ref}
+        className={cn(tabBarVariants({ variant }), className)}
+        {...props}
+      >
+        {isScrollable ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="flex-1"
+            contentContainerClassName="gap-1.5 px-0.5 items-center"
+          >
+            {renderTabs()}
+          </ScrollView>
+        ) : renderTabs()}
       </View>
     );
   }

@@ -85,23 +85,23 @@ export const THEME_2_VENTOREX_ORANGE = {
   },
 
   dark: {
-    background: 'hsl(227 50% 8%)', // #0A1126 Deep NAHOM Navy Base
+    background: 'hsl(240 5% 8%)', // #131316 Neutral charcoal base
     foreground: 'hsl(0 0% 98%)', // #FAFAFA Soft Crisp White
-    card: 'hsl(227 38% 13%)', // #15203A Elevated Navy Surface
+    card: 'hsl(240 4% 12%)', // #1D1D20 Elevated charcoal surface
     cardForeground: 'hsl(0 0% 98%)',
-    popover: 'hsl(227 35% 16%)', // #1A2948
+    popover: 'hsl(240 4% 15%)', // #252529
     popoverForeground: 'hsl(0 0% 98%)',
     primary: 'hsl(25 100% 50%)', // #FF6A00 Ventorex Bright Orange
-    primaryForeground: 'hsl(227 50% 8%)', // #0A1126
-    secondary: 'hsl(227 30% 18%)', // #203052 Navy Secondary
+    primaryForeground: 'hsl(0 0% 100%)',
+    secondary: 'hsl(240 4% 17%)', // #2A2A2E Neutral elevated control
     secondaryForeground: 'hsl(0 0% 98%)',
-    muted: 'hsl(227 28% 18%)',
-    mutedForeground: 'hsl(218 18% 70%)', // #A7B5C9
+    muted: 'hsl(240 4% 17%)',
+    mutedForeground: 'hsl(240 5% 70%)', // #B2B2B8
     accent: 'hsl(24 100% 62%)', // #FF8A3D Soft Bright Orange
-    accentForeground: 'hsl(227 50% 8%)',
+    accentForeground: 'hsl(0 0% 100%)',
     destructive: 'hsl(0 84% 60%)', // #EF4444
-    border: 'hsl(227 25% 25%)', // #304269 Subtle Navy Border
-    input: 'hsl(227 25% 25%)',
+    border: 'hsl(240 4% 25%)', // #3E3E43
+    input: 'hsl(240 4% 25%)',
     ring: 'hsl(25 100% 50%)',
     radius: '1.125rem', // 18px
     chart1: 'hsl(25 100% 50%)',

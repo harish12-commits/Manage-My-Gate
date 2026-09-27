@@ -94,24 +94,26 @@
   }
 
   .dark:root {
-    --background: 227 50% 8%; /* #0A1126 Deep NAHOM Navy Base */
+    /* Neutral charcoal surfaces keep dark mode calm and legible without
+       introducing a second, dark-navy brand palette. */
+    --background: 240 5% 8%; /* #131316 */
     --foreground: 0 0% 98%; /* #FAFAFA Soft Crisp White */
-    --card: 227 38% 13%; /* #15203A Elevated Navy Surface */
+    --card: 240 4% 12%; /* #1D1D20 Elevated charcoal surface */
     --card-foreground: 0 0% 98%;
-    --popover: 227 35% 16%; /* #1A2948 */
+    --popover: 240 4% 15%; /* #252529 */
     --popover-foreground: 0 0% 98%;
     --primary: 25 100% 50%; /* #FF6A00 Ventorex Bright Orange */
-    --primary-foreground: 227 50% 8%; /* #0A1126 */
-    --secondary: 227 30% 18%; /* #203052 Navy Secondary */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 17%; /* #2A2A2E */
     --secondary-foreground: 0 0% 98%;
-    --muted: 227 28% 18%;
-    --muted-foreground: 218 18% 70%; /* #A7B5C9 */
+    --muted: 240 4% 17%;
+    --muted-foreground: 240 5% 70%; /* #B2B2B8 */
     --accent: 24 100% 62%; /* #FF8A3D Soft Bright Orange */
-    --accent-foreground: 227 50% 8%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%; /* #EF4444 */
     --destructive-foreground: 0 0% 100%;
-    --border: 227 25% 25%; /* #304269 Subtle Navy Border */
-    --input: 227 25% 25%;
+    --border: 240 4% 25%; /* #3E3E43 */
+    --input: 240 4% 25%;
     --ring: 25 100% 50%;
     --chart-1: 25 100% 50%;
     --chart-2: 24 100% 62%;

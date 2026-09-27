@@ -279,8 +279,29 @@ export const complaintSlice = createSlice({
       })
       .addCase(fetchComplaints.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.list = action.payload?.complaints || action.payload || [];
-        state.pagination = action.payload?.pagination || state.pagination;
+        const incoming = action.payload?.complaints || action.payload || [];
+        const requestedPage = Number((action.meta.arg as any)?.page || 1);
+
+        // Keep earlier pages when a list asks for more results, while protecting
+        // against overlapping API pages or socket updates creating duplicate cards.
+        if (requestedPage > 1) {
+          const knownIds = new Set(state.list.map((item: any) => String(item?._id || item?.id || '')));
+          state.list.push(
+            ...incoming.filter((item: any) => {
+              const id = String(item?._id || item?.id || '');
+              if (!id || knownIds.has(id)) return false;
+              knownIds.add(id);
+              return true;
+            })
+          );
+        } else {
+          state.list = incoming;
+        }
+        state.pagination = action.payload?.pagination || {
+          ...state.pagination,
+          currentPage: requestedPage,
+        };
+        state.pagination.limit = Number((action.meta.arg as any)?.limit || state.pagination.limit);
       })
       .addCase(fetchComplaints.rejected, (state, action) => {
         state.status = 'failed';

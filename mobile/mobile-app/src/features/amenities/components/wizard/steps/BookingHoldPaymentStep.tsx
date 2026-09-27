@@ -10,7 +10,7 @@ import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { AmenityHoldState } from '../../../types/amenityDomain.types';
-import { Clock, Wallet, CreditCard, Banknote, AlertTriangle, CheckCircle2, RotateCcw } from 'lucide-react-native';
+import { Clock, Wallet, CreditCard, AlertTriangle, CheckCircle2, RotateCcw } from 'lucide-react-native';
 
 export interface BookingHoldPaymentStepProps {
   activeHold: AmenityHoldState | null;
@@ -18,8 +18,8 @@ export interface BookingHoldPaymentStepProps {
   isHoldExpired: boolean;
   totalAmount: number;
   currency?: string;
-  paymentMethod: 'WALLET' | 'RAZORPAY' | 'PAY_AT_GATE';
-  onPaymentMethodChange: (method: 'WALLET' | 'RAZORPAY' | 'PAY_AT_GATE') => void;
+  paymentMethod: 'WALLET' | 'RAZORPAY';
+  onPaymentMethodChange: (method: 'WALLET' | 'RAZORPAY') => void;
   balance: number;
   onOpenTopUp: () => void;
   onLaunchRazorpay: () => void;
@@ -160,11 +160,11 @@ export function BookingHoldPaymentStep({
                 : 'bg-muted/30 border-border'
             }`}
           >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2.5">
-                <Wallet size={18} className="text-primary" />
-                <View>
-                  <Text className="font-semibold text-xs text-foreground">Digital Wallet Balance</Text>
+            <View className="flex-row items-center justify-between gap-2">
+              <View className="flex-row items-center gap-2.5 flex-1 min-w-0">
+                <Wallet size={18} className="text-primary shrink-0" />
+                <View className="flex-1 min-w-0">
+                  <Text className="font-semibold text-xs text-foreground" numberOfLines={1}>Digital Wallet Balance</Text>
                   <Text variant="muted" className="text-[11px]">
                     Available: {balance} {currency}
                   </Text>
@@ -174,6 +174,7 @@ export function BookingHoldPaymentStep({
               <StatusBadge
                 label={isBalanceSufficient ? 'Sufficient' : 'Low Balance'}
                 variant={isBalanceSufficient ? 'success' : 'warning'}
+                className="shrink-0"
               />
             </View>
 
@@ -205,10 +206,10 @@ export function BookingHoldPaymentStep({
                 : 'bg-muted/30 border-border'
             }`}
           >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2.5">
-                <CreditCard size={18} className="text-primary" />
-                <View>
+            <View className="flex-row items-center justify-between gap-2">
+              <View className="flex-row items-center gap-2.5 flex-1 min-w-0">
+                <CreditCard size={18} className="text-primary shrink-0" />
+                <View className="flex-1 min-w-0">
                   <Text className="font-semibold text-xs text-foreground">
                     Online Payment (Cards, UPI, NetBanking)
                   </Text>
@@ -218,38 +219,10 @@ export function BookingHoldPaymentStep({
                 </View>
               </View>
 
-              <StatusBadge label="Instant" variant="info" />
+              <StatusBadge label="Instant" variant="info" className="shrink-0" />
             </View>
           </TouchableOpacity>
 
-          {/* Pay-at-Gate / Cash Option */}
-          <TouchableOpacity
-            onPress={() => onPaymentMethodChange('PAY_AT_GATE')}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Select Pay at Gate cash collection"
-            className={`p-3.5 rounded-xl border transition-all ${
-              paymentMethod === 'PAY_AT_GATE'
-                ? 'bg-primary/5 border-primary'
-                : 'bg-muted/30 border-border'
-            }`}
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2.5">
-                <Banknote size={18} className="text-primary" />
-                <View>
-                  <Text className="font-semibold text-xs text-foreground">
-                    Pay at Gate (Cash Collection)
-                  </Text>
-                  <Text variant="muted" className="text-[11px]">
-                    Pay cash at counter or gate before entry
-                  </Text>
-                </View>
-              </View>
-
-              <StatusBadge label="Pay Later" variant="warning" />
-            </View>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -287,15 +260,13 @@ export function BookingHoldPaymentStep({
         className="w-full h-12 rounded-xl mt-2"
         accessibilityLabel="Confirm Reservation Button"
       >
-        <Text className="font-bold text-base text-primary-foreground">
+        <Text className="font-bold text-[13px] text-primary-foreground" numberOfLines={1}>
           {confirming
             ? 'Confirming Reservation...'
             : isHoldExpired
             ? 'Hold Expired'
             : isPaymentRequired
-            ? paymentMethod === 'PAY_AT_GATE'
-              ? `Confirm Booking • Pay at Gate (${totalAmount} ${currency})`
-              : `Pay & Confirm Booking (${totalAmount} ${currency})`
+            ? `Pay & Confirm Booking (${totalAmount} ${currency})`
             : 'Confirm Free Reservation'}
         </Text>
       </Button>

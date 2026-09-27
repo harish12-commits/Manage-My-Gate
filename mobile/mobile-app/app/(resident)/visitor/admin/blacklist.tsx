@@ -79,12 +79,15 @@ export default function AdminBlacklistScreen() {
       subtitle={t('restricted_visitors_security_breach_registry', 'Restricted visitors & security breach registry')}
       headerRight={
         <Button
+          variant="destructive"
           size="sm"
           onPress={() => setModalOpen(true)}
-          className="flex-row items-center gap-1 px-3 py-1.5 h-8 rounded-full bg-emerald-600 active:bg-emerald-700"
+          accessibilityRole="button"
+          accessibilityLabel="Add Blacklist"
+          className="flex-row items-center gap-1 px-3 rounded-full bg-red-600 active:bg-red-700 border-0"
         >
           <Plus size={14} color="#ffffff" />
-          <Text className="text-xs font-bold text-white">{t('add_entry', 'Add Entry')}</Text>
+          <Text className="text-xs font-bold text-white">{t('add_blacklist', 'Add Blacklist')}</Text>
         </Button>
       }
     >

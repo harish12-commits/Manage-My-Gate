@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, ScrollView } from 'react-native';
+import { View, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { DropdownSelect } from '@/components/forms/DropdownSelect';
 import {
@@ -120,8 +120,15 @@ export const AudienceStep: React.FC<AudienceStepProps> = ({
   }, []);
 
   return (
-    <ScrollView className="flex-1 px-4 py-3" showsVerticalScrollIndicator={false}>
-      <View className="gap-4 pb-12">
+    <ScrollView
+      className="flex-1 px-4 py-3"
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      contentContainerStyle={{ paddingBottom: 132 }}
+    >
+      <View className="gap-4">
         {/* Error banner */}
         {error ? (
           <View className="flex-row items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-xl">
@@ -161,7 +168,7 @@ export const AudienceStep: React.FC<AudienceStepProps> = ({
               >
                 <View
                   className={cn(
-                    'w-10 h-10 rounded-xl items-center justify-center',
+                    'w-10 h-10 rounded-xl items-center justify-center shrink-0',
                     isSelected ? 'bg-primary' : 'bg-primary/10'
                   )}
                 >
@@ -171,7 +178,7 @@ export const AudienceStep: React.FC<AudienceStepProps> = ({
                   />
                 </View>
 
-                <View className="flex-1">
+                <View className="flex-1 min-w-0">
                   <Text className="text-sm font-bold text-foreground">{preset.label}</Text>
                   <Text variant="muted" className="text-xs leading-4 mt-0.5">
                     {preset.subtitle}
@@ -179,7 +186,7 @@ export const AudienceStep: React.FC<AudienceStepProps> = ({
                 </View>
 
                 {isSelected ? (
-                  <View className="w-5 h-5 rounded-full bg-primary items-center justify-center ms-1">
+                  <View className="w-5 h-5 rounded-full bg-primary items-center justify-center ms-1 shrink-0">
                     <Check size={12} className="text-primary-foreground" />
                   </View>
                 ) : null}

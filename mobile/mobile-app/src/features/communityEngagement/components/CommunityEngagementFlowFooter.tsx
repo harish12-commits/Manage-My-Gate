@@ -1,8 +1,10 @@
 import React from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { ArrowRight, ArrowLeft, CheckCircle2, Bookmark } from 'lucide-react-native';
+import { useTranslation } from '@/src/utils/i18n';
 
 export interface CommunityEngagementFlowFooterProps {
   onBack: () => void;
@@ -29,36 +31,44 @@ export const CommunityEngagementFlowFooter: React.FC<CommunityEngagementFlowFoot
   disabled = false,
   publishNow = true,
 }) => {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isCompactWidth = width < 360;
+
   return (
-    <View className="bg-card border-t border-border px-4 py-3 pb-6 flex-row items-center gap-2.5">
+    <View
+      style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+      className="bg-card border-t border-border px-3.5 pt-3 flex-row items-center gap-2"
+    >
       {/* Previous / Back CTA */}
       {!isFirstStep && (
         <Button
           variant="outline"
           onPress={onBack}
           disabled={loading || savingDraft}
-          className="flex-1 h-12 rounded-2xl flex-row items-center justify-center gap-1.5 border-border"
+          className="flex-1 min-w-0 h-12 rounded-2xl flex-row items-center justify-center gap-1 border-border"
           accessibilityRole="button"
           accessibilityLabel="Back to previous step"
         >
           <ArrowLeft size={16} className="text-foreground" />
-          <Text className="font-bold text-foreground text-sm">Previous</Text>
+          <Text className="font-bold text-foreground text-xs" numberOfLines={1}>{t('previous', 'Previous')}</Text>
         </Button>
       )}
 
       {/* Save Draft CTA */}
       {onSaveDraft && (
         <Button
-          variant="secondary"
+          variant="outline"
           onPress={onSaveDraft}
           disabled={loading || savingDraft || disabled}
-          className="h-12 px-4 rounded-2xl flex-row items-center justify-center gap-1.5 border border-border"
+          className="flex-1 min-w-0 h-12 px-2 rounded-2xl flex-row items-center justify-center gap-1 border-border"
           accessibilityRole="button"
           accessibilityLabel="Save as Draft"
         >
-          <Bookmark size={15} className="text-foreground" />
-          <Text className="font-bold text-foreground text-xs">
-            {savingDraft ? 'Saving...' : 'Save Draft'}
+          <Bookmark size={15} className="text-primary" />
+          <Text className="font-bold text-primary text-xs" numberOfLines={1}>
+            {savingDraft ? t('saving', 'Saving...') : t('save_draft', 'Save Draft')}
           </Text>
         </Button>
       )}
@@ -68,7 +78,7 @@ export const CommunityEngagementFlowFooter: React.FC<CommunityEngagementFlowFoot
         variant="default"
         onPress={onNext}
         disabled={loading || savingDraft || disabled}
-        className="flex-1 h-12 rounded-2xl flex-row items-center justify-center gap-2 shadow-sm"
+        className="flex-1 min-w-0 h-12 px-2 rounded-2xl flex-row items-center justify-center gap-1 shadow-sm"
         accessibilityRole="button"
         accessibilityLabel={
           isLastStep
@@ -82,21 +92,21 @@ export const CommunityEngagementFlowFooter: React.FC<CommunityEngagementFlowFoot
       >
         {isLastStep ? (
           <>
-            <CheckCircle2 size={18} className="text-primary-foreground" />
-            <Text className="font-bold text-primary-foreground text-sm">
+            {!isCompactWidth && <CheckCircle2 size={17} className="text-primary-foreground shrink-0" />}
+            <Text numberOfLines={1} className="font-bold text-primary-foreground text-xs">
               {loading
-                ? 'Saving...'
+                ? t('saving', 'Saving...')
                 : isEditMode
-                ? 'Save Changes'
+                ? t('save_changes', 'Save Changes')
                 : publishNow
-                ? 'Publish Now'
-                : 'Schedule Content'}
+                ? t('publish_now', 'Publish Now')
+                : t('schedule_for_later', 'Schedule Content')}
             </Text>
           </>
         ) : (
           <>
-            <Text className="font-bold text-primary-foreground text-sm">Continue</Text>
-            <ArrowRight size={16} className="text-primary-foreground" />
+            <Text numberOfLines={1} className="font-bold text-primary-foreground text-xs">{t('continue', 'Continue')}</Text>
+            {!isCompactWidth && <ArrowRight size={15} className="text-primary-foreground shrink-0" />}
           </>
         )}
       </Button>

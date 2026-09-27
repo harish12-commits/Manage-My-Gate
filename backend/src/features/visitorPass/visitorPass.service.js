@@ -13,6 +13,16 @@ export class VisitorPassService {
    * @returns {Promise<Object>} The created pass document.
    */
   async createPass(passData, session) {
+    const blacklistedVisitor = await blacklistService.checkMatch(passData.orgId, {
+      name: passData.visitorDetails?.name,
+      phone: passData.visitorDetails?.phone,
+      idProofNumber: passData.visitorDetails?.idProofNumber,
+      plate: passData.vehicleDetails?.number,
+    });
+    if (blacklistedVisitor) {
+      throw new HttpError(403, 'This visitor cannot receive a pass because they are on the visitor blacklist.');
+    }
+
     if (passData && passData.validity) {
       if (passData.validity.startDate) {
         const start = new Date(passData.validity.startDate);
@@ -81,6 +91,7 @@ export class VisitorPassService {
     const isBanned = await blacklistService.checkMatch(pass.orgId, {
       name: pass.visitorDetails?.name,
       phone: pass.visitorDetails?.phone,
+      idProofNumber: pass.visitorDetails?.idProofNumber,
       plate: pass.vehicleDetails?.number
     });
     if (isBanned) {

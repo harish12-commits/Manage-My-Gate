@@ -28,6 +28,7 @@ export interface PaginatedListProps<T> {
   contentContainerStyle?: StyleProp<ViewStyle>;
   onScroll?: (event: any) => void;
   extraData?: any;
+  paginationSummary?: boolean;
 }
 
 const getEmptyIconComponent = (iconName?: string): LucideIcons.LucideIcon => {
@@ -58,6 +59,7 @@ export function PaginatedList<T>({
   contentContainerStyle,
   onScroll: onScrollProp,
   extraData: extraDataProp,
+  paginationSummary = false,
 }: PaginatedListProps<T>) {
   const { language } = useTranslation();
   const { handleScroll } = useBottomNavScroll();
@@ -65,6 +67,7 @@ export function PaginatedList<T>({
 
   const currentPage = pagination?.currentPage ?? (pagination as any)?.page ?? 1;
   const totalPages = pagination?.totalPages ?? 1;
+  const totalRecords = pagination?.totalRecords ?? data.length;
 
   React.useEffect(() => {
     onEndReachedCalledDuringMomentum.current = false;
@@ -124,10 +127,19 @@ export function PaginatedList<T>({
   };
 
   const renderFooter = () => {
-    if (loading && data.length > 0 && currentPage < totalPages) {
+    if (data.length > 0 && (paginationSummary || (loading && currentPage < totalPages))) {
       return (
         <View className="py-4 items-center justify-center">
-          <ActivityIndicator size="small" color="#FF6A00" />
+          {loading && currentPage < totalPages ? (
+            <ActivityIndicator size="small" color="#FF6A00" />
+          ) : null}
+          {paginationSummary ? (
+            <Text className="mt-2 text-xs font-medium text-muted-foreground">
+              {currentPage < totalPages
+                ? `Showing ${Math.min(data.length, totalRecords)} of ${totalRecords}`
+                : `${totalRecords} record${totalRecords === 1 ? '' : 's'} shown`}
+            </Text>
+          ) : null}
         </View>
       );
     }
@@ -206,7 +218,9 @@ export function PaginatedList<T>({
       }
       contentContainerStyle={[{ flexGrow: 1 }, contentContainerStyle]}
       contentContainerClassName={cn(
-        data.length === 0 && 'justify-center',
+        // A screen-supplied empty state belongs below its header/search controls.
+        // Only vertically centre the built-in generic empty state.
+        data.length === 0 && ListEmptyComponent === undefined && 'justify-center',
         contentContainerClassName
       )}
     />

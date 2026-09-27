@@ -57,16 +57,16 @@ export const AppBackground: React.FC<AppBackgroundProps> = memo(({ style }) => {
             <Stop offset="100%" stopColor="#FFF8EF" stopOpacity="0" />
           </RadialGradient>
 
-          {/* Dark Theme: quiet NAHOM navy with restrained orange radiance */}
+          {/* Dark Theme: neutral charcoal with restrained orange radiance. */}
           <LinearGradient id="appBgGradDark" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#172B70" stopOpacity="1" />
-            <Stop offset="45%" stopColor="#101C3D" stopOpacity="1" />
-            <Stop offset="100%" stopColor="#0A1126" stopOpacity="1" />
+            <Stop offset="0%" stopColor="#26262A" stopOpacity="1" />
+            <Stop offset="45%" stopColor="#1B1B1F" stopOpacity="1" />
+            <Stop offset="100%" stopColor="#131316" stopOpacity="1" />
           </LinearGradient>
 
           <RadialGradient id="darkTopGlow" cx="85%" cy="8%" r="60%">
             <Stop offset="0%" stopColor="#FF6A00" stopOpacity="0.14" />
-            <Stop offset="100%" stopColor="#0A1126" stopOpacity="0" />
+            <Stop offset="100%" stopColor="#131316" stopOpacity="0" />
           </RadialGradient>
         </Defs>
 

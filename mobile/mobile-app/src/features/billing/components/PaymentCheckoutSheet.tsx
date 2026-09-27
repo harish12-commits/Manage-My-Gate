@@ -21,6 +21,7 @@ import {
   buildInvoiceOrderKey,
   buildInvoiceVerifyKey,
 } from '@/src/utils/idempotency';
+import { useTranslation } from '@/src/utils/i18n';
 
 export interface PaymentCheckoutSheetProps {
   visible: boolean;
@@ -38,6 +39,7 @@ export function PaymentCheckoutSheet({
   onPaymentSuccess,
 }: PaymentCheckoutSheetProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const { walletBalance, loadResidentDues } = useBilling();
   const walletState = useSelector((state: RootState) => state.wallet);
   const isGatewayConfigured = walletState?.isPaymentGatewayConfigured === true;
@@ -323,13 +325,13 @@ export function PaymentCheckoutSheet({
                 }`}>
                   {paymentMode === 'FULL' ? <Check size={12} className="text-primary-foreground" /> : null}
                 </View>
-                <View>
-                  <Text className="font-bold text-sm text-foreground">Pay Full Remaining Amount</Text>
-                  <Text className="text-xs text-muted-foreground">Settle total outstanding invoice balance</Text>
+                <View className="flex-1 min-w-0">
+                  <Text numberOfLines={1} className="font-bold text-sm text-foreground truncate">{t('pay_full_remaining_amount', 'Pay Full Remaining Amount')}</Text>
+                  <Text numberOfLines={1} className="text-xs text-muted-foreground truncate">{t('settle_total_outstanding_balance', 'Settle total outstanding invoice balance')}</Text>
                 </View>
               </View>
 
-              <Text className="text-base font-extrabold text-foreground">
+              <Text className="text-base font-extrabold text-foreground shrink-0 ms-2">
                 ₹{remainingDue.toLocaleString('en-IN')}
               </Text>
             </TouchableOpacity>
@@ -345,18 +347,18 @@ export function PaymentCheckoutSheet({
               }`}
             >
               <View className="flex-row items-center gap-3 mb-2">
-                <View className={`w-5 h-5 rounded-full border items-center justify-center ${
+                <View className={`w-5 h-5 rounded-full border items-center justify-center shrink-0 ${
                   paymentMode === 'CUSTOM' ? 'border-primary bg-primary' : 'border-muted-foreground'
                 }`}>
                   {paymentMode === 'CUSTOM' ? <Check size={12} className="text-primary-foreground" /> : null}
                 </View>
-                <Text className="font-bold text-sm text-foreground">Pay Custom Partial Amount</Text>
+                <Text numberOfLines={1} className="font-bold text-sm text-foreground flex-1 min-w-0 truncate">{t('pay_custom_partial_amount', 'Pay Custom Partial Amount')}</Text>
               </View>
 
               {paymentMode === 'CUSTOM' ? (
                 <View className="mt-2 ps-8">
                   <TextInput
-                    label="Custom Settlement Amount (₹)"
+                    label={t('custom_settlement_amount', 'Custom Settlement Amount (₹)')}
                     value={customAmountStr}
                     onChangeText={setCustomAmountStr}
                     placeholder={`Enter amount (Max ₹${remainingDue})`}
@@ -369,14 +371,14 @@ export function PaymentCheckoutSheet({
             </TouchableOpacity>
 
             {/* Amount Breakdown Preview */}
-            <View className="bg-muted/40 border border-border/60 rounded-xl p-3.5 flex-row items-center justify-between">
-              <View>
-                <Text className="text-xs text-muted-foreground">Amount Being Paid Now</Text>
-                <Text className="text-base font-extrabold text-primary">₹{amountToPay.toLocaleString('en-IN')}</Text>
+            <View className="bg-muted/40 border border-border/60 rounded-xl p-3.5 flex-row items-center justify-between gap-2">
+              <View className="flex-1 min-w-0">
+                <Text numberOfLines={1} className="text-xs text-muted-foreground truncate">{t('amount_being_paid_now', 'Amount Being Paid Now')}</Text>
+                <Text numberOfLines={1} className="text-base font-extrabold text-primary">₹{amountToPay.toLocaleString('en-IN')}</Text>
               </View>
-              <View className="items-end">
-                <Text className="text-xs text-muted-foreground">Remaining After Payment</Text>
-                <Text className="text-base font-bold text-foreground">₹{remainingAfterPayment.toLocaleString('en-IN')}</Text>
+              <View className="items-end shrink-0">
+                <Text numberOfLines={1} className="text-xs text-muted-foreground truncate">{t('remaining_after_payment', 'Remaining After Payment')}</Text>
+                <Text numberOfLines={1} className="text-base font-bold text-foreground">₹{remainingAfterPayment.toLocaleString('en-IN')}</Text>
               </View>
             </View>
           </View>
@@ -384,35 +386,35 @@ export function PaymentCheckoutSheet({
           {/* Section 2: Payment Method Selection */}
           <View className="mb-5 gap-2.5">
             <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              2. Select Payment Method
+              {t('select_payment_method', '2. Select Payment Method')}
             </Text>
 
             {/* Digital Wallet Option */}
             <TouchableOpacity
               onPress={() => setSelectedMethod('WALLET')}
               activeOpacity={0.8}
-              className={`p-4 rounded-xl border flex-row items-center justify-between ${
+              className={`p-4 rounded-xl border flex-row items-center justify-between gap-2 ${
                 selectedMethod === 'WALLET' ? 'bg-status-success/10 border-status-success' : 'bg-card border-border'
               }`}
             >
-              <View className="flex-row items-center flex-1 me-2 gap-3">
-                <View className="w-10 h-10 rounded-xl bg-status-success/15 items-center justify-center">
+              <View className="flex-row items-center flex-1 min-w-0 me-2 gap-3">
+                <View className="w-10 h-10 rounded-xl bg-status-success/15 items-center justify-center shrink-0">
                   <Icon as={Wallet} size={20} className="text-status-success" />
                 </View>
-                <View className="flex-1">
-                  <Text className="font-bold text-sm text-foreground">Digital Wallet</Text>
-                  <Text className="text-xs text-muted-foreground">
-                    Available Balance: ₹{walletBalance.toLocaleString('en-IN')}
+                <View className="flex-1 min-w-0">
+                  <Text numberOfLines={1} className="font-bold text-sm text-foreground truncate">{t('digital_wallet', 'Digital Wallet')}</Text>
+                  <Text numberOfLines={1} className="text-xs text-muted-foreground truncate">
+                    {t('available_wallet_balance', 'Available Balance')}: ₹{walletBalance.toLocaleString('en-IN')}
                   </Text>
                 </View>
               </View>
 
               {isWalletInsufficient ? (
-                <View className="bg-destructive/10 px-2.5 py-1 rounded-md">
-                  <Text className="text-xs font-bold text-destructive">Insufficient</Text>
+                <View className="bg-destructive/10 px-2.5 py-1 rounded-md shrink-0">
+                  <Text className="text-xs font-bold text-destructive">{t('insufficient', 'Insufficient')}</Text>
                 </View>
               ) : (
-                <View className={`w-5 h-5 rounded-full border items-center justify-center ${
+                <View className={`w-5 h-5 rounded-full border items-center justify-center shrink-0 ${
                   selectedMethod === 'WALLET' ? 'border-status-success bg-status-success' : 'border-muted-foreground'
                 }`}>
                   {selectedMethod === 'WALLET' ? <Check size={12} className="text-primary-foreground" /> : null}
@@ -425,15 +427,15 @@ export function PaymentCheckoutSheet({
               onPress={() => {
                 if (!isGatewayConfigured) {
                   Alert.alert(
-                    'Online Gateway Not Configured',
-                    'Razorpay online payment has not been configured for your community by the administrator. Please pay using an Offline Payment Request or Digital Wallet.'
+                    t('online_gateway_not_configured', 'Online Gateway Not Configured'),
+                    t('razorpay_online_payment_has_not_been_configur', 'Razorpay online payment has not been configured for your community by the administrator. Please pay using an Offline Payment Request or Digital Wallet.')
                   );
                   return;
                 }
                 setSelectedMethod('RAZORPAY');
               }}
               activeOpacity={isGatewayConfigured ? 0.8 : 0.9}
-              className={`p-4 rounded-xl border flex-row items-center justify-between ${
+              className={`p-4 rounded-xl border flex-row items-center justify-between gap-2 ${
                 !isGatewayConfigured
                   ? 'bg-muted/30 border-border/60 opacity-70'
                   : selectedMethod === 'RAZORPAY'
@@ -441,29 +443,29 @@ export function PaymentCheckoutSheet({
                   : 'bg-card border-border'
               }`}
             >
-              <View className="flex-row items-center gap-3 flex-1 me-2">
-                <View className={`w-10 h-10 rounded-xl items-center justify-center ${isGatewayConfigured ? 'bg-primary/10' : 'bg-muted/60'}`}>
+              <View className="flex-row items-center gap-3 flex-1 min-w-0 me-2">
+                <View className={`w-10 h-10 rounded-xl items-center justify-center shrink-0 ${isGatewayConfigured ? 'bg-primary/10' : 'bg-muted/60'}`}>
                   <Icon as={CreditCard} size={20} className={isGatewayConfigured ? 'text-primary' : 'text-muted-foreground'} />
                 </View>
-                <View className="flex-1">
+                <View className="flex-1 min-w-0">
                   <View className="flex-row items-center gap-2">
-                    <Text className={`font-bold text-sm ${isGatewayConfigured ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      Razorpay Online
+                    <Text numberOfLines={1} className={`font-bold text-sm truncate ${isGatewayConfigured ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {t('razorpay_online', 'Razorpay Online')}
                     </Text>
                     {!isGatewayConfigured ? (
-                      <View className="bg-amber-500/15 px-2 py-0.5 rounded-md">
-                        <Text className="text-[10px] font-bold text-amber-600 dark:text-amber-400">Not Configured</Text>
+                      <View className="bg-amber-500/15 px-2 py-0.5 rounded-md shrink-0">
+                        <Text className="text-[10px] font-bold text-amber-600 dark:text-amber-400">{t('not_configured', 'Not Configured')}</Text>
                       </View>
                     ) : null}
                   </View>
-                  <Text className="text-xs text-muted-foreground">
-                    {isGatewayConfigured ? 'UPI, Credit/Debit Card, NetBanking' : 'Disabled by community administrator'}
+                  <Text numberOfLines={1} className="text-xs text-muted-foreground truncate">
+                    {isGatewayConfigured ? t('upi_card_netbanking', 'UPI, Credit/Debit Card, NetBanking') : t('disabled_by_administrator', 'Disabled by community administrator')}
                   </Text>
                 </View>
               </View>
 
               {isGatewayConfigured ? (
-                <View className={`w-5 h-5 rounded-full border items-center justify-center ${
+                <View className={`w-5 h-5 rounded-full border items-center justify-center shrink-0 ${
                   selectedMethod === 'RAZORPAY' ? 'border-primary bg-primary' : 'border-muted-foreground'
                 }`}>
                   {selectedMethod === 'RAZORPAY' ? <Check size={12} className="text-primary-foreground" /> : null}
@@ -475,21 +477,21 @@ export function PaymentCheckoutSheet({
             <TouchableOpacity
               onPress={() => setSelectedMethod('OFFLINE')}
               activeOpacity={0.8}
-              className={`p-4 rounded-xl border flex-row items-center justify-between ${
+              className={`p-4 rounded-xl border flex-row items-center justify-between gap-2 ${
                 selectedMethod === 'OFFLINE' ? 'bg-amber-500/10 border-amber-500' : 'bg-card border-border'
               }`}
             >
-              <View className="flex-row items-center gap-3">
-                <View className="w-10 h-10 rounded-xl bg-amber-500/10 items-center justify-center">
+              <View className="flex-row items-center gap-3 flex-1 min-w-0 me-2">
+                <View className="w-10 h-10 rounded-xl bg-amber-500/10 items-center justify-center shrink-0">
                   <Icon as={Landmark} size={20} className="text-amber-600 dark:text-amber-400" />
                 </View>
-                <View>
-                  <Text className="font-bold text-sm text-foreground">Offline Payment Request</Text>
-                  <Text className="text-xs text-muted-foreground">Bank Transfer (NEFT/IMPS), UPI, Cheque, Cash</Text>
+                <View className="flex-1 min-w-0">
+                  <Text numberOfLines={1} className="font-bold text-sm text-foreground truncate">{t('offline_payment_request', 'Offline Payment Request')}</Text>
+                  <Text numberOfLines={1} className="text-xs text-muted-foreground truncate">{t('offline_payment_methods_sub', 'Bank Transfer (NEFT/IMPS), UPI, Cheque, Cash')}</Text>
                 </View>
               </View>
 
-              <View className={`w-5 h-5 rounded-full border items-center justify-center ${
+              <View className={`w-5 h-5 rounded-full border items-center justify-center shrink-0 ${
                 selectedMethod === 'OFFLINE' ? 'border-amber-500 bg-amber-500' : 'border-muted-foreground'
               }`}>
                 {selectedMethod === 'OFFLINE' ? <Check size={12} className="text-primary-foreground" /> : null}

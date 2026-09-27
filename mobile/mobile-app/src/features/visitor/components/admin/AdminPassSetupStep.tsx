@@ -155,22 +155,22 @@ export const AdminPassSetupStep: React.FC<AdminPassSetupStepProps> = ({
               variant="outline"
               size="default"
               onPress={() => setVillaSheetOpen(true)}
-              className="flex-row items-center justify-between px-3.5 py-2.5 rounded-xl border-primary/30 bg-card"
+              className="min-h-[72px] h-auto flex-row items-center justify-between px-3.5 py-2.5 rounded-xl border-primary/30 bg-card"
             >
-              <View className="flex-row items-center gap-2.5 flex-1">
-                <Home size={16} className="text-primary" />
-                <View className="flex-1">
-                  <Text className="text-xs font-bold text-foreground" numberOfLines={1}>
+              <View className="flex-row items-center gap-2.5 flex-1 min-w-0">
+                <Home size={16} className="text-primary shrink-0" />
+                <View className="flex-1 min-w-0 justify-center">
+                  <Text className="text-xs leading-4 font-bold text-foreground" numberOfLines={2} ellipsizeMode="tail">
                     {data.villaName || 'Select Destination Unit & Host *'}
                   </Text>
                   {data.residentName && (
-                    <Text className="text-[11px] text-muted-foreground" numberOfLines={1}>
+                    <Text className="text-[11px] leading-4 text-muted-foreground" numberOfLines={2} ellipsizeMode="tail">
                       Host: {data.residentName}
                     </Text>
                   )}
                 </View>
               </View>
-              <ChevronRight size={15} className="text-primary" />
+              <ChevronRight size={15} className="text-primary shrink-0 ms-2" />
             </Button>
           </View>
         )}

@@ -7,7 +7,7 @@ export class BlacklistController {
    */
   async create(req, res, next) {
     try {
-      const { orgId, name, phone, plate, reason } = req.body;
+      const { orgId, name, phone, idProofNumber, plate, reason } = req.body;
       const targetOrgId = req.tenant?.orgId || orgId;
       if (!req.tenant?.isPlatform && req.tenant?.orgId && orgId && String(req.tenant.orgId) !== String(orgId)) {
         throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
@@ -18,6 +18,7 @@ export class BlacklistController {
         orgId: targetOrgId,
         name,
         phone,
+        idProofNumber,
         plate,
         reason,
         createdById
@@ -71,9 +72,9 @@ export class BlacklistController {
       if (!req.tenant?.isPlatform && req.tenant?.orgId && String(req.tenant.orgId) !== String(orgId)) {
         throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
       }
-      const { name, phone, plate } = req.query;
+      const { name, phone, idProofNumber, plate } = req.query;
       
-      const match = await blacklistService.checkMatch(orgId, { name, phone, plate });
+      const match = await blacklistService.checkMatch(orgId, { name, phone, idProofNumber, plate });
       
       res.success(match, 'Check match status executed successfully');
     } catch (error) {

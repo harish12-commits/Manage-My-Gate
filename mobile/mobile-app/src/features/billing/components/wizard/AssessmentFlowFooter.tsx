@@ -1,5 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/button';
 
 interface AssessmentFlowFooterProps {
@@ -17,8 +18,13 @@ export const AssessmentFlowFooter: React.FC<AssessmentFlowFooterProps> = ({
   isLastStep,
   loading = false,
 }) => {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View className="p-4 border-t border-border bg-card flex-row gap-3">
+    <View
+      style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+      className="px-4 pt-4 border-t border-border bg-card flex-row gap-3"
+    >
       {!isFirstStep && (
         <Button
           variant="outline"
