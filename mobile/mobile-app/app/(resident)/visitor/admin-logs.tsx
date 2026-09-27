@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { View, Alert } from 'react-native';
+import { useSelector } from 'react-redux';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
@@ -9,21 +10,26 @@ import { AdminGateLogCard, AdminGateLogItem } from '@/src/features/visitor/compo
 import { AdminForceCheckoutModal } from '@/src/features/visitor/components/admin/AdminForceCheckoutModal';
 import { VisitorLogDetailsModal } from '@/src/features/visitor/components/history/VisitorLogDetailsModal';
 import { useAdminVisitor } from '@/src/features/visitor/hooks/useAdminVisitor';
+import visitorService from '@/src/features/visitor/services/visitorService';
 import { mapBackendPassToHistoryItem } from '@/src/features/visitor/utils/mapBackendPassToHistoryItem';
+import { mapBackendLogToGateLogItem } from '@/src/features/visitor/utils/mapBackendLogToGateLogItem';
+import { selectActiveOrgId } from '@/src/features/auth/store/authSelectors';
 import { downloadCSVFile } from '@/src/utils/downloadHelper';
 import { useTranslation } from '@/src/utils/i18n';
 
+const PAGE_SIZE = 10;
+
 export default function AdminGateLogsScreen() {
   const { t } = useTranslation();
-  const {
-    communityPasses,
-    pagination,
-    status,
-    actionStatus,
-    error,
-    loadCommunityPasses,
-    forceCheckout,
-  } = useAdminVisitor();
+  const activeOrgId = useSelector(selectActiveOrgId);
+  const { actionStatus, forceCheckout } = useAdminVisitor();
+
+  // The audit trail is the gate's own event log (check-ins, walk-ins, check-outs),
+  // not the pass registry: times, guard and gate come from what actually happened.
+  const [gateLogs, setGateLogs] = useState<any[]>([]);
+  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0, limit: PAGE_SIZE });
+  const [status, setStatus] = useState<'idle' | 'loading' | 'succeeded' | 'failed'>('idle');
+  const [error, setError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const [search, setSearch] = useState<string>('');
@@ -36,18 +42,34 @@ export default function AdminGateLogsScreen() {
   const [exporting, setExporting] = useState(false);
 
   const loadData = useCallback(
-    (page: number, append: boolean = false) => {
-      const params: any = {
-        page,
-        limit: 10,
-        append,
-      };
-      if (activeTab !== 'ALL') {
-        params.status = activeTab;
+    async (page: number, append: boolean = false) => {
+      if (!activeOrgId) return;
+      setStatus('loading');
+      try {
+        const params: any = { skip: (page - 1) * PAGE_SIZE, limit: PAGE_SIZE };
+        if (activeTab !== 'ALL') {
+          params.status = activeTab;
+        }
+        const response: any = await visitorService.getHistoryLogs(activeOrgId, params);
+        const body = response && response.success !== undefined ? response : response?.data;
+        const inner = body?.data || body || {};
+        const rows = Array.isArray(inner) ? inner : inner.data || [];
+        const totalRecords = typeof inner.totalRecords === 'number' ? inner.totalRecords : rows.length;
+        setGateLogs((prev) => (append ? [...prev, ...rows] : rows));
+        setPagination({
+          currentPage: page,
+          totalPages: Math.max(1, Math.ceil(totalRecords / PAGE_SIZE)),
+          totalRecords,
+          limit: PAGE_SIZE,
+        });
+        setError(null);
+        setStatus('succeeded');
+      } catch (err: any) {
+        setError(err?.response?.data?.message || err?.message || 'Failed to load gate logs.');
+        setStatus('failed');
       }
-      return loadCommunityPasses(params);
     },
-    [loadCommunityPasses, activeTab]
+    [activeOrgId, activeTab]
   );
 
   useEffect(() => {
@@ -74,41 +96,18 @@ export default function AdminGateLogsScreen() {
     setLoadingMore(false);
   }, [status, loadingMore, refreshing, pagination, loadData]);
 
-  const mappedLogs: AdminGateLogItem[] = useMemo(() => {
-    if (!Array.isArray(communityPasses)) return [];
-    return communityPasses.map((pass: any) => ({
-      _id: pass._id || pass.id,
-      visitorName: pass.visitorName || pass.visitorDetails?.fullName || 'Visitor',
-      phone: pass.phone || pass.visitorDetails?.phone,
-      passType: pass.passType || pass.category || 'GUEST',
-      category: pass.category || pass.passType,
-      code: pass.shortKey || pass.code,
-      shortKey: pass.shortKey || pass.code,
-      vehicleNo: pass.vehicleNo || pass.vehicleDetails?.plateNumber,
-      villaNumber: pass.villaNumber || pass.unitNumber || pass.destinationUnit,
-      guardName: pass.guardName || pass.approvedByName || 'Gate Security',
-      gateName: pass.gateName || 'Main Security Gate',
-      entryTime: pass.entryTime || pass.validFrom || pass.createdAt,
-      exitTime: pass.exitTime || pass.validUntil,
-      status: pass.status || 'ACTIVE',
-      isBlacklisted: Boolean(pass.isBlacklisted),
-      purpose: pass.purpose,
-      provider: pass.provider || pass.serviceCategory,
-      rawPass: pass,
-    }));
-  }, [communityPasses]);
+  const mappedLogs: AdminGateLogItem[] = useMemo(() => gateLogs.map(mapBackendLogToGateLogItem), [gateLogs]);
 
   const filteredLogs = useMemo(() => {
     if (!search.trim()) return mappedLogs;
     const query = search.toLowerCase().trim();
     return mappedLogs.filter((log) => {
       const matchName = log.visitorName ? log.visitorName.toLowerCase().includes(query) : false;
-      const matchCode = log.shortKey ? log.shortKey.toLowerCase().includes(query) : false;
       const matchVehicle = log.vehicleNo ? log.vehicleNo.toLowerCase().includes(query) : false;
       const matchVilla = log.villaNumber ? log.villaNumber.toLowerCase().includes(query) : false;
       const matchGuard = log.guardName ? log.guardName.toLowerCase().includes(query) : false;
       const matchPhone = log.phone ? log.phone.includes(query) : false;
-      return matchName || matchCode || matchVehicle || matchVilla || matchGuard || matchPhone;
+      return matchName || matchVehicle || matchVilla || matchGuard || matchPhone;
     });
   }, [mappedLogs, search]);
 
@@ -119,7 +118,8 @@ export default function AdminGateLogsScreen() {
 
   const handleConfirmForceCheckout = async (reason: string) => {
     if (selectedLog?._id) {
-      await forceCheckout(selectedLog._id, reason);
+      const res: any = await forceCheckout(selectedLog._id, reason);
+      setError(res?.meta?.requestStatus === 'rejected' ? String(res.payload || 'Failed to check out visitor.') : null);
       setCheckoutModalOpen(false);
       setSelectedLog(null);
       loadData(1, false);
@@ -164,11 +164,11 @@ export default function AdminGateLogsScreen() {
       escapeCSV(log.shortKey || log.code || 'N/A'),
       escapeCSV(log.vehicleNo || 'N/A'),
       escapeCSV(log.villaNumber || 'Community'),
-      escapeCSV(log.status || 'ACTIVE'),
+      escapeCSV(log.status || 'N/A'),
       escapeCSV(log.entryTime ? new Date(log.entryTime).toLocaleString() : 'N/A'),
-      escapeCSV(log.exitTime ? new Date(log.exitTime).toLocaleString() : 'Active Inside'),
-      escapeCSV(log.guardName || 'Gate Security'),
-      escapeCSV(log.gateName || 'Main Security Gate'),
+      escapeCSV(log.exitTime ? new Date(log.exitTime).toLocaleString() : log.status === 'INSIDE' ? 'Active Inside' : 'N/A'),
+      escapeCSV(log.guardName || 'N/A'),
+      escapeCSV(log.gateName || 'N/A'),
       escapeCSV(log.purpose || 'Visitor Entry'),
     ]);
 
@@ -202,9 +202,10 @@ export default function AdminGateLogsScreen() {
         searchPlaceholder={t('search_visitor_vehicle_plate_guard_or_villa', 'Search visitor, vehicle plate, guard or villa...')}
         sortOptions={[
           { label: t('all_logs', 'All Logs'), value: 'ALL' },
-          { label: t('inside_now', 'Inside Now'), value: 'ACTIVE' },
-          { label: t('completed', 'Completed'), value: 'EXPIRED' },
-          { label: t('revoked_denied', 'Revoked/Denied'), value: 'REVOKED' },
+          { label: t('inside_now', 'Inside Now'), value: 'INSIDE' },
+          { label: t('awaiting_host', 'Awaiting Host'), value: 'PENDING' },
+          { label: t('completed', 'Completed'), value: 'COMPLETED' },
+          { label: t('revoked_denied', 'Revoked/Denied'), value: 'REJECTED' },
         ]}
         currentSort={activeTab}
         onSortChange={(tabKey) => {
@@ -248,7 +249,7 @@ export default function AdminGateLogsScreen() {
           onLoadMore={handleLoadMore}
           onRefresh={handleRefresh}
           refreshing={refreshing}
-          loading={status === 'loading' && !refreshing && !loadingMore && communityPasses.length === 0}
+          loading={status === 'loading' && !refreshing && !loadingMore && gateLogs.length === 0}
           ListHeaderComponent={renderHeader()}
           emptyIcon="ClipboardList"
           emptyTitle={t('no_audit_logs_found', 'No Audit Logs Found')}

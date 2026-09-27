@@ -60,8 +60,8 @@ export const AdminGateLogCard: React.FC<AdminGateLogCardProps> = ({
   const shortKey = log.code || log.shortKey || log.rawPass?.shortKey || log.rawPass?.code || 'N/A';
   const vehicleNo = log.vehicleNo || log.rawPass?.vehicleDetails?.plateNumber || log.rawPass?.vehicleNo;
   const villa = log.villaNumber || log.unitNumber || log.rawPass?.villaNumber || log.rawPass?.unitNumber;
-  const guard = log.guardName || log.rawPass?.guardName || 'Security Gate';
-  const gate = log.gateName || log.rawPass?.gateName || 'Main Gate';
+  const guard = log.guardName || log.rawPass?.guardName || '—';
+  const gate = log.gateName || log.rawPass?.gateName || '—';
   const status = (log.status || log.rawPass?.status || 'ACTIVE').toUpperCase();
   const isInside = status === 'ACTIVE' || status === 'CHECKED_IN' || status === 'INSIDE';
 

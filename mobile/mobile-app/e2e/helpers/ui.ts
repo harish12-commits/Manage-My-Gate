@@ -12,6 +12,13 @@ export const typeInto = async (view: View, placeholder: string | RegExp, value: 
   await fireEvent.changeText(await view.findByPlaceholderText(placeholder), value);
 };
 
+/** Picks a status option from a SearchFilterBar (its options live in a filter modal). */
+export const chooseFilter = async (view: View, label: string | RegExp) => {
+  await fireEvent.press(await view.findByLabelText('Open filter options'));
+  const options = await view.findAllByText(label);
+  await fireEvent.press(options[options.length - 1]);
+};
+
 const flatten = (c: any): string =>
   Array.isArray(c) ? c.map(flatten).join('') : typeof c === 'string' || typeof c === 'number' ? String(c) : '';
 

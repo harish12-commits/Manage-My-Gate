@@ -20,7 +20,7 @@ export class VisitorLogRepository {
    * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
    * @returns {Promise<Object|null>} The updated log document.
    */
-  async updateLogForCheckout(id, checkOutTime = new Date(), actorId, gateName, session = null) {
+  async updateLogForCheckout(id, checkOutTime = new Date(), actorId, { gateName, reason } = {}, session = null) {
     return await VisitorLog.findByIdAndUpdate(
       id,
       {
@@ -30,7 +30,13 @@ export class VisitorLogRepository {
         },
         ...(actorId ? {
           $push: {
-            actionHistory: { action: 'CHECKED_OUT', actorId, ...(gateName ? { gateName } : {}), occurredAt: checkOutTime || new Date() },
+            actionHistory: {
+              action: 'CHECKED_OUT',
+              actorId,
+              ...(gateName ? { gateName } : {}),
+              ...(reason ? { reason } : {}),
+              occurredAt: checkOutTime || new Date(),
+            },
           },
         } : {}),
       },
@@ -190,6 +196,23 @@ export class VisitorLogRepository {
           preserveNullAndEmptyArrays: true
         }
       },
+      // The visited unit: the pass's villa, or the host's villa for walk-ins (no pass).
+      {
+        $lookup: {
+          from: 'villas',
+          localField: 'pass.villaId',
+          foreignField: '_id',
+          as: 'passVilla'
+        }
+      },
+      {
+        $lookup: {
+          from: 'villas',
+          localField: 'resident.villaId',
+          foreignField: '_id',
+          as: 'residentVilla'
+        }
+      },
       { $sort: { createdAt: -1 } },
       {
         $facet: {
@@ -204,8 +227,18 @@ export class VisitorLogRepository {
                 entryType: 1,
                 logStatus: 1,
                 snapshot: 1,
+                gateName: 1,
+                actionHistory: 1,
                 checkInTime: 1,
                 checkOutTime: 1,
+                villa: {
+                  $let: {
+                    vars: {
+                      v: { $ifNull: [{ $arrayElemAt: ['$passVilla', 0] }, { $arrayElemAt: ['$residentVilla', 0] }] }
+                    },
+                    in: { _id: '$$v._id', unitNumber: '$$v.unitNumber', blockOrBuilding: '$$v.blockOrBuilding' }
+                  }
+                },
                 createdAt: 1,
                 updatedAt: 1,
                 residentId: {

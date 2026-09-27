@@ -64,7 +64,11 @@ export class VisitorLogController {
   async checkout(req, res, next) {
     try {
       const { id } = req.params;
-      const data = await visitorLogService.checkout(id, req.user, { orgId: req.tenant.orgId, gateName: req.body.gateName });
+      const data = await visitorLogService.checkout(id, req.user, {
+        orgId: req.tenant.orgId,
+        gateName: req.body.gateName,
+        reason: req.body.reason,
+      });
       res.success(data, 'Visitor checked out successfully');
     } catch (error) {
       next(error);

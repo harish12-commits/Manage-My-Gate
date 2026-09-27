@@ -206,7 +206,7 @@ export class VisitorLogService {
       log._id,
       new Date(),
       getActorId(actor),
-      context.gateName,
+      { gateName: context.gateName, reason: context.reason },
       session
     );
     

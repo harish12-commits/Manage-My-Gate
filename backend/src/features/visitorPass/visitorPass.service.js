@@ -141,6 +141,8 @@ export class VisitorPassService {
         ? optionsOrSkip
         : { skip: optionsOrSkip, limit, statuses };
 
+    // Passes never used before their validity ended would otherwise stay PENDING ("upcoming") forever.
+    await visitorPassRepository.expireEndedPasses(orgId, new Date(), session);
     const result = await visitorPassRepository.findActivePassesByOrg(orgId, opts, session);
     if (result && result.data) {
       const mapped = [];

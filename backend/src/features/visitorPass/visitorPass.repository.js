@@ -66,6 +66,38 @@ export class VisitorPassRepository {
     );
   }
 
+  /**
+   * Marks PENDING/ACTIVE passes whose validity has ended as EXPIRED, recording the transition.
+   * @param {string} orgId - The organization ID.
+   * @param {Date} [now] - The reference instant.
+   * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
+   * @returns {Promise<Object>} The update result.
+   */
+  async expireEndedPasses(orgId, now = new Date(), session = null) {
+    return VisitorPass.updateMany(
+      {
+        orgId: new mongoose.Types.ObjectId(orgId),
+        status: { $in: ['PENDING', 'ACTIVE'] },
+        'validity.endDate': { $lt: now },
+      },
+      [
+        {
+          // $status still refers to the pre-update value inside this stage.
+          $set: {
+            statusHistory: {
+              $concatArrays: [
+                { $ifNull: ['$statusHistory', []] },
+                [{ fromStatus: '$status', toStatus: 'EXPIRED', reason: 'Validity period ended', occurredAt: now }],
+              ],
+            },
+            status: 'EXPIRED',
+          },
+        },
+      ],
+      { updatePipeline: true, ...(session ? { session } : {}) }
+    );
+  }
+
   /** Atomically consumes one pass use, preventing replayed QR scans from admitting twice. */
   async consumeForEntry(id, session = null) {
     return VisitorPass.findOneAndUpdate(

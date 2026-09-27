@@ -85,6 +85,13 @@ export const resolveWalkInRules = [
 ];
 
 export const checkoutRules = [
+  body('reason')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Reason must be at most 500 characters'),
+
   body('gateName')
     .optional()
     .isString()
