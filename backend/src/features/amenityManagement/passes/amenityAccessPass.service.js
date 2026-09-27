@@ -127,7 +127,7 @@ export class AmenityAccessPassService {
       session
     );
 
-    if (!v2PassAcrossOrgs) {
+    if (!v2PassAcrossOrgs && token.length <= 30) {
       const cleanRef = token.toUpperCase().startsWith('RES-')
         ? token.toUpperCase()
         : `RES-${token.toUpperCase()}`;
@@ -145,9 +145,8 @@ export class AmenityAccessPassService {
         orConditions.push({ reservationNumber: new RegExp(`${seq}$`) });
       }
 
-      const hexMatch = token.match(/[a-f0-9]{6}$/i);
-      if (hexMatch) {
-        orConditions.push({ _id: new RegExp(`${hexMatch[0]}$`, 'i') });
+      if (mongoose.Types.ObjectId.isValid(token)) {
+        orConditions.push({ _id: new mongoose.Types.ObjectId(token) });
       }
 
       const AmenityReservation =

@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import useAppSocket from '../../../hooks/useAppSocket';
 import { upsertAmenity, removeAmenity } from '../store/amenitySlice';
 import { upsertBooking } from '../store/amenityBookingSlice';
-import { fetchWalletThunk } from '../store/walletSlice';
+import { fetchWalletThunk } from '../../wallet/store/walletSlice';
 
 export const useAmenitySocket = () => {
   const { socket } = useAppSocket();

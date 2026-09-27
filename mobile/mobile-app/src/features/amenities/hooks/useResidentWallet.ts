@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useRouter } from 'expo-router';
 import { RootState, AppDispatch } from '../../../store/store';
-import { fetchWalletThunk, topUpWalletThunk, clearWalletStatus } from '../store/walletSlice';
+import { fetchWalletThunk, clearWalletStatus } from '../../wallet/store/walletSlice';
 import { fetchMyBookingsThunk, cancelBookingThunk, AmenityBooking } from '../store/amenityBookingSlice';
 
 export function useResidentWallet() {
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
 
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState<boolean>(false);
   const [selectedPassForQR, setSelectedPassForQR] = useState<AmenityBooking | null>(null);
@@ -42,19 +44,17 @@ export function useResidentWallet() {
   }, [myBookings]);
 
   const handleOpenTopUp = () => {
-    setIsTopUpModalOpen(true);
+    setIsTopUpModalOpen(false);
+    router.push('/(resident)/billing/wallet' as any);
   };
 
   const handleCloseTopUp = () => {
     setIsTopUpModalOpen(false);
   };
 
-  const handleTopUpSubmit = async (amount: number) => {
-    if (amount <= 0) return;
-    const result = await dispatch(topUpWalletThunk(amount));
-    if (topUpWalletThunk.fulfilled.match(result)) {
-      setIsTopUpModalOpen(false);
-    }
+  const handleTopUpSubmit = async (_amount: number) => {
+    setIsTopUpModalOpen(false);
+    router.push('/(resident)/billing/wallet' as any);
   };
 
   const handleOpenPassQR = (pass: AmenityBooking) => {

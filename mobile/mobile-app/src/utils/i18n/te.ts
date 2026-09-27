@@ -2536,7 +2536,7 @@ export const te: Record<string, string> = {
   'by_billing_cycle': 'బిల్లింగ్ సైకిల్ ద్వారా',
   'cash_deposit': 'నగదు డిపాజిట్',
   'payment_request_submitted': 'చెల్లింపు అభ్యర్థన సమర్పించబడింది!',
-  'submitted_for_verification': ') ధృవీకరణ కోసం సమర్పించబడింది.',
+  'submitted_for_verification': 'ధృవీకరణ కోసం సమర్పించబడింది.',
   '2_reference_date_details': '2. రిఫరెన్స్ & తేదీ వివరాలు',
   '3_receipt_document_proof': '3. రసీదు / పత్ర రుజువు',
   'attach_screenshot_bank_transfer_receipt_or_ch': 'స్క్రీన్‌షాట్, బ్యాంక్ బదిలీ రసీదు లేదా చెక్ ఫోటోను అటాచ్ చేయండి (చిత్రాలు లేదా PDF)',

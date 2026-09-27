@@ -45,7 +45,7 @@ export const getAmenitySlots = async (id: string, date: string) => {
   return await apiClient.get(`/amenities/${id}/slots?date=${date}`);
 };
 
-export const createAmenityBooking = async (payload: CreateBookingPayload) => {
+export const createAmenityBooking = async (payload: CreateBookingPayload, idempotencyKey?: string) => {
   const bookingDate = payload.bookingDate || payload.date;
   const numberOfPersons = payload.numberOfPersons ?? payload.guestsCount ?? 1;
 
@@ -56,7 +56,8 @@ export const createAmenityBooking = async (payload: CreateBookingPayload) => {
     numberOfPersons,
     guestsCount: numberOfPersons,
   };
-  return await apiClient.post('/amenity-bookings', normalizedPayload);
+  const headers = idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined;
+  return await apiClient.post('/amenity-bookings', normalizedPayload, { headers });
 };
 
 export const getMyBookings = async (params: { page?: number; limit?: number; status?: string } = {}) => {
@@ -81,8 +82,11 @@ export const getWalletBalance = async () => {
   return await apiClient.get('/wallet');
 };
 
+/**
+ * @deprecated Direct balance injection is decommissioned. Use walletService.createWalletOrder and verifyWalletPayment.
+ */
 export const topUpWallet = async (amount: number) => {
-  return await apiClient.post('/wallet/add-money', { amount });
+  return await apiClient.post('/wallet/create-order', { amount });
 };
 
 export const createAmenity = async (payload: any) => {

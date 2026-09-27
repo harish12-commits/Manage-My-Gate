@@ -9,7 +9,7 @@ import villaReducer from '../features/villa/store/villaSlice';
 import amenityReducer from '../features/amenities/store/amenitySlice';
 import securityLogReducer from '../features/amenities/store/securityLogSlice';
 import amenityBookingReducer from '../features/amenities/store/amenityBookingSlice';
-import walletReducer from '../features/billing/store/walletSlice';
+import walletReducer from '../features/wallet/store/walletSlice';
 import dashboardReducer from '../features/dashboard/dashboardSlice';
 import notificationReducer from '../features/notification/store/notificationSlice';
 import roleBuilderReducer from '../features/roleBuilder/store/roleSlice';

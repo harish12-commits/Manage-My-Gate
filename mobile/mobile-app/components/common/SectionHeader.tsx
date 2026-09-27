@@ -66,6 +66,13 @@ const CATEGORY_DEFAULT_META: Record<
     darkIconBg: 'bg-pink-950/40',
     iconColor: '#DB2777',
   },
+  digital_wallet: {
+    icon: 'WalletCards',
+    subtitle: 'Prepaid Balance & Ledger',
+    lightIconBg: 'bg-emerald-50',
+    darkIconBg: 'bg-emerald-950/40',
+    iconColor: '#10B981',
+  },
   financial_billing: {
     icon: 'CreditCard',
     subtitle: 'Dues, Invoices & Accounts',

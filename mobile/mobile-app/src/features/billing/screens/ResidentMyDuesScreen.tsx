@@ -13,6 +13,8 @@ import { Wallet, CreditCard, Receipt, ChevronRight, CheckCircle2, ShieldAlert, C
 import { useBilling } from '../hooks/useBilling';
 import { useBillingSocket } from '../hooks/useBillingSocket';
 import { useAuth } from '@/src/features/auth/hooks/useAuth';
+import { billingService } from '../services/billingService';
+import paymentService from '../../payment/services/paymentService';
 import { UnitDueBreakdown, InvoiceStatus, Invoice } from '../types';
 import { PaymentCheckoutSheet } from '../components/PaymentCheckoutSheet';
 import { OfflineSettleSheet } from '../components/OfflineSettleSheet';
@@ -237,7 +239,7 @@ export function ResidentMyDuesScreen() {
               <EmptyState
                 icon={CheckCircle2}
                 title="All Dues Settled!"
-                description="You currently have no outstanding maintenance fees or unpaid invoices."
+                description="No outstanding invoices."
               />
             ) : (
               <View className="gap-3">
@@ -406,35 +408,29 @@ export function ResidentMyDuesScreen() {
           }}
           onPaymentSuccess={(result: any, amountPaid?: number, paymentMethod?: string) => {
             loadResidentDues();
-            const paid =
-              amountPaid !== undefined && amountPaid !== null && Number(amountPaid) > 0
-                ? Number(amountPaid)
-                : Number(result?.amountPaid || result?.paidAmount || checkoutInvoice?.paidAmount || 0);
-
-            const total = Number(checkoutInvoice?.totalDue || checkoutInvoice?.totalAmount || result?.totalDue || 0);
-            const remaining =
-              result?.outstandingAmount !== undefined
-                ? Number(result.outstandingAmount)
-                : Math.max(0, total - paid);
-
-            const isFull = remaining <= 0.01;
+            const serverInv = result?.invoice || result?.data?.invoice || result?.data || result;
+            const authoritativeStatus = serverInv?.status || result?.status || 'PAID';
+            const paid = serverInv?.paidAmount ?? (amountPaid !== undefined && amountPaid !== null ? Number(amountPaid) : checkoutInvoice?.paidAmount || 0);
+            const remaining = serverInv?.outstandingAmount ?? 0;
+            const total = serverInv?.totalDue ?? checkoutInvoice?.totalDue ?? (paid + remaining);
 
             const receiptData = {
               ...(checkoutInvoice || {}),
+              ...serverInv,
               ...(result || {}),
-              invoiceNumber: result?.invoiceNumber || checkoutInvoice?.invoiceNumber || result?.invoice?.invoiceNumber || checkoutInvoice?._id,
-              unitNumber: result?.unitNumber || checkoutInvoice?.unitNumber || residentVillaNumber,
-              assessmentName: result?.assessmentName || checkoutInvoice?.assessmentName || result?.invoice?.assessmentName,
+              invoiceNumber: serverInv?.invoiceNumber || result?.invoiceNumber || checkoutInvoice?.invoiceNumber || checkoutInvoice?._id,
+              unitNumber: serverInv?.unitNumber || result?.unitNumber || checkoutInvoice?.unitNumber || residentVillaNumber,
+              assessmentName: serverInv?.assessmentName || result?.assessmentName || checkoutInvoice?.assessmentName,
               totalDue: total,
               totalAmount: total,
               paidAmount: paid,
-              amountPaid: paid,
+              amountPaid: amountPaid || paid,
               outstandingAmount: remaining,
-              status: isFull ? 'PAID' : 'PARTIALLY_PAID',
+              status: authoritativeStatus as any,
               paymentMethod: paymentMethod || result?.paymentMethod || 'Online Payment',
             };
             setReceiptInvoice(receiptData);
-            setReceiptAmount(paid);
+            setReceiptAmount(amountPaid || paid);
             setReceiptMethod(paymentMethod || 'Online Payment');
           }}
         />

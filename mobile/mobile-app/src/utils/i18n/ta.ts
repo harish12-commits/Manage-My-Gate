@@ -2536,7 +2536,7 @@ export const ta: Record<string, string> = {
   'by_billing_cycle': 'பில்லிங் சுழற்சி வாரியாக',
   'cash_deposit': 'ரொக்க வைப்பு',
   'payment_request_submitted': 'கட்டணக் கோரிக்கை சமர்ப்பிக்கப்பட்டது!',
-  'submitted_for_verification': ') சரிபார்ப்பிற்கு சமர்ப்பிக்கப்பட்டது.',
+  'submitted_for_verification': 'சரிபார்ப்பிற்கு சமர்ப்பிக்கப்பட்டது.',
   '2_reference_date_details': '2. குறிப்பு மற்றும் தேதி விவரங்கள்',
   '3_receipt_document_proof': '3. ரசீது / ஆவணச் சான்று',
   'attach_screenshot_bank_transfer_receipt_or_ch': 'ஸ்கிரீன்ஷாட், வங்கி பரிமாற்ற ரசீது அல்லது காசோலை புகைப்படத்தை இணைக்கவும் (படங்கள் அல்லது PDF)',

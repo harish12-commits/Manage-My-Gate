@@ -2,8 +2,14 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Checkbox } from '../../../../components/forms/Checkbox';
 import { Icon } from '../../../../components/ui/icon';
-import { ShieldCheck, Compass, Check, Layers, Users, Key, Landmark, Sparkles } from 'lucide-react-native';
+import { ShieldCheck, Compass, Check, Layers, Users, Key, Landmark, Sparkles, WalletCards } from 'lucide-react-native';
 import { PermissionGroupMap, PermissionItem } from '../store/roleSlice';
+
+const PERMISSION_LABEL_OVERRIDES: Record<string, string> = {
+  'billing:action_center': 'Digital Wallet & Resident Ledger',
+  'billing:dashboard': 'Billing Hub & Community Ledger',
+  'billing:assessment_manager': 'Assessment Manager',
+};
 
 const PERMISSION_LABEL_MAP: Record<string, string> = {
   active_board: 'Resident Feed',
@@ -15,9 +21,19 @@ const PERMISSION_LABEL_MAP: Record<string, string> = {
   dashboard: 'Manage Engagement',
 };
 
+const PERMISSION_DESCRIPTION_OVERRIDES: Record<string, string> = {
+  'billing:action_center': 'Prepaid wallet top-up, dues payments, and personal transaction receipts',
+  'billing:dashboard': 'Community financial overview, collection stats, and society general ledger',
+  'billing:assessment_manager': 'Generate maintenance levies, recurring assessments, and invoices',
+};
+
 const formatPermissionLabel = (permissionString?: string): string => {
   if (!permissionString) return '';
-  const str = String(permissionString).toLowerCase();
+  const normalized = permissionString.toLowerCase().trim();
+  if (PERMISSION_LABEL_OVERRIDES[normalized]) {
+    return PERMISSION_LABEL_OVERRIDES[normalized];
+  }
+  const str = normalized;
   if (str === 'notices:active_board' || str === 'notices.active_board' || str === 'active_board') {
     return 'Resident Feed';
   }
@@ -70,10 +86,17 @@ export const isPermissionSelected = (perm: PermissionItem | string, selectedIds:
   return false;
 };
 
+const getPermissionDescription = (permissionString?: string): string | null => {
+  if (!permissionString) return null;
+  const normalized = permissionString.toLowerCase().trim();
+  return PERMISSION_DESCRIPTION_OVERRIDES[normalized] || null;
+};
+
 const getCategoryDisplayName = (category: string): string => {
   const map: Record<string, string> = {
     visitor: 'Visitor Management',
     amenities: 'Amenities & Bookings',
+    digital_wallet: 'Digital Wallet & Ledger',
     billing: 'Billing & Invoices',
     villas: 'Unit Management',
     users: 'User Management',
@@ -92,6 +115,9 @@ const getCategoryIcon = (category: string) => {
       return ShieldCheck;
     case 'amenities':
       return Sparkles;
+    case 'digital_wallet':
+    case 'wallet':
+      return WalletCards;
     case 'billing':
       return Landmark;
     case 'villas':
@@ -103,6 +129,18 @@ const getCategoryIcon = (category: string) => {
     default:
       return Key;
   }
+};
+
+const CATEGORY_ORDER: Record<string, number> = {
+  visitor: 1,
+  amenities: 2,
+  complaints: 3,
+  notices: 4,
+  digital_wallet: 5,
+  billing: 6,
+  villas: 7,
+  users: 8,
+  integrations: 9,
 };
 
 const AMENITY_TIERS = [
@@ -145,7 +183,62 @@ export const PermissionMatrixGrid: React.FC<PermissionMatrixGridProps> = ({
 }) => {
   const [internalTier, setInternalTier] = React.useState<string>('none');
   const currentAmenityTier = activeAmenityTier || internalTier;
-  const categories = Object.keys(groupedPermissions || {});
+
+  const normalizedGroupedPermissions = React.useMemo(() => {
+    if (!groupedPermissions) return {};
+
+    const result: Record<string, PermissionItem[]> = {};
+
+    Object.entries(groupedPermissions).forEach(([categoryKey, perms]) => {
+      const lowerKey = categoryKey.toLowerCase();
+
+      if (lowerKey === 'billing') {
+        const billingPerms: PermissionItem[] = [];
+        const walletPerms: PermissionItem[] = [];
+
+        (perms || []).forEach((p) => {
+          const permName = (p.name || p.code || p._id || '').toLowerCase();
+          const action = permName.includes(':') ? permName.split(':')[1] : permName;
+
+          if (action === 'action_center') {
+            walletPerms.push({
+              ...p,
+              name: p.name || 'billing:action_center',
+            });
+          } else {
+            billingPerms.push(p);
+          }
+        });
+
+        if (billingPerms.length > 0) {
+          result['billing'] = billingPerms;
+        }
+        if (walletPerms.length > 0) {
+          result['digital_wallet'] = [
+            ...(result['digital_wallet'] || []),
+            ...walletPerms,
+          ];
+        }
+      } else if (lowerKey === 'digital_wallet' || lowerKey === 'wallet') {
+        result['digital_wallet'] = [
+          ...(result['digital_wallet'] || []),
+          ...(perms || []),
+        ];
+      } else {
+        result[lowerKey] = perms;
+      }
+    });
+
+    return result;
+  }, [groupedPermissions]);
+
+  const categories = React.useMemo(() => {
+    return Object.keys(normalizedGroupedPermissions).sort((a, b) => {
+      const orderA = CATEGORY_ORDER[a.toLowerCase()] ?? 99;
+      const orderB = CATEGORY_ORDER[b.toLowerCase()] ?? 99;
+      return orderA - orderB;
+    });
+  }, [normalizedGroupedPermissions]);
 
   if (categories.length === 0) {
     return (
@@ -158,7 +251,7 @@ export const PermissionMatrixGrid: React.FC<PermissionMatrixGridProps> = ({
   return (
     <View className="gap-4">
       {categories.map((category) => {
-        let perms: PermissionItem[] = groupedPermissions[category] || [];
+        let perms: PermissionItem[] = normalizedGroupedPermissions[category] || [];
         const isAmenities = category.toLowerCase() === 'amenities';
 
         // Filter complaints permissions as per reference domain rule
@@ -313,6 +406,8 @@ export const PermissionMatrixGrid: React.FC<PermissionMatrixGridProps> = ({
                   const permValue = perm.name || perm.code || perm._id || '';
                   const isChecked = isPermissionSelected(perm, selectedIds);
                   const isLast = idx === perms.length - 1;
+                  const label = formatPermissionLabel(perm.name || String(permValue));
+                  const description = getPermissionDescription(perm.name || String(permValue));
 
                   return (
                     <TouchableOpacity
@@ -323,13 +418,20 @@ export const PermissionMatrixGrid: React.FC<PermissionMatrixGridProps> = ({
                         !isLast ? 'border-b border-border/40' : ''
                       } ${isChecked ? 'bg-primary/5' : 'bg-card'}`}
                     >
-                      <Text
-                        className={`text-xs font-semibold flex-1 me-3 text-start ${
-                          isChecked ? 'text-primary font-bold' : 'text-foreground'
-                        }`}
-                      >
-                        {formatPermissionLabel(perm.name || String(permValue))}
-                      </Text>
+                      <View className="flex-1 me-3">
+                        <Text
+                          className={`text-xs font-semibold text-start ${
+                            isChecked ? 'text-primary font-bold' : 'text-foreground'
+                          }`}
+                        >
+                          {label}
+                        </Text>
+                        {description ? (
+                          <Text className="text-[10px] text-muted-foreground mt-0.5 text-start leading-tight">
+                            {description}
+                          </Text>
+                        ) : null}
+                      </View>
 
                       <Checkbox
                         checked={isChecked}

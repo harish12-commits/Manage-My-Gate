@@ -3,6 +3,7 @@ import sampleFeatureRouter from '../features/sampleFeature/sampleFeature.router.
 import authRouter from '../features/auth/auth.router.js';
 import roleRouter from '../features/role/role.router.js';
 import userRouter from '../features/user/user.router.js';
+import sessionRouter from '../features/session/session.router.js';
 import notificationRouter from '../features/notification/notification.router.js';
 import deviceTokenRouter from '../features/deviceToken/deviceToken.routes.js';
 import integrationHubRouter from '../features/integrationHub/integrationHub.router.js';
@@ -67,6 +68,8 @@ router.use('/auth', authRouter);
 router.use('/session', sessionRouter);
 router.use('/roles', roleRouter);
 router.use('/users', userRouter);
+router.use('/session', sessionRouter);
+router.use('/sessions', sessionRouter);
 router.use('/notifications', notificationRouter);
 router.use('/device-tokens', deviceTokenRouter);
 router.use('/directory', directoryRouter);
@@ -120,9 +123,12 @@ router.use('/crm/meetings', crmMeetingRouter);
 router.use('/platform-crm', platformCrmRouter);
 
 import onboardingWizardRouter from '../features/onboardingWizard/onboardingWizard.router.js';
+import { reconciliationRouter } from '../features/ledger/reconciliation/index.js';
 
 router.use('/onboarding-wizard', onboardingWizardRouter);
 router.use('/onboarding', onboardingWizardRouter);
+router.use('/ledger/reconciliation', reconciliationRouter);
+router.use('/financial-ledger/reconciliation', reconciliationRouter);
 
 import issueReportConfigRouter from '../features/issueReportConfig/issueReportConfig.router.js';
 

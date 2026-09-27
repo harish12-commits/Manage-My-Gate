@@ -300,15 +300,29 @@ export class AmenityBookingService {
       const totalAmount = pricingDetails.totalAmount;
       const deposit = pricingDetails.securityDeposit;
 
-      // 14. Create Confirmed Booking (No pending status)
-      const finalStatus = 'confirmed';
-      const finalPaymentStatus = 'success';
-      const finalPaymentMethod = bookingData.paymentMethod || 'WALLET';
+      // 14. Determine status based on payment method
+      const finalPaymentMethod = (bookingData.paymentMethod || 'WALLET').toUpperCase();
+      const isOnline = finalPaymentMethod === 'ONLINE' && totalAmount > 0;
+      const isCash = ['PAY_AT_GATE', 'CASH'].includes(finalPaymentMethod) && totalAmount > 0;
+      const isWallet = finalPaymentMethod === 'WALLET' && totalAmount > 0;
+
+      let finalStatus = 'confirmed';
+      let finalPaymentStatus = 'success';
+      if (isOnline) {
+        finalStatus = 'pending';
+        finalPaymentStatus = 'pending';
+      } else if (isCash) {
+        finalStatus = 'confirmed';
+        finalPaymentStatus = 'pending';
+      } else if (totalAmount === 0) {
+        finalStatus = 'confirmed';
+        finalPaymentStatus = 'success';
+      }
 
       let walletToUse = null;
       let walletPayerId = userId;
 
-      if (finalPaymentMethod.toUpperCase() === 'WALLET' && totalAmount > 0) {
+      if (isWallet) {
         const walletService = (await import('../wallet/wallet.service.js')).default;
         walletToUse = await walletService.getWallet(userId, orgId, sessionOpt);
 
@@ -370,7 +384,10 @@ export class AmenityBookingService {
 
       let updatedWallet = null;
       let walletTxn = null;
-      if (finalPaymentMethod.toUpperCase() === 'WALLET' && totalAmount > 0) {
+      let paymentDoc = null;
+      let paymentIntent = null;
+
+      if (isWallet) {
         const walletService = (await import('../wallet/wallet.service.js')).default;
         
         updatedWallet = await walletService.updateBalance(walletPayerId, orgId, -totalAmount, sessionOpt);
@@ -387,6 +404,96 @@ export class AmenityBookingService {
           referenceId: booking._id,
           description: `Payment for Amenity Booking${isFamilyMember ? ' (Booked by family member)' : ''}`
         }, sessionOpt);
+
+        // 1. Create Canonical Payment Record
+        const Payment = (await import('../payment/payment.model.js')).default;
+        const createdPayments = await Payment.create([{
+          orgId,
+          userId: walletPayerId,
+          payerUserId: walletPayerId,
+          domain: 'AMENITY',
+          referenceType: 'AmenityBooking',
+          referenceId: booking._id,
+          amount: totalAmount,
+          currency: 'INR',
+          paymentCategory: 'ONLINE',
+          paymentMethod: 'WALLET',
+          status: 'success',
+          paidAt: new Date(),
+          idempotencyKey: `amenity-wallet-${booking._id.toString()}`,
+          description: `Wallet payment for Amenity Booking ${booking.bookingId || booking._id}`,
+          metadata: {
+            amenityId: booking.amenityId,
+            bookingDate: booking.bookingDate,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            walletTransactionId: walletTxn?._id,
+          }
+        }], { session: sessionOpt });
+        paymentDoc = createdPayments[0];
+
+        // 2. Link paymentId to booking
+        booking.paymentId = paymentDoc._id.toString();
+        await booking.save({ session: sessionOpt });
+
+        // 3. Post Double-Entry Financial Ledger Entry
+        const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
+        await financialLedgerService.recordWalletDebitEntry({
+          userId: walletPayerId,
+          orgId,
+          amount: totalAmount,
+          referenceType: 'AmenityBooking',
+          referenceId: booking._id,
+          paymentId: paymentDoc._id,
+          idempotencyKey: `amenity-wallet-ledger-${booking._id.toString()}`,
+          description: `Wallet payment for Amenity Booking ${booking.bookingId || booking._id}`,
+          session: sessionOpt,
+        });
+      } else if (isCash) {
+        // Create canonical Payment record for offline / pay-at-gate
+        const Payment = (await import('../payment/payment.model.js')).default;
+        const createdPayments = await Payment.create([{
+          orgId,
+          userId,
+          payerUserId: userId,
+          domain: 'AMENITY',
+          referenceType: 'AmenityBooking',
+          referenceId: booking._id,
+          amount: totalAmount,
+          currency: 'INR',
+          paymentCategory: 'OFFLINE',
+          paymentMethod: 'CASH',
+          status: 'pending',
+          idempotencyKey: `amenity-cash-init-${booking._id.toString()}`,
+          description: `Pay at gate cash payment for Amenity Booking ${booking.bookingId || booking._id}`,
+          metadata: {
+            amenityId: booking.amenityId,
+            bookingDate: booking.bookingDate,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+          }
+        }], { session: sessionOpt });
+        paymentDoc = createdPayments[0];
+        booking.paymentId = paymentDoc._id.toString();
+        await booking.save({ session: sessionOpt });
+      } else if (isOnline) {
+        try {
+          const PaymentContextFactory = (await import('../payment/paymentContext.factory.js')).default;
+          const unifiedPaymentService = (await import('../payment/unifiedPayment.service.js')).default;
+          const context = PaymentContextFactory.fromAmenityBooking(booking, {
+            amount: totalAmount,
+            userId,
+            orgId,
+            paymentMethod: 'ONLINE',
+          });
+          paymentIntent = await unifiedPaymentService.createPaymentOrder(context, { session: sessionOpt });
+          if (paymentIntent?.payment?._id) {
+            booking.paymentId = paymentIntent.payment._id.toString();
+            await booking.save({ session: sessionOpt });
+          }
+        } catch (orderErr) {
+          logger.warn('Failed auto-creating payment order during online amenity booking:', orderErr.message);
+        }
       }
 
       if (session && session.inTransaction()) {
@@ -394,7 +501,7 @@ export class AmenityBookingService {
         session.endSession();
       }
 
-      if (finalPaymentMethod.toUpperCase() === 'WALLET' && totalAmount > 0) {
+      if (isWallet) {
          const { walletEventEmitter, WALLET_UPDATED, WALLET_TRANSACTION_CREATED } = await import('../wallet/wallet.events.js');
          walletEventEmitter.emit(WALLET_UPDATED, { userId: walletPayerId, orgId, balance: updatedWallet?.balance });
          if (String(walletPayerId) !== String(userId)) {
@@ -409,7 +516,8 @@ export class AmenityBookingService {
       
       return {
         booking,
-        paymentIntent: null
+        paymentIntent,
+        payment: paymentDoc,
       };
     } catch (error) {
       if (session && session.inTransaction()) {
@@ -420,9 +528,14 @@ export class AmenityBookingService {
     }
   }
 
-  async generateAccessQRCode(bookingId, session = null) {
+  async generateAccessQRCode(bookingOrId, session = null, shouldSave = true) {
     const AmenityBooking = (await import('./amenityBooking.model.js')).default;
-    const booking = await AmenityBooking.findById(bookingId).session(session);
+    let booking;
+    if (bookingOrId && typeof bookingOrId === 'object' && typeof bookingOrId.save === 'function') {
+      booking = bookingOrId;
+    } else {
+      booking = await AmenityBooking.findById(bookingOrId).session(session);
+    }
     if (!booking) {
       const HttpError = (await import('../../utils/httpError.utils.js')).default;
       throw new HttpError(404, 'Booking not found');
@@ -432,7 +545,22 @@ export class AmenityBookingService {
     const bookingIdStr = booking.bookingId || `BKG-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
     const passToken = booking.passToken || crypto.randomBytes(32).toString('hex');
     const passTokenHash = booking.passTokenHash || crypto.createHash('sha256').update(passToken).digest('hex');
-    const qrCodeUrl = await QRCode.toDataURL(`MMG:AMENITY:${passToken}`);
+    let qrCodeUrl = booking.qrCode;
+    if (!qrCodeUrl) {
+      try {
+        qrCodeUrl = await QRCode.toDataURL(`MMG:AMENITY:${passToken}`);
+      } catch (err) {
+        logger.warn('Failed generating QR image in generateAccessQRCode:', err.message);
+      }
+    }
+    booking.passToken = passToken;
+    booking.passTokenHash = passTokenHash;
+    booking.qrCode = qrCodeUrl;
+    booking.bookingId = bookingIdStr;
+
+    if (shouldSave) {
+      await booking.save(session ? { session } : undefined);
+    }
     return { qrCodeUrl, bookingIdStr, passToken, passTokenHash };
   }
 
@@ -448,24 +576,28 @@ export class AmenityBookingService {
       return booking;
     }
 
-    const { qrCodeUrl, bookingIdStr, passToken, passTokenHash } = await this.generateAccessQRCode(booking._id, session);
+    const { qrCodeUrl, bookingIdStr, passToken, passTokenHash } = await this.generateAccessQRCode(booking, session, false);
     const qrExpiresAt = new Date(`${booking.bookingDate}T${booking.endTime}`);
 
     // Robust extraction: support both standard paymentData object and raw Razorpay payload
     const paymentEntity = paymentData?.payment?.entity || paymentData?.order?.entity || {};
     const gatewayTransactionId = paymentData.gatewayTransactionId || paymentEntity.id || paymentData.id || 'unknown_txn';
     const paymentMethod = paymentData.paymentMethod || paymentEntity.method || paymentData.method || 'RAZORPAY';
+    const paymentId = paymentData.paymentId || (paymentData._id ? String(paymentData._id) : null);
 
     booking.paymentStatus = 'success';
     booking.status = 'confirmed';
     
     booking.razorpayTransactionId = gatewayTransactionId;
     booking.paymentMethod = paymentMethod;
+    if (paymentId) {
+      booking.paymentId = String(paymentId);
+    }
     booking.passToken = passToken;
     booking.passTokenHash = passTokenHash;
     booking.qrCode = qrCodeUrl;
     booking.qrStatus = 'active';
-    booking.qrGeneratedAt = new Date();
+    booking.qrGeneratedAt = booking.qrGeneratedAt || new Date();
     booking.qrExpiresAt = qrExpiresAt;
     if (!booking.bookingId) {
       booking.bookingId = bookingIdStr;
@@ -619,6 +751,25 @@ export class AmenityBookingService {
   }
 
 
+  /**
+   * Credits a cancellation refund to the unified digital wallet via the canonical wallet credit path, which
+   * atomically updates the balance, records the WalletTransaction and posts the double-entry ledger entry.
+   * The deterministic idempotency key guarantees a booking can never be refunded to the wallet twice.
+   */
+  async _refundToWallet({ targetUserId, orgId, refundAmount, refundPercentage, booking, paymentMethod = 'WALLET' }) {
+    const walletService = (await import('../wallet/wallet.service.js')).default;
+    return walletService.creditWallet({
+      userId: targetUserId,
+      orgId,
+      amount: refundAmount,
+      referenceType: 'Refund',
+      referenceId: booking._id,
+      idempotencyKey: `AMENITY-REFUND-${booking._id.toString()}`,
+      paymentMethod,
+      description: `Refund for Cancelled Amenity Booking (${refundPercentage}% refund)`,
+    });
+  }
+
   async cancelBooking(bookingId, userId, orgId, reason = '', isAdmin = false, options = {}) {
     const mongoose = (await import('mongoose')).default;
     // Removed transaction to support standalone local MongoDB
@@ -685,24 +836,12 @@ export class AmenityBookingService {
 
         if (isWallet && refundAmount > 0) {
           try {
-            const walletService = (await import('../wallet/wallet.service.js')).default;
-            await walletService.updateBalance(targetUserId, orgId, refundAmount);
-            await walletService.createTransaction({
-              orgId,
-              userId: targetUserId,
-              type: 'Credit',
-              amount: refundAmount,
-              paymentMethod: 'WALLET',
-              paymentStatus: 'success',
-              referenceType: 'AmenityBooking',
-              referenceId: booking._id,
-              description: `Refund for Cancelled Amenity Booking (${refundPercentage}% refund)`
-            });
-            const { walletEventEmitter, WALLET_UPDATED } = await import('../wallet/wallet.events.js');
-            walletEventEmitter.emit(WALLET_UPDATED, { userId: targetUserId, orgId });
+            await this._refundToWallet({ targetUserId, orgId, refundAmount, refundPercentage, booking });
             newPaymentStatus = refundPercentage === 100 ? 'refunded' : 'partial_refund';
           } catch (walletErr) {
-            console.error(`[CANCEL BOOKING] Wallet refund failed for booking ${bookingId}:`, walletErr.message);
+            logger.error(`[CANCEL BOOKING] Wallet refund failed for booking ${bookingId}`, { error: walletErr.message });
+            // Refund is still owed — surface it instead of leaving the booking marked as paid
+            newPaymentStatus = 'refund_pending';
           }
         } else if (booking.paymentId && refundAmount > 0) {
           const paymentService = (await import('../payment/payment.service.js')).default;
@@ -716,21 +855,7 @@ export class AmenityBookingService {
           } catch (refundError) {
              console.error(`[CANCEL BOOKING] Refund failed for booking ${bookingId}, crediting to digital wallet:`, refundError.message);
              try {
-               const walletService = (await import('../wallet/wallet.service.js')).default;
-               await walletService.updateBalance(targetUserId, orgId, refundAmount);
-               await walletService.createTransaction({
-                 orgId,
-                 userId: targetUserId,
-                 type: 'Credit',
-                 amount: refundAmount,
-                 paymentMethod: booking.paymentMethod || 'ONLINE',
-                 paymentStatus: 'success',
-                 referenceType: 'Refund',
-                 referenceId: booking._id,
-                 description: `Refund for Cancelled Amenity Booking (${refundPercentage}% refund)`
-               });
-               const { walletEventEmitter, WALLET_UPDATED } = await import('../wallet/wallet.events.js');
-               walletEventEmitter.emit(WALLET_UPDATED, { userId: targetUserId, orgId });
+               await this._refundToWallet({ targetUserId, orgId, refundAmount, refundPercentage, booking, paymentMethod: booking.paymentMethod || 'ONLINE' });
                newPaymentStatus = refundPercentage === 100 ? 'refunded' : 'partial_refund';
              } catch (fallbackErr) {
                console.error(`[CANCEL BOOKING] Fallback wallet refund failed:`, fallbackErr.message);
@@ -740,24 +865,11 @@ export class AmenityBookingService {
         } else if (refundAmount > 0) {
           // ONLINE or other digital payment method without direct gateway ID: Credit to resident's digital wallet
           try {
-            const walletService = (await import('../wallet/wallet.service.js')).default;
-            await walletService.updateBalance(targetUserId, orgId, refundAmount);
-            await walletService.createTransaction({
-              orgId,
-              userId: targetUserId,
-              type: 'Credit',
-              amount: refundAmount,
-              paymentMethod: booking.paymentMethod || 'ONLINE',
-              paymentStatus: 'success',
-              referenceType: 'Refund',
-              referenceId: booking._id,
-              description: `Refund for Cancelled Amenity Booking (${refundPercentage}% refund)`
-            });
-            const { walletEventEmitter, WALLET_UPDATED } = await import('../wallet/wallet.events.js');
-            walletEventEmitter.emit(WALLET_UPDATED, { userId: targetUserId, orgId });
+            await this._refundToWallet({ targetUserId, orgId, refundAmount, refundPercentage, booking, paymentMethod: booking.paymentMethod || 'ONLINE' });
             newPaymentStatus = refundPercentage === 100 ? 'refunded' : 'partial_refund';
           } catch (walletErr) {
-            console.error(`[CANCEL BOOKING] Digital wallet refund credit failed:`, walletErr.message);
+            logger.error(`[CANCEL BOOKING] Digital wallet refund credit failed for booking ${bookingId}`, { error: walletErr.message });
+            newPaymentStatus = 'refund_pending';
           }
         }
       } else if (booking.paymentStatus === 'pending') {
@@ -1168,6 +1280,145 @@ export class AmenityBookingService {
         guardName: scan.checkedInBy?.name || 'Security'
       };
     }).sort((a, b) => b.scanTime - a.scanTime);
+  }
+
+  async recordCashPayment(bookingId, amount, collectedBy, options = {}) {
+    const mongoose = (await import('mongoose')).default;
+    const HttpError = (await import('../../utils/httpError.utils.js')).default;
+    const isReplicaSet = ['ReplicaSetNoPrimary', 'ReplicaSetWithPrimary', 'Sharded'].includes(
+      mongoose.connection.client?.topology?.description?.type
+    );
+    let session = null;
+    let sessionOpt = undefined;
+    if (isReplicaSet) {
+      session = await mongoose.startSession();
+      session.startTransaction();
+      sessionOpt = session;
+    }
+
+    try {
+      const AmenityBooking = (await import('./amenityBooking.model.js')).default;
+      const booking = await AmenityBooking.findById(bookingId).session(sessionOpt);
+      if (!booking) {
+        throw new HttpError(404, 'Booking not found');
+      }
+
+      const orgId = booking.orgId;
+      if (options.orgId && String(options.orgId) !== String(orgId)) {
+        throw new HttpError(403, 'Cross-tenant cash payment forbidden');
+      }
+
+      if (booking.paymentStatus === 'success') {
+        throw new HttpError(400, 'Booking has already been paid');
+      }
+
+      const totalExpected = Number(
+        booking.pricingDetails?.totalAmount !== undefined
+          ? booking.pricingDetails.totalAmount
+          : booking.pricing?.totalPrice !== undefined
+          ? booking.pricing.totalPrice
+          : booking.totalPrice || booking.amount
+      ) || 0;
+
+      const numericAmount = Number(amount !== undefined ? amount : totalExpected);
+      if (Math.abs(numericAmount - totalExpected) > 0.01) {
+        throw new HttpError(400, `Cash amount (₹${numericAmount}) does not match booking total of ₹${totalExpected}`);
+      }
+
+      const receiptNumber = options.receiptNumber || `RCP-AMN-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
+
+      // Update or create canonical Payment record
+      const Payment = (await import('../payment/payment.model.js')).default;
+      let payment = null;
+      if (booking.paymentId) {
+        payment = await Payment.findById(booking.paymentId).session(sessionOpt);
+      }
+      if (!payment) {
+        payment = await Payment.findOne({
+          domain: 'AMENITY',
+          referenceId: booking._id,
+          orgId,
+        }).session(sessionOpt);
+      }
+
+      if (payment) {
+        payment.status = 'success';
+        payment.paymentMethod = 'CASH';
+        payment.paymentCategory = 'OFFLINE';
+        payment.paidAt = new Date();
+        payment.amount = numericAmount;
+        payment.receiptNumber = receiptNumber;
+        payment.collectedBy = collectedBy || null;
+        payment.offlinePaymentDetails = {
+          collectedBy,
+          receiptNumber,
+          notes: options.notes || 'Counter cash collection',
+        };
+        await payment.save({ session: sessionOpt });
+      } else {
+        const createdPayments = await Payment.create([{
+          orgId,
+          userId: booking.userId,
+          payerUserId: booking.userId,
+          domain: 'AMENITY',
+          referenceType: 'AmenityBooking',
+          referenceId: booking._id,
+          amount: numericAmount,
+          currency: 'INR',
+          paymentCategory: 'OFFLINE',
+          paymentMethod: 'CASH',
+          status: 'success',
+          paidAt: new Date(),
+          receiptNumber,
+          idempotencyKey: `cash-amn-${booking._id.toString()}-${Date.now()}`,
+          description: `Cash collection for Amenity Booking ${booking.bookingId || booking._id}`,
+          offlinePaymentDetails: {
+            collectedBy,
+            receiptNumber,
+            notes: options.notes || 'Counter cash collection',
+          },
+        }], { session: sessionOpt });
+        payment = createdPayments[0];
+      }
+
+      // Update booking
+      booking.paymentStatus = 'success';
+      booking.status = 'confirmed';
+      booking.paymentMethod = 'CASH';
+      booking.paymentId = payment._id.toString();
+      if (!booking.qrCode || !booking.passToken) {
+        const { qrCodeUrl, bookingIdStr, passToken, passTokenHash } = await this.generateAccessQRCode(booking, sessionOpt, false);
+        booking.qrCode = qrCodeUrl;
+        booking.passToken = passToken;
+        booking.passTokenHash = passTokenHash;
+        booking.qrStatus = 'active';
+        booking.qrGeneratedAt = booking.qrGeneratedAt || new Date();
+        if (!booking.bookingId) booking.bookingId = bookingIdStr;
+      }
+      await booking.save({ session: sessionOpt });
+
+      // Post double-entry ledger entry inside the same session
+      const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
+      const ledgerEntry = await financialLedgerService.recordSettlementLedgerEntry(payment, 'AMENITY', sessionOpt);
+
+      if (session && session.inTransaction()) {
+        await session.commitTransaction();
+        session.endSession();
+      }
+
+      return {
+        booking,
+        payment,
+        ledgerEntry,
+        receiptNumber,
+      };
+    } catch (error) {
+      if (session && session.inTransaction()) {
+        await session.abortTransaction();
+        session.endSession();
+      }
+      throw error;
+    }
   }
 }
 

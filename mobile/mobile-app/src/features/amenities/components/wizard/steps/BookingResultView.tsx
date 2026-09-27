@@ -48,9 +48,12 @@ export function BookingResultView({
   }
 
   const rawBookingStatus = String(reservation.bookingStatus || (reservation as any).status || 'CONFIRMED');
+  const rawPaymentStatus = String(reservation.paymentStatus || 'PENDING').toUpperCase();
+  const rawPaymentMethod = String((reservation as any).paymentMethod || '').toUpperCase();
   const isPendingApproval = rawBookingStatus === 'PENDING_APPROVAL' || rawBookingStatus === 'PENDING';
   const isConfirmed = rawBookingStatus === 'CONFIRMED' || rawBookingStatus === 'APPROVED';
   const isRejected = rawBookingStatus === 'REJECTED' || rawBookingStatus === 'CANCELLED';
+  const isPayAtGatePending = isConfirmed && (rawPaymentStatus === 'PENDING' || rawPaymentStatus === 'PAYMENT_DUE') && (rawPaymentMethod === 'PAY_AT_GATE' || rawPaymentMethod === 'CASH');
 
   const primaryPass = accessPasses?.[0];
 
@@ -74,7 +77,9 @@ export function BookingResultView({
       {/* Hero Status Card */}
       <View
         className={`items-center rounded-3xl border p-6 text-center ${
-          isConfirmed
+          isPayAtGatePending
+            ? 'border-amber-500/30 bg-amber-500/10'
+            : isConfirmed
             ? 'border-emerald-500/30 bg-emerald-500/10'
             : isPendingApproval
               ? 'border-amber-500/30 bg-amber-500/10'
@@ -82,13 +87,17 @@ export function BookingResultView({
         }`}>
         <View
           className={`mb-3 h-14 w-14 items-center justify-center rounded-full ${
-            isConfirmed
+            isPayAtGatePending
+              ? 'bg-amber-500/20'
+              : isConfirmed
               ? 'bg-emerald-500/20'
               : isPendingApproval
                 ? 'bg-amber-500/20'
                 : 'bg-destructive/20'
           }`}>
-          {isConfirmed ? (
+          {isPayAtGatePending ? (
+            <Clock size={32} className="text-amber-600 dark:text-amber-400" />
+          ) : isConfirmed ? (
             <CheckCircle2 size={32} className="text-emerald-600 dark:text-emerald-400" />
           ) : isPendingApproval ? (
             <Clock size={32} className="text-amber-600 dark:text-amber-400" />
@@ -98,7 +107,9 @@ export function BookingResultView({
         </View>
 
         <Text variant="h2" className="text-center font-bold text-foreground">
-          {isConfirmed
+          {isPayAtGatePending
+            ? 'Booking Confirmed — Cash Collection Pending'
+            : isConfirmed
             ? 'Reservation Confirmed!'
             : isPendingApproval
               ? 'Booking Pending Review'
@@ -106,7 +117,9 @@ export function BookingResultView({
         </Text>
 
         <Text variant="muted" className="mt-1 max-w-xs text-center text-xs text-muted-foreground">
-          {isConfirmed
+          {isPayAtGatePending
+            ? 'Present the booking pass at the designated facility/gate and complete the cash payment according to the facility process.'
+            : isConfirmed
             ? 'Your facility reservation is active. Keep your pass ready for gate access.'
             : isPendingApproval
               ? 'Your request requires administrative approval. You will be notified once reviewed.'

@@ -6,7 +6,7 @@ import {
   cancelBookingThunk,
   AmenityBooking,
 } from '../store/amenityBookingSlice';
-import { fetchWalletThunk } from '../store/walletSlice';
+import { fetchWalletThunk } from '../../wallet/store/walletSlice';
 
 export const FILTER_TABS = ['All', 'CONFIRMED', 'COMPLETED', 'CANCELLED'] as const;
 export type BookingFilterTab = typeof FILTER_TABS[number];

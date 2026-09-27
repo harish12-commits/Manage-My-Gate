@@ -225,16 +225,18 @@ export function AmenityBookingWizard({ facility, onClose }: AmenityBookingWizard
       />
 
       {/* Razorpay Checkout Modal */}
-      <RazorpayCheckoutModal
-        visible={wizard.isRazorpayOpen}
-        options={wizard.razorpayOptions}
-        onSuccess={wizard.handleRazorpaySuccess}
-        onDismiss={wizard.handleRazorpayDismiss}
-        onError={(err) => {
-          wizard.handleRazorpayDismiss();
-          wizard.setStepError(err?.description || 'Payment was cancelled or failed.');
-        }}
-      />
+      {wizard.razorpayOptions && (
+        <RazorpayCheckoutModal
+          visible={wizard.isRazorpayOpen}
+          options={wizard.razorpayOptions}
+          onSuccess={wizard.handleRazorpaySuccess}
+          onDismiss={wizard.handleRazorpayDismiss}
+          onError={(err) => {
+            wizard.handleRazorpayDismiss();
+            wizard.setStepError(err?.description || 'Payment was cancelled or failed.');
+          }}
+        />
+      )}
     </View>
   );
 }

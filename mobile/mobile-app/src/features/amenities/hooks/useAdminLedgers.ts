@@ -5,7 +5,7 @@ import {
   fetchBookingQueueThunk,
   AmenityBooking,
 } from '../store/amenityBookingSlice';
-import { fetchWalletThunk } from '../store/walletSlice';
+import { fetchWalletThunk } from '../../wallet/store/walletSlice';
 import { fetchAmenitiesThunk } from '../store/amenitySlice';
 
 export type LedgerViewMode = 'master' | 'wallet';

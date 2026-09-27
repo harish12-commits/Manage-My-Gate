@@ -20,7 +20,7 @@ import {
   clearV2Errors,
   resetV2BookingState,
 } from '../store/amenityBookingSlice';
-import { fetchWalletThunk, topUpWalletThunk } from '../store/walletSlice';
+import { fetchWalletThunk } from '../../wallet/store/walletSlice';
 import {
   calculateHoldRemainingSeconds,
   canDisplayAmenityAccessPass,
@@ -275,15 +275,15 @@ export function useResidentBooking() {
     loadSlots();
   };
 
-  const handleOpenTopUp = () => setIsTopUpOpen(true);
+  const handleOpenTopUp = () => {
+    setIsTopUpOpen(false);
+    router.push('/(resident)/billing/wallet' as any);
+  };
   const handleCloseTopUp = () => setIsTopUpOpen(false);
 
-  const handleTopUpSubmit = async (amount: number) => {
-    if (amount <= 0) return;
-    const result = await dispatch(topUpWalletThunk(amount));
-    if (topUpWalletThunk.fulfilled.match(result)) {
-      setIsTopUpOpen(false);
-    }
+  const handleTopUpSubmit = async (_amount: number) => {
+    setIsTopUpOpen(false);
+    router.push('/(resident)/billing/wallet' as any);
   };
 
   const isDaily = currentAmenity?.pricing?.pricingType === 'daily';

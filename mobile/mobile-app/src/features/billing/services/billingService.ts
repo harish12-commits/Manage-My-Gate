@@ -1,9 +1,11 @@
 import apiClient from '../../../services/apiClient';
+import { getIdempotencyHeaders } from '../../../utils/idempotency';
 import {
   BillingKPIs,
   OfflineSettlementPayload,
   RazorpayVerificationPayload,
 } from '../types';
+import paymentService from '../../payment/services/paymentService';
 
 export const billingService = {
   /**
@@ -136,100 +138,49 @@ export const billingService = {
    * Settle invoice payment using resident digital wallet balance.
    * @param invoiceId
    * @param amount
+   * @param idempotencyKey
    */
-  async payInvoiceWithWallet(invoiceId: string, amount: number): Promise<any> {
-    const response: any = await apiClient.post('/wallet/pay-invoice', { invoiceId, amount });
+  async payInvoiceWithWallet(invoiceId: string, amount: number, idempotencyKey?: string): Promise<any> {
+    const headers = getIdempotencyHeaders(idempotencyKey);
+    const response: any = await apiClient.post(
+      '/wallet/pay-invoice',
+      { invoiceId, amount },
+      { headers: Object.keys(headers).length > 0 ? headers : undefined }
+    );
     const body = response?.success !== undefined ? response : response?.data;
     return body?.data || body;
   },
 
   /**
    * Create Razorpay payment order for an invoice.
+   * Delegates directly to canonical Payment Core boundary.
    * @param invoiceId
    * @param amount
+   * @param idempotencyKey
    */
-  async createRazorpayOrder(invoiceId: string, amount: number): Promise<any> {
-    const response: any = await apiClient.post('/payments/create-order', {
-      referenceId: invoiceId,
-      referenceType: 'Invoice',
-      amount,
-      currency: 'INR',
-      gateway: 'razorpay',
-    });
-    const body = response?.success !== undefined ? response : response?.data;
-    return body?.data || body;
+  async createRazorpayOrder(invoiceId: string, amount: number, idempotencyKey?: string): Promise<any> {
+    return await paymentService.createPaymentOrder(
+      {
+        referenceId: invoiceId,
+        referenceType: 'Invoice',
+        amount,
+        currency: 'INR',
+        gateway: 'razorpay',
+      },
+      idempotencyKey
+    );
   },
 
   /**
    * Verify Razorpay cryptographic signature.
+   * Delegates directly to canonical Payment Core boundary.
    * @param payload
+   * @param idempotencyKey
    */
-  async verifyRazorpayPayment(payload: RazorpayVerificationPayload): Promise<any> {
-    const formattedPayload = {
-      paymentId: payload.paymentId || payload.payment_id,
-      orderId: payload.razorpayOrderId || payload.orderId || payload.razorpay_order_id,
-      razorpayPaymentId: payload.razorpayPaymentId || payload.razorpay_payment_id,
-      razorpaySignature: payload.razorpaySignature || payload.razorpay_signature,
-      payment_id: payload.paymentId || payload.payment_id,
-      razorpay_payment_id: payload.razorpayPaymentId || payload.razorpay_payment_id,
-      razorpay_order_id: payload.razorpayOrderId || payload.orderId || payload.razorpay_order_id,
-      razorpay_signature: payload.razorpaySignature || payload.razorpay_signature,
-    };
-    const response: any = await apiClient.post('/payments/verify-signature', formattedPayload);
-    const body = response?.success !== undefined ? response : response?.data;
-    return body?.data || body;
+  async verifyRazorpayPayment(payload: RazorpayVerificationPayload, idempotencyKey?: string): Promise<any> {
+    return await paymentService.verifyPaymentSignature(payload, idempotencyKey);
   },
 
-  /**
-   * Fetch digital wallet balance and details.
-   */
-  async getWalletBalance(params: Record<string, any> = {}): Promise<any> {
-    const response: any = await apiClient.get('/wallet', { params });
-    const body = response?.success !== undefined ? response : response?.data;
-    return body?.data || body;
-  },
-
-  /**
-   * Create Razorpay order to top up wallet balance.
-   * @param amount
-   */
-  async createWalletOrder(amount: number): Promise<any> {
-    const response: any = await apiClient.post('/wallet/create-order', { amount });
-    const body = response?.success !== undefined ? response : response?.data;
-    return body?.data || body;
-  },
-
-  /**
-   * Direct wallet top-up (bypass gateway or test add-money).
-   * @param amount
-   */
-  async topUpWalletDirect(amount: number): Promise<any> {
-    const response: any = await apiClient.post('/wallet/add-money', { amount });
-    const body = response?.success !== undefined ? response : response?.data;
-    return body?.data || body;
-  },
-
-  /**
-   * Verify payment to top up wallet.
-   * @param paymentData
-   */
-  async verifyWalletPayment(paymentData: any): Promise<any> {
-    const formattedPayload = {
-      ...paymentData,
-      paymentId: paymentData?.paymentId || paymentData?.payment_id,
-      payment_id: paymentData?.paymentId || paymentData?.payment_id,
-      amount: paymentData?.amount,
-      razorpay_order_id: paymentData?.razorpay_order_id || paymentData?.razorpayOrderId || paymentData?.orderId,
-      razorpay_payment_id: paymentData?.razorpay_payment_id || paymentData?.razorpayPaymentId,
-      razorpay_signature: paymentData?.razorpay_signature || paymentData?.razorpaySignature,
-      razorpayOrderId: paymentData?.razorpay_order_id || paymentData?.razorpayOrderId || paymentData?.orderId,
-      razorpayPaymentId: paymentData?.razorpay_payment_id || paymentData?.razorpayPaymentId,
-      razorpaySignature: paymentData?.razorpay_signature || paymentData?.razorpaySignature,
-    };
-    const response: any = await apiClient.post('/wallet/verify-payment', formattedPayload);
-    const body = response?.success !== undefined ? response : response?.data;
-    return body?.data || body;
-  },
 
   /**
    * Send available wallet credit back through Razorpay. The backend validates

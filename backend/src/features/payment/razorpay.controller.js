@@ -1,47 +1,52 @@
-import Razorpay from 'razorpay';
-import crypto from 'crypto';
-import mongoose from 'mongoose';
-import WalletLedger from '../wallet/walletLedger.model.js';
-import AmenityBooking from '../amenityBooking/amenityBooking.model.js';
-import HttpError from '../../utils/httpError.utils.js';
+/**
+ * @deprecated Phase 8 Architectural Hardening:
+ * RazorpayController is DEPRECATED.
+ * All order creation and signature verification must flow through the canonical Unified Payment Core:
+ * - Order Creation: POST /api/v1/payments/create-order via PaymentController / UnifiedPaymentService
+ * - Signature Verification: POST /api/v1/payments/verify-signature via PaymentController / UnifiedPaymentService
+ * - Webhook Ingress: POST /api/v1/payments/webhook via UnifiedPaymentService.processWebhook()
+ *
+ * This controller is maintained strictly as a backward-compatibility facade and delegates
+ * directly to the Unified Payment Core.
+ */
 
-// Initialize Razorpay
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'test_key',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'test_secret'
-});
+import unifiedPaymentService from './unifiedPayment.service.js';
+import HttpError from '../../utils/httpError.utils.js';
+import logger from '../../utils/logger.utils.js';
 
 class RazorpayController {
-  
   /**
-   * 1. Initiate Payment: Creates a Razorpay Order
+   * @deprecated Use UnifiedPaymentService.createOrder or POST /api/v1/payments/create-order
    */
   async initiatePayment(req, res, next) {
+    logger.warn('[DEPRECATED] Direct call to RazorpayController.initiatePayment. Use /api/v1/payments/create-order');
     try {
-      const { amount, currency = 'INR', receipt, notes } = req.body;
+      const { amount, currency = 'INR', referenceId, referenceType, domain } = req.body;
       const userId = req.user?._id || req.body.userId;
+      const orgId = req.user?.orgId || req.body.orgId || req.headers['x-organization-id'];
 
-      if (!amount || !userId) {
-        throw new HttpError(400, 'Amount and User ID are required.');
+      if (!amount || !userId || !orgId) {
+        throw new HttpError(400, 'Amount, User ID, and Organization ID are required.');
       }
 
-      const options = {
-        amount: amount * 100, // Razorpay expects amount in smallest currency unit (paise)
+      // Delegate to Canonical Unified Payment Core
+      const order = await unifiedPaymentService.createOrder({
+        orgId,
+        userId,
+        domain: domain || 'OTHER',
+        referenceType: referenceType || 'Other',
+        referenceId: referenceId || userId,
+        amount: Number(amount),
         currency,
-        receipt: receipt || `rcpt_${Date.now()}`,
-        notes: {
-          ...notes,
-          userId: userId.toString()
-        }
-      };
-
-      const order = await razorpay.orders.create(options);
+        paymentMethod: 'ONLINE',
+      });
 
       res.status(200).json({
         success: true,
-        order_id: order.id,
+        order_id: order.gatewayOrderId,
         amount: order.amount,
-        currency: order.currency
+        currency: order.currency,
+        paymentId: order.paymentId,
       });
     } catch (error) {
       next(error);
@@ -49,91 +54,24 @@ class RazorpayController {
   }
 
   /**
-   * 2. Webhook Handler for Razorpay Events
+   * @deprecated Use handleRazorpayWebhook in razorpay.webhook.js or POST /api/v1/payments/webhook
    */
   async razorpayWebhook(req, res, next) {
+    logger.warn('[DEPRECATED] Direct call to RazorpayController.razorpayWebhook. Use /api/v1/payments/webhook');
     try {
-      // 3. Cryptographic Signature Verification (HMAC SHA256)
       const webhookSignature = req.headers['x-razorpay-signature'];
-      const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-      
-      // FIX GAP 1: Use req.rawBody captured by Express router middleware
-      if (!req.rawBody) {
-        throw new Error('rawBody is missing. Ensure router uses express.json({ verify: ... })');
-      }
-      
-      const expectedSignature = crypto
-        .createHmac('sha256', webhookSecret)
-        .update(req.rawBody)
-        .digest('hex');
+      const rawBody = req.rawBody || req.body;
 
-      if (expectedSignature !== webhookSignature) {
-        console.error('Invalid Razorpay Signature');
-        return res.status(400).send('Invalid signature');
+      if (!rawBody) {
+        throw new HttpError(400, 'Raw body is required for webhook signature verification');
       }
 
-      // Valid Signature - Process Event
-      const event = req.body.event;
-      const payload = req.body.payload;
-
-      // 4. ACID Compliant Database Updates
-      const session = await mongoose.startSession();
-      
-      try {
-        await session.withTransaction(async () => {
-          
-          if (event === 'payment.captured') {
-            const payment = payload.payment.entity;
-            const userId = payment.notes?.userId;
-            const amountInRupees = payment.amount / 100;
-            const paymentId = payment.id;
-
-            if (userId) {
-              // FIX GAP 2: Idempotency Check (Prevent Double-Credit)
-              const existingLedger = await WalletLedger.findOne({ 
-                description: `Razorpay Wallet Recharge: ${paymentId}` 
-              }).session(session);
-
-              if (!existingLedger) {
-                const newLedgerEntry = new WalletLedger({
-                  userId,
-                  amount: amountInRupees,
-                  transactionType: 'credit',
-                  description: `Razorpay Wallet Recharge: ${paymentId}`
-                });
-                await newLedgerEntry.save({ session });
-              }
-            }
-          } 
-          
-          else if (event === 'refund.processed') {
-            const refund = payload.refund.entity;
-            const paymentId = refund.payment_id;
-            
-            // FIX GAP 3: Use razorpayTransactionId matching the schema
-            const booking = await AmenityBooking.findOne({ razorpayTransactionId: paymentId }).session(session);
-            
-            if (booking) {
-              booking.paymentStatus = 'refunded';
-              booking.status = 'cancelled';
-              await booking.save({ session });
-            }
-          }
-          
-        });
-        
-        // Transaction successful
-        res.status(200).json({ status: 'ok' });
-        
-      } catch (dbError) {
-        console.error('Webhook DB Transaction Error:', dbError);
-        res.status(500).json({ error: 'Internal Database Error' });
-      } finally {
-        await session.endSession();
-      }
-
+      // Delegate to Canonical Webhook Ingress
+      const result = await unifiedPaymentService.processWebhook(rawBody, webhookSignature, req.headers);
+      res.status(200).json(result);
     } catch (error) {
-      next(error);
+      logger.error('[DEPRECATED Webhook] Processing failed:', { error: error.message });
+      res.status(error.statusCode || 400).json({ error: error.message });
     }
   }
 }

@@ -3,7 +3,7 @@ import {
   FinancialTransactionCard,
   FinancialTransactionItem,
   FinancialTransactionCardProps,
-} from './FinancialTransactionCard';
+} from '@/src/features/billing/components/FinancialTransactionCard';
 
 export type WalletTransactionItem = FinancialTransactionItem;
 export type WalletTransactionCardProps = FinancialTransactionCardProps;
@@ -13,4 +13,3 @@ export function WalletTransactionCard(props: WalletTransactionCardProps) {
 }
 
 export default WalletTransactionCard;
-

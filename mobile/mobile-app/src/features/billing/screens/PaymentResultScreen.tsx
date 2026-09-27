@@ -1,18 +1,18 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { View, ScrollView, Share, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { DetailSection } from '@/components/ui/DetailSection';
 import { DetailRow } from '@/components/ui/DetailRow';
-import { Share2, Download, FileText } from 'lucide-react-native';
+import { Share2, Download, RefreshCw, FileText } from 'lucide-react-native';
 import { useAuth } from '@/src/features/auth/hooks/useAuth';
 import { useBilling } from '../hooks/useBilling';
 import { useBillingSocket } from '../hooks/useBillingSocket';
+import { billingService } from '../services/billingService';
+import paymentService from '../../payment/services/paymentService';
 import { PaymentResultHeroCard } from '../components/PaymentResultHeroCard';
 import { InvoiceStatus, Invoice } from '../types';
 import { generateInvoiceHtml, exportInvoiceHtmlDocument } from '../utils/invoicePdfUtility';
@@ -38,6 +38,10 @@ export function PaymentResultScreen() {
     loadResidentDues,
   } = useBilling();
 
+  const [serverInvoice, setServerInvoice] = useState<Invoice | null>(null);
+  const [isRechecking, setIsRechecking] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
   // Socket listener for real-time verification updates
   useBillingSocket();
 
@@ -45,8 +49,8 @@ export function PaymentResultScreen() {
     loadResidentDues();
   }, [loadResidentDues]);
 
-  // Match target invoice from Redux state
-  const invoice: Invoice | null = useMemo(() => {
+  // Match target invoice from Redux state or directly loaded server invoice
+  const reduxInvoice: Invoice | null = useMemo(() => {
     if (!invoiceId) return null;
 
     const inGrid = invoicesList.find(
@@ -80,23 +84,58 @@ export function PaymentResultScreen() {
     return null;
   }, [invoiceId, invoicesList, activeDues]);
 
+  // Server invoice takes absolute precedence over Redux summary state
+  const invoice = serverInvoice || reduxInvoice;
+
   const invNo = invoice?.invoiceNumber || invoiceId || '—';
   const unitStr = invoice?.unitNumber ? `Villa ${invoice.unitNumber}` : 'Villa Unit';
   const periodStr = invoice?.billingPeriodString || 'Current Period';
 
   // Authoritative financial state
-  const status: InvoiceStatus = invoice?.status || (params?.status as InvoiceStatus) || 'UNPAID';
+  const status: InvoiceStatus | string =
+    serverInvoice?.status ||
+    (params?.status as InvoiceStatus) ||
+    invoice?.status ||
+    'UNPAID';
 
   const totalDue = invoice?.totalDue ?? invoice?.amount ?? (params?.amount ? parseFloat(params.amount) : 0);
   const paidAmount = invoice?.paidAmount ?? (status === 'PAID' ? totalDue : 0);
-  const remainingDue = Math.max(0, totalDue - paidAmount);
+  const remainingDue = invoice?.outstandingAmount ?? Math.max(0, totalDue - paidAmount);
   const methodStr = invoice?.paymentMethod || paramMethod || 'Digital Payment';
   const refStr = invoice?.offlineReference || paramRef || '—';
 
-  const isPaid = status === 'PAID';
-  const isPartial = status === 'PARTIALLY_PAID' || (paidAmount > 0 && remainingDue > 0);
+  const isPaid = status === 'PAID' || status === 'SUCCESS';
+  const isChecking = status === 'CHECKING' || status === 'PAYMENT_CHECKING';
+  const isPartial = status === 'PARTIALLY_PAID' || (!isChecking && paidAmount > 0 && remainingDue > 0);
+  const isFailed = status === 'FAILED';
+  const isCancelled = status === 'CANCELLED';
 
-  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  // Interactive recovery action querying authoritative backend invoice endpoint
+  const handleCheckStatus = useCallback(async () => {
+    if (!invoiceId) return;
+    try {
+      setIsRechecking(true);
+      const fresh = await billingService.getInvoiceById(invoiceId);
+      if (fresh) {
+        setServerInvoice(fresh);
+        await loadResidentDues();
+        if (fresh.status === 'PAID' || fresh.status === 'PARTIALLY_PAID') {
+          await paymentService.clearActivePaymentSession('Invoice', invoiceId);
+        }
+      }
+    } catch (err: any) {
+      console.log('[PaymentResultScreen] Status check query returned error or in-progress', err);
+    } finally {
+      setIsRechecking(false);
+    }
+  }, [invoiceId, loadResidentDues]);
+
+  // Limited automatic reconciliation on mount for checking state
+  useEffect(() => {
+    if (invoiceId && (params?.status === 'CHECKING' || status === 'CHECKING')) {
+      handleCheckStatus();
+    }
+  }, [invoiceId]);
 
   // Native Receipt Share Handler
   const handleShareReceipt = async () => {
@@ -104,7 +143,7 @@ export function PaymentResultScreen() {
       const formattedAmount = `₹${(isPaid ? totalDue : paidAmount || totalDue).toLocaleString('en-IN')}`;
       await Share.share({
         title: `Payment Receipt #${invNo}`,
-        message: `Nahom Payment Receipt #${invNo}\nUnit: ${unitStr}\nAmount: ${formattedAmount}\nStatus: ${status.replace(/_/g, ' ')}\nMethod: ${methodStr}\nReference: ${refStr}`,
+        message: `Nahom Payment Receipt #${invNo}\nUnit: ${unitStr}\nAmount: ${formattedAmount}\nStatus: ${String(status).replace(/_/g, ' ')}\nMethod: ${methodStr}\nReference: ${refStr}`,
       });
     } catch (err: any) {
       Alert.alert('Share Failed', err.message || 'Unable to share receipt.');
@@ -139,7 +178,7 @@ export function PaymentResultScreen() {
         totalDue,
         paidAmount: isPaid ? totalDue : paidAmount,
         outstandingAmount: remainingDue,
-        status,
+        status: status as any,
         paymentMethod: methodStr,
         offlineReference: refStr,
         billingPeriodString: periodStr,
@@ -168,7 +207,7 @@ export function PaymentResultScreen() {
       title="Payment Result"
       subtitle={`Invoice #${invNo}`}
       iconName="Receipt"
-      loading={loadingStates.fetchDues && !invoice}
+      loading={loadingStates.fetchDues && !invoice && !serverInvoice}
     >
       <View className="flex-1 bg-background justify-between">
         {/* Scrollable Receipt Body with pb-32 Bottom Clearance */}
@@ -182,6 +221,7 @@ export function PaymentResultScreen() {
             invoiceNumber={invNo}
             unitName={unitStr}
             reference={refStr}
+            rejectionReason={(invoice as any)?.rejectionReason || (invoice as any)?.offlinePayment?.rejectionReason}
           />
 
           {/* Payment Summary Details Section */}
@@ -206,7 +246,23 @@ export function PaymentResultScreen() {
 
         {/* Sticky Bottom Completion CTAs */}
         <View className="gap-2.5 p-4 pt-2 pb-6 border-t border-border bg-background">
-          {(isPaid || isPartial) ? (
+          {isChecking ? (
+            <Button
+              variant="default"
+              size="lg"
+              className="w-full flex-row items-center justify-center"
+              onPress={handleCheckStatus}
+              disabled={isRechecking}
+              loading={isRechecking}
+              accessibilityRole="button"
+              accessibilityLabel="Check Payment Status"
+            >
+              <Icon as={RefreshCw} size={18} className="text-primary-foreground me-2" />
+              <Text className="font-bold text-base text-primary-foreground">
+                {isRechecking ? 'Verifying with Server…' : 'Check Payment Status'}
+              </Text>
+            </Button>
+          ) : (isPaid || isPartial) ? (
             <>
               <Button
                 variant="default"

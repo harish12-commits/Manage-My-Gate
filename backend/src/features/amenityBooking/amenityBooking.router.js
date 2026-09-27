@@ -20,6 +20,7 @@ router.put('/:id/cancel', authorizePermission('amenities', 'my_booking'), amenit
 // Admin facing routes (Approval queue & manual booking)
 router.get('/admin-calendar', authorizePermission('amenities', ['admin_calander', 'dashboard']), amenityBookingController.getAdminCalendar);
 router.post('/manual', authorizePermission('amenities', ['dashboard', 'admin_calander']), validate(manualBookingRules), amenityBookingController.createManualBooking);
+router.post('/:id/cash-payment', authorizePermission('amenities', ['dashboard', 'admin_calander', 'scanner']), amenityBookingController.recordCashPayment);
 router.get('/queue', authorizePermission('amenities', ['dashboard', 'ledgers', 'admin_calander', 'amenities']), amenityBookingController.getQueue);
 
 router.put('/:id/admin-cancel', authorizePermission('amenities', 'admin_calander'), amenityBookingController.adminCancelBooking);

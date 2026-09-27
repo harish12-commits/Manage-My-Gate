@@ -2,9 +2,11 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import billingService from '@/src/features/billing/services/billingService';
 import { BillingKPIs, ActiveDues, Invoice, InvoicesGridPagination, BillingState } from '@/src/features/billing/types';
 
-// Helper to perform optimistic sync when an invoice status changes
-const performInvoiceSync = (state: BillingState, updatedInvoice: any) => {
-  if (!updatedInvoice) return;
+// Helper to perform sync when an invoice status changes
+const performInvoiceSync = (state: BillingState, payload: any) => {
+  if (!payload) return;
+  const updatedInvoice = payload?.invoice || payload?.data?.invoice || payload?.data || payload;
+  if (!updatedInvoice || (!updatedInvoice._id && !updatedInvoice.invoiceNumber)) return;
 
   // 1. Sync invoicesList grid
   if (state.invoicesList && Array.isArray(state.invoicesList)) {
@@ -275,9 +277,12 @@ export const rejectOfflineSettlement = createAsyncThunk(
 
 export const payWithWallet = createAsyncThunk(
   'billing/payWithWallet',
-  async ({ invoiceId, amount }: { invoiceId: string; amount: number }, { rejectWithValue }) => {
+  async (
+    { invoiceId, amount, idempotencyKey }: { invoiceId: string; amount: number; idempotencyKey?: string },
+    { rejectWithValue }
+  ) => {
     try {
-      const data = await billingService.payInvoiceWithWallet(invoiceId, amount);
+      const data = await billingService.payInvoiceWithWallet(invoiceId, amount, idempotencyKey);
       return data;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Failed to pay invoice with wallet');
@@ -287,9 +292,12 @@ export const payWithWallet = createAsyncThunk(
 
 export const createRazorpayOrder = createAsyncThunk(
   'billing/createRazorpayOrder',
-  async ({ invoiceId, amount }: { invoiceId: string; amount: number }, { rejectWithValue }) => {
+  async (
+    { invoiceId, amount, idempotencyKey }: { invoiceId: string; amount: number; idempotencyKey?: string },
+    { rejectWithValue }
+  ) => {
     try {
-      const data = await billingService.createRazorpayOrder(invoiceId, amount);
+      const data = await billingService.createRazorpayOrder(invoiceId, amount, idempotencyKey);
       return data;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Failed to create Razorpay order');
@@ -299,9 +307,14 @@ export const createRazorpayOrder = createAsyncThunk(
 
 export const verifyRazorpaySignature = createAsyncThunk(
   'billing/verifyRazorpaySignature',
-  async (payload: any, { rejectWithValue }) => {
+  async (
+    payload: { verificationData?: any; idempotencyKey?: string } | any,
+    { rejectWithValue }
+  ) => {
     try {
-      const data = await billingService.verifyRazorpayPayment(payload);
+      const verificationData = payload?.verificationData || payload;
+      const idempotencyKey = payload?.idempotencyKey;
+      const data = await billingService.verifyRazorpayPayment(verificationData, idempotencyKey);
       return data;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Razorpay signature verification failed');

@@ -416,6 +416,11 @@ export class InvoiceRepository {
       invoice.status = newStatus;
     }
 
+    if (paymentData.auditEntry) {
+      invoice.auditHistory = invoice.auditHistory || [];
+      invoice.auditHistory.push(paymentData.auditEntry);
+    }
+
     return await invoice.save(activeSession ? { session: activeSession } : undefined);
   }
 

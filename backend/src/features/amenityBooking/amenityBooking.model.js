@@ -60,7 +60,7 @@ const amenityBookingSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'captured', 'refunded', 'failed', 'success'],
+    enum: ['pending', 'captured', 'refunded', 'partial_refund', 'refund_pending', 'failed', 'success'],
     default: 'pending'
   },
   razorpayTransactionId: {

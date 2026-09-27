@@ -1,16 +1,15 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import billingService from '../services/billingService';
-import { WalletState } from '../types';
+import walletService from '../services/walletService';
+import { WalletState, WalletTransaction } from '../types';
 
-
-
+export type { WalletState, WalletTransaction };
 
 export const fetchWalletBalance = createAsyncThunk<any, { page?: number; limit?: number } | void>(
   'wallet/fetchWalletBalance',
   async (params: { page?: number; limit?: number } | void = {}, { rejectWithValue }) => {
     try {
       const queryParams = params || {};
-      const data = await billingService.getWalletBalance(queryParams);
+      const data = await walletService.getWalletBalance(queryParams);
       return { ...data, requestedParams: queryParams };
     } catch (error: any) {
       return rejectWithValue(
@@ -22,9 +21,14 @@ export const fetchWalletBalance = createAsyncThunk<any, { page?: number; limit?:
 
 export const createWalletRazorpayOrder = createAsyncThunk(
   'wallet/createWalletRazorpayOrder',
-  async ({ amount }: { amount: number }, { rejectWithValue }) => {
+  async (
+    payload: { amount: number; idempotencyKey?: string } | number,
+    { rejectWithValue }
+  ) => {
     try {
-      const data = await billingService.createWalletOrder(amount);
+      const amount = typeof payload === 'number' ? payload : payload.amount;
+      const idempotencyKey = typeof payload === 'number' ? undefined : payload.idempotencyKey;
+      const data = await walletService.createWalletOrder(amount, idempotencyKey);
       return data;
     } catch (error: any) {
       return rejectWithValue(
@@ -36,9 +40,14 @@ export const createWalletRazorpayOrder = createAsyncThunk(
 
 export const verifyWalletPayment = createAsyncThunk(
   'wallet/verifyWalletPayment',
-  async (paymentData: any, { rejectWithValue, dispatch }) => {
+  async (
+    payload: { paymentData?: any; idempotencyKey?: string } | any,
+    { rejectWithValue, dispatch }
+  ) => {
     try {
-      const data = await billingService.verifyWalletPayment(paymentData);
+      const paymentData = payload?.paymentData || payload;
+      const idempotencyKey = payload?.idempotencyKey;
+      const data = await walletService.verifyWalletPayment(paymentData, idempotencyKey);
       dispatch(fetchWalletBalance());
       return data;
     } catch (error: any) {
@@ -53,7 +62,7 @@ export const refundWalletToOriginalPayment = createAsyncThunk(
   'wallet/refundWalletToOriginalPayment',
   async ({ paymentId, amount }: { paymentId: string; amount: number }, { rejectWithValue, dispatch }) => {
     try {
-      const data = await billingService.refundWalletToOriginalPayment(paymentId, amount);
+      const data = await walletService.refundWalletToOriginalPayment(paymentId, amount);
       dispatch(fetchWalletBalance());
       return data;
     } catch (error: any) {
@@ -68,13 +77,37 @@ export const topUpWalletDirect = createAsyncThunk(
   'wallet/topUpWalletDirect',
   async ({ amount }: { amount: number }, { rejectWithValue, dispatch }) => {
     try {
-      const response: any = await billingService.topUpWalletDirect(amount);
+      if (process.env.NODE_ENV === 'production') {
+        return rejectWithValue(
+          'Direct wallet top-up is disabled in production. Please top up using Razorpay via the Digital Wallet screen.'
+        );
+      }
+      const response: any = await walletService.topUpWalletDirect(amount);
       dispatch(fetchWalletBalance());
       return response?.data || response;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || error.message || 'Failed to add funds to digital wallet'
       );
+    }
+  }
+);
+
+// Backward-compatible alias thunks previously exposed via amenities/store/walletSlice
+export const fetchWalletThunk = fetchWalletBalance;
+export const topUpWalletThunk = createAsyncThunk(
+  'wallet/topUpWalletThunk',
+  async (amount: number, { dispatch, rejectWithValue }) => {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        return rejectWithValue(
+          'Direct wallet top-up is disabled in production. Please top up using Razorpay via the Digital Wallet screen.'
+        );
+      }
+      const result = await dispatch(topUpWalletDirect({ amount })).unwrap();
+      return result;
+    } catch (err: any) {
+      return rejectWithValue(err?.message || err || 'Failed to top up wallet');
     }
   }
 );
@@ -146,11 +179,6 @@ export const walletSlice = createSlice({
           state.minimumRefundAmount = action.payload.minimumRefundAmount || 10;
           state.refundEligibleBalance = action.payload.refundEligibleBalance || 0;
           state.refundableSources = action.payload.refundableSources || [];
-          state.transactions = state.transactionHistory;
-
-          if (action.payload.isPaymentGatewayConfigured !== undefined) {
-            state.isPaymentGatewayConfigured = action.payload.isPaymentGatewayConfigured;
-          }
 
           if (action.payload.pagination) {
             state.pagination = action.payload.pagination;
@@ -265,5 +293,6 @@ export const walletSlice = createSlice({
   },
 });
 
+export const clearWalletStatus = walletSlice.actions.clearWalletError;
 export const { syncWalletBalance, clearWalletError } = walletSlice.actions;
 export default walletSlice.reducer;

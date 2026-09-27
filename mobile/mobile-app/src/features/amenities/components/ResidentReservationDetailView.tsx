@@ -143,6 +143,26 @@ export function ResidentReservationDetailView({
         </View>
       </View>
 
+      {/* Pay-at-Gate / Cash Collection Pending Notice */}
+      {reservation.bookingStatus === 'CONFIRMED' &&
+      reservation.paymentStatus === 'PENDING' &&
+      (pricing?.totalAmount ?? 0) > 0 ? (
+        <View
+          testID="pay-at-gate-pending-notice"
+          className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex-row items-start gap-3"
+        >
+          <AlertCircle size={20} className="text-amber-500 mt-0.5" />
+          <View className="flex-1 gap-1">
+            <Text className="font-semibold text-sm text-foreground">
+              Cash Collection Pending at Gate
+            </Text>
+            <Text variant="muted" className="text-xs text-muted-foreground leading-relaxed">
+              Your booking is confirmed. Please present your digital access pass at the gate or amenity counter to complete your cash payment before entering.
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
       {/* 2. Digital Access Pass Section */}
       <View className="gap-2.5">
         <ResidentAccessPassCard

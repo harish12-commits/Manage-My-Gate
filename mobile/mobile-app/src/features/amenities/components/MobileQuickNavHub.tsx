@@ -126,17 +126,6 @@ export function MobileQuickNavHub({ searchQuery = '' }: MobileQuickNavHubProps) 
       permission: 'amenities:my_booking',
     },
     {
-      id: 'amenities_wallet',
-      name: 'Digital Wallet',
-      route: '/(resident)/amenities/wallet',
-      iconName: 'WalletCards',
-      badge: formatRevenueBadge(walletBalance),
-      badgeColor: 'bg-emerald-500',
-      colorBg: 'bg-emerald-500/10 dark:bg-emerald-500/20',
-      colorIcon: '#16A34A',
-      permission: 'amenities:wallet',
-    },
-    {
       id: 'amenities_scanner',
       name: 'Security Scanner',
       route: '/(resident)/amenities/scanner',

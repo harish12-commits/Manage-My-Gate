@@ -1,10 +1,19 @@
 import mongoose from 'mongoose';
 import walletRepository from './wallet.repository.js';
-import { WalletTransaction } from './wallet.model.js';
+import { Wallet, WalletTransaction } from './wallet.model.js';
 import Payment from '../payment/payment.model.js';
-import { walletEventEmitter, WALLET_UPDATED, WALLET_TRANSACTION_CREATED } from './wallet.events.js';
+import {
+  walletEventEmitter,
+  WALLET_UPDATED,
+  WALLET_TRANSACTION_CREATED,
+  WALLET_DEBIT_STARTED,
+  WALLET_DEBIT_SUCCESS,
+  WALLET_DEBIT_FAILED,
+  WALLET_CREDIT_STARTED,
+  WALLET_CREDIT_SUCCESS,
+  WALLET_CREDIT_FAILED,
+} from './wallet.events.js';
 import { paymentEventEmitter, PAYMENT_SUCCESS, PAYMENT_REFUNDED } from '../payment/payment.events.js';
-import { amenityBookingEventEmitter, AMENITY_BOOKING_CONFIRMED } from '../amenityBooking/amenityBooking.events.js';
 import invoiceService from '../invoice/invoice.services.js';
 import paymentService from '../payment/payment.service.js';
 import HttpError from '../../utils/httpError.utils.js';
@@ -22,68 +31,38 @@ class WalletService {
   }
 
   registerListeners() {
-    // Listen for confirmed bookings (both manual and paid)
-    amenityBookingEventEmitter.on(AMENITY_BOOKING_CONFIRMED, async ({ booking, paymentMethod, amount }) => {
+    // Unified wallet rule: WalletTransactions record ONLY real wallet balance movements.
+    // Card/Razorpay booking payments never touch the wallet (they appear in Financial History via the booking),
+    // and wallet booking debits are posted synchronously inside the booking creation API.
+
+    // Refund of a WALLET-paid amenity booking settled through the unified payment core
+    // (the PAYMENT_REFUNDED payload is the refund Payment record; its amount is negative).
+    paymentEventEmitter.on(PAYMENT_REFUNDED, async (refundRecord) => {
+      if (refundRecord.referenceType !== 'AmenityBooking' || (refundRecord.paymentMethod || '').toUpperCase() !== 'WALLET') {
+        return;
+      }
       try {
-        await this.createBookingTransaction(booking, 'Debit', amount || booking.totalPrice, paymentMethod, 'success');
-        walletEventEmitter.emit(WALLET_UPDATED, { userId: booking.userId, orgId: booking.orgId });
-      } catch (e) {
-        logger.error('Error creating wallet transaction for confirmed booking', e);
-      }
-    });
-
-    // Listen for refunds
-    paymentEventEmitter.on(PAYMENT_REFUNDED, async (payment) => {
-      if (payment.referenceType === 'AmenityBooking') {
-        try {
-          const amenityBookingService = (await import('../amenityBooking/amenityBooking.services.js')).default;
-          const booking = await amenityBookingService.getBookingById(payment.referenceId, payment.orgId);
-          if (booking) {
-            await this.createBookingTransaction(booking, 'Credit', payment.amount, payment.paymentMethod, 'refunded');
-            walletEventEmitter.emit(WALLET_UPDATED, { userId: booking.userId, orgId: booking.orgId });
-          }
-        } catch (e) {
-          logger.error('Error creating wallet transaction for refund', e);
+        const amenityBookingService = (await import('../amenityBooking/amenityBooking.services.js')).default;
+        const booking = await amenityBookingService.getBookingById(refundRecord.referenceId, refundRecord.orgId);
+        if (booking) {
+          await this.creditWallet({
+            userId: booking.userId?._id || booking.userId,
+            orgId: booking.orgId,
+            amount: Math.abs(Number(refundRecord.amount)),
+            referenceType: 'Refund',
+            referenceId: booking._id,
+            // Same key as the cancellation refund path, so a booking is never refunded to the wallet twice
+            idempotencyKey: `AMENITY-REFUND-${booking._id.toString()}`,
+            paymentMethod: 'WALLET',
+            description: 'Refund for Cancelled Amenity Booking',
+            // paymentSettlement.settleRefund already posted the refund ledger entry (Revenue Adjustment -> Resident Wallet)
+            skipLedger: true,
+          });
         }
+      } catch (e) {
+        logger.error('Error crediting wallet for amenity booking refund', e);
       }
     });
-  }
-
-  async createBookingTransaction(booking, type, amount, paymentMethod, paymentStatus) {
-    const amenityService = (await import('../amenity/amenity.services.js')).default;
-    const amenity = await amenityService.getAmenityById(booking.amenityId, booking.orgId);
-
-    const normalizedMethod = (paymentMethod || '').toUpperCase();
-    if (type === 'Debit' && (normalizedMethod === 'WALLET' || normalizedMethod === 'PAY_AT_GATE')) {
-      // WALLET transactions are created synchronously inside the booking creation API.
-      // PAY_AT_GATE does not involve the wallet ledger.
-      return null;
-    }
-
-    const transactionData = {
-      orgId: booking.orgId,
-      userId: booking.userId,
-      bookingId: booking.bookingId,
-      type,
-      amount: Math.abs(amount),
-      paymentMethod,
-      paymentStatus,
-      referenceType: 'AmenityBooking',
-      referenceId: booking._id,
-      amenityName: amenity ? amenity.name : 'Unknown Amenity',
-      description: type === 'Debit' ? `Booking for ${amenity ? amenity.name : 'Amenity'}` : `Refund for ${amenity ? amenity.name : 'Amenity'}`
-    };
-
-    const transaction = await walletRepository.createTransaction(transactionData);
-
-    if (paymentMethod === 'wallet' || type === 'Credit') {
-      const absAmount = Math.abs(amount);
-      const delta = type === 'Debit' ? -absAmount : absAmount;
-      await walletRepository.updateBalance(booking.userId, booking.orgId, delta);
-    }
-
-    walletEventEmitter.emit(WALLET_TRANSACTION_CREATED, transaction);
-    return transaction;
   }
 
   async addMoney(userId, orgId, amount, paymentMethod = 'admin_adjustment', description = 'Wallet Recharge') {
@@ -128,7 +107,17 @@ class WalletService {
   /**
    * Pay open invoice dues using user's digital wallet balance within a Mongoose Transaction.
    */
-  async payInvoiceWithWallet({ userId, orgId, invoiceId, amount }) {
+  async payInvoiceWithWallet(param1, param2, param3, param4) {
+    let userId, orgId, invoiceId, amount;
+    if (typeof param1 === 'object' && param1 !== null && !param1._bsontype) {
+      ({ userId, orgId, invoiceId, amount } = param1);
+    } else {
+      userId = param1;
+      invoiceId = param2;
+      amount = param3;
+      orgId = param4;
+    }
+
     if (!userId || !invoiceId) {
       throw new HttpError(400, 'User ID and Invoice ID are required');
     }
@@ -147,15 +136,19 @@ class WalletService {
     try {
       // 1. Fetch invoice inside session via invoiceService (no direct model query)
       const invoice = await invoiceService.getInvoiceById(invoiceId, activeSession);
+      if (!orgId) {
+        orgId = invoice.orgId || invoice.communityId;
+      }
 
-      let isAuthorized = invoice.targetUserId.toString() === userId.toString();
+      const targetUserIdStr = (invoice.targetUserId?._id || invoice.targetUserId)?.toString();
+      let isAuthorized = targetUserIdStr === userId.toString();
 
       if (!isAuthorized) {
         // Check if user is an admin or a family member / co-resident in the same unit/villa
         try {
           const User = (await import('../user/user.model.js')).default;
           const userDoc = await User.findById(userId).session(activeSession);
-          const targetUserDoc = await User.findById(invoice.targetUserId).session(activeSession);
+          const targetUserDoc = targetUserIdStr ? await User.findById(targetUserIdStr).session(activeSession) : null;
 
           // If both share the same villaId
           if (userDoc?.villaId && targetUserDoc?.villaId && userDoc.villaId.toString() === targetUserDoc.villaId.toString()) {
@@ -210,11 +203,11 @@ class WalletService {
 
       // If family member's own wallet doesn't have enough balance, check if the household/targetUser wallet has enough balance
       if (!wallet || wallet.balance < amountDue) {
-        if (invoice.targetUserId && invoice.targetUserId.toString() !== userId.toString()) {
-          const primaryWallet = await walletRepository.getWallet(invoice.targetUserId, targetOrgId, activeSession);
+        if (targetUserIdStr && targetUserIdStr !== userId.toString()) {
+          const primaryWallet = await walletRepository.getWallet(targetUserIdStr, targetOrgId, activeSession);
           if (primaryWallet && primaryWallet.balance >= amountDue) {
             wallet = primaryWallet;
-            payingUserId = invoice.targetUserId;
+            payingUserId = targetUserIdStr;
           }
         }
       }
@@ -261,6 +254,20 @@ class WalletService {
         paymentMethod: 'WALLET',
         gatewayTransactionId: walletTxn.transactionId
       }, activeSession);
+
+      // 6.5 Record Double-Entry Financial Ledger Entry (Resident Wallet -> Invoice Receivable)
+      const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
+      await financialLedgerService.recordWalletDebitEntry({
+        userId: payingUserId,
+        orgId: targetOrgId,
+        amount: amountDue,
+        referenceType: 'Invoice',
+        referenceId: invoice._id,
+        paymentId: paymentRecord._id,
+        idempotencyKey: `INV_WALLET_PAY:${invoice._id.toString()}:${payingUserId.toString()}:${amountDue}`,
+        description: `Wallet payment for Invoice #${invoice.invoiceNumber || invoice._id}`,
+        session: activeSession,
+      });
 
       // Commit transaction if active
       if (isTransactionActive) {
@@ -654,8 +661,9 @@ class WalletService {
     // 4. Try environment variables fallback
     const keyId = credentials?.keyId || credentials?.key_id || process.env.RAZORPAY_KEY_ID || '';
     const keySecret = credentials?.keySecret || credentials?.key_secret || process.env.RAZORPAY_KEY_SECRET || '';
-    const isRealKey = !!(keyId && (keyId.startsWith('rzp_test_') || keyId.startsWith('rzp_live_')));
-    if (!isConfigured && isRealKey && keySecret) {
+    const isMock = keyId.includes('mock') || keyId.includes('dummy') || keyId === 'rzp_test_12345';
+    const isRealKey = !!(keyId && (keyId.startsWith('rzp_test_') || keyId.startsWith('rzp_live_')) && !isMock);
+    if (!isConfigured && isRealKey && keySecret && !orgId) {
       isConfigured = true;
     }
 
@@ -910,29 +918,356 @@ class WalletService {
     return transaction;
   }
 
-  async processPayment(userId, orgId, amount, description = 'Wallet payment') {
+  /**
+   * Canonical, concurrency-safe atomic wallet debit operation.
+   * Guarantees:
+   * 1. Valid amount and tenant context
+   * 2. Database-level atomic balance condition ($gte check) preventing overdraft race conditions
+   * 3. Idempotent execution
+   * 4. WalletTransaction recording
+   * 5. Double-entry financial ledger recording
+   * 6. Atomic Mongoose session participation (all or nothing rollback)
+   */
+  async debitWallet(params) {
+    const MAX_RETRIES = 5;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        return await this._executeDebitWallet(params);
+      } catch (err) {
+        const isTransient =
+          err.name === 'MongoServerError' &&
+          (err.code === 112 ||
+            err.errorLabels?.includes('TransientTransactionError') ||
+            err.hasErrorLabel?.('TransientTransactionError'));
+        if (isTransient && !params.session && attempt < MAX_RETRIES) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 30 + Math.random() * 20));
+          continue;
+        }
+        throw err;
+      }
+    }
+  }
+
+  async _executeDebitWallet({
+    userId,
+    orgId,
+    amount,
+    referenceType = 'Other',
+    referenceId = null,
+    paymentId = null,
+    idempotencyKey = null,
+    description = '',
+    skipLedger = false,
+    session: outerSession = null,
+  }) {
     const numericAmount = Number(amount);
     if (!numericAmount || numericAmount <= 0) {
-      throw new HttpError(400, 'Invalid payment amount');
+      throw new HttpError(400, 'Invalid debit amount');
     }
-    const wallet = await walletRepository.getWallet(userId, orgId);
-    if (!wallet || wallet.balance < numericAmount) {
-      throw new HttpError(400, 'Insufficient wallet balance');
+    if (!userId) {
+      throw new HttpError(400, 'User ID is required for wallet debit');
     }
-    const updatedWallet = await walletRepository.updateBalance(userId, orgId, -numericAmount);
-    const transaction = await walletRepository.createTransaction({
-      orgId,
+    if (!orgId) {
+      throw new HttpError(400, 'Organization (tenant) ID is required for wallet debit');
+    }
+
+    let session = outerSession;
+    let isLocalSession = false;
+    if (!session) {
+      session = await mongoose.startSession();
+      isLocalSession = true;
+      try {
+        session.startTransaction();
+      } catch (e) {
+        logger.debug('debitWallet: transaction start skipped', { error: e.message });
+      }
+    }
+
+    const activeSession = session && typeof session.inTransaction === 'function' && session.inTransaction() ? session : null;
+
+    try {
+      walletEventEmitter.emit(WALLET_DEBIT_STARTED, { userId, orgId, amount: numericAmount });
+
+      // 1. Idempotency Check: if a transaction with idempotencyKey already exists, return it
+      if (idempotencyKey) {
+        const existingTxn = await WalletTransaction.findOne({ transactionId: idempotencyKey }).session(activeSession);
+        if (existingTxn) {
+          const currentWallet = await walletRepository.getWallet(userId, orgId, activeSession);
+          if (isLocalSession) await session.endSession();
+          return {
+            wallet: currentWallet,
+            transaction: existingTxn,
+            alreadyProcessed: true,
+          };
+        }
+      }
+
+      // 2. Database-level atomic conditional debit (WHERE balance >= numericAmount)
+      const updatedWallet = await walletRepository.atomicDebit(userId, orgId, numericAmount, activeSession);
+
+      // 3. Create WalletTransaction record
+      const transactionId = idempotencyKey || `TXN-DEB-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      const transaction = await walletRepository.createTransaction({
+        orgId,
+        userId,
+        transactionId,
+        type: 'Debit',
+        amount: numericAmount,
+        paymentMethod: 'WALLET',
+        paymentStatus: 'success',
+        referenceType,
+        referenceId,
+        referenceModel: referenceType === 'Invoice' ? 'Invoice' : (referenceType === 'AmenityBooking' ? 'AmenityBooking' : 'Payment'),
+        description: description || `Wallet debit of ₹${numericAmount} for ${referenceType}`,
+      }, activeSession);
+
+      // 4. Record Double-Entry Financial Ledger Entry in the SAME session
+      let ledgerEntry = null;
+      // skipLedger: the payment settlement layer has already posted the ledger entry for this movement
+      if (!skipLedger) {
+        try {
+          const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
+          ledgerEntry = await financialLedgerService.recordWalletDebitEntry({
+            userId,
+            orgId,
+            amount: numericAmount,
+            referenceType,
+            referenceId: referenceId || transaction._id,
+            paymentId,
+            idempotencyKey: `${transactionId}:LEDGER`,
+            description: transaction.description,
+            session: activeSession,
+          });
+        } catch (ledgerErr) {
+          logger.error('debitWallet: financial ledger recording failed', { error: ledgerErr.message });
+          throw ledgerErr;
+        }
+      }
+
+      // 5. Commit if local session
+      if (isLocalSession) {
+        if (session.inTransaction()) {
+          await session.commitTransaction();
+        }
+        await session.endSession();
+      }
+
+      // 6. Decoupled event emissions ONLY AFTER COMMIT
+      walletEventEmitter.emit(WALLET_DEBIT_SUCCESS, { userId, orgId, amount: numericAmount, balance: updatedWallet.balance });
+      walletEventEmitter.emit(WALLET_UPDATED, { userId, orgId, balance: updatedWallet.balance });
+      walletEventEmitter.emit(WALLET_TRANSACTION_CREATED, transaction);
+
+      return {
+        wallet: updatedWallet,
+        transaction,
+        ledgerEntry,
+        alreadyProcessed: false,
+      };
+    } catch (err) {
+      if (isLocalSession) {
+        if (session.inTransaction()) {
+          try {
+            await session.abortTransaction();
+          } catch (e) {}
+        }
+        try {
+          await session.endSession();
+        } catch (e) {}
+      }
+      walletEventEmitter.emit(WALLET_DEBIT_FAILED, { userId, orgId, amount: numericAmount, error: err.message });
+      throw err;
+    }
+  }
+
+  /**
+   * Canonical, concurrency-safe atomic wallet credit operation.
+   * Guarantees:
+   * 1. Valid amount and tenant context
+   * 2. Atomic balance increment
+   * 3. Idempotent execution (via razorpay_payment_id or idempotencyKey)
+   * 4. WalletTransaction recording
+   * 5. Double-entry financial ledger recording
+   * 6. Atomic Mongoose session participation (all or nothing rollback)
+   */
+  async creditWallet(params) {
+    const MAX_RETRIES = 5;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        return await this._executeCreditWallet(params);
+      } catch (err) {
+        const isTransient =
+          err.name === 'MongoServerError' &&
+          (err.code === 112 ||
+            err.errorLabels?.includes('TransientTransactionError') ||
+            err.hasErrorLabel?.('TransientTransactionError'));
+        if (isTransient && !params.session && attempt < MAX_RETRIES) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 30 + Math.random() * 20));
+          continue;
+        }
+        throw err;
+      }
+    }
+  }
+
+  async _executeCreditWallet({
+    userId,
+    orgId,
+    amount,
+    referenceType = 'Recharge',
+    referenceId = null,
+    paymentId = null,
+    razorpay_payment_id = null,
+    razorpay_order_id = null,
+    idempotencyKey = null,
+    paymentMethod = 'ONLINE',
+    description = '',
+    skipLedger = false,
+    session: outerSession = null,
+  }) {
+    const numericAmount = Number(amount);
+    if (!numericAmount || numericAmount <= 0) {
+      throw new HttpError(400, 'Invalid credit amount');
+    }
+    if (!userId) {
+      throw new HttpError(400, 'User ID is required for wallet credit');
+    }
+    if (!orgId) {
+      throw new HttpError(400, 'Organization (tenant) ID is required for wallet credit');
+    }
+
+    let session = outerSession;
+    let isLocalSession = false;
+    if (!session) {
+      session = await mongoose.startSession();
+      isLocalSession = true;
+      try {
+        session.startTransaction();
+      } catch (e) {
+        logger.debug('creditWallet: transaction start skipped', { error: e.message });
+      }
+    }
+
+    const activeSession = session && typeof session.inTransaction === 'function' && session.inTransaction() ? session : null;
+
+    try {
+      walletEventEmitter.emit(WALLET_CREDIT_STARTED, { userId, orgId, amount: numericAmount });
+
+      // 1. Idempotency Check: if razorpay_payment_id or idempotencyKey already credited, return existing
+      if (razorpay_payment_id) {
+        const existingTxn = await walletRepository.findTransactionByRazorpayPaymentId(razorpay_payment_id, activeSession);
+        if (existingTxn) {
+          const currentWallet = await walletRepository.getWallet(userId, orgId, activeSession);
+          if (isLocalSession) await session.endSession();
+          return {
+            wallet: currentWallet,
+            transaction: existingTxn,
+            alreadyProcessed: true,
+          };
+        }
+      }
+      if (idempotencyKey) {
+        const existingTxn = await WalletTransaction.findOne({ transactionId: idempotencyKey }).session(activeSession);
+        if (existingTxn) {
+          const currentWallet = await walletRepository.getWallet(userId, orgId, activeSession);
+          if (isLocalSession) await session.endSession();
+          return {
+            wallet: currentWallet,
+            transaction: existingTxn,
+            alreadyProcessed: true,
+          };
+        }
+      }
+
+      // 2. Atomic credit
+      const updatedWallet = await walletRepository.atomicCredit(userId, orgId, numericAmount, activeSession);
+
+      // 3. Create WalletTransaction
+      const transactionId = idempotencyKey || `TXN-CRE-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      const transaction = await walletRepository.createTransaction({
+        orgId,
+        userId,
+        transactionId,
+        razorpay_payment_id,
+        razorpay_order_id,
+        type: 'Credit',
+        amount: numericAmount,
+        paymentMethod: paymentMethod || 'ONLINE',
+        paymentStatus: 'success',
+        referenceType,
+        referenceId,
+        referenceModel: referenceType === 'Refund' ? 'Payment' : (referenceType === 'Recharge' ? 'Payment' : 'AmenityBooking'),
+        description: description || `Wallet credit of ₹${numericAmount}`,
+      }, activeSession);
+
+      // 4. Record Double-Entry Financial Ledger Entry in the SAME session
+      let ledgerEntry = null;
+      // skipLedger: the payment settlement layer has already posted the ledger entry for this movement
+      if (!skipLedger) {
+        try {
+          const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
+          ledgerEntry = await financialLedgerService.recordWalletCreditEntry({
+            userId,
+            orgId,
+            amount: numericAmount,
+            referenceType,
+            referenceId: referenceId || transaction._id,
+            paymentId,
+            idempotencyKey: `${transactionId}:LEDGER`,
+            paymentMethod,
+            description: transaction.description,
+            session: activeSession,
+          });
+        } catch (ledgerErr) {
+          logger.error('creditWallet: financial ledger recording failed', { error: ledgerErr.message });
+          throw ledgerErr;
+        }
+      }
+
+      // 5. Commit if local session
+      if (isLocalSession) {
+        if (session.inTransaction()) {
+          await session.commitTransaction();
+        }
+        await session.endSession();
+      }
+
+      // 6. Decoupled event emissions ONLY AFTER COMMIT
+      walletEventEmitter.emit(WALLET_CREDIT_SUCCESS, { userId, orgId, amount: numericAmount, balance: updatedWallet.balance });
+      walletEventEmitter.emit(WALLET_UPDATED, { userId, orgId, balance: updatedWallet.balance });
+      walletEventEmitter.emit(WALLET_TRANSACTION_CREATED, transaction);
+
+      return {
+        wallet: updatedWallet,
+        transaction,
+        ledgerEntry,
+        alreadyProcessed: false,
+      };
+    } catch (err) {
+      if (isLocalSession) {
+        if (session.inTransaction()) {
+          try {
+            await session.abortTransaction();
+          } catch (e) {}
+        }
+        try {
+          await session.endSession();
+        } catch (e) {}
+      }
+      walletEventEmitter.emit(WALLET_CREDIT_FAILED, { userId, orgId, amount: numericAmount, error: err.message });
+      throw err;
+    }
+  }
+
+  async processPayment(userId, orgId, amount, description = 'Wallet payment', session = null) {
+    const result = await this.debitWallet({
       userId,
-      type: 'Debit',
-      amount: numericAmount,
-      paymentMethod: 'wallet',
-      paymentStatus: 'success',
+      orgId,
+      amount,
       referenceType: 'Other',
-      description
+      description,
+      session,
     });
-    walletEventEmitter.emit(WALLET_TRANSACTION_CREATED, transaction);
-    walletEventEmitter.emit(WALLET_UPDATED, { userId, orgId, balance: updatedWallet.balance });
-    return transaction;
+    return result.transaction;
   }
 
   /**
@@ -1054,6 +1389,20 @@ class WalletService {
         ? `Family booking deduction for amenity: ${booking.amenityName || 'Amenity'}`
         : `Booking payment for amenity: ${booking.amenityName || 'Amenity'}`
     }, session);
+
+    // Record Double-Entry Financial Ledger Entry (Resident Wallet -> Amenity Revenue)
+    const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
+    await financialLedgerService.recordWalletDebitEntry({
+      userId,
+      orgId,
+      amount: totalAmount,
+      referenceType: 'AmenityBooking',
+      referenceId: booking._id,
+      idempotencyKey: `AMENITY_WALLET_PAY:${booking._id.toString()}:${totalAmount}`,
+      description: `Wallet payment for amenity booking: ${booking.amenityName || 'Amenity'}`,
+      session,
+    });
+
     return { updatedWallet, walletTxn };
   }
 

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Wallet, WalletTransaction } from './wallet.model.js';
 import '../amenityBooking/amenityBooking.model.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -42,11 +43,23 @@ class WalletRepository {
     }
 
     if (targetOrgId) {
-      return await Wallet.findOneAndUpdate(
-        { userId, orgId: targetOrgId },
-        { $setOnInsert: { balance: 0, orgId: targetOrgId } },
-        options
-      );
+      let attempts = 0;
+      while (attempts < 3) {
+        try {
+          return await Wallet.findOneAndUpdate(
+            { userId, orgId: targetOrgId },
+            { $setOnInsert: { balance: 0, orgId: targetOrgId } },
+            options
+          );
+        } catch (err) {
+          if ((err.code === 112 || err.hasErrorLabel?.('TransientTransactionError')) && attempts < 2) {
+            attempts++;
+            await new Promise((res) => setTimeout(res, 50 * attempts));
+            continue;
+          }
+          throw err;
+        }
+      }
     }
 
     // If still no orgId, search existing with most recent activity or insert without orgId
@@ -112,8 +125,34 @@ class WalletRepository {
       } catch (e) {}
     }
 
+    // Atomic conditional check on debit: Prevents overdraft race conditions
+    if (amountDelta < 0) {
+      const debitAmount = Math.abs(amountDelta);
+      const query = targetOrgId
+        ? { userId: new mongoose.Types.ObjectId(userId), orgId: new mongoose.Types.ObjectId(targetOrgId), balance: { $gte: debitAmount } }
+        : { userId: new mongoose.Types.ObjectId(userId), balance: { $gte: debitAmount } };
+
+      const options = { returnDocument: 'after' };
+      if (activeSession) options.session = activeSession;
+
+      const updated = await Wallet.findOneAndUpdate(query, { $inc: { balance: amountDelta } }, options);
+      if (!updated) {
+        const HttpError = (await import('../../utils/httpError.utils.js')).default;
+        const findQuery = Wallet.findOne(targetOrgId ? { userId, orgId: targetOrgId } : { userId });
+        if (activeSession) findQuery.session(activeSession);
+        const currentWallet = await findQuery;
+        const currentBalance = currentWallet ? currentWallet.balance : 0;
+        throw new HttpError(
+          400,
+          `Insufficient wallet balance. Total due is ₹${debitAmount}, but current available wallet balance is ₹${currentBalance}.`
+        );
+      }
+      return updated;
+    }
+
+    // Credit (amountDelta >= 0)
     const query = targetOrgId ? { userId, orgId: targetOrgId } : { userId };
-    const options = { returnDocument: 'after', upsert: true, new: true, setDefaultsOnInsert: true };
+    const options = { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true };
     if (activeSession) options.session = activeSession;
     
     const update = { $inc: { balance: amountDelta } };
@@ -121,7 +160,33 @@ class WalletRepository {
       update.$setOnInsert = { orgId: targetOrgId };
     }
 
-    return await Wallet.findOneAndUpdate(query, update, options);
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        return await Wallet.findOneAndUpdate(query, update, options);
+      } catch (err) {
+        if ((err.code === 112 || err.hasErrorLabel?.('TransientTransactionError')) && attempts < 2) {
+          attempts++;
+          await new Promise((res) => setTimeout(res, 50 * attempts));
+          continue;
+        }
+        throw err;
+      }
+    }
+  }
+
+  /**
+   * Atomic conditional wallet debit.
+   */
+  async atomicDebit(userId, orgId, amount, session = null) {
+    return await this.updateBalance(userId, orgId, -amount, session);
+  }
+
+  /**
+   * Atomic wallet credit.
+   */
+  async atomicCredit(userId, orgId, amount, session = null) {
+    return await this.updateBalance(userId, orgId, amount, session);
   }
 
   /**

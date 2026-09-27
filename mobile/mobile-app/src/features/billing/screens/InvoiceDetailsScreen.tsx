@@ -32,11 +32,13 @@ import {
   ExternalLink,
   Eye,
   X,
+  AlertCircle,
 } from 'lucide-react-native';
 import { useAuth } from '@/src/features/auth/hooks/useAuth';
 import { useBilling } from '../hooks/useBilling';
 import { useBillingSocket } from '../hooks/useBillingSocket';
 import { billingService } from '../services/billingService';
+import paymentService from '../../payment/services/paymentService';
 import { InvoiceStatus, Invoice } from '../types';
 import { PaymentCheckoutSheet } from '../components/PaymentCheckoutSheet';
 import { OfflineSettleSheet } from '../components/OfflineSettleSheet';
@@ -197,27 +199,43 @@ export function InvoiceDetailsScreen() {
     return null;
   }, [invoiceId, invoicesList, activeDues]);
 
-  // Fallback single-invoice API fetch if not found in Redux dues cache
+  // Always fetch fresh single invoice from backend on mount or invoiceId change
   useEffect(() => {
-    const fetchSingleInvoice = async () => {
-      if (!invoiceId || reduxInvoice || fallbackInvoice) return;
+    if (!invoiceId) return;
+    let isMounted = true;
+
+    const fetchAuthoritativeInvoice = async () => {
       try {
         setFallbackLoading(true);
         const data = await billingService.getInvoiceById(invoiceId);
-        if (data) {
+        if (data && isMounted) {
           setFallbackInvoice(data);
+        }
+
+        // Active session recovery check
+        const activeSession = await paymentService.getActivePaymentSession('Invoice', invoiceId);
+        if (activeSession && data) {
+          if (data.status === 'PAID' || data.status === 'PARTIALLY_PAID') {
+            await paymentService.clearActivePaymentSession('Invoice', invoiceId);
+          }
         }
       } catch (err) {
         console.log('Direct invoice fetch completed or unavailable', err);
       } finally {
-        setFallbackLoading(false);
+        if (isMounted) {
+          setFallbackLoading(false);
+        }
       }
     };
 
-    fetchSingleInvoice();
-  }, [invoiceId, reduxInvoice, fallbackInvoice]);
+    fetchAuthoritativeInvoice();
+    return () => {
+      isMounted = false;
+    };
+  }, [invoiceId]);
 
-  const invoice = reduxInvoice || fallbackInvoice;
+  // Server invoice takes strict precedence over Redux dues summary
+  const invoice = fallbackInvoice || reduxInvoice;
   const { user } = useAuth();
 
   const dynamicCommunityName = useMemo(() => {
@@ -481,6 +499,24 @@ export function InvoiceDetailsScreen() {
               </View>
             ) : null}
 
+            {/* Rejection Info Banner */}
+            {((invoice as any)?.rejectionReason || (invoice as any)?.auditHistory?.some((a: any) => a.action === 'OFFLINE_PAYMENT_REJECTED')) && !isPendingVerification ? (
+              <View className="border border-destructive/30 bg-destructive/10 rounded-xl p-4 flex-row items-start">
+                <Icon as={AlertCircle} size={20} className="me-3 mt-0.5 text-destructive" />
+                <View className="flex-1">
+                  <Text className="text-sm font-bold text-destructive">
+                    Previous Payment Submission Rejected
+                  </Text>
+                  <Text className="text-xs mt-1 text-destructive/90">
+                    Reason: {(invoice as any)?.rejectionReason || (invoice as any)?.auditHistory?.find((a: any) => a.action === 'OFFLINE_PAYMENT_REJECTED')?.reason || 'Payment details could not be verified by the admin.'}
+                  </Text>
+                  <Text className="text-[11px] mt-1 text-muted-foreground">
+                    Please submit a fresh payment request with valid transaction proof or pay using Digital Wallet / Online.
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+
             {/* Offline Submission Details (Proof & Remarks) */}
             {(invoice?.payerNotes || invoice?.paymentScreenshot || (isPendingVerification && invoice?.offlineReference)) ? (
               <DetailSection title="Offline Payment Submission Details">
@@ -656,38 +692,35 @@ export function InvoiceDetailsScreen() {
           }}
           onPaymentSuccess={(result: any, amountPaid?: number, paymentMethod?: string) => {
             loadResidentDues();
-            if (invoiceId) {
+            const serverInv = result?.invoice || result?.data?.invoice || result?.data || result;
+            if (serverInv && serverInv.status) {
+              setFallbackInvoice(serverInv);
+            } else if (invoiceId) {
               billingService.getInvoiceById(invoiceId).then(setFallbackInvoice).catch(() => {});
             }
-            const paid =
-              amountPaid !== undefined && amountPaid !== null && Number(amountPaid) > 0
-                ? Number(amountPaid)
-                : Number(result?.amountPaid || result?.paidAmount || invoice?.paidAmount || 0);
 
-            const total = Number(invoice?.totalDue || invoice?.totalAmount || result?.totalDue || 0);
-            const remaining =
-              result?.outstandingAmount !== undefined
-                ? Number(result.outstandingAmount)
-                : Math.max(0, total - paid);
-
-            const isFull = remaining <= 0.01;
+            const authoritativeStatus = serverInv?.status || result?.status || 'PAID';
+            const paid = serverInv?.paidAmount ?? (amountPaid !== undefined && amountPaid !== null ? Number(amountPaid) : invoice?.paidAmount || 0);
+            const remaining = serverInv?.outstandingAmount ?? 0;
+            const total = serverInv?.totalDue ?? invoice?.totalDue ?? (paid + remaining);
 
             const receiptData = {
               ...(invoice || {}),
+              ...serverInv,
               ...(result || {}),
-              invoiceNumber: result?.invoiceNumber || invoice?.invoiceNumber || result?.invoice?.invoiceNumber || invoice?._id,
-              unitNumber: result?.unitNumber || invoice?.unitNumber || (user as any)?.villaNumber || (user as any)?.activeVillaNumber || (user as any)?.unitNumber,
-              assessmentName: result?.assessmentName || invoice?.assessmentName || result?.invoice?.assessmentName,
+              invoiceNumber: serverInv?.invoiceNumber || invoice?.invoiceNumber || result?.invoiceNumber || invoice?._id,
+              unitNumber: serverInv?.unitNumber || invoice?.unitNumber || (user as any)?.villaNumber || (user as any)?.activeVillaNumber || (user as any)?.unitNumber,
+              assessmentName: serverInv?.assessmentName || invoice?.assessmentName || (invoice as any)?.snapshot?.assessmentName,
               totalDue: total,
               totalAmount: total,
               paidAmount: paid,
-              amountPaid: paid,
+              amountPaid: amountPaid || paid,
               outstandingAmount: remaining,
-              status: isFull ? 'PAID' : 'PARTIALLY_PAID',
+              status: authoritativeStatus as any,
               paymentMethod: paymentMethod || result?.paymentMethod || 'Online Payment',
             };
             setReceiptInvoice(receiptData);
-            setReceiptAmount(paid);
+            setReceiptAmount(amountPaid || paid);
             setReceiptMethod(paymentMethod || 'Online Payment');
           }}
         />

@@ -192,7 +192,7 @@ export function AdminOfflineSettleSheet({
           } else {
             formData.append('proof', {
               uri: fileItem.uri,
-              name: fileItem.name || `proof_${Date.now()}.jpg`,
+              name: fileItem.name || 'admin_proof.jpg',
               type: fileItem.type || 'image/jpeg',
             } as any);
           }
@@ -204,11 +204,7 @@ export function AdminOfflineSettleSheet({
         }
       }
 
-      const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const rand = Math.floor(1000 + Math.random() * 9000);
-      const effectiveRef =
-        referenceNumber.trim() ||
-        (paymentMethod === 'CASH' ? `CASH-${dateStr}-${rand}` : undefined);
+      const effectiveRef = referenceNumber.trim() || undefined;
 
       const payload = {
         amount: amountToSettle,

@@ -168,7 +168,7 @@ export function generateInvoiceHtml(item: Invoice | any, options: GenerateInvoic
     statusBg = '#FEF3C7';
     statusColor = '#92400E';
     statusBorder = '#FCD34D';
-  } else if (item.status === 'UNPAID' || item.status === 'OVERDUE') {
+  } else if (item.status === 'UNPAID' || item.status === 'OVERDUE' || item.status === 'REJECTED') {
     statusBg = '#FEE2E2';
     statusColor = '#991B1B';
     statusBorder = '#FCA5A5';

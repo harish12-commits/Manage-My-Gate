@@ -29,7 +29,9 @@ import {
   Copy,
 } from 'lucide-react-native';
 import { useBilling } from '../hooks/useBilling';
+import { useMobilePayment } from '../hooks/useMobilePayment';
 import { billingService } from '../services/billingService';
+import { createOperationId, buildInvoiceOfflineKey } from '@/src/utils/idempotency';
 import { Invoice } from '../types';
 
 
@@ -105,7 +107,8 @@ export function OfflineSettleSheet({
   communityName = 'Community Workspace',
 }: OfflineSettleSheetProps) {
   const router = useRouter();
-  const { settleOffline, loadResidentDues, loadingStates, error, resetBillingError } = useBilling();
+  const { loadResidentDues, loadingStates, error, resetBillingError } = useBilling();
+  const { submitOfflinePayment, isGlobalSettling } = useMobilePayment();
 
   const [paymentMethod, setPaymentMethod] = useState<OfflinePaymentType>('BANK_TRANSFER');
   const [offlineReference, setOfflineReference] = useState<string>('');
@@ -116,9 +119,11 @@ export function OfflineSettleSheet({
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Post-submission PDF state
-  const [submittedResult, setSubmittedResult] = useState<any | null>(null);
+  // Deterministic operation identity preserved across retry/remount
+  const operationIdRef = React.useRef<string>(createOperationId());
 
+  // Post-submission state
+  const [submittedResult, setSubmittedResult] = useState<any | null>(null);
 
   // Derived figures
   const totalDue = invoice?.totalDue ?? invoice?.amount ?? 0;
@@ -154,6 +159,7 @@ export function OfflineSettleSheet({
 
   useEffect(() => {
     if (visible && invoice) {
+      operationIdRef.current = createOperationId();
       setPaymentMethod('BANK_TRANSFER');
       setOfflineReference('');
       setPayerNotes('');
@@ -182,25 +188,14 @@ export function OfflineSettleSheet({
   };
 
   const handleExecuteSubmission = async () => {
-    if (!invoice._id || isFormInvalid || isSubmitting) return;
+    if (!invoice._id || isFormInvalid || isSubmitting || isGlobalSettling) return;
     setIsSubmitting(true);
 
     try {
-      const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-
-      const prefixMap: Record<OfflinePaymentType, string> = {
-        BANK_TRANSFER: 'BANK',
-        UPI: 'UPI',
-        CHEQUE: 'CHQ',
-        CASH: 'CASH',
-        DEMAND_DRAFT: 'DD',
-      };
-      const prefix = prefixMap[paymentMethod] || 'OFFLINE';
-
       let effectiveRef = offlineReference.trim();
+      // For CASH: do not fabricate a reference; omit if empty so backend assigns canonical reference
       if (!effectiveRef && paymentMethod === 'CASH') {
-        effectiveRef = `${prefix}-${dateStr}-${randomSuffix}`;
+        effectiveRef = '';
       }
 
       // Upload proof attachment if attached
@@ -214,7 +209,7 @@ export function OfflineSettleSheet({
           } else {
             formData.append('proof', {
               uri: fileItem.uri,
-              name: fileItem.name || `proof_${Date.now()}.jpg`,
+              name: fileItem.name || 'payment_proof.jpg',
               type: fileItem.type || 'image/jpeg',
             } as any);
           }
@@ -226,21 +221,39 @@ export function OfflineSettleSheet({
         }
       }
 
-      const result = await settleOffline(invoice._id, {
-        offlineReference: effectiveRef,
-        offlineAmount: amountToSubmit,
-        paymentMethod,
-        paymentDate: paymentDateStr,
-        paymentScreenshot: uploadedProofUrl,
-        payerNotes: payerNotes.trim() || undefined,
-      });
+      const idempotencyKey = buildInvoiceOfflineKey(invoice._id, operationIdRef.current);
+      const result = await submitOfflinePayment(
+        invoice._id,
+        {
+          offlineReference: effectiveRef || undefined,
+          amount: amountToSubmit,
+          paymentMethod,
+          paymentDate: paymentDateStr,
+          paymentScreenshot: uploadedProofUrl,
+          payerNotes: payerNotes.trim() || undefined,
+        },
+        idempotencyKey,
+        operationIdRef.current
+      );
 
       setIsSubmitting(false);
       setShowConfirmModal(false);
+
+      if (result?.isChecking) {
+        Alert.alert(
+          'Submission In Progress',
+          'Your payment submission response is taking longer than expected. Please check your invoice status in a moment.'
+        );
+        onClose();
+        return;
+      }
+
+      const serverInvoice = result?.invoice || result?.data?.invoice || result?.data || result;
       setSubmittedResult(
-        result || {
+        serverInvoice || {
           ...invoice,
-          offlineReference: effectiveRef,
+          status: 'VERIFICATION_PENDING',
+          offlineReference: effectiveRef || result?.offlineReference,
           offlineAmount: amountToSubmit,
           paymentMethod,
           paymentScreenshot: uploadedProofUrl,
@@ -248,7 +261,7 @@ export function OfflineSettleSheet({
         }
       );
       await loadResidentDues();
-      if (onSettlementSubmitted) onSettlementSubmitted(result);
+      if (onSettlementSubmitted) onSettlementSubmitted(serverInvoice || result);
     } catch (err: any) {
       setIsSubmitting(false);
       setShowConfirmModal(false);

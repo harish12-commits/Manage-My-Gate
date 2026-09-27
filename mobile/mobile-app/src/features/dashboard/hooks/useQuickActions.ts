@@ -124,17 +124,30 @@ export const useQuickActions = () => {
 
     let baseCatalog = (rawCatalog && rawCatalog.length > 0) ? rawCatalog : BUILT_IN_FEATURE_CATALOG;
     if (rawCatalog && rawCatalog.length > 0) {
+      const canonicalMap = new Map(ALL_AVAILABLE_FEATURES.map((f) => [f.id, f]));
+
       baseCatalog = BUILT_IN_FEATURE_CATALOG.map((builtinCat) => {
         const rawCat = rawCatalog.find((rc) => rc.categoryKey === builtinCat.categoryKey);
         if (!rawCat) return builtinCat;
-        const validRawItems = rawCat.items.filter((ri) => validFeatureIds.has(ri.id));
+        // Strictly filter raw items: must exist in canonical catalog and match this category
+        const validRawItems = (rawCat.items || []).filter((item: FeatureItem) => {
+          const canonical = canonicalMap.get(item.id);
+          if (!canonical) return false;
+          return (canonical.categoryKey || 'general') === builtinCat.categoryKey;
+        });
         const mergedItems = [...validRawItems];
         builtinCat.items.forEach((bi) => {
           if (!mergedItems.some((ri) => ri.id === bi.id)) {
             mergedItems.push(bi);
           }
         });
-        return { ...rawCat, items: mergedItems };
+        return {
+          ...builtinCat,
+          ...rawCat,
+          categoryKey: builtinCat.categoryKey,
+          categoryName: builtinCat.categoryName,
+          items: mergedItems,
+        };
       });
     }
     
@@ -146,8 +159,12 @@ export const useQuickActions = () => {
         'amenities_facilities': ['amenities'],
         'complaints_helpdesk': ['complaints'],
         'notice_board_polls': ['notices'],
+        // digital_wallet is a core financial category — it is shown whenever billing OR amenities
+        // is active. We never completely hide it based on module keys alone because wallet
+        // top-up is always a valid resident & admin feature.
+        'digital_wallet': ['billing', 'amenities', 'wallet'],
         'financial_billing': ['billing'],
-        'administration_security': ['administration_security']
+        'administration_security': ['administration_security'],
       };
       
       const itemToModuleMap: Record<string, string[]> = {
@@ -160,7 +177,18 @@ export const useQuickActions = () => {
       
       baseCatalog = baseCatalog.map(category => {
         let requiredCategoryModules = categoryToModuleMap[category.categoryKey];
-        
+
+        // digital_wallet passthrough: if none of the billing/amenities/wallet module keys
+        // exist in the workspace module list at all (e.g. workspace API returned unrelated keys),
+        // treat the digital_wallet category as always-enabled — it's a core financial feature.
+        if (
+          category.categoryKey === 'digital_wallet' &&
+          requiredCategoryModules &&
+          !requiredCategoryModules.some(m => enabledModuleKeys.includes(m))
+        ) {
+          requiredCategoryModules = undefined;
+        }
+
         // Filter items within the category by workspace modules
         const filteredItems = category.items.filter(item => {
           if (item.id === 'admin_workspace_settings' || item.id === 'admin_app_settings') return true;
@@ -175,7 +203,7 @@ export const useQuickActions = () => {
           }
           return true;
         });
-        
+
         return { ...category, items: filteredItems };
       }).filter(category => category.items.length > 0);
     }

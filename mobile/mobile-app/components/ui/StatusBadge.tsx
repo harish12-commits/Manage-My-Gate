@@ -68,11 +68,19 @@ export const STATUS_VARIANT_MAP: Record<string, StatusVariant> = {
   EXPIRED: 'neutral',
   REJECTED: 'danger',
   Rejected: 'danger',
-  // Billing
+  // Billing & Payment
   PAID: 'success',
   UNPAID: 'danger',
   OVERDUE: 'critical',
   VERIFICATION_PENDING: 'warning',
+  CASH_PENDING: 'warning',
+  PAY_AT_GATE: 'warning',
+  CHECKING: 'info',
+  PAYMENT_CHECKING: 'info',
+  PARTIALLY_PAID: 'warning',
+  FAILED: 'danger',
+  CANCELLED: 'neutral',
+  REFUNDED: 'info',
   // Complaints status
   Open: 'info',
   Assigned: 'warning',
@@ -175,6 +183,9 @@ const StatusBadge = React.forwardRef<View, StatusBadgeProps>(
     return (
       <View
         ref={ref}
+        accessible={true}
+        accessibilityRole="text"
+        accessibilityLabel={props.accessibilityLabel || `Status: ${displayLabel}`}
         className={cn(statusBadgeVariants({ size }), className)}
         style={[{ backgroundColor: colorConfig.bg, borderColor: colorConfig.border, borderWidth: 1 }, style]}
         {...props}

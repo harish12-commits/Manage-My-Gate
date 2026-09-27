@@ -2,7 +2,6 @@
 export * from './types';
 export { default as billingService } from './services/billingService';
 export * from './store/billingSlice';
-export * from './store/walletSlice';
 export { default as useBilling } from './hooks/useBilling';
 export { default as useBillingSocket } from './hooks/useBillingSocket';
 export { default as useAssessmentForm } from './hooks/useAssessmentForm';
@@ -18,10 +17,7 @@ export { default as PaymentResultScreen } from './screens/PaymentResultScreen';
 export { default as PaymentResultHeroCard } from './components/PaymentResultHeroCard';
 export { default as PaymentReceiptCard } from './components/PaymentReceiptCard';
 export { default as PaymentCheckoutSheet } from './components/PaymentCheckoutSheet';
-export { default as WalletScreen } from './screens/WalletScreen';
-export { default as WalletHeroCard } from './components/WalletHeroCard';
 export { default as FinancialTransactionCard } from './components/FinancialTransactionCard';
-export { default as WalletTransactionCard } from './components/WalletTransactionCard';
 export { default as ResidentDueCard } from './components/ResidentDueCard';
 export { default as OfflineSettleSheet } from './components/OfflineSettleSheet';
 export { default as AssessmentManagementScreen } from './screens/AssessmentManagementScreen';

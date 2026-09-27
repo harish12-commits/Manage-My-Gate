@@ -10,7 +10,7 @@ import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { AmenityHoldState } from '../../../types/amenityDomain.types';
-import { Clock, Wallet, CreditCard, AlertTriangle, CheckCircle2, RotateCcw } from 'lucide-react-native';
+import { Clock, Wallet, CreditCard, Banknote, AlertTriangle, CheckCircle2, RotateCcw } from 'lucide-react-native';
 
 export interface BookingHoldPaymentStepProps {
   activeHold: AmenityHoldState | null;
@@ -18,8 +18,8 @@ export interface BookingHoldPaymentStepProps {
   isHoldExpired: boolean;
   totalAmount: number;
   currency?: string;
-  paymentMethod: 'WALLET' | 'RAZORPAY';
-  onPaymentMethodChange: (method: 'WALLET' | 'RAZORPAY') => void;
+  paymentMethod: 'WALLET' | 'RAZORPAY' | 'PAY_AT_GATE';
+  onPaymentMethodChange: (method: 'WALLET' | 'RAZORPAY' | 'PAY_AT_GATE') => void;
   balance: number;
   onOpenTopUp: () => void;
   onLaunchRazorpay: () => void;
@@ -221,6 +221,35 @@ export function BookingHoldPaymentStep({
               <StatusBadge label="Instant" variant="info" />
             </View>
           </TouchableOpacity>
+
+          {/* Pay-at-Gate / Cash Option */}
+          <TouchableOpacity
+            onPress={() => onPaymentMethodChange('PAY_AT_GATE')}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Select Pay at Gate cash collection"
+            className={`p-3.5 rounded-xl border transition-all ${
+              paymentMethod === 'PAY_AT_GATE'
+                ? 'bg-primary/5 border-primary'
+                : 'bg-muted/30 border-border'
+            }`}
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-2.5">
+                <Banknote size={18} className="text-primary" />
+                <View>
+                  <Text className="font-semibold text-xs text-foreground">
+                    Pay at Gate (Cash Collection)
+                  </Text>
+                  <Text variant="muted" className="text-[11px]">
+                    Pay cash at counter or gate before entry
+                  </Text>
+                </View>
+              </View>
+
+              <StatusBadge label="Pay Later" variant="warning" />
+            </View>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -264,7 +293,9 @@ export function BookingHoldPaymentStep({
             : isHoldExpired
             ? 'Hold Expired'
             : isPaymentRequired
-            ? `Pay & Confirm Booking (${totalAmount} ${currency})`
+            ? paymentMethod === 'PAY_AT_GATE'
+              ? `Confirm Booking • Pay at Gate (${totalAmount} ${currency})`
+              : `Pay & Confirm Booking (${totalAmount} ${currency})`
             : 'Confirm Free Reservation'}
         </Text>
       </Button>

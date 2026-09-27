@@ -84,6 +84,22 @@ export default function AllFeaturesScreen() {
       router.navigate('/(resident)/admin/billing/assessments' as any);
       return;
     }
+    if (tileId === 'financial_history') {
+      router.navigate('/(resident)/billing/history' as any);
+      return;
+    }
+    if (tileId === 'billing_wallet' || tileId === 'amenities_wallet') {
+      router.navigate('/(resident)/billing/wallet' as any);
+      return;
+    }
+    if (tileId === 'amenities_action_center') {
+      router.navigate('/(resident)/amenities/dashboard' as any);
+      return;
+    }
+    if (tileId === 'billing_my_invoices') {
+      router.navigate('/(resident)/billing/my-dues' as any);
+      return;
+    }
     let feature = allFeaturesList.find((item) => item.id === tileId);
     if (!feature) {
       feature = (ALL_AVAILABLE_FEATURES as any[]).find((item) => item.id === tileId);
@@ -185,6 +201,7 @@ export default function AllFeaturesScreen() {
                   amenities_facilities: { icon: 'Sparkles', subKey: 'cat_amenities_sub', subtitle: 'Facilities & Reservations', color: '#16A34A' },
                   complaints_helpdesk: { icon: 'ListTodo', subKey: 'cat_complaints_sub', subtitle: 'Issues & SLA Helpdesk', color: '#7C3AED' },
                   notice_board_polls: { icon: 'Megaphone', subKey: 'cat_notice_sub', subtitle: 'Broadcasts & Resident Polls', color: '#DB2777' },
+                  digital_wallet: { icon: 'WalletCards', subKey: 'cat_wallet_sub', subtitle: 'Prepaid Balance & Ledger', color: '#10B981' },
                   financial_billing: { icon: 'CreditCard', subKey: 'cat_billing_sub', subtitle: 'Dues, Invoices & Accounts', color: '#0D9488' },
                   administration_security: { icon: 'UserRoundCog', subKey: 'cat_admin_sub', subtitle: 'Staff, RBAC & Settings', color: '#D97706' },
                 };

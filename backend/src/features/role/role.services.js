@@ -226,7 +226,10 @@ export class RoleService {
     const permissions = await permissionService.getAllPermissions();
     const grouped = {};
     permissions.forEach((perm) => {
-      const feature = perm.feature || 'other';
+      let feature = perm.feature || 'other';
+      if (feature.toLowerCase() === 'billing' && perm.action === 'action_center') {
+        feature = 'digital_wallet';
+      }
       const category = feature.charAt(0).toUpperCase() + feature.slice(1);
       if (!grouped[category]) {
         grouped[category] = [];

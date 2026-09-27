@@ -89,6 +89,25 @@ export class AmenityBookingController {
     }
   }
 
+  async recordCashPayment(req, res, next) {
+    try {
+      const { id } = req.params;
+      const orgId = req.tenant.orgId;
+      const adminId = req.user.id || req.user._id;
+      const { amount, receiptNumber, notes } = req.body;
+
+      const result = await amenityBookingService.recordCashPayment(id, amount, adminId, {
+        orgId,
+        receiptNumber,
+        notes,
+      });
+
+      res.success(result, 'Cash payment recorded successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async cancelBooking(req, res, next) {
     try {
       const { id } = req.params;

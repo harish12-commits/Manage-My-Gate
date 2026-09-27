@@ -2,6 +2,12 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { CFormCheck, CRow, CCol } from '@coreui/react'
 
+const PERMISSION_LABEL_OVERRIDES = {
+  'billing:action_center': 'Digital Wallet & Resident Ledger',
+  'billing:dashboard': 'Billing Hub & Community Ledger',
+  'billing:assessment_manager': 'Assessment Manager',
+}
+
 const PERMISSION_LABEL_MAP = {
   active_board: 'Resident Feed',
   resident_feed: 'Resident Feed',
@@ -14,7 +20,11 @@ const PERMISSION_LABEL_MAP = {
 
 const formatPermissionLabel = (permissionString) => {
   if (!permissionString) return ''
-  const str = String(permissionString).toLowerCase()
+  const normalized = String(permissionString).toLowerCase().trim()
+  if (PERMISSION_LABEL_OVERRIDES[normalized]) {
+    return PERMISSION_LABEL_OVERRIDES[normalized]
+  }
+  const str = normalized
   if (str === 'notices:active_board' || str === 'notices.active_board' || str === 'active_board') {
     return 'Resident Feed'
   }
@@ -24,7 +34,6 @@ const formatPermissionLabel = (permissionString) => {
   if (str === 'notices:manage_notices' || str === 'notices.manage_notices' || str === 'manage_notices') {
     return 'Manage Engagement'
   }
-
   let label = permissionString
   if (label.includes(':')) {
     const parts = label.split(':')
@@ -71,6 +80,7 @@ const getCategoryDisplayName = (category) => {
   const map = {
     visitor: 'Visitor Management',
     amenities: 'Amenities & Bookings',
+    digital_wallet: 'Digital Wallet & Ledger',
     billing: 'Billing & Invoices',
     villas: 'Unit Management',
     users: 'User Management',
@@ -80,6 +90,18 @@ const getCategoryDisplayName = (category) => {
   }
   const key = category.toLowerCase()
   return map[key] || category.charAt(0).toUpperCase() + category.slice(1)
+}
+
+const CATEGORY_ORDER = {
+  visitor: 1,
+  amenities: 2,
+  complaints: 3,
+  notices: 4,
+  digital_wallet: 5,
+  billing: 6,
+  villas: 7,
+  users: 8,
+  integrations: 9,
 }
 
 const AMENITY_TIERS = [
@@ -115,7 +137,63 @@ const PermissionMatrix = ({
   const [internalTier, setInternalTier] = React.useState('none')
   const currentAmenityTier = activeAmenityTier || internalTier
 
-  if (!groupedPermissions || Object.keys(groupedPermissions).length === 0) {
+  const normalizedGroupedPermissions = React.useMemo(() => {
+    if (!groupedPermissions) return {}
+
+    const result = {}
+
+    Object.entries(groupedPermissions).forEach(([categoryKey, perms]) => {
+      const lowerKey = categoryKey.toLowerCase()
+
+      if (lowerKey === 'billing') {
+        const billingPerms = []
+        const walletPerms = []
+
+        ;(perms || []).forEach((p) => {
+          const permName = (p.name || p.code || p._id || '').toLowerCase()
+          const action = permName.includes(':') ? permName.split(':')[1] : permName
+
+          if (action === 'action_center') {
+            walletPerms.push({
+              ...p,
+              name: p.name || 'billing:action_center',
+            })
+          } else {
+            billingPerms.push(p)
+          }
+        })
+
+        if (billingPerms.length > 0) {
+          result['billing'] = billingPerms
+        }
+        if (walletPerms.length > 0) {
+          result['digital_wallet'] = [
+            ...(result['digital_wallet'] || []),
+            ...walletPerms,
+          ]
+        }
+      } else if (lowerKey === 'digital_wallet' || lowerKey === 'wallet') {
+        result['digital_wallet'] = [
+          ...(result['digital_wallet'] || []),
+          ...(perms || []),
+        ]
+      } else {
+        result[lowerKey] = perms
+      }
+    })
+
+    return result
+  }, [groupedPermissions])
+
+  const categories = React.useMemo(() => {
+    return Object.keys(normalizedGroupedPermissions).sort((a, b) => {
+      const orderA = CATEGORY_ORDER[a.toLowerCase()] ?? 99
+      const orderB = CATEGORY_ORDER[b.toLowerCase()] ?? 99
+      return orderA - orderB
+    })
+  }, [normalizedGroupedPermissions])
+
+  if (categories.length === 0) {
     return (
       <div className="text-center text-body-secondary py-3 small">
         No permissions found in the system.
@@ -125,8 +203,8 @@ const PermissionMatrix = ({
 
   return (
     <div className="d-flex flex-column gap-3">
-      {Object.keys(groupedPermissions).map((category) => {
-        let perms = groupedPermissions[category] || []
+      {categories.map((category) => {
+        let perms = normalizedGroupedPermissions[category] || []
         const isAmenities = category.toLowerCase() === 'amenities'
         const isVisitor = category.toLowerCase() === 'visitor'
 

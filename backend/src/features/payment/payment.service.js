@@ -1,9 +1,19 @@
 import Payment from './payment.model.js';
 import paymentRepository from './payment.repository.js';
-import { paymentEventEmitter, PAYMENT_INITIATED, PAYMENT_SUCCESS, PAYMENT_FAILED, PAYMENT_REFUNDED } from './payment.events.js';
-import { getPaymentProvider } from './providers/index.js';
-import integrationHubService from '../integrationHub/integrationHub.service.js';
+import {
+  paymentEventEmitter,
+  PAYMENT_INITIATED,
+  PAYMENT_SUCCESS,
+  PAYMENT_FAILED,
+  PAYMENT_REFUNDED,
+} from './payment.events.js';
+import unifiedPaymentService from './unifiedPayment.service.js';
+import paymentConfigResolver from './paymentConfig.resolver.js';
+import { PaymentContext } from './payment.types.js';
+import { resolvePaymentDomain } from './payment.utils.js';
+import { CANONICAL_PAYMENT_METHODS } from './payment.constants.js';
 import { formatINR } from './utils/currency.utils.js';
+import integrationHubService from '../integrationHub/integrationHub.service.js';
 import Razorpay from 'razorpay';
 import HttpError from '../../utils/httpError.utils.js';
 import logger from '../../utils/logger.utils.js';
@@ -41,223 +51,75 @@ export class PaymentService {
   }
 
   /**
-   * Initiate a payment order using the configured provider strategy
+   * Initiate a payment order using the unified payment core.
    */
-  async createPaymentOrder({ orgId, userId, referenceId, referenceType, amount, currency = 'INR', gateway = null }, session = null) {
-    try {
-      if (!orgId || !userId || !referenceId || !amount) {
-        throw new HttpError(400, 'orgId, userId, referenceId, and amount are required.');
-      }
-
-      // Backend Amount & Eligibility Validation for Invoices
-      if (referenceType === 'Invoice') {
-        const Invoice = (await import('../invoice/invoice.model.js')).default;
-        const invoice = await Invoice.findById(referenceId);
-        if (!invoice) {
-          throw new HttpError(404, 'Invoice not found.');
-        }
-        if (String(invoice.orgId) !== String(orgId)) {
-          throw new HttpError(404, 'Invoice not found.');
-        }
-        if (invoice.status === 'PAID') {
-          throw new HttpError(400, 'Invoice has already been fully paid.');
-        }
-        if (invoice.status === 'CANCELLED') {
-          throw new HttpError(400, 'Invoice is cancelled and cannot accept payments.');
-        }
-        
-        const remainingDue = Math.max(0, invoice.totalDue - (invoice.paidAmount || 0));
-        if (amount > remainingDue + 0.01) {
-          throw new HttpError(400, `Payment amount (₹${amount}) exceeds remaining invoice due of ₹${remainingDue}.`);
-        }
-      }
-
-      let activeGateway = (gateway || 'razorpay').toLowerCase();
-
-      let credentials = {};
-      let isConfigured = false;
-      try {
-        isConfigured = await integrationHubService.isProviderConfigured(orgId, 'razorpay');
-        if (isConfigured) {
-          credentials = await integrationHubService.getDecryptedCredentials(orgId, 'razorpay');
-        }
-      } catch (error) {
-        logger.warn('Failed to fetch credentials for razorpay from integrationHub', { error: error.message });
-      }
-
-      if (activeGateway === 'razorpay') {
-        if (!isConfigured) {
-          throw new HttpError(
-            400,
-            'Online payment gateway (Razorpay) has not been configured for your community by the administrator. Please contact your community admin or use an offline payment method.'
-          );
-        }
-
-        const keyId = credentials?.keyId || credentials?.key_id;
-        const keySecret = credentials?.keySecret || credentials?.key_secret;
-
-        if (!keyId || !keySecret || keyId === 'test_key' || keyId === 'rzp_test_YOUR_KEY_ID_HERE') {
-          throw new HttpError(
-            400,
-            'Razorpay credentials configured for your community are invalid. Please contact your community admin.'
-          );
-        }
-      } else if (activeGateway === 'mock') {
-        if (process.env.NODE_ENV !== 'test') {
-          throw new HttpError(400, 'Mock payment gateway is disabled in this environment.');
-        }
-      }
-
-      logger.info(`Initiating payment order via '${activeGateway}' strategy`, { orgId, userId, amount, currency });
-
-      const provider = getPaymentProvider(activeGateway);
-      
-      const receipt = `rcpt_${uuidv4().replace(/-/g, '').substring(0, 12)}`;
-      let orderPayload;
-      try {
-        orderPayload = await provider.createOrder(
-          { amount, currency, receipt, notes: { orgId, userId, referenceId, referenceType } },
-          credentials
-        );
-      } catch (err) {
-        logger.error(`Payment order creation failed for gateway '${activeGateway}': ${err.message}`);
-        const statusCode = err.statusCode === 401 ? 400 : (err.statusCode || 500);
-        throw new HttpError(statusCode, `Payment gateway error: ${err.message}`);
-      }
-
-      // Save payment record in DB (persisting amount in Rupees)
-      const payment = new Payment({
-        orgId,
-        userId,
-        referenceId,
-        referenceType,
-        amount, // Stored in Rupees
-        currency: currency.toUpperCase(),
-        status: 'pending',
-        gateway: activeGateway,
-        gatewayTransactionId: orderPayload.orderId,
-      });
-
-      await payment.save(session ? { session } : undefined);
-
-      paymentEventEmitter.emit(PAYMENT_INITIATED, payment);
-
-      return {
-        success: true,
-        paymentId: payment._id,
-        orderId: orderPayload.orderId,
-        amount: payment.amount,
-        amountFormatted: formatINR(payment.amount),
-        currency: payment.currency,
-        status: payment.status,
-        gateway: payment.gateway,
-        razorpayKeyId: activeGateway === 'mock' ? 'rzp_test_mockkey' : (credentials?.keyId || credentials?.key_id || process.env.RAZORPAY_KEY_ID),
-        rawOrder: orderPayload.rawOrder,
-      };
-    } catch (error) {
-      logger.error('Failed to create payment order', { error: error.message, stack: error.stack });
-      if (error instanceof HttpError) throw error;
-      throw new HttpError(500, `Payment order creation failed: ${error.message}`);
+  async createPaymentOrder(
+    { orgId, userId, referenceId, referenceType, amount, currency = 'INR', gateway = null },
+    session = null
+  ) {
+    if (!orgId || !userId || !referenceId || !amount) {
+      throw new HttpError(400, 'orgId, userId, referenceId, and amount are required.');
     }
+
+    let paymentContext;
+    if (referenceType === 'Invoice') {
+      const invoiceService = (await import('../invoice/invoice.services.js')).default;
+      const invoice = await invoiceService.getInvoiceById(referenceId, session);
+      const PaymentContextFactory = (await import('./paymentContext.factory.js')).default;
+      paymentContext = PaymentContextFactory.fromInvoice(invoice, {
+        amount: Number(amount),
+        userId,
+        orgId,
+        paymentMethod: CANONICAL_PAYMENT_METHODS.ONLINE,
+      });
+    } else if (referenceType === 'AmenityBooking' || referenceType === 'Amenity') {
+      const AmenityBooking = (await import('../amenityBooking/amenityBooking.model.js')).default;
+      const bookingQuery = AmenityBooking.findById(referenceId);
+      if (session) bookingQuery.session(session);
+      const booking = await bookingQuery;
+      if (!booking) {
+        throw new HttpError(404, 'Referenced amenity booking not found.');
+      }
+      const PaymentContextFactory = (await import('./paymentContext.factory.js')).default;
+      paymentContext = PaymentContextFactory.fromAmenityBooking(booking, {
+        amount: Number(amount),
+        userId,
+        orgId,
+        paymentMethod: CANONICAL_PAYMENT_METHODS.ONLINE,
+      });
+    } else {
+      const domain = resolvePaymentDomain({ referenceType });
+      paymentContext = new PaymentContext({
+        domain,
+        referenceId: String(referenceId),
+        referenceType: referenceType || 'Invoice',
+        orgId: String(orgId),
+        userId: String(userId),
+        amount: Number(amount),
+        currency: currency || 'INR',
+        paymentMethod: CANONICAL_PAYMENT_METHODS.ONLINE,
+      });
+    }
+
+    return await unifiedPaymentService.createPaymentOrder(paymentContext, {
+      gateway,
+      session,
+    });
   }
 
   /**
-   * Verify payment signature and mark payment as success or failed
+   * Verify payment signature and mark payment as success or failed.
    */
   async verifyPaymentSignature({ orgId, paymentId, orderId, razorpayPaymentId, razorpaySignature }) {
-    try {
-      const payment = await Payment.findById(paymentId);
-      if (!payment) throw new HttpError(404, 'Payment record not found.');
-      if (orgId && String(payment.orgId) !== String(orgId)) {
-        throw new HttpError(404, 'Payment record not found.');
-      }
-
-      if (payment.status === 'success') {
-        logger.info(`Payment transaction ${paymentId} already settled (success). Idempotent response returned.`);
-        let settledInvoice = null;
-        if (payment.referenceType === 'Invoice' && payment.referenceId) {
-          try {
-            const invoiceService = (await import('../invoice/invoice.services.js')).default;
-            settledInvoice = await invoiceService.getInvoiceById(payment.referenceId);
-          } catch (err) {}
-        }
-        return {
-          success: true,
-          message: 'Payment already verified by webhook',
-          payment,
-          invoice: settledInvoice,
-        };
-      }
-
-      const activeGateway = payment.gateway || 'mock';
-      let credentials = {};
-      if (activeGateway !== 'mock') {
-        credentials = await integrationHubService.getDecryptedCredentials(orgId || payment.orgId, activeGateway);
-      }
-
-      let verification;
-      if (process.env.NODE_ENV !== 'production' && razorpaySignature?.startsWith('sig_mock_')) {
-        logger.info('Bypassing signature verification for mock payment in non-production environment');
-        verification = { isValid: true };
-      } else {
-        const provider = getPaymentProvider(activeGateway);
-        verification = await provider.verifySignature(
-          {
-            orderId: orderId || payment.gatewayTransactionId,
-            paymentId: razorpayPaymentId,
-            signature: razorpaySignature,
-          },
-          credentials
-        );
-      }
-
-      if (verification.isValid) {
-        payment.status = 'success';
-        payment.gatewayTransactionId = razorpayPaymentId || payment.gatewayTransactionId;
-        payment.errorReason = null;
-        await payment.save();
-
-        paymentEventEmitter.emit(PAYMENT_SUCCESS, payment);
-
-        logger.info('Payment signature verification successful', { paymentId: payment._id, orderId });
-
-        let settledInvoice = null;
-        if (payment.referenceType === 'Invoice' && payment.referenceId) {
-          try {
-            const invoiceService = (await import('../invoice/invoice.services.js')).default;
-            settledInvoice = await invoiceService.getInvoiceById(payment.referenceId);
-          } catch (err) {
-            logger.warn('Could not fetch settled invoice in verifyPaymentSignature:', err.message);
-          }
-        }
-
-        return {
-          success: true,
-          message: 'Payment verified successfully',
-          payment,
-          invoice: settledInvoice,
-        };
-      } else {
-        payment.status = 'failed';
-        payment.errorReason = 'Invalid payment gateway signature';
-        await payment.save();
-
-        paymentEventEmitter.emit(PAYMENT_FAILED, payment);
-
-        logger.warn('Payment signature verification failed', { paymentId: payment._id, orderId });
-
-        throw new HttpError(400, 'Invalid payment gateway signature.');
-      }
-    } catch (error) {
-      logger.error('Error verifying payment signature', { error: error.message });
-      if (error instanceof HttpError) throw error;
-      throw new HttpError(500, `Signature verification failed: ${error.message}`);
-    }
+    return await unifiedPaymentService.verifyPayment({
+      orgId,
+      paymentId,
+      orderId,
+      razorpayPaymentId,
+      razorpaySignature,
+    });
   }
 
-  /**
-   * Process refund via strategy provider
-   */
   async assertPaymentAccess(paymentId, { orgId, userId, isAdmin = false } = {}) {
     const payment = await Payment.findById(paymentId);
     if (!payment || (orgId && String(payment.orgId) !== String(orgId))) {
@@ -269,117 +131,29 @@ export class PaymentService {
     return payment;
   }
 
+  /**
+   * Process refund via unified payment core.
+   */
   async processRefund(paymentId, amount = null, notes = {}, context = {}) {
-    try {
-      const payment = await Payment.findById(paymentId);
-      if (!payment) throw new HttpError(404, 'Payment record not found.');
-      if (context.orgId && String(payment.orgId) !== String(context.orgId)) {
-        throw new HttpError(404, 'Payment record not found.');
-      }
+    return await unifiedPaymentService.processRefund({
+      paymentId,
+      amount,
+      notes,
+    });
+  }
 
-      if (payment.status !== 'success') {
-        throw new HttpError(400, 'Only successful payments can be refunded.');
-      }
+  /**
+   * Get payment status via unified payment core.
+   */
+  async getPaymentStatus(paymentId) {
+    return await unifiedPaymentService.getPaymentStatus(paymentId);
+  }
 
-      const activeGateway = payment.gateway || 'mock';
-      const refundAmount = amount === null || amount === undefined ? payment.amount : Number(amount);
-      if (!Number.isFinite(refundAmount) || refundAmount <= 0) {
-        throw new HttpError(400, 'Refund amount must be a positive number.');
-      }
-
-      const previousRefunds = await Payment.find({
-        parentPaymentId: payment._id,
-        type: 'Refund',
-        status: 'success',
-        isDeleted: false,
-      }).select('amount').lean();
-      const alreadyRefunded = previousRefunds.reduce((sum, refund) => sum + Math.abs(Number(refund.amount) || 0), 0);
-      const refundableAmount = Math.max(0, Number(payment.amount) - alreadyRefunded);
-      if (refundAmount > refundableAmount + 0.01) {
-        throw new HttpError(400, `Refund amount exceeds the remaining refundable amount of ₹${refundableAmount}.`);
-      }
-      
-      let gatewayRefund = { id: `refund_mock_${Date.now()}` };
-      
-      if (
-        process.env.NODE_ENV !== 'production'
-        && (activeGateway === 'mock' || payment.gatewayTransactionId?.startsWith('pay_mock_'))
-      ) {
-        logger.info('Bypassing gateway refund for mock payment in non-production environment');
-      } else {
-        const credentials = await integrationHubService.getDecryptedCredentials(payment.orgId, activeGateway);
-        const provider = getPaymentProvider(activeGateway);
-        // Providers implement the common `refund` contract. Calling a
-        // non-existent `initiateRefund` meant real Razorpay refunds failed
-        // before any money could be sent back to the payer.
-        gatewayRefund = await provider.refund(
-          {
-            paymentId: payment.gatewayTransactionId,
-            amount: refundAmount,
-            notes,
-          },
-          credentials
-        );
-      }
-
-      // 1. Mark original payment status as partially refunded or fully refunded (Optional but good practice)
-      // Here we just leave it as success, and create a negative offset Refund record
-
-      // 2. Create Refund ledger record
-      const refundRecord = await Payment.create({
-        orgId: payment.orgId,
-        userId: payment.userId,
-        referenceId: payment.referenceId,
-        referenceType: payment.referenceType,
-        amount: -Math.abs(refundAmount), // Negative amount for refund
-        type: 'Refund',
-        parentPaymentId: payment._id,
-        status: 'success',
-        gateway: activeGateway,
-        gatewayTransactionId: gatewayRefund.refundId || gatewayRefund.id,
-        paymentMethod: payment.paymentMethod,
-        currency: payment.currency,
-      });
-
-      paymentEventEmitter.emit(PAYMENT_REFUNDED, refundRecord);
-
-      logger.info('Refund processed successfully', { paymentId: payment._id, refundId: refundRecord._id });
-
-      // 3. Trigger recalculation of the parent Invoice
-      if (payment.referenceType === 'Invoice') {
-        const Invoice = (await import('../invoice/invoice.model.js')).default;
-        const invoice = await Invoice.findById(payment.referenceId);
-        if (invoice) {
-          // Re-sum all successful payments and refunds
-          const allLedgers = await Payment.find({
-            referenceId: invoice._id,
-            status: 'success',
-            isDeleted: false
-          });
-          const sumPaid = allLedgers.reduce((sum, p) => sum + p.amount, 0);
-          
-          invoice.paidAmount = sumPaid;
-          invoice.auditHistory.push({
-            action: 'PAYMENT_REFUNDED',
-            details: `Refund of ₹${refundAmount} processed. New Paid Amount: ₹${sumPaid}`,
-            date: new Date(),
-            performedBy: context.actorId || null
-          });
-          
-          await invoice.save(); // Pre-save hook adjusts outstandingAmount and status
-        }
-      }
-
-      return {
-        success: true,
-        message: 'Refund initiated successfully',
-        refund: refundRecord
-      };
-    } catch (error) {
-      logger.error('Error processing refund', { error: error.message });
-      if (error instanceof HttpError) throw error;
-      throw new HttpError(500, `Refund failed: ${error.message}`);
-    }
+  /**
+   * Check if payment gateway is configured for an organization.
+   */
+  async isGatewayConfigured(orgId, provider = 'razorpay') {
+    return await paymentConfigResolver.isConfigured({ orgId, provider });
   }
 
   /**
@@ -389,7 +163,7 @@ export class PaymentService {
     try {
       const payment = await Payment.findById(paymentId);
       if (!payment) throw new HttpError(404, 'Payment not found');
-      
+
       if (payment.status !== 'pending' && payment.status !== 'processing') {
         throw new HttpError(400, `Payment already processed with status: ${payment.status}`);
       }
@@ -415,7 +189,6 @@ export class PaymentService {
       throw error;
     }
   }
-
 
   /**
    * Dashboard aggregation methods
@@ -473,65 +246,108 @@ export class PaymentService {
         customer: {
           name: user.name || user.username || 'Resident',
           contact: user.phone || '',
-          email: user.email || ''
+          email: user.email || '',
         },
         notify: {
           sms: false,
-          email: false
+          email: true,
         },
-        reminder_enable: false
+        reminder_enable: true,
+        notes: {
+          invoiceId: invoice._id.toString(),
+          orgId: invoice.orgId.toString(),
+          userId: user._id.toString(),
+        },
       };
 
-      const linkResponse = await instance.paymentLink.create(payload);
-      return linkResponse.short_url;
+      const link = await instance.paymentLink.create(payload);
+
+      return link.short_url;
     } catch (error) {
-      logger.error('Failed to create Razorpay payment link', { error: error.message });
-      if (process.env.NODE_ENV !== 'production') {
-        logger.warn('Returning mock payment link due to Razorpay API error in DEV mode.');
-        return `https://rzp.io/mock_link/${invoice._id}`;
-      }
-      return null;
+      logger.error('Failed to create Razorpay payment link:', error);
+      throw new HttpError(500, `Payment Link generation failed: ${error.message}`);
     }
   }
 
   /**
-   * Check if payment gateway is actively configured for an organization
+   * List payments with advanced multi-criteria filtering and server-side aggregation pagination.
    */
-  async isGatewayConfigured(orgId, gateway = 'razorpay') {
-    const configuredProvider = (process.env.PAYMENT_PROVIDER || 'mock').toLowerCase();
-    if (configuredProvider === 'mock') {
-      return { isConfigured: true, provider: 'mock', isMock: true };
+  async getPayments(filters = {}, options = {}) {
+    const page = Math.max(1, parseInt(options.page, 10) || 1);
+    const limit = Math.max(1, parseInt(options.limit, 10) || 10);
+    const skip = (page - 1) * limit;
+
+    const matchStage = {};
+
+    if (filters.orgId) {
+      matchStage.orgId = new mongoose.Types.ObjectId(filters.orgId);
+    }
+    if (filters.userId) {
+      matchStage.userId = new mongoose.Types.ObjectId(filters.userId);
+    }
+    if (filters.status) {
+      matchStage.status = filters.status;
+    }
+    if (filters.paymentCategory) {
+      matchStage.paymentCategory = filters.paymentCategory;
+    }
+    if (filters.paymentMethod) {
+      matchStage.paymentMethod = filters.paymentMethod;
+    }
+    if (filters.approvalStatus) {
+      matchStage.approvalStatus = filters.approvalStatus;
+    }
+    if (filters.referenceType) {
+      matchStage.referenceType = filters.referenceType;
+    }
+    if (filters.referenceId) {
+      matchStage.referenceId = filters.referenceId;
+    }
+    if (filters.startDate || filters.endDate) {
+      matchStage.paymentDate = {};
+      if (filters.startDate) matchStage.paymentDate.$gte = new Date(filters.startDate);
+      if (filters.endDate) matchStage.paymentDate.$lte = new Date(filters.endDate);
+    }
+    if (filters.minAmount !== undefined || filters.maxAmount !== undefined) {
+      matchStage.amount = {};
+      if (filters.minAmount !== undefined) matchStage.amount.$gte = Number(filters.minAmount);
+      if (filters.maxAmount !== undefined) matchStage.amount.$lte = Number(filters.maxAmount);
+    }
+    matchStage.isDeleted = false;
+
+    const sortStage = {};
+    if (options.sortBy) {
+      sortStage[options.sortBy] = options.sortOrder === 'asc' ? 1 : -1;
+    } else {
+      sortStage.createdAt = -1;
     }
 
-    try {
-      let credentials = {};
-      const platformOrgId = process.env.PLATFORM_ORG_ID;
-      if (platformOrgId) {
-        credentials = await integrationHubService.getDecryptedCredentials(platformOrgId, gateway);
-      } else {
-        const globalConn = await integrationHubService.getGlobalConnectionByProvider(gateway);
-        if (globalConn) {
-          credentials = await integrationHubService.getDecryptedCredentialsById(globalConn._id);
-        } else if (orgId) {
-          credentials = await integrationHubService.getDecryptedCredentials(orgId, gateway);
-        }
-      }
+    const aggregationPipeline = [
+      { $match: matchStage },
+      { $sort: sortStage },
+      {
+        $facet: {
+          metadata: [{ $count: 'total' }],
+          data: [{ $skip: skip }, { $limit: limit }],
+        },
+      },
+    ];
 
-      const keyId = credentials?.keyId || credentials?.key_id || process.env.RAZORPAY_KEY_ID;
-      const keySecret = credentials?.keySecret || credentials?.key_secret || process.env.RAZORPAY_KEY_SECRET;
-      const isRealKey = !!(keyId && keySecret && (keyId.startsWith('rzp_test_') || keyId.startsWith('rzp_live_')));
+    const results = await Payment.aggregate(aggregationPipeline);
+    const totalRecords = results[0]?.metadata[0]?.total || 0;
+    const records = results[0]?.data || [];
 
-      return {
-        isConfigured: isRealKey,
-        provider: gateway,
-        isMock: false,
-        keyId: isRealKey ? keyId : null
-      };
-    } catch (err) {
-      logger.warn('Failed to check gateway configuration status', { error: err.message });
-      return { isConfigured: false, provider: gateway, isMock: false };
-    }
+    return {
+      payments: records,
+      pagination: {
+        page,
+        limit,
+        totalRecords,
+        totalPages: Math.ceil(totalRecords / limit),
+      },
+    };
   }
 }
 
-export default new PaymentService();
+export const paymentService = new PaymentService();
+export default paymentService;

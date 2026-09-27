@@ -169,7 +169,32 @@ const paymentSchema = new mongoose.Schema({
   idempotencyKey: {
     type: String,
     index: { unique: true, sparse: true }
-  }
-}, { timestamps: true });
+  },
+  domain: {
+    type: String,
+    enum: ['INVOICE', 'AMENITY', 'WALLET', 'OTHER'],
+    index: true,
+    default: 'INVOICE'
+  },
+  gatewayOrderId: {
+    type: String,
+    default: null,
+    index: true
+  },
+  processedEvents: [{
+    eventId: { type: String, required: true },
+    eventType: { type: String },
+    processedAt: { type: Date, default: Date.now }
+  }],
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    }
+  }, { timestamps: true });
 
-export default mongoose.model('Payment', paymentSchema);
+  // Phase 8 Index Hardening: Optimal multi-tenant financial reporting and settlement indexes
+  paymentSchema.index({ orgId: 1, status: 1, createdAt: -1 });
+  paymentSchema.index({ orgId: 1, domain: 1, createdAt: -1 });
+  paymentSchema.index({ referenceType: 1, referenceId: 1, status: 1 });
+
+  export default mongoose.model('Payment', paymentSchema);

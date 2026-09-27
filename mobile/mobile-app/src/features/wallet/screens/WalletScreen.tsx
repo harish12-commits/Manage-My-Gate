@@ -16,10 +16,10 @@ import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { Wallet, Plus, ArrowDownLeft, ArrowUpRight, Receipt, ShieldCheck, ChevronRight, AlertCircle, RotateCcw } from 'lucide-react-native';
 import { fetchWalletBalance, createWalletRazorpayOrder, verifyWalletPayment, refundWalletToOriginalPayment, clearWalletError } from '../store/walletSlice';
-import { useBillingSocket } from '../hooks/useBillingSocket';
-import { RazorpayCheckoutModal } from '../components/RazorpayCheckoutModal';
+import { useBillingSocket } from '@/src/features/billing/hooks/useBillingSocket';
+import { RazorpayCheckoutModal } from '@/src/features/billing/components/RazorpayCheckoutModal';
 import { WalletHeroCard } from '../components/WalletHeroCard';
-import { FinancialTransactionCard } from '../components/FinancialTransactionCard';
+import { FinancialTransactionCard } from '@/src/features/billing/components/FinancialTransactionCard';
 
 export function WalletScreen() {
   const router = useRouter();
@@ -254,7 +254,6 @@ export function WalletScreen() {
                 />
 
                 {/* Transaction Statement Section Header */}
-
                 <View className="flex-row items-center justify-between px-0.5">
                   <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Transaction Statement ({history.length})
@@ -264,7 +263,7 @@ export function WalletScreen() {
             }
             emptyIcon="Receipt"
             emptyTitle="No Wallet Transactions Yet"
-            emptySubtitle="All your maintenance top-ups, wallet settlements, and refund credits will appear here."
+            emptySubtitle="No wallet transactions yet."
             contentContainerClassName="px-4 pt-3 pb-28"
           />
         </View>

@@ -74,8 +74,13 @@ const walletTransactionSchema = new mongoose.Schema({
   },
   referenceId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'AmenityBooking',
+    refPath: 'referenceModel',
     default: null
+  },
+  referenceModel: {
+    type: String,
+    enum: ['AmenityBooking', 'Invoice', 'Payment', 'Wallet', 'User'],
+    default: 'AmenityBooking'
   },
   amenityName: {
     type: String,
@@ -89,6 +94,7 @@ const walletTransactionSchema = new mongoose.Schema({
 
 walletTransactionSchema.index({ userId: 1, orgId: 1, createdAt: -1 });
 walletTransactionSchema.index({ sourcePaymentId: 1, paymentStatus: 1 });
+walletTransactionSchema.index({ orgId: 1, referenceType: 1, referenceId: 1 });
 
 export const WalletTransaction = mongoose.model('WalletTransaction', walletTransactionSchema);
 

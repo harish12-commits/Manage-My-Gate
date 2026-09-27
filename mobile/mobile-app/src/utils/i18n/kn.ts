@@ -2536,7 +2536,7 @@ export const kn: Record<string, string> = {
   'by_billing_cycle': 'ಬಿಲ್ಲಿಂಗ್ ಸೈಕಲ್ ಪ್ರಕಾರ',
   'cash_deposit': 'ನಗದು ಠೇವಣಿ',
   'payment_request_submitted': 'ಪಾವತಿ ವಿನಂತಿಯನ್ನು ಸಲ್ಲಿಸಲಾಗಿದೆ!',
-  'submitted_for_verification': ') ಪರಿಶೀಲನೆಗಾಗಿ ಸಲ್ಲಿಸಲಾಗಿದೆ.',
+  'submitted_for_verification': 'ಪರಿಶೀಲನೆಗಾಗಿ ಸಲ್ಲಿಸಲಾಗಿದೆ.',
   '2_reference_date_details': '2. ಉಲ್ಲೇಖ ಮತ್ತು ದಿನಾಂಕದ ವಿವರಗಳು',
   '3_receipt_document_proof': '3. ರಶೀದಿ / ದಾಖಲೆ ಪುರಾವೆ',
   'attach_screenshot_bank_transfer_receipt_or_ch': 'ಸ್ಕ್ರೀನ್‌ಶಾಟ್, ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆ ರಶೀದಿ ಅಥವಾ ಚೆಕ್ ಫೋಟೋ ಲಗತ್ತಿಸಿ (ಚಿತ್ರಗಳು ಅಥವಾ PDF)',

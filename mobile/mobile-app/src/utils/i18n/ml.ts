@@ -2536,7 +2536,7 @@ export const ml: Record<string, string> = {
   'by_billing_cycle': 'ബില്ലിംഗ് സൈക്കിൾ അനുസരിച്ച്',
   'cash_deposit': 'പണം നിക്ഷേപം',
   'payment_request_submitted': 'പേയ്‌മെന്റ് അഭ്യർത്ഥന സമർപ്പിച്ചു!',
-  'submitted_for_verification': ') പരിശോധനയ്ക്കായി സമർപ്പിച്ചു.',
+  'submitted_for_verification': 'പരിശോധനയ്ക്കായി സമർപ്പിച്ചു.',
   '2_reference_date_details': '2. റഫറൻസും തീയതി വിവരങ്ങളും',
   '3_receipt_document_proof': '3. രസീത് / രേഖാ തെളിവ്',
   'attach_screenshot_bank_transfer_receipt_or_ch': 'സ്ക്രീൻഷോട്ട്, ബാങ്ക് ട്രാൻസ്ഫർ രസീത്, അല്ലെങ്കിൽ ചെക്ക് ഫോട്ടോ അറ്റാച്ചുചെയ്യുക (ഇമേജുകൾ അല്ലെങ്കിൽ PDF)',

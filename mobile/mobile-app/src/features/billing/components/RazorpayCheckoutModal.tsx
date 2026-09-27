@@ -23,6 +23,8 @@ export interface RazorpayCheckoutOptions {
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
+  isWalletTopUp?: boolean;
+  [key: string]: any;
 }
 
 export interface RazorpaySuccessPayload {

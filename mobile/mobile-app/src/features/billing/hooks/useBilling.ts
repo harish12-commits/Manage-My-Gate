@@ -14,7 +14,7 @@ import {
   verifyRazorpaySignature,
   clearBillingError,
 } from '../store/billingSlice';
-import { fetchWalletBalance } from '../store/walletSlice';
+import { fetchWalletBalance } from '../../wallet/store/walletSlice';
 
 /**
  * Custom Hook: useBilling
@@ -148,22 +148,22 @@ export const useBilling = () => {
   );
 
   const payInvoiceWallet = useCallback(
-    (invoiceId: string, amount: number) => {
-      return dispatch(payWithWallet({ invoiceId, amount })).unwrap();
+    (invoiceId: string, amount: number, idempotencyKey?: string) => {
+      return dispatch(payWithWallet({ invoiceId, amount, idempotencyKey })).unwrap();
     },
     [dispatch]
   );
 
   const payInvoiceRazorpay = useCallback(
-    (invoiceId: string, amount: number) => {
-      return dispatch(createRazorpayOrder({ invoiceId, amount })).unwrap();
+    (invoiceId: string, amount: number, idempotencyKey?: string) => {
+      return dispatch(createRazorpayOrder({ invoiceId, amount, idempotencyKey })).unwrap();
     },
     [dispatch]
   );
 
   const verifyRazorpay = useCallback(
-    (verificationData: any) => {
-      return dispatch(verifyRazorpaySignature(verificationData)).unwrap();
+    (verificationData: any, idempotencyKey?: string) => {
+      return dispatch(verifyRazorpaySignature({ verificationData, idempotencyKey })).unwrap();
     },
     [dispatch]
   );

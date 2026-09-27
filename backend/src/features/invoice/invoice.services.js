@@ -9,6 +9,7 @@ import HttpError from '../../utils/httpError.utils.js';
 import logger, { loggerStorage } from '../../utils/logger.utils.js';
 import paymentService from '../payment/payment.service.js';
 import notificationService from '../notification/notification.service.js';
+import { paymentEventEmitter, PAYMENT_SUCCESS } from '../payment/payment.events.js';
 
 export class InvoiceService {
   /**
@@ -411,20 +412,33 @@ export class InvoiceService {
     }
 
     const Payment = (await import('../payment/payment.model.js')).default;
-    
+    const paymentSettlementService = (await import('../payment/paymentSettlement.service.js')).default;
+
     // 1. Webhook Idempotency Lock
     if (paymentDetails.paymentId) {
       const existingPayment = await Payment.findOne({ gatewayTransactionId: paymentDetails.paymentId });
       if (existingPayment) {
-        logger.info('Idempotency lock: Duplicate webhook ignored', { paymentId: paymentDetails.paymentId });
-        return { success: true, message: 'Duplicate webhook skipped' };
+        if (existingPayment.status === 'success') {
+          logger.info('Idempotency lock: Duplicate webhook ignored', { paymentId: paymentDetails.paymentId });
+          return { success: true, message: 'Duplicate webhook skipped', invoice };
+        }
+        // If existingPayment is pending, settle it via paymentSettlementService
+        const settlement = await paymentSettlementService.settlePayment({
+          paymentId: existingPayment._id,
+          gatewayTransactionId: paymentDetails.paymentId,
+          gatewayOrderId: paymentDetails.orderId || existingPayment.gatewayOrderId,
+          gatewayEventId: paymentDetails.eventId,
+          paymentMethod: paymentDetails.method || existingPayment.paymentMethod || 'RAZORPAY',
+        });
+        const updatedInvoice = await Invoice.findById(invoiceId);
+        return { success: true, invoice: updatedInvoice, payment: settlement.payment };
       }
     }
 
     const amountPaid = paymentDetails.amount || 0;
 
     // 2. Overpayment Protection
-    if (amountPaid > invoice.outstandingAmount) {
+    if (amountPaid > (invoice.outstandingAmount ?? invoice.totalAmount)) {
       logger.error('Overpayment detected, rejecting', { invoiceId, amountPaid, outstanding: invoice.outstandingAmount });
       
       // Attempt automated refund if possible
@@ -439,36 +453,37 @@ export class InvoiceService {
       throw new HttpError(400, 'Payment amount exceeds outstanding amount. Refund initiated.');
     }
 
-    // 3. Create definitive Payment Ledger record
-    await Payment.create({
-      referenceId: invoiceId,
+    // 3. Find or Create pending Payment record
+    const targetUserId = invoice.targetUserId?._id || invoice.targetUserId;
+    const payment = await Payment.create({
+      orgId: invoice.communityId || invoice.orgId,
+      userId: targetUserId,
+      residentId: targetUserId,
+      invoiceId: invoice._id,
+      villaId: invoice.unitId,
+      referenceId: invoice._id,
       referenceType: 'Invoice',
+      domain: 'INVOICE',
       amount: amountPaid,
-      status: 'success',
+      status: 'pending',
+      gateway: 'razorpay',
       gatewayTransactionId: paymentDetails.paymentId,
+      gatewayOrderId: paymentDetails.orderId || null,
+      paymentMethod: paymentDetails.method || 'RAZORPAY',
+      idempotencyKey: paymentDetails.paymentId ? `INV_WEBHOOK:${invoice._id.toString()}:${paymentDetails.paymentId}` : undefined,
+    });
+
+    // 4. Settle through canonical PaymentSettlementService (updates invoice, records double-entry ledger, emits events)
+    const settlement = await paymentSettlementService.settlePayment({
+      paymentId: payment._id,
+      gatewayTransactionId: paymentDetails.paymentId,
+      gatewayOrderId: paymentDetails.orderId,
+      gatewayEventId: paymentDetails.eventId,
       paymentMethod: paymentDetails.method || 'RAZORPAY',
     });
 
-    // 4. Calculate paidAmount = SUM(successful payments)
-    const allSuccessfulPayments = await Payment.find({
-      referenceId: invoiceId,
-      status: 'success',
-      isDeleted: false
-    });
-    
-    const sumPaid = allSuccessfulPayments.reduce((sum, p) => sum + p.amount, 0);
-
-    // 5. Update Invoice (Triggers Optimistic Lock Validation & Pre-Save calculations)
-    invoice.paidAmount = sumPaid;
-    // For backward compatibility (legacy)
-    invoice.paid_at = new Date();
-    invoice.paymentMethod = paymentDetails.method || 'RAZORPAY';
-
-    await invoice.save();
-
-    invoiceEventEmitter.emit(INVOICE_STATUS_UPDATED, invoice);
-
-    return { success: true, invoice };
+    const updatedInvoice = await Invoice.findById(invoiceId);
+    return { success: true, invoice: updatedInvoice, payment: settlement.payment };
   }
 
   /**
@@ -616,85 +631,122 @@ export class InvoiceService {
     const Invoice = (await import('./invoice.model.js')).default;
     const Payment = (await import('../payment/payment.model.js')).default;
 
-    const invoice = await Invoice.findById(invoiceId);
-    if (!invoice) {
-      throw new HttpError(404, 'Invoice not found');
+    const session = await mongoose.startSession();
+    let isTransactionActive = false;
+    try {
+      session.startTransaction();
+      isTransactionActive = true;
+    } catch (err) {
+      logger.warn('Mongoose transaction not supported in current MongoDB environment; continuing with session:', { error: err.message });
     }
-
-    if (invoice.status === 'PAID') {
-      throw new Error('Invoice is already marked as PAID.');
-    }
-
-    const currentTotal = invoice.totalAmount || invoice.totalDue || 0;
-    const currentPaid = invoice.paidAmount || 0;
-    const remainingDue = invoice.outstandingAmount !== undefined
-      ? invoice.outstandingAmount
-      : Math.max(0, currentTotal - currentPaid);
-
-    // Determine amount to apply
-    let amountToApply = 0;
-    const customAmount = options?.amount !== undefined && options?.amount !== null ? Number(options.amount) : null;
-    const settlementType = options?.settlementType || (customAmount ? 'CUSTOM' : 'FULL');
-
-    if (settlementType === 'FULL') {
-      amountToApply = remainingDue;
-    } else if (customAmount && customAmount > 0) {
-      amountToApply = Math.min(customAmount, remainingDue);
-    } else if (invoice.offlineAmount && invoice.offlineAmount > 0) {
-      amountToApply = Math.min(invoice.offlineAmount, remainingDue);
-    } else {
-      amountToApply = remainingDue;
-    }
-
-    if (amountToApply <= 0) {
-      amountToApply = remainingDue;
-    }
-
-    const paymentMethod = (options?.paymentMethod || invoice.paymentMethod || 'BANK_TRANSFER').toUpperCase();
-    const isCash = paymentMethod === 'CASH';
-    const prefixMap = {
-      CASH: 'CASH',
-      CHEQUE: 'CHQ',
-      UPI: 'UPI',
-      DEMAND_DRAFT: 'DD',
-      NEFT: 'NEFT',
-      BANK_TRANSFER: 'BANK',
-    };
-    const methodPrefix = prefixMap[paymentMethod] || 'OFFLINE';
-    const rawProvidedRef = options?.paymentReference || options?.reference || invoice.offlineReference;
-    const cleanRef = rawProvidedRef ? String(rawProvidedRef).trim() : '';
-    if (paymentMethod !== 'CASH' && !cleanRef) {
-      throw new HttpError(400, `Payment reference number or transaction UTR is required for ${paymentMethod}.`);
-    }
-    const offlineReference = cleanRef || `${methodPrefix}-${Date.now()}`;
-
-    const newOutstanding = Math.max(0, Math.round((remainingDue - amountToApply) * 100) / 100);
-    const finalStatus = newOutstanding > 0 ? 'PARTIALLY_PAID' : 'PAID';
-
-    // Generate unique receipt number (METHOD-YYYY-XXXXXX)
-    const yearStr = new Date().getFullYear();
-    const randSeq = Math.floor(100000 + Math.random() * 900000);
-    const receiptNumber = `${methodPrefix}-${yearStr}-${randSeq}`;
-
-    const updated = await invoiceRepository.updateStatusWithLock(
-      invoiceId,
-      finalStatus,
-      {
-        paid_at: new Date(),
-        settled_at: new Date(),
-        amount: amountToApply,
-        paymentMethod: paymentMethod,
-        offlineReference: offlineReference,
-        payerNotes: options?.notes || invoice.payerNotes,
-        paymentScreenshot: options?.paymentScreenshot || invoice.paymentScreenshot,
-      }
-    );
+    const activeSession = isTransactionActive ? session : null;
 
     try {
+      const invoiceQuery = Invoice.findById(invoiceId);
+      if (activeSession) invoiceQuery.session(activeSession);
+      const invoice = await invoiceQuery;
+
+      if (!invoice) {
+        throw new HttpError(404, 'Invoice not found');
+      }
+
+      if (invoice.status === 'PAID') {
+        throw new HttpError(400, 'Invoice is already marked as PAID.');
+      }
+
+      const currentTotal = Number(invoice.totalAmount || invoice.totalDue || 0);
+      const currentPaid = Number(invoice.paidAmount || 0);
+      const remainingDue = invoice.outstandingAmount !== undefined
+        ? Number(invoice.outstandingAmount)
+        : Math.max(0, currentTotal - currentPaid);
+
+      // Determine amount to apply
+      let amountToApply = 0;
+      const customAmount = options?.amount !== undefined && options?.amount !== null ? Number(options.amount) : null;
+      const settlementType = options?.settlementType || (customAmount ? 'CUSTOM' : 'FULL');
+
+      if (settlementType === 'FULL') {
+        amountToApply = remainingDue;
+      } else if (customAmount && customAmount > 0) {
+        amountToApply = Math.min(customAmount, remainingDue);
+      } else if (invoice.offlineAmount && invoice.offlineAmount > 0) {
+        amountToApply = Math.min(invoice.offlineAmount, remainingDue);
+      } else {
+        amountToApply = remainingDue;
+      }
+
+      if (amountToApply <= 0) {
+        amountToApply = remainingDue;
+      }
+
+      const paymentMethod = (options?.paymentMethod || invoice.paymentMethod || 'BANK_TRANSFER').toUpperCase();
+      const isCash = paymentMethod === 'CASH';
+      const prefixMap = {
+        CASH: 'CASH',
+        CHEQUE: 'CHQ',
+        UPI: 'UPI',
+        DEMAND_DRAFT: 'DD',
+        NEFT: 'NEFT',
+        BANK_TRANSFER: 'BANK',
+      };
+      const methodPrefix = prefixMap[paymentMethod] || 'OFFLINE';
+      const rawProvidedRef = options?.paymentReference || options?.reference || invoice.offlineReference;
+      const cleanRef = rawProvidedRef ? String(rawProvidedRef).trim() : '';
+      if (paymentMethod !== 'CASH' && !cleanRef) {
+        throw new HttpError(400, `Payment reference number or transaction UTR is required for ${paymentMethod}.`);
+      }
+      const offlineReference = cleanRef || `${methodPrefix}-${Date.now()}`;
+
+      const newOutstanding = Math.max(0, Math.round((remainingDue - amountToApply) * 100) / 100);
+      const finalStatus = newOutstanding > 0 ? 'PARTIALLY_PAID' : 'PAID';
+
+      // Generate unique receipt number (METHOD-YYYY-XXXXXX)
+      const yearStr = new Date().getFullYear();
+      const randSeq = Math.floor(100000 + Math.random() * 900000);
+      const receiptNumber = `${methodPrefix}-${yearStr}-${randSeq}`;
+
+      const methodLabels = {
+        CASH: 'Cash',
+        CHEQUE: 'Cheque',
+        UPI: 'UPI Transfer',
+        DEMAND_DRAFT: 'Demand Draft',
+        BANK_TRANSFER: 'Bank transfer',
+        NEFT: 'NEFT',
+      };
+      const methodLabel = methodLabels[paymentMethod] || paymentMethod;
+
+      const auditEntry = {
+        action: `${paymentMethod}_PAYMENT_VERIFIED`,
+        details: `${methodLabel} payment of ₹${amountToApply} approved (${finalStatus}). Receipt #${receiptNumber}. Remaining due: ₹${newOutstanding}`,
+        performedBy: adminUserId,
+        source: 'ADMIN_PANEL',
+        date: new Date(),
+      };
+
+      const updated = await invoiceRepository.updateStatusWithLock(
+        invoiceId,
+        finalStatus,
+        {
+          paid_at: new Date(),
+          settled_at: new Date(),
+          amount: amountToApply,
+          paymentMethod: paymentMethod,
+          offlineReference: offlineReference,
+          payerNotes: options?.notes || invoice.payerNotes,
+          paymentScreenshot: options?.paymentScreenshot || invoice.paymentScreenshot,
+          auditEntry,
+        },
+        activeSession
+      );
+
       // Find existing pending payment or create new PAID payment
-      let payment = await Payment.findOne({ invoiceId: invoice._id, status: 'VERIFICATION_PENDING' });
+      const paymentFindQuery = Payment.findOne({ invoiceId: invoice._id, status: 'VERIFICATION_PENDING' });
+      if (activeSession) paymentFindQuery.session(activeSession);
+      let payment = await paymentFindQuery;
+
       if (payment) {
-        payment.status = 'PAID';
+        payment.status = 'success';
+        payment.domain = 'INVOICE';
         payment.amount = amountToApply;
         payment.verifiedBy = adminUserId || null;
         payment.verifiedAt = new Date();
@@ -702,24 +754,22 @@ export class InvoiceService {
         payment.processedBy = adminUserId || null;
         payment.receiptNumber = receiptNumber;
         payment.paymentMethod = paymentMethod;
-        if (options?.notes) {
-          payment.payerNotes = options.notes;
-        }
-        if (options?.paymentScreenshot) {
-          payment.proofDocument = options.paymentScreenshot;
-        }
-        await payment.save();
+        if (options?.notes) payment.payerNotes = options.notes;
+        if (options?.paymentScreenshot) payment.proofDocument = options.paymentScreenshot;
+        await payment.save(activeSession ? { session: activeSession } : undefined);
       } else {
-        await Payment.create({
+        const targetUserId = invoice.targetUserId?._id || invoice.targetUserId;
+        const paymentDocs = await Payment.create([{
           orgId: invoice.communityId || invoice.orgId,
-          userId: invoice.targetUserId,
+          userId: targetUserId,
           invoiceId: invoice._id,
-          residentId: invoice.targetUserId,
+          residentId: targetUserId,
           villaId: invoice.unitId,
           referenceId: invoice._id,
           referenceType: 'Invoice',
+          domain: 'INVOICE',
           amount: amountToApply,
-          status: 'PAID',
+          status: 'success',
           paymentCategory: 'OFFLINE',
           paymentMethod: paymentMethod,
           paymentReference: offlineReference,
@@ -732,54 +782,45 @@ export class InvoiceService {
           proofDocument: options?.paymentScreenshot || invoice.paymentScreenshot || null,
           payerNotes: options?.notes || invoice.payerNotes || null,
           gateway: 'offline',
-        });
+          idempotencyKey: `OFFLINE_PAY:${invoice._id.toString()}:${receiptNumber}`,
+        }], activeSession ? { session: activeSession } : {});
+        payment = paymentDocs[0];
       }
+
+      // Record Double-Entry Financial Ledger entry (Bank/Cheque/Cash Clearing -> Invoice Receivable)
+      const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
+      const ledgerEntry = await financialLedgerService.recordSettlementLedgerEntry(payment, 'INVOICE', activeSession);
+
+      if (isTransactionActive) {
+        await session.commitTransaction();
+      }
+      await session.endSession();
+
+      const populated = await Invoice.findById(updated._id)
+        .populate('targetUserId', 'name username email firstName lastName')
+        .populate('unitId', 'unitNumber')
+        .lean();
+
+      const result = populated || (updated.toObject ? updated.toObject() : updated);
+      result.receiptNumber = receiptNumber;
+      result.payment = payment;
+      result.ledgerEntry = ledgerEntry;
+
+      paymentEventEmitter.emit(PAYMENT_SUCCESS, payment, { alreadySettled: true });
+      invoiceEventEmitter.emit(INVOICE_STATUS_UPDATED, result);
+      invoiceEventEmitter.emit('OFFLINE_PAYMENT_APPROVED', result);
+      if (isCash) {
+        invoiceEventEmitter.emit('CASH_PAYMENT_RECORDED', result);
+      }
+
+      return result;
     } catch (err) {
-      logger.error('Failed to create/update Payment record during approval:', err);
+      if (isTransactionActive) {
+        try { await session.abortTransaction(); } catch (e) {}
+      }
+      await session.endSession();
+      throw err;
     }
-
-    const methodLabels = {
-      CASH: 'Cash',
-      CHEQUE: 'Cheque',
-      UPI: 'UPI Transfer',
-      DEMAND_DRAFT: 'Demand Draft',
-      BANK_TRANSFER: 'Bank transfer',
-      NEFT: 'NEFT',
-    };
-    const methodLabel = methodLabels[paymentMethod] || paymentMethod;
-
-    // Append to audit history
-    try {
-      await Invoice.findByIdAndUpdate(invoice._id, {
-        $push: {
-          auditHistory: {
-            action: `${paymentMethod}_PAYMENT_VERIFIED`,
-            details: `${methodLabel} payment of ₹${amountToApply} approved (${finalStatus}). Receipt #${receiptNumber}. Remaining due: ₹${newOutstanding}`,
-            performedBy: adminUserId,
-            source: 'ADMIN_PANEL',
-            date: new Date(),
-          },
-        },
-      });
-    } catch (auditErr) {
-      logger.warn('Failed to append audit history for payment approval:', auditErr);
-    }
-
-    const populated = await Invoice.findById(updated._id)
-      .populate('targetUserId', 'name username email firstName lastName')
-      .populate('unitId', 'unitNumber')
-      .lean();
-
-    const result = populated || (updated.toObject ? updated.toObject() : updated);
-    result.receiptNumber = receiptNumber;
-
-    invoiceEventEmitter.emit(INVOICE_STATUS_UPDATED, result);
-    invoiceEventEmitter.emit('OFFLINE_PAYMENT_APPROVED', result);
-    if (isCash) {
-      invoiceEventEmitter.emit('CASH_PAYMENT_RECORDED', result);
-    }
-
-    return result;
   }
 
   /**
@@ -900,59 +941,98 @@ export class InvoiceService {
 
     const Invoice = (await import('./invoice.model.js')).default;
     const Payment = (await import('../payment/payment.model.js')).default;
+    const financialLedgerService = (await import('../ledger/financialLedger.service.js')).default;
 
-    const invoice = await Invoice.findById(invoiceId);
-    if (!invoice) {
-      throw new Error('Invoice not found');
-    }
-
-    if (invoice.status === 'PAID') {
-      throw new Error('Invoice is already fully paid.');
-    }
-
-    const amountToApply = amount || invoice.outstandingAmount || invoice.totalAmount;
-    if (amountToApply <= 0) {
-      throw new Error('Invalid cash payment amount.');
-    }
-
-    const newOutstanding = Math.max(0, (invoice.outstandingAmount || invoice.totalAmount) - amountToApply);
-    const finalStatus = newOutstanding > 0 ? 'PARTIALLY_PAID' : 'PAID';
-
-    // Generate unique receipt number (CASH-YYYY-XXXXXX)
-    const yearStr = new Date().getFullYear();
-    const randSeq = Math.floor(100000 + Math.random() * 900000);
-    const receiptNumber = `CASH-${yearStr}-${randSeq}`;
-
-    // Update invoice
-    invoice.status = finalStatus;
-    invoice.paidAmount = (invoice.paidAmount || 0) + amountToApply;
-    invoice.outstandingAmount = newOutstanding;
-    invoice.paymentMethod = 'CASH';
-    invoice.paid_at = new Date();
-    invoice.settled_at = new Date();
-    invoice.paymentCompletionDate = new Date();
-    invoice.auditHistory.push({
-      action: 'CASH_PAYMENT_RECORDED',
-      details: `Cash payment of ₹${amountToApply} recorded. Receipt #${receiptNumber}`,
-      performedBy: facilityUserId,
-      source: 'ADMIN_PANEL',
-      date: new Date()
-    });
-    await invoice.save();
-
-    // Create canonical Payment record
-    let payment;
+    const session = await mongoose.startSession();
+    let isTransactionActive = false;
     try {
-      payment = await Payment.create({
+      session.startTransaction();
+      isTransactionActive = true;
+    } catch (err) {
+      logger.warn('Mongoose transaction not supported; continuing with session:', { error: err.message });
+    }
+
+    const activeSession = isTransactionActive ? session : undefined;
+
+    try {
+      const invoiceQuery = Invoice.findById(invoiceId);
+      if (activeSession) invoiceQuery.session(activeSession);
+      const invoice = await invoiceQuery;
+
+      if (!invoice) {
+        throw new HttpError(404, 'Invoice not found');
+      }
+
+      if (invoice.status === 'PAID') {
+        throw new HttpError(400, 'Invoice is already fully paid.');
+      }
+
+      const totalLiability =
+        Number(invoice.totalAmount) ||
+        Number(invoice.totalDue) ||
+        Number(invoice.currentCharge) ||
+        ((Number(invoice.outstandingAmount || 0) + Number(invoice.paidAmount || 0))) ||
+        0;
+      const previousPaid = Number(invoice.paidAmount || 0);
+      const remainingDue = Math.max(0, totalLiability - previousPaid);
+
+      const amountToApply = amount !== undefined && amount !== null && Number(amount) > 0
+        ? Number(amount)
+        : (invoice.outstandingAmount !== undefined ? Number(invoice.outstandingAmount) : remainingDue);
+
+      if (amountToApply <= 0) {
+        throw new HttpError(400, 'Invalid cash payment amount.');
+      }
+
+      if (amountToApply > remainingDue) {
+        throw new HttpError(400, `Payment amount ₹${amountToApply} exceeds outstanding balance ₹${remainingDue}.`);
+      }
+
+      const newOutstanding = Math.max(0, remainingDue - amountToApply);
+      const finalStatus = newOutstanding > 0 ? 'PARTIALLY_PAID' : 'PAID';
+
+      // Generate unique receipt number (CASH-YYYY-XXXXXX)
+      const yearStr = new Date().getFullYear();
+      const randSeq = Math.floor(100000 + Math.random() * 900000);
+      const receiptNumber = `CASH-${yearStr}-${randSeq}`;
+
+      const auditEntry = {
+        action: 'CASH_PAYMENT_RECORDED',
+        details: `Cash payment of ₹${amountToApply} recorded (${finalStatus}). Receipt #${receiptNumber}. Remaining due: ₹${newOutstanding}`,
+        performedBy: facilityUserId,
+        source: 'ADMIN_PANEL',
+        date: new Date(),
+      };
+
+      // Update invoice using repository lock
+      const updated = await invoiceRepository.updateStatusWithLock(
+        invoiceId,
+        finalStatus,
+        {
+          amount: amountToApply,
+          paymentMethod: 'CASH',
+          paid_at: new Date(),
+          settled_at: new Date(),
+          offlineReference: receiptNumber,
+          auditEntry,
+        },
+        activeSession
+      );
+
+      const targetUserId = invoice.targetUserId?._id || invoice.targetUserId;
+
+      // Create canonical Payment record
+      const paymentDocs = await Payment.create([{
         orgId: invoice.communityId || invoice.orgId,
-        userId: invoice.targetUserId,
+        userId: targetUserId,
         invoiceId: invoice._id,
-        residentId: invoice.targetUserId,
+        residentId: targetUserId,
         villaId: invoice.unitId,
         referenceId: invoice._id,
         referenceType: 'Invoice',
+        domain: 'INVOICE',
         amount: amountToApply,
-        status: 'PAID',
+        status: 'success',
         paymentCategory: 'OFFLINE',
         paymentMethod: 'CASH',
         paymentDate: new Date(),
@@ -960,25 +1040,41 @@ export class InvoiceService {
         processedBy: facilityUserId,
         receiptNumber: receiptNumber,
         gateway: 'offline',
-        gatewayTransactionId: receiptNumber
-      });
+        gatewayTransactionId: receiptNumber,
+        idempotencyKey: `CASH_PAY:${invoice._id.toString()}:${receiptNumber}`,
+      }], activeSession ? { session: activeSession } : {});
+      const payment = paymentDocs[0];
+
+      // Record Double-Entry Financial Ledger entry (CASH_CLEARING -> INVOICE_RECEIVABLE)
+      const ledgerEntry = await financialLedgerService.recordSettlementLedgerEntry(payment, 'INVOICE', activeSession);
+
+      if (isTransactionActive) {
+        await session.commitTransaction();
+      }
+      await session.endSession();
+
+      const populated = await Invoice.findById(invoice._id)
+        .populate('targetUserId', 'name username email firstName lastName')
+        .populate('unitId', 'unitNumber')
+        .lean();
+
+      const result = populated || (updated.toObject ? updated.toObject() : updated);
+      result.receiptNumber = receiptNumber;
+      result.payment = payment;
+      result.ledgerEntry = ledgerEntry;
+
+      paymentEventEmitter.emit(PAYMENT_SUCCESS, payment, { alreadySettled: true });
+      invoiceEventEmitter.emit('CASH_PAYMENT_RECORDED', result);
+      invoiceEventEmitter.emit(INVOICE_STATUS_UPDATED, result);
+
+      return result;
     } catch (err) {
-      logger.error('Failed to create Payment record for Cash payment:', err);
+      if (isTransactionActive) {
+        try { await session.abortTransaction(); } catch (e) {}
+      }
+      await session.endSession();
+      throw err;
     }
-
-    const populated = await Invoice.findById(invoice._id)
-      .populate('targetUserId', 'name username email firstName lastName')
-      .populate('unitId', 'unitNumber')
-      .lean();
-
-    const result = populated || invoice.toObject();
-    result.receiptNumber = receiptNumber;
-    result.payment = payment;
-
-    invoiceEventEmitter.emit('CASH_PAYMENT_RECORDED', result);
-    invoiceEventEmitter.emit(INVOICE_STATUS_UPDATED, result);
-
-    return result;
   }
 
   /**

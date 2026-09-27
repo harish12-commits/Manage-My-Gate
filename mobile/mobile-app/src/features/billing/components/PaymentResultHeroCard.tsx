@@ -14,6 +14,7 @@ export interface PaymentResultHeroCardProps {
   invoiceNumber?: string;
   unitName?: string;
   reference?: string;
+  rejectionReason?: string;
   className?: string;
 }
 
@@ -22,6 +23,7 @@ interface OutcomeConfig {
   iconBgClass: string;
   iconTextClass: string;
   badgeVariant: StatusVariant;
+  subTitle?: string;
   title: string;
   description: string;
 }
@@ -30,22 +32,28 @@ function resolveOutcomeConfig({
   isPaid,
   isPartial,
   isPending,
+  isChecking,
+  isRejected,
   isFailed,
   isCancelled,
   invoiceNumber,
   unitName,
   reference,
+  rejectionReason,
   remainingDue,
   defaultVariant,
 }: {
   isPaid: boolean;
   isPartial: boolean;
   isPending: boolean;
+  isChecking: boolean;
+  isRejected: boolean;
   isFailed: boolean;
   isCancelled: boolean;
   invoiceNumber: string;
   unitName: string;
   reference: string;
+  rejectionReason?: string;
   remainingDue: number;
   defaultVariant: StatusVariant;
 }): OutcomeConfig {
@@ -57,6 +65,18 @@ function resolveOutcomeConfig({
       badgeVariant: 'success',
       title: 'Payment Confirmed!',
       description: `Invoice #${invoiceNumber} for ${unitName} has been fully settled.`,
+    };
+  }
+
+  if (isChecking) {
+    return {
+      icon: RefreshCw,
+      iconBgClass: 'bg-primary/10',
+      iconTextClass: 'text-primary',
+      badgeVariant: 'info',
+      subTitle: 'Payment is being verified',
+      title: "We're checking your payment status.",
+      description: 'Your payment request may already have reached the server. Do not submit another payment while we verify. Verifying authoritative settlement with the server.',
     };
   }
 
@@ -76,9 +96,23 @@ function resolveOutcomeConfig({
       icon: Clock,
       iconBgClass: 'bg-primary/10',
       iconTextClass: 'text-primary',
-      badgeVariant: 'info',
-      title: 'Submitted for Verification',
+      badgeVariant: 'warning',
+      subTitle: 'Submitted for Verification',
+      title: 'Payment submitted — awaiting verification.',
       description: `Offline ref #${reference} submitted and pending admin clearance verification.`,
+    };
+  }
+
+  if (isRejected) {
+    return {
+      icon: XCircle,
+      iconBgClass: 'bg-destructive/15',
+      iconTextClass: 'text-destructive',
+      badgeVariant: 'danger',
+      title: 'Payment submission rejected.',
+      description: rejectionReason
+        ? `Reason: ${rejectionReason}. Please check your details and try again.`
+        : 'Your offline payment submission was reviewed and rejected by management.',
     };
   }
 
@@ -122,14 +156,17 @@ export function PaymentResultHeroCard({
   invoiceNumber = '—',
   unitName = 'Villa Unit',
   reference = '—',
+  rejectionReason,
   className = '',
 }: PaymentResultHeroCardProps) {
-  const normStatus = (status || 'UNPAID') as InvoiceStatus;
+  const normStatus = String(status || 'UNPAID');
   const statusVariant = getStatusVariant(normStatus);
 
-  const isPaid = normStatus === 'PAID';
+  const isPaid = normStatus === 'PAID' || normStatus === 'SUCCESS';
+  const isChecking = normStatus === 'CHECKING' || normStatus === 'PAYMENT_CHECKING';
   const isPartial = normStatus === 'PARTIALLY_PAID' || ((paidAmount || 0) > 0 && remainingDue > 0);
-  const isPending = normStatus === 'VERIFICATION_PENDING';
+  const isPending = normStatus === 'VERIFICATION_PENDING' || normStatus === 'PENDING';
+  const isRejected = normStatus === 'REJECTED';
   const isFailed = normStatus === 'FAILED';
   const isCancelled = normStatus === 'CANCELLED';
 
@@ -139,21 +176,36 @@ export function PaymentResultHeroCard({
     isPaid,
     isPartial,
     isPending,
+    isChecking,
+    isRejected,
     isFailed,
     isCancelled,
     invoiceNumber,
     unitName,
     reference,
+    rejectionReason,
     remainingDue,
-    defaultVariant: statusVariant,
+    defaultVariant: isChecking ? 'info' : statusVariant,
   });
 
   return (
-    <View className={`bg-card border border-border rounded-2xl p-6 items-center shadow-xs ${className}`}>
+    <View
+      accessible={true}
+      accessibilityRole="summary"
+      accessibilityLabel={`Payment outcome: ${outcome.title}. Amount: ₹${displayAmount.toLocaleString('en-IN')}`}
+      className={`bg-card border border-border rounded-2xl p-6 items-center shadow-xs ${className}`}
+    >
       {/* Header Outcome Icon */}
       <View className={`w-16 h-16 rounded-full items-center justify-center mb-3 ${outcome.iconBgClass}`}>
         <Icon as={outcome.icon} size={36} className={outcome.iconTextClass} />
       </View>
+
+      {/* Sub-headline category tag if present */}
+      {outcome.subTitle ? (
+        <Text className="text-xs font-bold uppercase tracking-wider text-primary mb-1">
+          {outcome.subTitle}
+        </Text>
+      ) : null}
 
       {/* Main Headline Title */}
       <Text className="text-xl font-extrabold text-foreground text-center mb-1">

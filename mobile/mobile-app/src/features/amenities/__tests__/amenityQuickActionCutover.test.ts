@@ -64,12 +64,12 @@ describe('Amenity v2 — Frontend Quick Action Go-Live Cutover', () => {
         isFeatureAllowedForUser(f, residentUser) && f.categoryKey === 'amenities_facilities'
       );
 
-      // Resident must only have discover, my_booking, and wallet
+      // Resident must only have discover and my_booking under amenities (wallet is consolidated in billing)
       expect(residentAmenityFeatures.map((f) => f.id)).toEqual([
         'amenities_discover',
         'amenities_my_booking',
-        'amenities_wallet',
       ]);
+      expect(ALL_AVAILABLE_FEATURES.find((f) => f.id === 'amenities_wallet')).toBeUndefined();
 
       // None of the resident amenity features should point to the old dashboard
       residentAmenityFeatures.forEach((f) => {

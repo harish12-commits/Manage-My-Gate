@@ -318,7 +318,7 @@ The Financial & Billing module (`src/features/billing/components/` & `src/featur
 | :--- | :--- | :--- |
 | **`InvoiceCard`** | `src/features/billing/components/InvoiceCard.tsx` | `<ListCard>`, `<StatusBadge>`, `<Text>` |
 | **`AmenityLedgerCard`** | `src/features/amenities/components/AmenityLedgerCard.tsx` | `<ListCard>`, `<StatusBadge>`, `<Text>` |
-| **`WalletTransactionCard`** | `src/features/billing/components/WalletTransactionCard.tsx` | `<Icon>`, `<StatusBadge>`, `<Text>`, `<Pressable>` |
+| **`WalletTransactionCard`** | `src/features/wallet/components/WalletTransactionCard.tsx` | `<Icon>`, `<StatusBadge>`, `<Text>`, `<Pressable>` |
 | **`ResidentDueCard`** | `src/features/billing/components/ResidentDueCard.tsx` | `<Icon>`, `<StatusBadge>`, `<Button>`, `<Text>` |
 | **`PaymentReceiptCard`** | `src/features/billing/components/PaymentReceiptCard.tsx` | `<Icon>`, `<StatusBadge>`, `<Button>`, `<Text>`, `<TouchableOpacity>` |
 | **`PaymentResultHeroCard`** | `src/features/billing/components/PaymentResultHeroCard.tsx` | `<Icon>`, `<StatusBadge>`, `<Text>` |

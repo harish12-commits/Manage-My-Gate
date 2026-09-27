@@ -22,7 +22,6 @@ describe('Amenity Management — 3-Role Feature Access (Visitor Pattern Parity)'
   const residentFeatures = [
     feat('amenities_discover'),
     feat('amenities_my_booking'),
-    feat('amenities_wallet'),
   ];
 
   const adminFeatures = [
@@ -49,10 +48,10 @@ describe('Amenity Management — 3-Role Feature Access (Visitor Pattern Parity)'
       expect(checkIsSecurityRole(residentUser)).toBe(false);
     });
 
-    it('allows all 3 Resident Amenity features', () => {
+    it('allows both Resident Amenity features and confirms single wallet cutover', () => {
       expect(isFeatureAllowedForUser(feat('amenities_discover'), residentUser)).toBe(true);
       expect(isFeatureAllowedForUser(feat('amenities_my_booking'), residentUser)).toBe(true);
-      expect(isFeatureAllowedForUser(feat('amenities_wallet'), residentUser)).toBe(true);
+      expect(ALL_AVAILABLE_FEATURES.find((f) => f.id === 'amenities_wallet')).toBeUndefined();
     });
 
     it('strictly denies all 6 Admin Amenity features to Resident', () => {
@@ -156,7 +155,7 @@ describe('Amenity Management — 3-Role Feature Access (Visitor Pattern Parity)'
       const residentUser = { role: 'resident' };
       expect(catalogIsFeatureAllowed(feat('amenities_discover'), residentUser)).toBe(true);
       expect(catalogIsFeatureAllowed(feat('amenities_my_booking'), residentUser)).toBe(true);
-      expect(catalogIsFeatureAllowed(feat('amenities_wallet'), residentUser)).toBe(true);
+      expect(ALL_AVAILABLE_FEATURES.find((f) => f.id === 'amenities_wallet')).toBeUndefined();
       expect(catalogIsFeatureAllowed(feat('amenities_scanner'), residentUser)).toBe(false);
       expect(catalogIsFeatureAllowed(feat('amenities_dashboard'), residentUser)).toBe(false);
     });

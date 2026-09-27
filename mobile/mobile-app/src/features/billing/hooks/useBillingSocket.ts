@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../store/store';
 import { useAppSocket } from '../../../hooks/useAppSocket';
 import { syncRealtimeInvoice, fetchMyDues, fetchAdminKPIs, fetchInvoicesGrid } from '../store/billingSlice';
-import { fetchWalletBalance, syncWalletBalance } from '../store/walletSlice';
+import { fetchWalletBalance, syncWalletBalance } from '../../wallet/store/walletSlice';
 import { checkIsAdmin } from '../../../utils/rbac';
 
 /**

@@ -15,6 +15,12 @@ import { useBilling } from '../hooks/useBilling';
 import { useMobilePayment, PaymentMethod } from '../hooks/useMobilePayment';
 import { Invoice } from '../types';
 import { RazorpayCheckoutModal, RazorpayCheckoutOptions } from './RazorpayCheckoutModal';
+import {
+  createOperationId,
+  buildInvoiceWalletKey,
+  buildInvoiceOrderKey,
+  buildInvoiceVerifyKey,
+} from '@/src/utils/idempotency';
 
 export interface PaymentCheckoutSheetProps {
   visible: boolean;
@@ -49,7 +55,6 @@ export function PaymentCheckoutSheet({
   const [customAmountStr, setCustomAmountStr] = useState<string>('');
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('WALLET');
   const [showWalletConfirmModal, setShowWalletConfirmModal] = useState<boolean>(false);
-  const [showUnknownStateAlert, setShowUnknownStateAlert] = useState<boolean>(false);
   const [razorpayOptions, setRazorpayOptions] = useState<RazorpayCheckoutOptions | null>(null);
 
   // Derived figures
@@ -78,8 +83,12 @@ export function PaymentCheckoutSheet({
   const isCancelled = status === 'CANCELLED';
   const isPaymentDisabled = isPaid || isPendingVerification || isCancelled || remainingDue <= 0;
 
+  // Deterministic operation ID for the checkout session (preserved across retries)
+  const operationIdRef = React.useRef<string>(createOperationId());
+
   useEffect(() => {
     if (visible) {
+      operationIdRef.current = createOperationId();
       resetPaymentState();
       setPaymentMode('FULL');
       setCustomAmountStr('');
@@ -88,7 +97,6 @@ export function PaymentCheckoutSheet({
         : (isGatewayConfigured ? 'RAZORPAY' : 'OFFLINE');
       setSelectedMethod(defaultMethod);
       setShowWalletConfirmModal(false);
-      setShowUnknownStateAlert(false);
     }
   }, [visible, invoice, walletBalance, remainingDue, isGatewayConfigured, resetPaymentState]);
 
@@ -103,8 +111,10 @@ export function PaymentCheckoutSheet({
     router.push('/(resident)/billing/wallet' as any);
   };
 
+  const isSubmittingRef = React.useRef<boolean>(false);
+
   const handleInitiatePayment = () => {
-    if (isPaymentDisabled || isAmountInvalid) return;
+    if (isPaymentDisabled || isAmountInvalid || isSubmittingRef.current || isGlobalSettling) return;
 
     if (selectedMethod === 'OFFLINE') {
       onClose();
@@ -133,29 +143,36 @@ export function PaymentCheckoutSheet({
   };
 
   const handleConfirmWalletPayment = async () => {
-    if (!invoice._id || amountToPay <= 0) return;
+    if (!invoice._id || amountToPay <= 0 || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     try {
-      const result = await processWalletPayment(invoice._id, amountToPay);
+      const idempotencyKey = buildInvoiceWalletKey(invoice._id, amountToPay, operationIdRef.current);
+      const result = await processWalletPayment(invoice._id, amountToPay, idempotencyKey, operationIdRef.current);
       setShowWalletConfirmModal(false);
       await loadResidentDues();
-      const rawTotal = invoice.totalDue || invoice.totalAmount || (invoice as any).amount || totalDue;
-      const currentPaid = (invoice.paidAmount || 0) + amountToPay;
-      const calcRemaining = Math.max(0, remainingDue - amountToPay);
-      const isFull = calcRemaining <= 0.01;
+
+      // Server invoice is strictly authoritative
+      const serverInvoice = result?.invoice || result?.data?.invoice || result?.data || result;
+      const authoritativeStatus = serverInvoice?.status || 'PAID';
+      const authoritativePaid = serverInvoice?.paidAmount ?? (invoice.paidAmount || 0);
+      const authoritativeOutstanding = serverInvoice?.outstandingAmount ?? 0;
+      const rawTotal = serverInvoice?.totalDue ?? serverInvoice?.totalAmount ?? invoice.totalDue ?? totalDue;
 
       const updatedReceiptData = {
-        ...(result?.invoice || {}),
         ...invoice,
+        ...serverInvoice,
         _id: invoice._id,
-        invoiceNumber: invoice.invoiceNumber || result?.invoice?.invoiceNumber || invoice._id,
-        unitNumber: invoice.unitNumber || result?.invoice?.unitNumber,
-        assessmentName: (invoice as any).assessmentName || result?.invoice?.snapshot?.assessmentName || result?.invoice?.assessmentName,
+        invoiceNumber: serverInvoice?.invoiceNumber || invoice.invoiceNumber || invoice._id,
+        unitNumber: serverInvoice?.unitNumber || invoice.unitNumber,
+        assessmentName: serverInvoice?.assessmentName || serverInvoice?.snapshot?.assessmentName || (invoice as any).assessmentName,
         totalDue: rawTotal,
         totalAmount: rawTotal,
-        paidAmount: currentPaid,
+        paidAmount: authoritativePaid,
         amountPaid: amountToPay,
-        outstandingAmount: calcRemaining,
-        status: (isFull ? 'PAID' : 'PARTIALLY_PAID') as any,
+        outstandingAmount: authoritativeOutstanding,
+        remainingDue: authoritativeOutstanding,
+        status: authoritativeStatus as any,
+        paymentStatus: (serverInvoice?.paymentStatus || authoritativeStatus) as any,
         paymentMethod: 'Digital Wallet',
       };
       if (onPaymentSuccess) {
@@ -168,14 +185,18 @@ export function PaymentCheckoutSheet({
     } catch (err: any) {
       setShowWalletConfirmModal(false);
       Alert.alert('Wallet Payment Failed', err.message || 'Transaction could not be completed.');
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 
   const handleProcessRazorpay = async () => {
-    if (!invoice._id || amountToPay <= 0) return;
+    if (!invoice._id || amountToPay <= 0 || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
 
     try {
-      const orderData = await initiateRazorpayPayment(invoice._id, amountToPay);
+      const idempotencyKey = buildInvoiceOrderKey(invoice._id, amountToPay, operationIdRef.current);
+      const orderData = await initiateRazorpayPayment(invoice._id, amountToPay, idempotencyKey, operationIdRef.current);
       
       const keyId = orderData?.razorpayKeyId || process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TXAJ0OalVys0pH';
       const orderId = orderData?.orderId || orderData?.id || '';
@@ -191,37 +212,57 @@ export function PaymentCheckoutSheet({
         customerName: (invoice as any)?.targetUser || 'Resident',
       });
     } catch (err: any) {
-      if (err?.code === 'NETWORK_ERROR' || err?.message?.includes('network')) {
-        setShowUnknownStateAlert(true);
-      } else {
-        Alert.alert('Payment Failed', err.message || 'Razorpay order creation failed.');
-      }
+      Alert.alert('Payment Failed', err.message || 'Razorpay order creation failed.');
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 
   const handleRazorpaySuccess = async (payload: any) => {
     setRazorpayOptions(null);
     try {
-      const verifyResult = await confirmRazorpayPayment(payload);
+      const paymentId = payload?.paymentId || razorpayOptions?.paymentId;
+      const orderId = payload?.orderId || razorpayOptions?.orderId;
+      const idempotencyKey = paymentId && orderId ? buildInvoiceVerifyKey(paymentId, orderId) : undefined;
+      const verifyResult = await confirmRazorpayPayment(payload, idempotencyKey, {
+        invoiceId: invoice._id,
+        amount: amountToPay,
+        operationId: operationIdRef.current,
+      });
+
+      // Handle ambiguous verification (network timeout or offline state during verification)
+      if (verifyResult?.isChecking || verifyResult?.status === 'CHECKING') {
+        onClose();
+        router.push(
+          `/(resident)/billing/payment-result?invoiceId=${invoice._id}&status=CHECKING&paymentMethod=Razorpay Online&amount=${amountToPay}` as any
+        );
+        return;
+      }
+
       await loadResidentDues();
-      const rawTotal = invoice.totalDue || invoice.totalAmount || (invoice as any).amount || totalDue;
-      const currentPaid = (invoice.paidAmount || 0) + amountToPay;
-      const calcRemaining = Math.max(0, remainingDue - amountToPay);
-      const isFull = calcRemaining <= 0.01;
+
+      // Server invoice is strictly authoritative
+      const serverInvoice = verifyResult?.invoice || verifyResult?.data?.invoice || verifyResult?.data || verifyResult;
+      const authoritativeStatus = serverInvoice?.status || 'PAID';
+      const authoritativePaid = serverInvoice?.paidAmount ?? (invoice.paidAmount || 0);
+      const authoritativeOutstanding = serverInvoice?.outstandingAmount ?? 0;
+      const rawTotal = serverInvoice?.totalDue ?? serverInvoice?.totalAmount ?? invoice.totalDue ?? totalDue;
 
       const updatedReceiptData = {
-        ...(verifyResult?.invoice || {}),
         ...invoice,
+        ...serverInvoice,
         _id: invoice._id,
-        invoiceNumber: invoice.invoiceNumber || verifyResult?.invoice?.invoiceNumber || invoice._id,
-        unitNumber: invoice.unitNumber || verifyResult?.invoice?.unitNumber,
-        assessmentName: (invoice as any).assessmentName || verifyResult?.invoice?.snapshot?.assessmentName || verifyResult?.invoice?.assessmentName,
+        invoiceNumber: serverInvoice?.invoiceNumber || invoice.invoiceNumber || invoice._id,
+        unitNumber: serverInvoice?.unitNumber || invoice.unitNumber,
+        assessmentName: serverInvoice?.assessmentName || serverInvoice?.snapshot?.assessmentName || (invoice as any).assessmentName,
         totalDue: rawTotal,
         totalAmount: rawTotal,
-        paidAmount: currentPaid,
+        paidAmount: authoritativePaid,
         amountPaid: amountToPay,
-        outstandingAmount: calcRemaining,
-        status: (isFull ? 'PAID' : 'PARTIALLY_PAID') as any,
+        outstandingAmount: authoritativeOutstanding,
+        remainingDue: authoritativeOutstanding,
+        status: authoritativeStatus as any,
+        paymentStatus: (serverInvoice?.paymentStatus || authoritativeStatus) as any,
         paymentMethod: 'Online Payment',
       };
       if (onPaymentSuccess) {
@@ -232,11 +273,7 @@ export function PaymentCheckoutSheet({
       }
       onClose();
     } catch (err: any) {
-      if (err?.code === 'NETWORK_ERROR' || err?.message?.includes('network')) {
-        setShowUnknownStateAlert(true);
-      } else {
-        Alert.alert('Signature Verification Failed', err.message || 'Payment signature could not be verified by backend.');
-      }
+      Alert.alert('Signature Verification Failed', err.message || 'Payment signature could not be verified by backend.');
     }
   };
 
@@ -465,8 +502,8 @@ export function PaymentCheckoutSheet({
             variant="default"
             size="lg"
             className="w-full flex-row items-center justify-center mt-2"
-            disabled={isPaymentDisabled || isAmountInvalid || (selectedMethod === 'WALLET' && isWalletInsufficient) || isGlobalSettling}
-            loading={isGlobalSettling}
+            disabled={isPaymentDisabled || isAmountInvalid || (selectedMethod === 'WALLET' && isWalletInsufficient) || isGlobalSettling || paymentState.isProcessing}
+            loading={isGlobalSettling || paymentState.isProcessing}
             onPress={handleInitiatePayment}
             accessibilityRole="button"
             accessibilityLabel={`Confirm and Pay ₹${amountToPay.toLocaleString('en-IN')}`}
@@ -492,26 +529,9 @@ export function PaymentCheckoutSheet({
         confirmLabel="Confirm & Pay"
         cancelLabel="Cancel"
         variant="info"
-        loading={isGlobalSettling}
+        loading={isGlobalSettling || paymentState.isProcessing}
         onConfirm={handleConfirmWalletPayment}
         onCancel={() => setShowWalletConfirmModal(false)}
-      />
-
-      {/* Unknown Payment Reconciliation Alert Modal */}
-      <ConfirmationModal
-        visible={showUnknownStateAlert}
-        title="Payment Verification In Progress"
-        message="Your payment was submitted to Razorpay, but network status is unknown. Please wait while we reconcile the payment with the server."
-        confirmLabel="Check Payment Status"
-        cancelLabel="Close"
-        variant="info"
-        loading={isGlobalSettling}
-        onConfirm={async () => {
-          await loadResidentDues();
-          setShowUnknownStateAlert(false);
-          onClose();
-        }}
-        onCancel={() => setShowUnknownStateAlert(false)}
       />
 
       {/* Razorpay WebView Checkout Modal */}

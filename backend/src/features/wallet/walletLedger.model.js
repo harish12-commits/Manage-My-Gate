@@ -38,11 +38,27 @@ const walletLedgerSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// Phase 8 Deprecation & Hardening: Prevent all new writes to obsolete WalletLedger
+const blockSave = function(next) { 
+  const err = new Error('WalletLedger is deprecated. All financial accounting mutations must use FinancialLedgerEntry.'); 
+  if (typeof next === 'function') return next(err);
+  throw err;
+};
+walletLedgerSchema.pre(['validate', 'save'], blockSave);
+
 // Immutable append-only log: prevent updates and deletions
-const blockUpdate = function(next) { next(new Error('WalletLedger is immutable. Updates are strictly forbidden.')); };
+const blockUpdate = function(next) { 
+  const err = new Error('WalletLedger is deprecated. Updates are strictly forbidden.'); 
+  if (typeof next === 'function') return next(err);
+  throw err;
+};
 walletLedgerSchema.pre(['updateOne', 'updateMany', 'findOneAndUpdate', 'replaceOne'], blockUpdate);
 
-const blockDelete = function(next) { next(new Error('WalletLedger is immutable. Deletions are strictly forbidden.')); };
+const blockDelete = function(next) { 
+  const err = new Error('WalletLedger is deprecated. Deletions are strictly forbidden.'); 
+  if (typeof next === 'function') return next(err);
+  throw err;
+};
 walletLedgerSchema.pre(['deleteOne', 'deleteMany', 'findOneAndDelete', 'remove'], blockDelete);
 
 // Middleware to calculate cryptographic hash before saving
