@@ -296,7 +296,8 @@ export class AmenityBookingService {
       }
 
       // 13. Pricing Calculation
-      const pricingDetails = bookingData.pricingDetails || this._calculatePricing(amenity, bookingDateTimeStart, bookingDateTimeEnd, bookingData.numberOfPersons || 1);
+      // The price is always computed server-side; a client-supplied pricingDetails is ignored.
+      const pricingDetails = this._calculatePricing(amenity, bookingDateTimeStart, bookingDateTimeEnd, bookingData.numberOfPersons || 1);
       const totalAmount = pricingDetails.totalAmount;
       const deposit = pricingDetails.securityDeposit;
 

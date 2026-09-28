@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { hasAmenityAdminScope, GATE_STAFF_PERMISSIONS } from '../domain/access/amenityAdminScope.js';
 import HttpError from '../../../utils/httpError.utils.js';
 import amenityReservationRepository from './amenityReservation.repository.js';
 import amenityReservationHoldRepository from '../holds/amenityReservationHold.repository.js';
@@ -1364,77 +1365,17 @@ export class AmenityReservationService {
     throw new HttpError(400, 'Invalid payment webhook payload: holdId or reservationId required');
   }
 
-  async _autoSettlePendingRefund(reservation, session) {
-    if (!reservation || reservation.paymentStatus !== 'REFUND_PENDING') {
-      return reservation;
-    }
-    try {
-      if (reservation.totalAmount > 0 && reservation.residentId) {
-        const walletService = (await import('../../wallet/wallet.service.js')).default;
-        await walletService.addMoney(
-          reservation.residentId,
-          reservation.orgId,
-          reservation.totalAmount,
-          'WALLET',
-          `Instant Refund for Cancelled Reservation #${reservation.reservationNumber || reservation._id}`
-        );
-      }
-      const updated = await amenityReservationRepository.updateStateDimensions(
-        reservation._id,
-        { paymentStatus: 'REFUNDED' },
-        session
-      );
-      return updated || reservation;
-    } catch (err) {
-      console.error('[AmenityReservationService] Auto refund error:', err?.message || err);
-      return reservation;
-  }
-    }
-
-  async _enrichAndRepairPricingSnapshot(reservation, session = null) {
+  /**
+   * Fills pricingSnapshot.baseAmount for display when only a total was recorded.
+   * Pure: never reprices from the facility and never writes. A reservation's amounts
+   * are fixed when it is confirmed, and reads must not move money or rewrite them.
+   */
+  _normalizePricingSnapshot(reservation) {
     if (!reservation) return reservation;
-    const resDoc = reservation.toObject ? reservation.toObject() : { ...reservation };
-
-    const snap = resDoc.pricingSnapshot || {};
-    const hasZeroOrMissingPricing = (!snap.baseAmount || snap.baseAmount === 0) && (snap.totalAmount === 0 || !snap.totalAmount) && (resDoc.totalAmount === 0 || !resDoc.totalAmount);
-
-    if (hasZeroOrMissingPricing && resDoc.facilityId) {
-      try {
-        const facilityId = resDoc.facilityId._id || resDoc.facilityId;
-        const facility = await amenityFacilityRepository.findById(facilityId, resDoc.orgId, session);
-
-        if (facility && facility.pricingConfig && Number(facility.pricingConfig.baseRate) > 0) {
-          const calculatedSnap = pricingService.calculatePricingSnapshot({
-            pricingConfig: facility.pricingConfig,
-            startDateTime: resDoc.requestedStartDateTime || resDoc.effectiveStartDateTime,
-            endDateTime: resDoc.requestedEndDateTime || resDoc.effectiveEndDateTime,
-            headcount: resDoc.headcount || 1,
-            quantity: resDoc.quantity || 1,
-          });
-
-          resDoc.pricingSnapshot = calculatedSnap;
-          resDoc.totalAmount = calculatedSnap.totalAmount;
-          resDoc.paidAmount = calculatedSnap.totalAmount;
-
-          const AmenityReservation = (await import('./amenityReservation.model.js')).default;
-          AmenityReservation.updateOne(
-            { _id: resDoc._id },
-            { $set: { pricingSnapshot: calculatedSnap, totalAmount: calculatedSnap.totalAmount, paidAmount: calculatedSnap.totalAmount } }
-          ).catch(() => {});
-        } else if (!snap.baseAmount && snap.totalAmount !== undefined) {
-          resDoc.pricingSnapshot = {
-            baseAmount: snap.totalAmount || 0,
-            taxAmount: snap.taxAmount || 0,
-            depositAmount: snap.depositAmount || 0,
-            totalAmount: snap.totalAmount || 0,
-            currency: snap.currency || 'INR',
-          };
-        }
-      } catch (err) {
-        // Non-blocking fallback
-      }
-    } else if (!snap.baseAmount && snap.totalAmount !== undefined) {
-      resDoc.pricingSnapshot = {
+    const doc = reservation.toObject ? reservation.toObject() : { ...reservation };
+    const snap = doc.pricingSnapshot || {};
+    if (!snap.baseAmount && snap.totalAmount !== undefined) {
+      doc.pricingSnapshot = {
         baseAmount: snap.totalAmount || 0,
         taxAmount: snap.taxAmount || 0,
         depositAmount: snap.depositAmount || 0,
@@ -1442,48 +1383,38 @@ export class AmenityReservationService {
         currency: snap.currency || 'INR',
       };
     }
-
-    return resDoc;
+    return doc;
   }
 
-
   /**
-   * Retrieves reservation by ID.
+   * Retrieves reservation by ID. Read-only: refunds are settled by the cancellation
+   * and refund flows, never as a side effect of reading.
    * @param {string|mongoose.Types.ObjectId} reservationId
    * @param {mongoose.ClientSession} [session]
    */
   async getReservationById(reservationId, session) {
-    let reservation = await amenityReservationRepository.findById(reservationId, session);
-    if (reservation && reservation.paymentStatus === 'REFUND_PENDING') {
-      reservation = await this._autoSettlePendingRefund(reservation, session);
-    }
-    return await this._enrichAndRepairPricingSnapshot(reservation, session);
+    return amenityReservationRepository.findById(reservationId, session);
   }
 
   /**
-   * Retrieves reservation by tenant reservation number.
+   * Retrieves reservation by tenant reservation number. Read-only.
    * @param {string|mongoose.Types.ObjectId} orgId
    * @param {string} reservationNumber
    * @param {mongoose.ClientSession} [session]
    */
   async getReservationByNumber(orgId, reservationNumber, session) {
-    let reservation = await amenityReservationRepository.findByReservationNumber(orgId, reservationNumber, session);
-    if (reservation && reservation.paymentStatus === 'REFUND_PENDING') {
-      reservation = await this._autoSettlePendingRefund(reservation, session);
-    }
-    return await this._enrichAndRepairPricingSnapshot(reservation, session);
+    return amenityReservationRepository.findByReservationNumber(orgId, reservationNumber, session);
   }
 
   /**
-   * Lists reservations with pagination via $facet aggregation pipeline.
+   * Lists reservations with pagination.
    * @param {Object} queryParams
    */
   async listReservations(queryParams) {
     const result = await amenityReservationRepository.findWithPagination(queryParams);
     if (result && Array.isArray(result.data)) {
-      result.data = await Promise.all(
-        result.data.map((resv) => this._enrichAndRepairPricingSnapshot(resv))
-      );
+      result.data = result.data.map((resv) => this._normalizePricingSnapshot(resv));
+      result.items = result.data;
     }
     return result;
   }
@@ -1495,48 +1426,8 @@ export class AmenityReservationService {
    * @param {string[]} requiredPermissions - Required permission strings
    * @returns {Promise<boolean>}
    */
-  async checkAmenityAdminScope(user, requiredPermissions = ['amenities:admin_calander', 'amenities:manage_bookings', 'amenities:scanner']) {
-    if (!user) return false;
-
-    // Platform and Organization-level super admins bypass permission checks
-    if (
-      user.isPlatform ||
-      user.isPlatformSuperAdmin ||
-      ['Super Admin', 'Platform Super Admin', 'Community Admin', 'Admin', 'SuperAdmin'].includes(user.role)
-    ) {
-      return true;
-    }
-
-    try {
-      const { mapPermission } = await import('../../../utils/permissionMapper.js');
-      const normalizedRequired = requiredPermissions.map(mapPermission);
-
-      // If user payload directly carries permissions (e.g., in JWT claims or mocks)
-      if (Array.isArray(user.permissions)) {
-        if (user.permissions.includes('*')) return true;
-        const userPerms = user.permissions.map(mapPermission);
-        if (normalizedRequired.some((reqPerm) => userPerms.includes(reqPerm))) {
-          return true;
-        }
-      }
-
-      // Dynamically resolve permissions from database via RBAC engine
-      const { getPermissionsForUser } = await import('../../../middlewares/rbac.middleware.js');
-      const normalizedUser = {
-        ...user,
-        id: user.id || user._id,
-      };
-      const permissions = await getPermissionsForUser(normalizedUser);
-      if (Array.isArray(permissions)) {
-        if (permissions.includes('*')) return true;
-        const userPerms = permissions.map(mapPermission);
-        return normalizedRequired.some((reqPerm) => userPerms.includes(reqPerm));
-      }
-    } catch (err) {
-      // Non-blocking fallback
-    }
-
-    return false;
+  async checkAmenityAdminScope(user, requiredPermissions = GATE_STAFF_PERMISSIONS) {
+    return hasAmenityAdminScope(user, requiredPermissions);
   }
 
   /**

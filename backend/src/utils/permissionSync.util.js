@@ -193,6 +193,24 @@ export const syncPermissions = async () => {
       }
     }
 
+    // 6.6 Self-healing: tenant (resident) roles must never hold admin-only permissions.
+    // Communities created before this fix were seeded with `amenities:amenities` on
+    // Resident Owner / Resident Tenant, which unlocked facility and maintenance admin APIs.
+    const { TENANT_FORBIDDEN_PERMISSIONS } = await import('../features/organization/defaultRolePermissions.js');
+    const forbiddenPerms = await PermissionModel.find({ name: { $in: TENANT_FORBIDDEN_PERMISSIONS } });
+    if (forbiddenPerms.length) {
+      const tenantRoles = await RoleModel.find({ isTenantRole: true }, { _id: 1, name: 1 });
+      const tenantRoleIds = tenantRoles.map((r) => r._id);
+      const removal = await RolePermissionModel.deleteMany({
+        roleId: { $in: tenantRoleIds },
+        permissionId: { $in: forbiddenPerms.map((p) => p._id) },
+      });
+      if (removal.deletedCount > 0) {
+        tenantRoleIds.forEach((id) => rolePermissionService.cache.delete(id.toString()));
+        logger.info(`Self-healed ${removal.deletedCount} admin-only permission grant(s) off tenant roles.`);
+      }
+    }
+
     // 6.7 Self-healing: Ensure existing memberships missing a status field get defaulted to 'Active'
     const OrgMembershipModel = (await import('../features/orgMembership/orgMembership.model.js')).default;
     await OrgMembershipModel.updateMany({ $or: [{ status: { $exists: false } }, { status: null }, { status: '' }] }, { $set: { status: 'Active' } });

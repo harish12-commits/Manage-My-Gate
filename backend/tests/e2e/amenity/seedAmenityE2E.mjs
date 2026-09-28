@@ -22,6 +22,7 @@ import { Permission } from '../../../src/features/permission/permission.model.js
 import { RolePermission } from '../../../src/features/rolePermission/rolePermission.model.js';
 import { Wallet } from '../../../src/features/wallet/wallet.model.js';
 import { syncPermissions } from '../../../src/utils/permissionSync.util.js';
+import { DEFAULT_ROLE_PERMISSIONS } from '../../../src/features/organization/defaultRolePermissions.js';
 import amenityFacilityService from '../../../src/features/amenityManagement/facilities/amenityFacility.service.js';
 import { AmenityResource } from '../../../src/features/amenityManagement/resources/amenityResource.model.js';
 
@@ -36,10 +37,17 @@ const ROLE_PERMISSIONS = {
   'Community Admin': [...AMENITY_ADMIN, ...AMENITY_RESIDENT, ...AMENITY_GUARD, 'billing:action_center', 'villas:read'],
   // Non-"admin" role name: exercises permission-based admin scope instead of the name bypass.
   'Amenity Manager': [...AMENITY_ADMIN, 'villas:read'],
-  'Security Guard': [...AMENITY_GUARD, 'villas:read'],
-  'Resident Owner': [...AMENITY_RESIDENT, 'billing:action_center', 'villas:read'],
-  'Family Member': [...AMENITY_RESIDENT, 'villas:read'],
+  // Tenant and guard roles use exactly what a newly created community gets.
+  'Security Guard': [...DEFAULT_ROLE_PERMISSIONS['Security Guard']],
+  'Resident Owner': [...DEFAULT_ROLE_PERMISSIONS['Resident Owner']],
+  'Family Member': [...DEFAULT_ROLE_PERMISSIONS['Family Member']],
 };
+
+// A tenant role as communities created before the permission fix have it: it still
+// carries the admin-only grant. The backend's boot-time self-heal must strip it.
+const LEGACY_TENANT_ROLE = { name: 'Resident Tenant', perms: [...DEFAULT_ROLE_PERMISSIONS['Resident Tenant'], 'amenities:amenities'] };
+
+void AMENITY_RESIDENT;
 
 const COMMUNITIES = [
   {
@@ -55,6 +63,8 @@ const COMMUNITIES = [
       { actor: 'residentA', role: 'Resident Owner', name: 'Ravi Resident', villa: 'A-101', residency: 'Owner', wallet: 5000 },
       { actor: 'familyA', role: 'Family Member', name: 'Fathima Family', villa: 'A-101', residency: 'Family', wallet: 0 },
       { actor: 'residentB', role: 'Resident Owner', name: 'Bhavna Resident', villa: 'A-102', residency: 'Owner', wallet: 1000 },
+      // Resident here, Community Admin in B: probes cross-community permission leaks.
+      { actor: 'crossAdmin', role: 'Resident Owner', name: 'Kiran Cross', villa: 'A-103', residency: 'Owner', wallet: 500, alsoAdminIn: 'B' },
     ],
   },
   {
@@ -143,6 +153,8 @@ export async function seedAmenityE2E() {
   const permMap = Object.fromEntries((await Permission.find({}).lean()).map((p) => [p.name, p._id]));
   const password = await bcrypt.hash(E2E_PASSWORD, 10);
   const fixture = { password: E2E_PASSWORD, orgs: {}, villas: {}, facilities: {}, actors: {} };
+  const rolesByOrg = {};
+  const extraMemberships = [];
 
   for (const cfg of COMMUNITIES) {
     const org = await Organization.create({
@@ -167,10 +179,19 @@ export async function seedAmenityE2E() {
         description: `${roleName} (amenity E2E)`,
         isTenantRole: roleName === 'Resident Owner' || roleName === 'Family Member',
       });
-      const missing = perms.filter((p) => !permMap[p]);
+      // Like organization creation (getPermissionIds), unknown non-amenity names are
+      // dropped; amenity permissions must all exist.
+      const missing = perms.filter((p) => !permMap[p] && p.startsWith('amenities:'));
       if (missing.length) throw new Error(`Permissions missing after sync: ${missing.join(', ')}`);
-      await RolePermission.insertMany(perms.map((p) => ({ roleId: roles[roleName]._id, permissionId: permMap[p] })));
+      await RolePermission.insertMany(perms.filter((p) => permMap[p]).map((p) => ({ roleId: roles[roleName]._id, permissionId: permMap[p] })));
     }
+
+    if (cfg.key === 'A') {
+      const legacy = await Role.create({ name: LEGACY_TENANT_ROLE.name, orgId: org._id, description: 'Legacy tenant role (amenity E2E)', isTenantRole: true });
+      await RolePermission.insertMany(LEGACY_TENANT_ROLE.perms.filter((p) => permMap[p]).map((p) => ({ roleId: legacy._id, permissionId: permMap[p] })));
+    }
+
+    rolesByOrg[cfg.key] = roles;
 
     const villas = {};
     for (const unitNumber of cfg.villas) {
@@ -226,6 +247,8 @@ export async function seedAmenityE2E() {
         await villa.save();
       }
 
+      if (spec.alsoAdminIn) extraMemberships.push({ userId: user._id, orgKey: spec.alsoAdminIn });
+
       if (spec.wallet !== undefined) {
         await Wallet.create({ orgId: org._id, userId: user._id, balance: spec.wallet });
       }
@@ -241,6 +264,11 @@ export async function seedAmenityE2E() {
         villaNumber: spec.villa || null,
       };
     }
+  }
+
+  for (const { userId, orgKey } of extraMemberships) {
+    const role = rolesByOrg[orgKey]['Community Admin'];
+    await OrgMembership.create({ userId, orgId: fixture.orgs[orgKey], roleId: role._id, roleIds: [role._id], status: 'Active' });
   }
 
   for (const spec of FACILITIES) {

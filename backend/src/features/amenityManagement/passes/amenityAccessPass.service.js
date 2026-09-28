@@ -132,18 +132,13 @@ export class AmenityAccessPassService {
         ? token.toUpperCase()
         : `RES-${token.toUpperCase()}`;
 
-      const seqMatch = token.match(/\d+$/);
-      const seq = seqMatch ? seqMatch[0] : null;
-
+      // A typed code is not a secret, so it only ever resolves inside the guard's own
+      // community, and only by an exact reservation number (never a numeric suffix).
       const orConditions = [
         { reservationNumber: token },
         { reservationNumber: cleanRef },
         { reservationNumber: token.replace(/^[A-Z]{2,6}-/i, '') },
       ];
-
-      if (seq) {
-        orConditions.push({ reservationNumber: new RegExp(`${seq}$`) });
-      }
 
       if (mongoose.Types.ObjectId.isValid(token)) {
         orConditions.push({ _id: new mongoose.Types.ObjectId(token) });
@@ -154,6 +149,7 @@ export class AmenityAccessPassService {
         (await import('../reservations/amenityReservation.model.js')).default;
 
       const matchedRes = await AmenityReservation.findOne({
+        orgId: new mongoose.Types.ObjectId(String(orgId)),
         $or: orConditions,
       }).session(session);
 
@@ -329,14 +325,17 @@ export class AmenityAccessPassService {
 
     // Step 2: Fallback to V1 AmenityBooking
     const AmenityBooking = mongoose.models.AmenityBooking || (await import('../../amenityBooking/amenityBooking.model.js')).default;
+    // Secret pass tokens may match across communities (the org check below then refuses
+    // them); typed booking ids and object ids only ever match inside this community.
+    const typedCodeConditions = [{ bookingId: token }];
+    if (mongoose.Types.ObjectId.isValid(token)) {
+      typedCodeConditions.push({ _id: new mongoose.Types.ObjectId(token) });
+    }
     const orConditions = [
       { passTokenHash },
       { passToken: token },
-      { bookingId: token },
+      { orgId: new mongoose.Types.ObjectId(String(orgId)), $or: typedCodeConditions },
     ];
-    if (mongoose.Types.ObjectId.isValid(token)) {
-      orConditions.push({ _id: new mongoose.Types.ObjectId(token) });
-    }
 
     const bookingAcrossOrgs = await AmenityBooking.findOne({ $or: orConditions }).session(session);
 

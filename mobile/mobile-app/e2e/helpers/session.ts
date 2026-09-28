@@ -15,7 +15,8 @@ export type Actor =
   // amenity suite only
   | 'familyA'
   | 'managerA'
-  | 'adminOther';
+  | 'adminOther'
+  | 'crossAdmin';
 
 export interface ActorInfo {
   id: string;

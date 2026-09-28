@@ -1,7 +1,6 @@
 import HttpError from '../../../utils/httpError.utils.js';
 import amenityFacilityService from './amenityFacility.service.js';
 import amenityIdempotencyService from '../idempotency/amenityIdempotencyRecord.service.js';
-import { getPermissionsForUser } from '../../../middlewares/rbac.middleware.js';
 import { mapPermission } from '../../../utils/permissionMapper.js';
 
 const isAdminUser = (user) => {
@@ -74,7 +73,8 @@ export class AmenityFacilityController {
 
       if (!isAdmin && req.user) {
         try {
-          const permissions = await getPermissionsForUser(req.user);
+          // Tenant-resolved permissions only; grants held in other communities must not count.
+          const permissions = Array.isArray(req.tenantPermissions) ? req.tenantPermissions : req.user.permissions || [];
           const userPermissions = permissions.map(mapPermission);
           if (
             userPermissions.includes('amenities:amenities') ||

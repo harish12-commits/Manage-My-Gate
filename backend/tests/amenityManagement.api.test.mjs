@@ -1338,153 +1338,38 @@ describe('Amenity Management Phase 4C — API Layer Integration Suite', () => {
     // -----------------------------------------------------------------------
     // 14.5 Payment Webhook Security (Attacks A–E)
     // -----------------------------------------------------------------------
-    describe('14.5 Payment Webhook Security (Attacks A–E)', () => {
-      it('Attack A: Unsigned webhook should be rejected with 400', async () => {
-        const res = await fetch(`${baseUrl}/payments/webhook`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+    describe('14.5 Payment Webhook Security', () => {
+      // The V2 amenity webhook was removed: it accepted a custom, non-gateway payload
+      // (unauthenticated when RAZORPAY_WEBHOOK_SECRET was unset) that could mark any
+      // reservation PAID. Gateway callbacks are settled only by /api/webhooks/razorpay.
+      for (const [label, headers] of [
+        ['unsigned', {}],
+        ['correctly signed', { 'x-razorpay-signature': null }],
+      ]) {
+        it(`${label} V2 amenity webhook call can no longer mark a reservation paid`, async () => {
+          const payload = {
             orgId: testOrg._id.toString(),
             reservationId: eventResvId,
             status: 'PAID',
-            paymentReference: 'UNSIGNED-ATTACK-A',
+            paymentReference: `REMOVED-WEBHOOK-${label}`,
             paymentAmount: 11800,
-          }),
+          };
+          const before = await AmenityReservation.findById(eventResvId).lean();
+          const res = await fetch(`${baseUrl}/payments/webhook`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(headers['x-razorpay-signature'] === null
+                ? { 'x-razorpay-signature': signWebhookPayload(payload) }
+                : headers),
+            },
+            body: JSON.stringify(payload),
+          });
+          assert.ok([401, 404].includes(res.status), `unexpected status ${res.status}`);
+          const after = await AmenityReservation.findById(eventResvId).lean();
+          assert.equal(after?.paymentStatus, before?.paymentStatus);
         });
-        assert.equal(res.status, 400);
-        const body = await res.json();
-        assert.equal(body.success, false);
-        assert.match(body.message, /signature/i);
-      });
-
-      it('Attack B: Tampered webhook signature should be rejected with 400', async () => {
-        const payload = {
-          orgId: testOrg._id.toString(),
-          reservationId: eventResvId,
-          status: 'PAID',
-          paymentReference: 'TAMPERED-ATTACK-B',
-          paymentAmount: 11800,
-        };
-        const res = await fetch(`${baseUrl}/payments/webhook`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-razorpay-signature': '0'.repeat(64),
-          },
-          body: JSON.stringify(payload),
-        });
-        assert.equal(res.status, 400);
-        const body = await res.json();
-        assert.equal(body.success, false);
-        assert.match(body.message, /Invalid webhook signature/i);
-      });
-
-      it('Attack C: Tenant spoofing in webhook payload should be rejected with 403', async () => {
-        const payload = {
-          orgId: otherOrg._id.toString(),
-          reservationId: eventResvId,
-          status: 'PAID',
-          paymentReference: 'SPOOFED-TENANT-ATTACK-C',
-          paymentAmount: 11800,
-        };
-        const signature = signWebhookPayload(payload);
-        const res = await fetch(`${baseUrl}/payments/webhook`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-razorpay-signature': signature,
-          },
-          body: JSON.stringify(payload),
-        });
-        assert.equal(res.status, 403);
-        const body = await res.json();
-        assert.equal(body.success, false);
-        assert.match(body.message, /spoofing/i);
-      });
-
-      it('Attack D: Non-existent reservation in webhook should be rejected with 404', async () => {
-        const fakeReservationId = new mongoose.Types.ObjectId().toString();
-        const payload = {
-          orgId: testOrg._id.toString(),
-          reservationId: fakeReservationId,
-          status: 'PAID',
-          paymentReference: 'NOT-FOUND-ATTACK-D',
-          paymentAmount: 11800,
-        };
-        const signature = signWebhookPayload(payload);
-        const res = await fetch(`${baseUrl}/payments/webhook`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-razorpay-signature': signature,
-          },
-          body: JSON.stringify(payload),
-        });
-        assert.equal(res.status, 404);
-        const body = await res.json();
-        assert.equal(body.success, false);
-      });
-
-      it('Attack E: Underpayment in webhook should be rejected with 400', async () => {
-        const start = new Date(Date.now() + 345600000);
-        const end = new Date(start.getTime() + 14400000);
-        const underpayHold = await AmenityReservationHold.create({
-          orgId: testOrg._id,
-          facilityId: eventFacilityId,
-          residentId: residentUser._id,
-          unitId: new mongoose.Types.ObjectId(),
-          requestedStartDateTime: start,
-          requestedEndDateTime: end,
-          effectiveStartDateTime: start,
-          effectiveEndDateTime: end,
-          headcount: 50,
-          holdType: 'ADMIN_REVIEW',
-          status: 'ACTIVE',
-          expiresAt: new Date(Date.now() + 1800000),
-        });
-
-        const underpayResv = await AmenityReservation.create({
-          orgId: testOrg._id,
-          facilityId: eventFacilityId,
-          residentId: residentUser._id,
-          unitId: underpayHold.unitId,
-          reservationNumber: `RES-202609-${Math.floor(100000 + Math.random() * 900000)}`,
-          requestedStartDateTime: start,
-          requestedEndDateTime: end,
-          effectiveStartDateTime: start,
-          effectiveEndDateTime: end,
-          headcount: 50,
-          bookingStatus: 'PENDING_APPROVAL',
-          approvalStatus: 'APPROVED',
-          paymentStatus: 'PENDING',
-          accessStatus: 'NOT_APPLICABLE',
-          completionStatus: 'PENDING',
-          totalAmount: 11800,
-        });
-
-        const payload = {
-          orgId: testOrg._id.toString(),
-          reservationId: underpayResv._id.toString(),
-          status: 'PAID',
-          paymentReference: 'UNDERPAY-ATTACK-E',
-          paymentAmount: 10,
-        };
-        const signature = signWebhookPayload(payload);
-        const res = await fetch(`${baseUrl}/payments/webhook`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-razorpay-signature': signature,
-          },
-          body: JSON.stringify(payload),
-        });
-        assert.equal(res.status, 400);
-        const body = await res.json();
-        assert.equal(body.success, false);
-        assert.match(body.message, /Insufficient payment amount/i);
-      });
+      }
     });
 
     // -----------------------------------------------------------------------

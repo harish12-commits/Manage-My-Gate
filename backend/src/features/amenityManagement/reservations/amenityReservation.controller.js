@@ -1,57 +1,9 @@
 import amenityReservationService from './amenityReservation.service.js';
 import amenityIdempotencyService from '../idempotency/amenityIdempotencyRecord.service.js';
 import HttpError from '../../../utils/httpError.utils.js';
-import { getPermissionsForUser } from '../../../middlewares/rbac.middleware.js';
-import { mapPermission } from '../../../utils/permissionMapper.js';
+import { hasAmenityAdminScope } from '../domain/access/amenityAdminScope.js';
 
-/**
- * Resolves whether a user has administrative scope for amenity operations based on permissions.
- *
- * @param {object} user - The authenticated user object from req.user
- * @param {string[]} requiredPermissions - Required permission strings
- * @returns {Promise<boolean>} - True if user has administrative scope, false if resident-restricted
- */
-const checkAmenityAdminScope = async (user, requiredPermissions = ['amenities:admin_calander', 'amenities:manage_bookings']) => {
-  if (!user) return false;
-
-  // Platform and Organization-level super admins bypass permission checks
-  if (
-    user.isPlatform ||
-    user.isPlatformSuperAdmin ||
-    ['Super Admin', 'Platform Super Admin', 'Community Admin', 'Admin', 'SuperAdmin'].includes(user.role)
-  ) {
-    return true;
-  }
-
-  const normalizedRequired = requiredPermissions.map(mapPermission);
-
-  // If user payload directly carries permissions (e.g., in JWT claims or mocks)
-  if (Array.isArray(user.permissions)) {
-    if (user.permissions.includes('*')) return true;
-    const userPerms = user.permissions.map(mapPermission);
-    if (normalizedRequired.some((reqPerm) => userPerms.includes(reqPerm))) {
-      return true;
-    }
-  }
-
-  // Dynamically resolve permissions from database via RBAC engine
-  try {
-    const normalizedUser = {
-      ...user,
-      id: user.id || user._id,
-    };
-    const permissions = await getPermissionsForUser(normalizedUser);
-    if (Array.isArray(permissions)) {
-      if (permissions.includes('*')) return true;
-      const userPerms = permissions.map(mapPermission);
-      return normalizedRequired.some((reqPerm) => userPerms.includes(reqPerm));
-    }
-  } catch (err) {
-    console.error('[AmenityRBAC] Error resolving user permissions in reservation controller:', err.message);
-  }
-
-  return false;
-};
+const checkAmenityAdminScope = (user, requiredPermissions) => hasAmenityAdminScope(user, requiredPermissions);
 
 export class AmenityReservationController {
   /**

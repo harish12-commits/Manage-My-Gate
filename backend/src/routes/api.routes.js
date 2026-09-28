@@ -14,7 +14,6 @@ import workspaceRouter from '../features/workspace/workspace.router.js';
 import messageTemplateRouter from '../features/messageTemplate/messageTemplate.router.js';
 import villaRouter from '../features/villa/villa.router.js';
 import amenityRouter from '../features/amenity/amenity.router.js';
-import bookingRouter from '../features/booking/booking.router.js';
 import amenityBookingRouter from '../features/amenityBooking/amenityBooking.router.js';
 import paymentRouter from '../features/payment/payment.router.js';
 import amenityDashboardRouter from '../features/amenityDashboard/amenityDashboard.router.js';
@@ -87,7 +86,9 @@ router.use('/dashboard-feed', dashboardFeedRouter);
 router.use('/templates', messageTemplateRouter);
 router.use('/villas', villaRouter);
 router.use('/amenities', amenityRouter);
-router.use('/bookings', bookingRouter);
+// The legacy /bookings API (features/booking) is intentionally not mounted: it had no
+// permission checks and no client uses it. Amenity bookings live under /amenity-bookings
+// and /api/v2/amenity-management.
 router.use('/amenity-bookings', amenityBookingRouter);
 router.use('/payments', paymentRouter);
 router.use('/amenity-dashboard', amenityDashboardRouter);

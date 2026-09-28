@@ -178,6 +178,18 @@ export class AmenityOutboxService {
         );
         break;
 
+      // Facility lifecycle events carry no resident-facing notification: live UI updates
+      // are already emitted in-process, and affected residents are notified through
+      // their own RESERVATION_CANCELLED events. Acknowledge so they never dead-letter.
+      case 'FACILITY_CREATED':
+      case 'FACILITY_PUBLISHED':
+      case 'FACILITY_DEACTIVATED':
+        logger.info(`[AmenityOutbox] ${eventType} acknowledged for facility ${payload?.code || aggregateId}`, {
+          orgId,
+          facilityId: payload?.facilityId || aggregateId,
+        });
+        break;
+
       default:
         throw new Error(`Unsupported outbox event type: ${eventType}`);
     }
