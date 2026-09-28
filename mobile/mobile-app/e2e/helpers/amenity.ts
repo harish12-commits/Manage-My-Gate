@@ -73,6 +73,8 @@ export interface HoldInput {
   headcount?: number;
   quantity?: number;
   resourceIndex?: number;
+  /** Staff only: book on this resident's behalf. */
+  residentId?: string;
 }
 
 /** Creates a V2 hold as `who` (setup only). Returns the raw API result. */
@@ -91,6 +93,7 @@ export const createHoldAs = (who: Actor, input: HoldInput) => {
       headcount: input.headcount ?? 1,
       quantity: input.quantity ?? 1,
       holdType: 'STANDARD',
+      ...(input.residentId ? { residentId: input.residentId } : {}),
     },
     { 'x-idempotency-key': idemKey('hold') }
   );

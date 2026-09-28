@@ -7,6 +7,8 @@ import {
   reservationIdParamRules,
   reservationNumberParamRules,
   listReservationsRules,
+  payBalanceRules,
+  collectPaymentRules,
 } from './amenityReservation.validateRules.js';
 import validate from '../../../middlewares/validator.middleware.js';
 import isAuthenticated from '../../../middlewares/auth.middleware.js';
@@ -32,6 +34,22 @@ router.post(
   authorizePermission('amenities', ['amenities', 'my_booking']),
   validate(cancelReservationRules),
   amenityReservationController.cancel
+);
+
+// POST /:reservationId/pay-balance - Resident pays the outstanding balance from the wallet
+router.post(
+  '/:reservationId/pay-balance',
+  authorizePermission('amenities', ['amenities', 'my_booking']),
+  validate(payBalanceRules),
+  amenityReservationController.payBalance
+);
+
+// POST /:reservationId/collect-payment - Gate staff collect the balance in cash
+router.post(
+  '/:reservationId/collect-payment',
+  authorizePermission('amenities', ['scanner', 'admin_calander', 'amenities']),
+  validate(collectPaymentRules),
+  amenityReservationController.collectPayment
 );
 
 // POST /:reservationId/review - Maker-checker review (Approve/Reject)

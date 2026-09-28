@@ -170,7 +170,8 @@ describe('P2b deposits and cancellation rules on other facilities', () => {
     expect((await reservation(id))!.bookingStatus).toBe('PENDING_APPROVAL');
     const before = await walletBalance('residentA');
     expectStatus(await cancelAs('residentA', id), 200);
-    expect((await walletBalance('residentA'))! - before!).toBe(7000);
+    // The hall takes a 25% advance (₹1,250) + ₹2,000 deposit when booking: all of it comes back.
+    expect((await walletBalance('residentA'))! - before!).toBe(3250);
   });
 
   it('records who cancelled and the refund breakdown for the ledger', async () => {

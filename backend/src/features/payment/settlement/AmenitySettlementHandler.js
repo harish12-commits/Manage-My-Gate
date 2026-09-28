@@ -1,8 +1,21 @@
 import DomainSettlementInterface from './DomainSettlementInterface.js';
 import logger from '../../../utils/logger.utils.js';
 
+const V2_REFERENCE_TYPES = ['AmenityReservationHold', 'AmenityReservation'];
+
 export class AmenitySettlementHandler extends DomainSettlementInterface {
   async settle(payment, session) {
+    // V2 amenity reservations (Amenity Management) settle through their own service;
+    // legacy AmenityBooking payments keep the original path below.
+    if (V2_REFERENCE_TYPES.includes(payment.referenceType)) {
+      const { amenityPaymentService } = await import('../../amenityManagement/payments/amenityPayment.service.js');
+      if (payment.referenceType === 'AmenityReservationHold') {
+        return amenityPaymentService.settleHoldPayment(payment, session);
+      }
+      const reservation = await amenityPaymentService.applySettledPayment(payment.referenceId, payment, session);
+      return { status: 'APPLIED', reservationId: reservation?._id };
+    }
+
     logger.info('Executing Amenity Booking settlement', {
       bookingId: payment.referenceId,
       paymentId: payment._id,

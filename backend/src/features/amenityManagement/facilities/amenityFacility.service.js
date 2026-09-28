@@ -415,7 +415,7 @@ export class AmenityFacilityService {
 
       // Nested policy blocks are merged, so a partial edit (e.g. only baseRate) keeps
       // the other pricing / cancellation fields instead of resetting them to defaults.
-      for (const key of ['pricingConfig', 'cancellationPolicy']) {
+      for (const key of ['pricingConfig', 'cancellationPolicy', 'paymentPolicy']) {
         if (cleanUpdate[key] && typeof cleanUpdate[key] === 'object') {
           const current = existing[key]?.toObject ? existing[key].toObject() : existing[key] || {};
           cleanUpdate[key] = { ...current, ...cleanUpdate[key] };

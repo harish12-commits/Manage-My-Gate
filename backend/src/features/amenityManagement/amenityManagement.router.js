@@ -9,6 +9,7 @@ import passRouter from './passes/amenityAccessPass.router.js';
 import maintenanceRouter from './maintenance/amenityMaintenanceBlock.router.js';
 import paymentRouter from './payments/amenityPayment.router.js';
 import settingsRouter from './settings/amenitySettings.router.js';
+import './payments/amenityPayment.listeners.js';
 
 const router = Router();
 

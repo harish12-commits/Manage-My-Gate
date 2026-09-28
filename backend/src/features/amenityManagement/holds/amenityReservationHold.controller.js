@@ -12,10 +12,17 @@ export class AmenityReservationHoldController {
   async create(req, res, next) {
     try {
       const orgId = req.tenant.orgId;
-      const residentId = req.user.id || req.user._id;
+      const actorId = req.user.id || req.user._id;
       const hasAdminScope = await checkAmenityAdminScope(req.user, ['amenities:admin_calander', 'amenities:manage_bookings']);
-      const unitId = (!hasAdminScope && (req.user.villaId || req.user.unitId)) ? (req.user.villaId || req.user.unitId) : (req.body.unitId || req.user.villaId || req.user.unitId || req.user.id);
       const idempotencyKey = req.headers['x-idempotency-key'] || req.headers['idempotency-key'];
+
+      // Amenity staff may book on a resident's behalf; everyone else books for themselves.
+      // The unit is always resolved server-side (never taken from the request).
+      const onBehalf = hasAdminScope && req.body.residentId && String(req.body.residentId) !== String(actorId);
+      const residentId = onBehalf ? req.body.residentId : actorId;
+      const unitId = onBehalf
+        ? await amenityReservationHoldService.resolveResidentUnit(orgId, residentId)
+        : req.user.villaId || req.user.unitId || actorId;
 
       const holdParams = {
         facilityId: req.body.facilityId,
@@ -28,6 +35,7 @@ export class AmenityReservationHoldController {
         orgId,
         residentId,
         unitId,
+        bookedBy: onBehalf ? actorId : null,
       };
 
       if (idempotencyKey) {

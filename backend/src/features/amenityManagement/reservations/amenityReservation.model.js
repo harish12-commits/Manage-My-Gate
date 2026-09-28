@@ -147,6 +147,7 @@ const amenityReservationSchema = new mongoose.Schema(
           'NOT_APPLICABLE',
           'PENDING',
           'HELD_AUTHORIZED',
+          'ADVANCE_PAID',
           'PAID',
           'REFUND_PENDING',
           'REFUNDED',
@@ -211,8 +212,45 @@ const amenityReservationSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['NONE', 'WALLET', 'RAZORPAY'],
+      enum: ['NONE', 'WALLET', 'RAZORPAY', 'CASH', 'WAIVED'],
       default: 'NONE',
+    },
+    amountSchedule: {
+      mode: { type: String, enum: ['FULL', 'ADVANCE', 'PAY_AT_GATE'], default: 'FULL' },
+      priceAmount: { type: Number, default: 0 },
+      depositAmount: { type: Number, default: 0 },
+      advanceAmount: { type: Number, default: 0 },
+      dueNowAmount: { type: Number, default: 0 },
+      balanceAmount: { type: Number, default: 0 },
+    },
+    // Price still to be paid (online before the slot, or collected at the gate).
+    balanceAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Balance cannot be negative'],
+    },
+    // Every settled payment against this reservation (booking payment, balance, gate cash).
+    payments: [
+      {
+        _id: false,
+        paymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
+        purpose: { type: String, enum: ['BOOKING', 'BALANCE'] },
+        method: { type: String, enum: ['WALLET', 'RAZORPAY', 'CASH'] },
+        amount: { type: Number },
+        receiptNumber: { type: String, default: null },
+        receivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+        paidAt: { type: Date, default: Date.now },
+      },
+    ],
+    bookedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    waivedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
     // Audit references are written only after the backend has settled the
     // selected payment method; they are never accepted as proof from the app.

@@ -189,9 +189,12 @@ export class AmenityAccessPassService {
       }
 
       // Step 4: Pass validity window
-      // 15-minute early arrival window; 1-minute end tolerance
+      // Community early-arrival window (default 15 minutes); 1-minute end tolerance
       const now = new Date();
-      const earlyArrivalStart = new Date(pass.validFrom.getTime() - 15 * 60 * 1000);
+      const { default: amenitySettingsService } = await import('../settings/amenitySettings.service.js');
+      const settings = await amenitySettingsService.getSettings(orgId, session);
+      const earlyMinutes = Number.isFinite(Number(settings?.checkInEarlyMinutes)) ? Number(settings.checkInEarlyMinutes) : 15;
+      const earlyArrivalStart = new Date(pass.validFrom.getTime() - earlyMinutes * 60 * 1000);
       const toleranceEnd = new Date(pass.validUntil.getTime() + 1 * 60 * 1000);
 
       if (now < earlyArrivalStart) {
@@ -212,6 +215,14 @@ export class AmenityAccessPassService {
           403,
           `Access denied: associated reservation is ${reservation.bookingStatus}`
         );
+      }
+
+      // Step 5b: Any outstanding balance is collected at the gate before entry
+      const balanceDue = Number(reservation.balanceAmount || 0);
+      if (balanceDue > 0) {
+        const err = new HttpError(402, `Balance of ₹${balanceDue} is due. Collect payment before entry.`);
+        err.details = [{ code: 'BALANCE_DUE', reservationId: String(reservation._id), balanceAmount: balanceDue }];
+        throw err;
       }
 
       // Step 6: Facility publication & deletion validation

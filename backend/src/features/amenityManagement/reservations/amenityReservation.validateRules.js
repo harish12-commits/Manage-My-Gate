@@ -2,7 +2,7 @@ import { body, param, query } from 'express-validator';
 
 export const confirmReservationRules = [
   body('holdId').notEmpty().withMessage('holdId is required').isMongoId().withMessage('Invalid holdId'),
-  body('paymentMethod').optional().isIn(['WALLET', 'RAZORPAY']).withMessage('Invalid payment method'),
+  body('paymentMethod').optional().isIn(['WALLET', 'RAZORPAY', 'WAIVED']).withMessage('Invalid payment method'),
   body('paymentId').optional().isMongoId().withMessage('Invalid payment ID'),
   body('notes').optional().isString().trim(),
 ];
@@ -52,4 +52,14 @@ export const listReservationsRules = [
   query('startDate').optional().isISO8601().withMessage('startDate must be valid ISO8601 date'),
   query('endDate').optional().isISO8601().withMessage('endDate must be valid ISO8601 date'),
   query('search').optional().isString().trim(),
+];
+
+export const payBalanceRules = [
+  param('reservationId').isMongoId().withMessage('Invalid reservationId'),
+  body('paymentMethod').isIn(['WALLET']).withMessage('Pay the balance from the Digital Wallet, or use online payment'),
+];
+
+export const collectPaymentRules = [
+  param('reservationId').isMongoId().withMessage('Invalid reservationId'),
+  body('amount').isFloat({ gt: 0 }).withMessage('amount must be greater than 0'),
 ];

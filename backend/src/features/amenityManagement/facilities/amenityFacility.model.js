@@ -297,6 +297,12 @@ const amenityFacilitySchema = new mongoose.Schema(
       type: cancellationPolicySchema,
       default: () => ({}),
     },
+    // How the price is collected: all when booking, an advance + balance, or at the gate.
+    paymentPolicy: {
+      mode: { type: String, enum: ['FULL', 'ADVANCE', 'PAY_AT_GATE'], default: 'FULL' },
+      advanceType: { type: String, enum: ['FIXED', 'PERCENT'], default: 'PERCENT' },
+      advanceValue: { type: Number, default: 0, min: [0, 'Advance cannot be negative'] },
+    },
     status: {
       type: String,
       enum: ['DRAFT', 'ACTIVE', 'INACTIVE', 'MAINTENANCE'],

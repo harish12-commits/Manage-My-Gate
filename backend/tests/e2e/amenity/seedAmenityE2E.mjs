@@ -25,6 +25,12 @@ import { syncPermissions } from '../../../src/utils/permissionSync.util.js';
 import { DEFAULT_ROLE_PERMISSIONS } from '../../../src/features/organization/defaultRolePermissions.js';
 import amenityFacilityService from '../../../src/features/amenityManagement/facilities/amenityFacility.service.js';
 import { AmenityResource } from '../../../src/features/amenityManagement/resources/amenityResource.model.js';
+import IntegrationHub from '../../../src/features/integrationHub/integrationHub.model.js';
+import { encryptGCM } from '../../../src/features/integrationHub/utils/crypto.util.js';
+
+// Razorpay test-mode credentials: with NODE_ENV=test and an rzp_test_ key the provider
+// simulates orders, captures and refunds when Razorpay rejects the key.
+export const E2E_RAZORPAY = { keyId: 'rzp_test_amenity_e2e', keySecret: 'amenity_e2e_secret', webhookSecret: 'amenity_e2e_webhook' };
 
 export const E2E_PASSWORD = 'E2e@Test1234';
 
@@ -110,6 +116,8 @@ const FACILITIES = [
     minNoticeHours: 24, advanceBookingDays: 30, operatingHours: allDays('06:00', '22:00'),
     pricingConfig: { pricingType: 'FIXED_EVENT', baseRate: 5000, securityDeposit: 2000, currency: 'INR' },
     cancellationPolicy: REFUND_50_BEFORE_24H,
+    // 25% advance + deposit when booking; the balance online before the day or at the gate.
+    paymentPolicy: { mode: 'ADVANCE', advanceType: 'PERCENT', advanceValue: 25 },
   },
   {
     key: 'rooms', orgKey: 'A', archetype: 'ROOM_RESOURCE', name: 'Meeting Rooms', code: 'ROOMS', category: 'Workspace',
@@ -133,6 +141,7 @@ const FACILITIES = [
       { name: 'Evening', startTime: '16:00', endTime: '22:00', price: 4500 },
     ],
     pricingConfig: { pricingType: 'FIXED_EVENT', baseRate: 4000, currency: 'INR' },
+    paymentPolicy: { mode: 'PAY_AT_GATE' },
   },
   {
     key: 'guestRoom', orgKey: 'A', archetype: 'ROOM_RESOURCE', name: 'Guest Suites', code: 'GUEST', category: 'Workspace',
@@ -284,6 +293,17 @@ export async function seedAmenityE2E() {
       };
     }
   }
+
+  // Community A has an online payment gateway; community B does not.
+  await IntegrationHub.create({
+    userId: fixture.actors.adminA.id,
+    orgId: fixture.orgs.A,
+    provider: 'razorpay',
+    accountLabel: 'Razorpay (E2E test mode)',
+    status: 'connected',
+    credentials: Object.entries(E2E_RAZORPAY).map(([key, value]) => ({ key, ...encryptGCM(value) })),
+  });
+  fixture.razorpay = E2E_RAZORPAY;
 
   for (const { userId, orgKey } of extraMemberships) {
     const role = rolesByOrg[orgKey]['Community Admin'];

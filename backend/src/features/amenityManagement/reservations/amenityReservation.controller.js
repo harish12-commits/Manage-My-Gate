@@ -12,17 +12,17 @@ export class AmenityReservationController {
   async confirm(req, res, next) {
     try {
       const orgId = req.tenant.orgId;
-      const residentId = req.user.id || req.user._id;
-      const unitId = req.user.villaId || req.user.unitId || req.user.id || req.user._id;
+      const actorId = req.user.id || req.user._id;
+      const hasAdminScope = await checkAmenityAdminScope(req.user, ['amenities:admin_calander', 'amenities:manage_bookings']);
       const idempotencyKey = req.headers['x-idempotency-key'] || req.headers['idempotency-key'];
 
       const confirmParams = {
         holdId: req.body.holdId,
         orgId,
-        residentId,
-        unitId,
+        residentId: actorId,
+        actorId,
+        hasAdminScope,
         paymentMethod: req.body.paymentMethod,
-        paymentId: req.body.paymentId,
         notes: req.body.notes,
       };
 
@@ -43,6 +43,50 @@ export class AmenityReservationController {
 
       const result = await amenityReservationService.confirmReservationFromHold(confirmParams);
       return res.success(result, 'Reservation confirmed successfully', 201);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * Resident (or a member of the same household) pays the outstanding balance from the wallet.
+   */
+  async payBalance(req, res, next) {
+    try {
+      const { reservationId } = req.params;
+      const orgId = req.tenant.orgId;
+      const reservation = await amenityReservationService.getReservationById(reservationId);
+      if (!reservation || reservation.orgId.toString() !== orgId.toString()) {
+        throw new HttpError(404, 'Reservation not found');
+      }
+      if (!(await amenityReservationService.canUserAccessReservation(req.user, reservation))) {
+        throw new HttpError(403, 'Forbidden. You do not have permission to pay for this reservation.');
+      }
+      const result = await amenityReservationService.payBalanceFromWallet({
+        reservationId,
+        orgId,
+        payerId: req.user.id || req.user._id,
+      });
+      return res.success(result, 'Balance paid successfully');
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * Gate staff collect the outstanding balance in cash and issue a receipt.
+   */
+  async collectPayment(req, res, next) {
+    try {
+      const { reservationId } = req.params;
+      const orgId = req.tenant.orgId;
+      const result = await amenityReservationService.collectBalanceInCash({
+        reservationId,
+        orgId,
+        amount: Number(req.body.amount),
+        collectedBy: req.user.id || req.user._id,
+      });
+      return res.success(result, 'Payment collected successfully');
     } catch (error) {
       return next(error);
     }

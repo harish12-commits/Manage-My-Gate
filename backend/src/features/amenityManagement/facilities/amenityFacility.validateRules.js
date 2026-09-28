@@ -110,6 +110,10 @@ export const createFacilityRules = [
   body('checkInTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('checkInTime must be HH:MM'),
   body('checkOutTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('checkOutTime must be HH:MM'),
   body('maxNights').optional().isInt({ min: 1 }).withMessage('maxNights must be at least 1'),
+  body('paymentPolicy.mode').optional().isIn(['FULL', 'ADVANCE', 'PAY_AT_GATE']).withMessage('paymentPolicy.mode must be FULL, ADVANCE or PAY_AT_GATE'),
+  body('paymentPolicy.advanceType').optional().isIn(['FIXED', 'PERCENT']).withMessage('paymentPolicy.advanceType must be FIXED or PERCENT'),
+  body('paymentPolicy.advanceValue').optional().isFloat({ min: 0 }).withMessage('paymentPolicy.advanceValue cannot be negative'),
+  body('paymentPolicy').optional().custom((p) => !(p?.advanceType === 'PERCENT' && Number(p?.advanceValue) > 100)).withMessage('An advance percentage cannot exceed 100'),
   body('pricingConfig.pricingType')
     .optional()
     .isIn(['FREE', 'HOURLY', 'DAILY', 'FIXED_EVENT', 'TIERED'])
@@ -283,6 +287,10 @@ export const updateFacilityRules = [
   body('checkInTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('checkInTime must be HH:MM'),
   body('checkOutTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('checkOutTime must be HH:MM'),
   body('maxNights').optional().isInt({ min: 1 }).withMessage('maxNights must be at least 1'),
+  body('paymentPolicy.mode').optional().isIn(['FULL', 'ADVANCE', 'PAY_AT_GATE']).withMessage('paymentPolicy.mode must be FULL, ADVANCE or PAY_AT_GATE'),
+  body('paymentPolicy.advanceType').optional().isIn(['FIXED', 'PERCENT']).withMessage('paymentPolicy.advanceType must be FIXED or PERCENT'),
+  body('paymentPolicy.advanceValue').optional().isFloat({ min: 0 }).withMessage('paymentPolicy.advanceValue cannot be negative'),
+  body('paymentPolicy').optional().custom((p) => !(p?.advanceType === 'PERCENT' && Number(p?.advanceValue) > 100)).withMessage('An advance percentage cannot exceed 100'),
   body('pricingConfig.pricingType')
     .optional()
     .isIn(['FREE', 'HOURLY', 'DAILY', 'FIXED_EVENT', 'TIERED'])

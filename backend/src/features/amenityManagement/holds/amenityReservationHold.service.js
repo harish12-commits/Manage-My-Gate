@@ -13,6 +13,7 @@ import pricingService from '../domain/pricing/pricing.service.js';
 import { withTransactionRetry } from '../domain/concurrency/transaction.utils.js';
 import { getProfile, bookingRuleError } from '../domain/profiles/facilityProfiles.js';
 import amenitySettingsService from '../settings/amenitySettings.service.js';
+import { computeAmountSchedule } from '../domain/payments/amountSchedule.js';
 import amenityManagementEvents, { AMENITY_EVENTS } from '../amenityManagement.events.js';
 
 export class AmenityReservationHoldService {
@@ -62,6 +63,7 @@ export class AmenityReservationHoldService {
       quantity = 1,
       holdType = 'STANDARD',
       holdDurationMinutes = 10,
+      bookedBy = null,
     },
     session
   ) {
@@ -165,6 +167,8 @@ export class AmenityReservationHoldService {
         status: 'ACTIVE',
         expiresAt,
         pricingSnapshot,
+        amountSchedule: computeAmountSchedule(facility, pricingSnapshot),
+        bookedBy: bookedBy || null,
       },
       session
     );
@@ -177,6 +181,20 @@ export class AmenityReservationHoldService {
     });
 
     return { hold, pricingSnapshot };
+  }
+
+  /**
+   * The unit (villa) a resident books for in this community. Staff booking on a
+   * resident's behalf must name someone who is an active member here.
+   * @returns {Promise<string>}
+   */
+  async resolveResidentUnit(orgId, userId) {
+    const OrgMembership = mongoose.models.OrgMembership || (await import('../../orgMembership/orgMembership.model.js')).default;
+    const membership = await OrgMembership.findOne({ orgId, userId, status: 'Active' }).lean();
+    if (!membership) {
+      throw new HttpError(404, 'Resident is not an active member of this community');
+    }
+    return membership.villaId || membership.units?.[0]?.villaId || userId;
   }
 
   /**
