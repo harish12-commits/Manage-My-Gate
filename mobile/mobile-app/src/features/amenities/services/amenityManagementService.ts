@@ -365,6 +365,17 @@ export const amenityManagementService = {
     return extractEnvelope(response);
   },
 
+  /** Community-wide amenity rules (quota, approval timeout, check-in window, no-show grace). */
+  async getAmenitySettings(): Promise<ApiResponse<any>> {
+    const response = await apiClient.get<ApiResponse<any>>(getAmenityV2Url('/settings'));
+    return extractEnvelope(response);
+  },
+
+  async updateAmenitySettings(update: Record<string, any>): Promise<ApiResponse<any>> {
+    const response = await apiClient.put<ApiResponse<any>>(getAmenityV2Url('/settings'), update);
+    return extractEnvelope(response);
+  },
+
   async getReservations(params: {
     page?: number;
     limit?: number;

@@ -73,6 +73,15 @@ export function MobileQuickNavHub({ searchQuery = '' }: MobileQuickNavHubProps) 
       permission: 'amenities:amenities',
     },
     {
+      id: 'amenities_settings',
+      name: 'Amenity Settings',
+      route: '/(resident)/amenities/settings',
+      iconName: 'SlidersHorizontal',
+      colorBg: 'bg-indigo-500/10 dark:bg-indigo-500/20',
+      colorIcon: '#6366F1',
+      permission: 'amenities:settings',
+    },
+    {
       id: 'amenities_admin_bookings',
       name: 'Booking Queue',
       route: '/(resident)/amenities/admin-bookings',
