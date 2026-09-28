@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Trash2, Lock, Edit2 } from 'lucide-react-native';
+import { Trash2, Lock, Edit2, ChevronRight } from 'lucide-react-native';
 import { ListCard } from '@/components/ui/ListCard';
 import { StatusVariant } from '@/components/ui/StatusBadge';
 import { IntegrationConnection } from '../services/integrationHubApi';
@@ -54,9 +54,9 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
         label: isConnected ? 'CONNECTED' : 'DISCONNECTED',
         variant: mapStatusVariant(),
       }}
-      showChevron={true}
+      rightContent={onPress ? <ChevronRight size={16} color="#9ca3af" /> : undefined}
       onPress={() => onPress && onPress(connection)}
-      className="mb-2 p-2.5 bg-card border border-border/70 rounded-xl shadow-xs"
+      className="mb-2.5 p-3 bg-card border border-border/70 rounded-2xl shadow-xs"
     >
       {/* Sub-Metadata Footer Row matching User Management / Role Card */}
       <View className="mt-1 pt-2 border-t border-border/40 flex-row items-center justify-between">

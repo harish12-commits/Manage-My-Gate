@@ -571,7 +571,7 @@ describe('Mobile Phase 3 — Unified Resident Financial History', () => {
 
       expect(screen.getByText('Invoice #INV-999')).toBeTruthy();
       expect(screen.getByText('₹5,000')).toBeTruthy();
-      expect(screen.getByText('PARTIALLY PAID')).toBeTruthy();
+      expect(screen.getByText(/PARTIALLY PAID/i)).toBeTruthy();
       expect(screen.getByText('₹2,000')).toBeTruthy();
       expect(screen.getByText('₹3,000')).toBeTruthy();
       expect(screen.getByText(/Villa\s*202/)).toBeTruthy();

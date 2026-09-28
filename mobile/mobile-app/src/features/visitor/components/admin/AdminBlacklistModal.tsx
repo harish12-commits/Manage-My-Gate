@@ -75,7 +75,10 @@ export const AdminBlacklistModal: React.FC<AdminBlacklistModalProps> = ({
       >
         <View className="flex-1 bg-black/60 items-center justify-center p-4">
           <Pressable className="absolute inset-0" onPress={onClose} />
-          <View className="bg-background w-full rounded-2xl p-4 gap-3 border border-border shadow-lg max-w-md max-h-[90%] flex-shrink">
+          <View
+            style={{ maxHeight: '90%' }}
+            className="bg-background w-full rounded-2xl p-4 gap-3 border border-border shadow-lg max-w-md flex-shrink"
+          >
             {/* Header */}
             <View className="flex-row items-center justify-between border-b border-border pb-3">
               <View className="flex-row items-center gap-2">
@@ -89,12 +92,12 @@ export const AdminBlacklistModal: React.FC<AdminBlacklistModalProps> = ({
 
             <ScrollView
               ref={formScrollRef}
-              className="flex-shrink"
+              className="flex-1"
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
               automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-              contentContainerStyle={{ flexGrow: 1, paddingBottom: 16 }}
+              contentContainerStyle={{ paddingBottom: 24 }}
             >
               {error && (
                 <View className="p-2.5 bg-destructive/10 border border-destructive/20 rounded-xl mb-2">

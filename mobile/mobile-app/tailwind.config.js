@@ -25,6 +25,7 @@ module.exports = {
         medium: ['HankenGrotesk_500Medium', 'sans-serif'],
         semibold: ['HankenGrotesk_600SemiBold', 'sans-serif'],
         bold: ['HankenGrotesk_700Bold', 'sans-serif'],
+        extrabold: ['HankenGrotesk_800ExtraBold', 'sans-serif'],
       },
       colors: {
         border: 'hsl(var(--border))',

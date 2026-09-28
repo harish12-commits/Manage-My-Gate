@@ -380,18 +380,33 @@ export const i18n = {
     }
 
     // 2. Normalized key match (e.g. "active_quick_actions")
-    const normalizedKey = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-    if (dict[normalizedKey]) {
-      return dict[normalizedKey];
-    }
+    if (!trimmed.includes(':')) {
+      const normalizedKey = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      if (dict[normalizedKey]) {
+        return dict[normalizedKey];
+      }
 
-    // Direct taxonomy prefix checks
-    if (dict[`status_${normalizedKey}`]) return dict[`status_${normalizedKey}`];
-    if (dict[`priority_${normalizedKey}`]) return dict[`priority_${normalizedKey}`];
-    if (dict[`cat_${normalizedKey}`]) return dict[`cat_${normalizedKey}`];
-    if (dict[`role_${normalizedKey}`]) return dict[`role_${normalizedKey}`];
-    if (dict[`feature_${normalizedKey}_name`]) return dict[`feature_${normalizedKey}_name`];
-    if (dict[`feature_${normalizedKey}`]) return dict[`feature_${normalizedKey}`];
+      // Direct taxonomy prefix checks
+      if (dict[`status_${normalizedKey}`]) return dict[`status_${normalizedKey}`];
+      if (dict[`priority_${normalizedKey}`]) return dict[`priority_${normalizedKey}`];
+      if (dict[`cat_${normalizedKey}`]) return dict[`cat_${normalizedKey}`];
+      if (dict[`role_${normalizedKey}`]) return dict[`role_${normalizedKey}`];
+      if (dict[`feature_${normalizedKey}_name`]) return dict[`feature_${normalizedKey}_name`];
+      if (dict[`feature_${normalizedKey}`]) return dict[`feature_${normalizedKey}`];
+    } else {
+      // Compound key-value pairs (e.g. "Status: CONFIRMED", "Payment: PAID", "Search: text")
+      const colonMatch = trimmed.match(/^([^:]+):\s*(.+)$/);
+      if (colonMatch) {
+        const prefix = colonMatch[1].trim();
+        const value = colonMatch[2].trim();
+        if (currentLanguageCode === 'en') {
+          return rawText;
+        }
+        const translatedPrefix = i18n.translateText(prefix);
+        const translatedValue = i18n.translateText(value);
+        return `${translatedPrefix}: ${translatedValue}`;
+      }
+    }
 
     // 3. Bidirectional multi-way match across ALL languages (English, Arabic, Tamil, Hindi, etc.)
     const resolvedKey =

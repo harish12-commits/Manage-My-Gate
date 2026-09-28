@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Modal, Pressable, Alert, Platform } from 'react-native';
+import { View, ScrollView, Modal, Pressable, Alert, Platform, TextInput as RNTextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useDispatch } from 'react-redux';
 import { ScreenShell } from '@/components/ui/ScreenShell';
@@ -8,17 +8,44 @@ import { Button } from '@/components/ui/button';
 import { TextInput } from '@/components/forms/TextInput';
 import { SuccessToast } from '@/components/feedback/SuccessToast';
 import { SheetGrabHandle } from '@/components/ui/SheetGrabHandle';
-import { ProfileHeaderCard, VerifyEmailOtpModal } from '@/src/features/profile/components';
+import { ProfileHeaderCard, VerifyEmailOtpModal, LocationPickerModal } from '@/src/features/profile/components';
 import { RoleSwitchModal, OrgSwitchModal, AssignmentSwitchModal, VillaSwitchModal } from '@/components/navigation';
 import { useProfile } from '@/src/features/profile/hooks/useProfile';
 import { useBottomNavScroll } from '@/components/navigation/BottomNavScrollContext';
 import authService from '@/src/features/auth/services/authService';
 import { updateProfileThunk } from '@/src/features/auth/store/authSlice';
 import { useTranslation } from '@/src/utils/i18n';
-import { Save, Camera, Image as ImageIcon, FileUp, Trash2, Settings, Building2, ShieldCheck, MapPin, Home, ChevronRight, BriefcaseBusiness, UserRound } from 'lucide-react-native';
+import {
+  Save,
+  Camera,
+  Image as ImageIcon,
+  FileUp,
+  Trash2,
+  Settings,
+  Building2,
+  ShieldCheck,
+  MapPin,
+  Home,
+  ChevronRight,
+  BriefcaseBusiness,
+  UserRound,
+  LocateFixed,
+  Sparkles,
+  Plus,
+  Check,
+  Navigation,
+  X,
+} from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { validateEmail, validatePhone, parseBackendError } from '@/src/utils/validation';
+import {
+  INTEREST_CATEGORIES,
+  WORK_SUGGESTIONS,
+  BIO_SUGGESTIONS,
+  HOMETOWN_QUICK_SUGGESTIONS,
+} from '@/src/features/profile/data/profileSuggestions';
+import { reverseGeocodeCoords } from '@/src/features/profile/data/locationData';
 
 interface SelectedAvatarFile {
   uri: string;
@@ -81,6 +108,117 @@ export default function ProfileScreen() {
   const [emailOtpResending, setEmailOtpResending] = useState(false);
   const [emailOtpError, setEmailOtpError] = useState<string | null>(null);
   const [devOtpCode, setDevOtpCode] = useState<string | null>(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [activeInterestCategory, setActiveInterestCategory] = useState<string>('sports');
+
+  // Parse current interests array
+  const currentInterests = React.useMemo(() => {
+    return interestsText
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }, [interestsText]);
+
+  // Active items for selected interest category
+  const activeCategoryItems = React.useMemo(() => {
+    const cat = INTEREST_CATEGORIES.find((c) => c.id === activeInterestCategory);
+    return cat ? cat.items : (INTEREST_CATEGORIES[0]?.items || []);
+  }, [activeInterestCategory]);
+
+  const [customInterestInput, setCustomInterestInput] = useState('');
+  const [isDetectingGps, setIsDetectingGps] = useState(false);
+
+  // Toggle an interest from suggestion chips
+  const handleToggleInterest = (interestName: string) => {
+    const exists = currentInterests.some(
+      (item) => item.toLowerCase() === interestName.toLowerCase()
+    );
+    if (exists) {
+      const updated = currentInterests.filter(
+        (item) => item.toLowerCase() !== interestName.toLowerCase()
+      );
+      setInterestsText(updated.join(', '));
+    } else {
+      if (currentInterests.length >= 20) {
+        Alert.alert(t('max_interests', 'Maximum Interests'), t('max_interests_desc', 'You can select up to 20 interests.'));
+        return;
+      }
+      const updated = [...currentInterests, interestName];
+      setInterestsText(updated.join(', '));
+    }
+  };
+
+  // Add custom interest from text input
+  const handleAddCustomInterest = () => {
+    const trimmed = customInterestInput.trim();
+    if (!trimmed) return;
+    if (currentInterests.length >= 20) {
+      Alert.alert(t('max_interests', 'Maximum Interests'), t('max_interests_desc', 'You can select up to 20 interests.'));
+      return;
+    }
+    const exists = currentInterests.some((i) => i.toLowerCase() === trimmed.toLowerCase());
+    if (!exists) {
+      const updated = [...currentInterests, trimmed];
+      setInterestsText(updated.join(', '));
+    }
+    setCustomInterestInput('');
+  };
+
+  // Remove a specific interest tag
+  const handleRemoveInterest = (interestName: string) => {
+    const updated = currentInterests.filter(
+      (item) => item.toLowerCase() !== interestName.toLowerCase()
+    );
+    setInterestsText(updated.join(', '));
+  };
+
+  const handleSelectWorkSuggestion = (suggestion: string) => {
+    setWork(suggestion);
+  };
+
+  const handleSelectBioSuggestion = (suggestion: string) => {
+    setBio(suggestion);
+  };
+
+  const handleSelectHometown = (loc: string) => {
+    setHometown(loc);
+  };
+
+  // Quick 1-tap GPS Geolocation direct from profile
+  const handleQuickGpsDetect = () => {
+    setIsDetectingGps(true);
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const formatted = await reverseGeocodeCoords(
+              position.coords.latitude,
+              position.coords.longitude
+            );
+            if (formatted) {
+              setHometown(formatted);
+            } else {
+              setShowLocationModal(true);
+            }
+          } catch (err) {
+            console.warn('[Profile] GPS reverse geocoding failed:', err);
+            setShowLocationModal(true);
+          } finally {
+            setIsDetectingGps(false);
+          }
+        },
+        (error) => {
+          console.warn('[Profile] Geolocation error:', error);
+          setIsDetectingGps(false);
+          setShowLocationModal(true);
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+      );
+    } else {
+      setIsDetectingGps(false);
+      setShowLocationModal(true);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -724,7 +862,10 @@ export default function ProfileScreen() {
 
         {/* Section: Personal Details & Edit Form */}
         <View className="gap-2.5">
-          <Text className="text-[12px] font-bold font-sans text-muted-foreground uppercase px-1 tracking-wider">
+          <Text
+            className="text-[12px] font-bold font-sans text-muted-foreground uppercase px-1 tracking-wider"
+            style={{ fontWeight: 'bold' }}
+          >
             {t('personal_details', 'Personal Details')}
           </Text>
 
@@ -828,45 +969,315 @@ export default function ProfileScreen() {
 
             <View className="h-px bg-border/70" />
 
-            <TextInput
-              label={t('bio', 'Bio')}
-              placeholder={t('bio_placeholder', 'Tell your neighbours about yourself')}
-              value={bio}
-              onChangeText={setBio}
-              multiline
-              maxLength={500}
-              leftIcon={UserRound}
-            />
-
-            <View className="flex-row gap-3">
+            {/* Bio with suggestions */}
+            <View className="gap-2">
               <TextInput
-                containerClassName="flex-1"
-                label={t('work', 'Work')}
-                placeholder={t('add_work', 'Add work')}
+                label={t('bio', 'Bio')}
+                placeholder={t('bio_placeholder', 'Tell your neighbours about yourself')}
+                value={bio}
+                onChangeText={setBio}
+                multiline
+                maxLength={500}
+                leftIcon={UserRound}
+              />
+              <View className="gap-1.5">
+                <View className="flex-row items-center gap-1.5 px-0.5">
+                  <Sparkles size={12} className="text-primary" />
+                  <Text className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                    {t('quick_bio_suggestions', 'Quick Bio Suggestions')}
+                  </Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-1.5 pb-0.5">
+                  {BIO_SUGGESTIONS.map((suggestion, idx) => (
+                    <Pressable
+                      key={idx}
+                      onPress={() => handleSelectBioSuggestion(suggestion)}
+                      className={`px-3 py-1.5 rounded-xl border me-1.5 active:opacity-75 ${
+                        bio === suggestion
+                          ? 'bg-primary/15 border-primary'
+                          : 'bg-card border-border/80'
+                      }`}
+                    >
+                      <Text className={`text-xs ${bio === suggestion ? 'text-primary font-bold' : 'text-muted-foreground font-medium'}`} numberOfLines={1}>
+                        {suggestion}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+
+            {/* Work / Profession (Full Width) */}
+            <View className="gap-2">
+              <TextInput
+                containerClassName="w-full"
+                label={t('work', 'Work / Profession')}
+                placeholder={t('add_work', 'e.g. Software Engineer, Doctor, Architect')}
                 value={work}
                 onChangeText={setWork}
                 maxLength={120}
                 leftIcon={BriefcaseBusiness}
               />
+              <View className="gap-1.5">
+                <View className="flex-row items-center gap-1.5 px-0.5">
+                  <Sparkles size={12} className="text-primary" />
+                  <Text className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                    {t('popular_roles', 'Popular Roles')}
+                  </Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-1.5 pb-0.5">
+                  {WORK_SUGGESTIONS.map((w) => (
+                    <Pressable
+                      key={w}
+                      onPress={() => handleSelectWorkSuggestion(w)}
+                      className={`px-3 py-1.5 rounded-xl border me-1.5 active:opacity-75 ${
+                        work === w
+                          ? 'bg-primary/15 border-primary'
+                          : 'bg-card border-border/80'
+                      }`}
+                    >
+                      <Text className={`text-xs ${work === w ? 'text-primary font-bold' : 'text-muted-foreground font-medium'}`}>
+                        {w}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+
+            {/* Hometown / Location (Full Width & Accessible) */}
+            <View className="gap-2">
+              <View className="flex-row items-center justify-between px-0.5">
+                <View className="flex-row items-center gap-1.5">
+                  <MapPin size={14} className="text-primary" />
+                  <Text className="text-[13.5px] font-bold font-sans text-foreground">
+                    {t('hometown', 'Hometown / Location')}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setShowLocationModal(true)}
+                  className="flex-row items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/25 active:bg-primary/20"
+                >
+                  <LocateFixed size={12} className="text-primary" />
+                  <Text className="text-xs font-bold text-primary">
+                    {t('select_location', 'All Locations')} &gt;
+                  </Text>
+                </Pressable>
+              </View>
+
               <TextInput
-                containerClassName="flex-1"
-                label={t('hometown', 'Hometown')}
-                placeholder={t('add_hometown', 'Add hometown')}
+                containerClassName="w-full"
+                placeholder={t('add_hometown', 'e.g. Bengaluru, Karnataka, India')}
                 value={hometown}
                 onChangeText={setHometown}
                 maxLength={120}
                 leftIcon={MapPin}
+                rightIcon={LocateFixed}
+                rightIconColor="#EA580C"
+                onRightIconPress={() => setShowLocationModal(true)}
               />
+
+              {/* Location Shortcuts Row */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-1.5 pb-0.5">
+                {/* 1. All Locations Picker trigger */}
+                <Pressable
+                  onPress={() => setShowLocationModal(true)}
+                  className="px-3 py-1.5 rounded-xl border border-primary/40 bg-primary/10 flex-row items-center gap-1.5 me-1.5 active:opacity-75"
+                >
+                  <MapPin size={13} className="text-primary" />
+                  <Text className="text-xs font-bold text-primary">
+                    {t('choose_location', 'Select Country / State')}
+                  </Text>
+                </Pressable>
+
+                {/* 2. Direct GPS auto-detect trigger */}
+                <Pressable
+                  onPress={handleQuickGpsDetect}
+                  disabled={isDetectingGps}
+                  className="px-3 py-1.5 rounded-xl border border-blue-500/40 bg-blue-500/10 flex-row items-center gap-1.5 me-1.5 active:opacity-75"
+                >
+                  {isDetectingGps ? (
+                    <ActivityIndicator size="small" color="#0284c7" />
+                  ) : (
+                    <LocateFixed size={13} className="text-blue-600 dark:text-blue-400" />
+                  )}
+                  <Text className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                    {isDetectingGps ? t('detecting', 'Detecting GPS...') : t('current_gps', 'Current GPS')}
+                  </Text>
+                </Pressable>
+
+                {/* 3. Popular Cities */}
+                {HOMETOWN_QUICK_SUGGESTIONS.map((ht) => {
+                  const cityName = ht.split(',')[0];
+                  const isSelected = hometown === ht;
+                  return (
+                    <Pressable
+                      key={ht}
+                      onPress={() => handleSelectHometown(ht)}
+                      className={`px-3 py-1.5 rounded-xl border me-1.5 active:opacity-75 ${
+                        isSelected
+                          ? 'bg-primary/15 border-primary'
+                          : 'bg-card border-border/80'
+                      }`}
+                    >
+                      <Text className={`text-xs ${isSelected ? 'text-primary font-bold' : 'text-muted-foreground font-medium'}`}>
+                        {cityName}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
             </View>
 
-            <TextInput
-              label={t('interests', 'Interests')}
-              placeholder={t('interests_placeholder', 'Add interests, separated by commas')}
-              helperText={t('interests_help', 'Choose up to 20 interests')}
-              value={interestsText}
-              onChangeText={setInterestsText}
-              maxLength={1200}
-            />
+            {/* Interests with Tag Cloud & Category Suggestions */}
+            <View className="gap-3">
+              {/* Section Header */}
+              <View className="flex-row items-center justify-between px-0.5">
+                <View className="flex-row items-center gap-1.5">
+                  <Sparkles size={14} className="text-primary" />
+                  <Text className="text-[13.5px] font-bold font-sans text-foreground">
+                    {t('interests', 'Interests & Hobbies')}
+                  </Text>
+                </View>
+                <View className="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                  <Text className="text-xs font-bold text-primary">
+                    {currentInterests.length}/20 {t('selected', 'selected')}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Selected Interests Tag Cloud */}
+              {currentInterests.length > 0 ? (
+                <View className="p-2.5 bg-secondary/30 rounded-2xl border border-border/70 gap-1.5">
+                  <Text className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider">
+                    {t('your_interests', 'Your Interests')}
+                  </Text>
+                  <View className="flex-row flex-wrap gap-1.5">
+                    {currentInterests.map((interest) => (
+                      <View
+                        key={interest}
+                        className="flex-row items-center px-2.5 py-1 rounded-lg bg-primary/15 border border-primary/30"
+                      >
+                        <Text className="text-[11px] font-bold text-primary me-1.5">
+                          {interest}
+                        </Text>
+                        <Pressable
+                          onPress={() => handleRemoveInterest(interest)}
+                          hitSlop={6}
+                          className="size-3.5 rounded-full bg-primary/25 items-center justify-center active:bg-primary/50"
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove ${interest}`}
+                        >
+                          <X size={9} className="text-primary" />
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : (
+                <View className="p-3 bg-secondary/30 rounded-2xl border border-dashed border-border/80 items-center justify-center">
+                  <Text className="text-xs text-muted-foreground font-medium text-center">
+                    {t('no_interests_yet', 'No interests selected. Tap suggestions below or add custom ones.')}
+                  </Text>
+                </View>
+              )}
+
+              {/* Add Custom Interest Input Field */}
+              <View className="flex-row items-center gap-2">
+                <View className="flex-1 flex-row items-center bg-card rounded-xl border border-border px-3 py-1.5 shadow-2xs">
+                  <RNTextInput
+                    value={customInterestInput}
+                    onChangeText={setCustomInterestInput}
+                    placeholder={t('type_custom_interest', 'Type custom interest (e.g. Chess, Hiking)...')}
+                    placeholderTextColor="#9ca3af"
+                    className="flex-1 text-xs text-foreground outline-none py-0 font-medium"
+                    onSubmitEditing={handleAddCustomInterest}
+                    returnKeyType="done"
+                  />
+                </View>
+                <Button
+                  size="sm"
+                  variant="default"
+                  disabled={!customInterestInput.trim() || currentInterests.length >= 20}
+                  onPress={handleAddCustomInterest}
+                  className="px-3 h-8.5 rounded-xl"
+                >
+                  <Plus size={13} className="text-white me-1" />
+                  <Text className="text-xs font-bold text-white">{t('add', 'Add')}</Text>
+                </Button>
+              </View>
+
+              {/* Suggestions by Field Category */}
+              <View className="bg-muted/20 p-3 rounded-2xl border border-border/70 gap-2.5 overflow-hidden">
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-1.5">
+                    <Sparkles size={12} className="text-primary" />
+                    <Text className="text-[11.5px] font-bold text-foreground">
+                      {t('suggested_by_category', 'Suggestions by Category')}
+                    </Text>
+                  </View>
+                  <Text className="text-[10.5px] text-muted-foreground font-medium">
+                    {t('tap_to_toggle', 'Tap to add / remove')}
+                  </Text>
+                </View>
+
+                {/* Compact Category Tabs: Sports, Tech, Arts, Food, Lifestyle */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerClassName="pe-2 gap-1.5"
+                  className="flex-row pb-0.5"
+                >
+                  {INTEREST_CATEGORIES.map((cat) => {
+                    const isActive = activeInterestCategory === cat.id;
+                    return (
+                      <Pressable
+                        key={cat.id}
+                        onPress={() => setActiveInterestCategory(cat.id)}
+                        className={`px-2.5 py-1 rounded-lg border me-1 ${
+                          isActive
+                            ? 'bg-primary border-primary'
+                            : 'bg-card border-border/80 active:bg-secondary/60'
+                        }`}
+                      >
+                        <Text className={`text-[11px] font-bold ${isActive ? 'text-white' : 'text-foreground'}`}>
+                          {cat.name}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                {/* Compact Items in Active Category */}
+                <View className="flex-row flex-wrap gap-1.5 pt-0.5">
+                  {activeCategoryItems.map((item) => {
+                    const isSelected = currentInterests.some(
+                      (ci) => ci.toLowerCase() === item.toLowerCase()
+                    );
+                    return (
+                      <Pressable
+                        key={item}
+                        onPress={() => handleToggleInterest(item)}
+                        className={`flex-row items-center px-2 py-1 rounded-lg border active:opacity-80 shadow-2xs ${
+                          isSelected
+                            ? 'bg-primary border-primary'
+                            : 'bg-card border-border/70 active:bg-secondary/60'
+                        }`}
+                      >
+                        {isSelected ? (
+                          <Check size={11} className="text-white me-1" />
+                        ) : (
+                          <Plus size={11} className="text-muted-foreground me-1" />
+                        )}
+                        <Text className={`text-[11px] ${isSelected ? 'text-white font-semibold' : 'text-foreground font-medium'}`}>
+                          {item}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            </View>
 
             {profileSuccess && <SuccessToast message={profileSuccess} />}
 
@@ -1028,6 +1439,14 @@ export default function ProfileScreen() {
       <AssignmentSwitchModal
         visible={assignmentModalOpen}
         onClose={() => setAssignmentModalOpen(false)}
+      />
+
+      {/* Location Picker Modal */}
+      <LocationPickerModal
+        visible={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        currentValue={hometown}
+        onSelectLocation={handleSelectHometown}
       />
     </ScreenShell>
   );
