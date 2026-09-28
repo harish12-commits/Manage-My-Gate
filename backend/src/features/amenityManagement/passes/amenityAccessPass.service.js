@@ -180,11 +180,25 @@ export class AmenityAccessPassService {
         );
       }
 
-      // Step 3: Anti-replay validation
+      // Step 3: Anti-replay validation. The gate may record the exit instead.
       if (pass.checkInTimestamp !== null) {
+        const usedReservation = await amenityReservationRepository.findById(pass.reservationId, session);
+        const usedFacility = usedReservation?.facilityId
+          ? await amenityFacilityRepository.findById(usedReservation.facilityId?._id || usedReservation.facilityId, orgId, session)
+          : null;
+        const { requiresReturnInspection } = await import('../reservations/amenityReservationLifecycle.service.js');
         throw new HttpError(
           409,
-          `Anti-replay violation: pass was already used for check-in at ${pass.checkInTimestamp.toISOString()}`
+          `Anti-replay violation: pass was already used for check-in at ${pass.checkInTimestamp.toISOString()}`,
+          {
+            code: 'ALREADY_CHECKED_IN',
+            checkedInAt: pass.checkInTimestamp,
+            canCheckOut: !pass.checkOutTimestamp,
+            requiresInspection: Boolean(usedFacility && requiresReturnInspection(usedFacility)),
+            reservationId: usedReservation ? String(usedReservation._id) : null,
+            reservationNumber: usedReservation?.reservationNumber || null,
+            depositAmount: Number(usedReservation?.amountSchedule?.depositAmount ?? usedReservation?.depositAmount ?? 0),
+          }
         );
       }
 
@@ -198,8 +212,19 @@ export class AmenityAccessPassService {
       const toleranceEnd = new Date(pass.validUntil.getTime() + 1 * 60 * 1000);
 
       if (now < earlyArrivalStart) {
-        const allowedTimeStr = earlyArrivalStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        throw new HttpError(403, `This pass is not yet valid. Entry permitted from ${allowedTimeStr}`);
+        const early = await amenityReservationRepository.findById(pass.reservationId, session);
+        const timeZone = early?.facilityId?.timezone || 'Asia/Kolkata';
+        let allowedTimeStr;
+        try {
+          allowedTimeStr = new Intl.DateTimeFormat('en-IN', { timeZone, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(earlyArrivalStart);
+        } catch {
+          allowedTimeStr = earlyArrivalStart.toISOString();
+        }
+        throw new HttpError(403, `This pass is not yet valid. Entry permitted from ${allowedTimeStr}`, {
+          code: 'NOT_YET_VALID',
+          allowedFrom: earlyArrivalStart,
+          timezone: timeZone,
+        });
       }
       if (now > toleranceEnd) {
         throw new HttpError(403, 'This amenity pass has expired');
@@ -220,9 +245,15 @@ export class AmenityAccessPassService {
       // Step 5b: Any outstanding balance is collected at the gate before entry
       const balanceDue = Number(reservation.balanceAmount || 0);
       if (balanceDue > 0) {
-        const err = new HttpError(402, `Balance of ₹${balanceDue} is due. Collect payment before entry.`);
-        err.details = [{ code: 'BALANCE_DUE', reservationId: String(reservation._id), balanceAmount: balanceDue }];
-        throw err;
+        const resident = reservation.residentId && typeof reservation.residentId === 'object' ? reservation.residentId : null;
+        throw new HttpError(402, `Balance of ₹${balanceDue} is due. Collect payment before entry.`, {
+          code: 'BALANCE_DUE',
+          reservationId: String(reservation._id),
+          reservationNumber: reservation.reservationNumber,
+          balanceAmount: balanceDue,
+          residentName: resident?.name || resident?.fullName || resident?.username || null,
+          facilityName: reservation.facilityId?.name || null,
+        });
       }
 
       // Step 6: Facility publication & deletion validation
@@ -330,11 +361,11 @@ export class AmenityAccessPassService {
           id: reservation._id,
           bookingId: reservation.reservationNumber,
           reservationNumber: reservation.reservationNumber,
-          date: reservation.date,
-          startTime: reservation.startTime,
-          endTime: reservation.endTime,
+          startDateTime: reservation.effectiveStartDateTime || reservation.requestedStartDateTime,
+          endDateTime: reservation.effectiveEndDateTime || reservation.requestedEndDateTime,
           status: reservation.bookingStatus,
-          headcount: reservation.partySize || 1,
+          headcount: reservation.headcount || 1,
+          quantity: reservation.quantity || 1,
         },
         organisation: {
           id: org?._id || orgId,

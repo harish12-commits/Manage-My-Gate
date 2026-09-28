@@ -445,9 +445,16 @@ export const amenityManagementService = {
     return extractEnvelope(response);
   },
 
-  async checkOutPass(payload: CheckOutPassApiPayload): Promise<ApiResponse<ApiAmenityAccessPass>> {
+  async checkOutPass(payload: CheckOutPassApiPayload): Promise<ApiResponse<any>> {
     const url = getAmenityV2Url('/passes/check-out');
-    const response = await apiClient.post<ApiResponse<ApiAmenityAccessPass>>(url, payload);
+    const response = await apiClient.post<ApiResponse<any>>(url, payload);
+    return extractEnvelope(response);
+  },
+
+  /** Gate staff record the booking balance collected in cash (the exact amount due). */
+  async collectReservationPayment(reservationId: string, amount: number): Promise<ApiResponse<any>> {
+    const url = getAmenityV2Url(`/reservations/${reservationId}/collect-payment`);
+    const response = await apiClient.post<ApiResponse<any>>(url, { amount });
     return extractEnvelope(response);
   },
 

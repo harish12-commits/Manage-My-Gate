@@ -10,6 +10,7 @@ import {
   AmenityAvailabilityResult,
   AmenityErrorDetails,
   AmenityCancellationPreview,
+  AmenityCheckOutResult,
 } from '../types/amenityDomain.types';
 import {
   CreateHoldApiPayload,
@@ -187,7 +188,7 @@ export interface AmenityBookingState {
 
   // v2 Guard Pass State
   v2CheckInResult: AmenityAccessPass | null;
-  v2CheckOutResult: AmenityAccessPass | null;
+  v2CheckOutResult: AmenityCheckOutResult | null;
   v2PassActionLoading: boolean;
   v2PassError: AmenityErrorDetails | null;
 
@@ -641,7 +642,29 @@ export const checkOutPassThunk = createAsyncThunk(
   async (payload: CheckOutPassApiPayload, { rejectWithValue }) => {
     try {
       const res = await amenityManagementService.checkOutPass(payload);
-      return normalizeAccessPassFromApi(res?.data || res);
+      const data: any = res?.data || res;
+      return {
+        pass: normalizeAccessPassFromApi(data?.pass || data),
+        reservation: data?.reservation ? normalizeReservationFromApi(data.reservation) : null,
+        deposit: data?.deposit || null,
+      } as AmenityCheckOutResult;
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Gate staff collect a booking's outstanding balance in cash before entry. */
+export const collectBalancePaymentThunk = createAsyncThunk(
+  'amenityBookings/collectBalancePayment',
+  async ({ reservationId, amount }: { reservationId: string; amount: number }, { rejectWithValue }) => {
+    try {
+      const res = await amenityManagementService.collectReservationPayment(reservationId, amount);
+      const data: any = res?.data || res;
+      return {
+        reservation: data?.reservation ? normalizeReservationFromApi(data.reservation) : null,
+        receiptNumber: data?.receiptNumber || null,
+      };
     } catch (err) {
       return rejectWithValue(mapAmenityApiError(err));
     }
@@ -1131,6 +1154,19 @@ const amenityBookingSlice = createSlice({
         state.v2PassError = null;
       })
       .addCase(checkOutPassThunk.rejected, (state, action) => {
+        state.v2PassActionLoading = false;
+        state.v2PassError = action.payload as AmenityErrorDetails;
+      })
+
+      // Gate cash collection
+      .addCase(collectBalancePaymentThunk.pending, (state) => {
+        state.v2PassActionLoading = true;
+      })
+      .addCase(collectBalancePaymentThunk.fulfilled, (state, action) => {
+        state.v2PassActionLoading = false;
+        applyReservationUpdate(state, action.payload.reservation);
+      })
+      .addCase(collectBalancePaymentThunk.rejected, (state, action) => {
         state.v2PassActionLoading = false;
         state.v2PassError = action.payload as AmenityErrorDetails;
       })

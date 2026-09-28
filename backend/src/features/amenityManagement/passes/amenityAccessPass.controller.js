@@ -2,6 +2,21 @@ import amenityAccessPassService from './amenityAccessPass.service.js';
 import amenityReservationService from '../reservations/amenityReservation.service.js';
 import HttpError from '../../../utils/httpError.utils.js';
 import { hasAmenityAdminScope } from '../domain/access/amenityAdminScope.js';
+import { logGateScan } from './amenityGateLog.js';
+
+const guardOf = (user) => ({ id: user?.id || user?._id, name: user?.name || user?.username || 'Security Guard' });
+
+/** Best-effort: the booking a refused scan was for, so the denial is logged against it. */
+const reservationForDeniedScan = async (orgId, rawToken, error) => {
+  try {
+    const reservationId = error?.details?.reservationId;
+    if (reservationId) return await amenityReservationService.getReservationById(reservationId);
+    const pass = await amenityAccessPassService._findPassForGate(orgId, rawToken);
+    return pass ? await amenityReservationService.getReservationById(pass.reservationId) : null;
+  } catch {
+    return null;
+  }
+};
 
 const checkAmenityAdminScope = (user, requiredPermissions) => hasAmenityAdminScope(user, requiredPermissions);
 
@@ -15,12 +30,37 @@ export class AmenityAccessPassController {
       const { rawToken, gateId } = req.body;
       const guardId = req.user?.id || req.user?._id;
 
-      const result = await amenityAccessPassService.validateAndRecordCheckIn({
-        orgId,
-        rawToken,
-        gateId,
-        guardId,
-      });
+      let result;
+      try {
+        result = await amenityAccessPassService.validateAndRecordCheckIn({
+          orgId,
+          rawToken,
+          gateId,
+          guardId,
+        });
+      } catch (error) {
+        // A pass that is inside is the start of an exit, not a refused entry.
+        const isExitScan = error?.details?.code === 'ALREADY_CHECKED_IN' && error?.details?.canCheckOut;
+        if (Number(error?.statusCode) < 500 && rawToken && !isExitScan) {
+          // Looked up inside the guard's community only, so a foreign pass logs without a booking.
+          const reservation = await reservationForDeniedScan(orgId, rawToken, error);
+          await logGateScan({ orgId, scanType: 'Denied', reservation, guard: guardOf(req.user), reason: error.message, remarks: error.details?.code || null });
+        }
+        throw error;
+      }
+
+      if (result?.booking?.id) {
+        const reservation = await amenityReservationService.getReservationById(result.booking.id);
+        await logGateScan({
+          orgId,
+          scanType: 'Entry',
+          reservation,
+          resident: result.resident,
+          guard: guardOf(req.user),
+          reason: 'Valid amenity pass',
+          remarks: 'Access granted',
+        });
+      }
 
       return res.success(result, 'Check-in validated and recorded successfully');
     } catch (error) {
@@ -43,7 +83,21 @@ export class AmenityAccessPassController {
         guardId: req.user?.id || req.user?._id,
       });
 
-      return res.success(result, 'Check-out recorded successfully');
+      const reservation = result?.reservation?._id
+        ? await amenityReservationService.getReservationById(result.reservation._id)
+        : null;
+      await logGateScan({
+        orgId,
+        scanType: 'Exit',
+        reservation,
+        guard: guardOf(req.user),
+        reason: 'Exit recorded',
+        remarks: result?.deposit?.retained > 0
+          ? `₹${result.deposit.retained} kept from the deposit${inspectionDetails?.damageNotes ? `: ${inspectionDetails.damageNotes}` : ''}`
+          : null,
+      });
+
+      return res.success({ ...result, reservation: reservation || result.reservation }, 'Check-out recorded successfully');
     } catch (error) {
       return next(error);
     }

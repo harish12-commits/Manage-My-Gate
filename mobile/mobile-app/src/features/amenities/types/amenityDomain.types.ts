@@ -281,6 +281,13 @@ export interface AmenityCancellationPreview {
   policy: { isAllowed?: boolean; refundCutoffHours?: number; refundPercentage?: number } | null;
 }
 
+/** Gate check-out: the closed pass, the completed booking and how the deposit was settled. */
+export interface AmenityCheckOutResult {
+  pass: AmenityAccessPass;
+  reservation: AmenityReservation | null;
+  deposit: { paid: number; retained: number; refunded: number; uncoveredDamage: number } | null;
+}
+
 // Access Pass Domain Model
 export interface AmenityAccessPass {
   _id: string;
