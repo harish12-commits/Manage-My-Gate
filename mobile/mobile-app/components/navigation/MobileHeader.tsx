@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Image } from 'react-native';
+import { View, TouchableOpacity, Image, Platform } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Bell, Home, Building2, ChevronDown, Sun, Moon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -190,7 +190,14 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
     }
   };
 
+  const blurActiveElement = () => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
   const handleBellPress = () => {
+    blurActiveElement();
     if (onNotificationPress) {
       onNotificationPress();
     } else {
@@ -320,7 +327,10 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
 
           {/* Profile Avatar / Icon Button */}
           <TouchableOpacity
-            onPress={() => router.push('/(resident)/profile' as any)}
+            onPress={() => {
+              blurActiveElement();
+              router.push('/(resident)/profile' as any);
+            }}
             activeOpacity={0.7}
             className="size-11 rounded-full bg-secondary/80 dark:bg-secondary/60 border border-border/70 items-center justify-center overflow-hidden active:bg-secondary shadow-2xs"
             accessibilityRole="button"

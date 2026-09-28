@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, TouchableOpacity, Alert } from 'react-native';
+import { View, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { PaginatedList } from '@/components/ui/PaginatedList';
@@ -53,6 +53,12 @@ export default function NotificationsScreen() {
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
   const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
   const [inviteStatusMap, setInviteStatusMap] = useState<Record<string, 'ACCEPTED' | 'REJECTED'>>({});
+
+  const blurActiveElement = useCallback(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, []);
 
   const {
     items,
@@ -261,6 +267,7 @@ export default function NotificationsScreen() {
   );
 
   const handleNotificationPress = (notification: NotificationItemData) => {
+    blurActiveElement();
     const id = notification.id || notification._id;
     if (id && !notification.isRead) {
       markAsRead(id);

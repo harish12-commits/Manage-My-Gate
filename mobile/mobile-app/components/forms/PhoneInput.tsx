@@ -270,9 +270,9 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
             >
               <Text className="text-base font-bold text-foreground mb-2 px-1">Select Country</Text>
 
-              {/* Search Filter */}
               <RNTextInput
                 className="bg-background border border-border rounded-xl px-3 py-2 text-sm text-foreground mb-3"
+                style={{ outlineStyle: 'none', includeFontPadding: false, textAlignVertical: 'center' } as any}
                 placeholder="Search country or code..."
                 placeholderTextColor="#737c88"
                 value={searchQuery}

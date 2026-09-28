@@ -41,11 +41,11 @@ const prepareInvoicePayload = async (payload) => {
   return payload;
 };
 
-const safeEmit = (room, event, payload) => {
+const safeEmit = (roomOrRooms, event, payload) => {
   try {
     const io = getIO();
     if (io) {
-      io.to(room).emit(event, payload);
+      io.to(roomOrRooms).emit(event, payload);
     }
   } catch (e) {
     // Socket.io not initialized in test/CLI mode
@@ -70,15 +70,12 @@ export const setupInvoiceSocketListeners = async () => {
       const populatedPayload = await prepareInvoicePayload(payload);
       const targetUserId = populatedPayload.targetUserId?._id || populatedPayload.targetUserId;
       
-      const userRoom = `user:${targetUserId}`;
-      logger.info(`Broadcasting invoice_generated to room: ${userRoom}`);
-      safeEmit(userRoom, 'invoice_generated', populatedPayload);
-
+      const targetRooms = [`user:${targetUserId}`];
       if (populatedPayload.communityId) {
-        const orgRoom = `org:${populatedPayload.communityId}`;
-        logger.info(`Broadcasting invoice_generated to room: ${orgRoom}`);
-        safeEmit(orgRoom, 'invoice_generated', populatedPayload);
+        targetRooms.push(`org:${populatedPayload.communityId}`);
       }
+      logger.info(`Broadcasting invoice_generated to rooms: ${targetRooms.join(', ')}`);
+      safeEmit(targetRooms, 'invoice_generated', populatedPayload);
 
       // Create persistent database notification for the user
       try {
@@ -111,15 +108,12 @@ export const setupInvoiceSocketListeners = async () => {
       const populatedPayload = await prepareInvoicePayload(payload);
       const targetUserId = populatedPayload.targetUserId?._id || populatedPayload.targetUserId;
 
-      const userRoom = `user:${targetUserId}`;
-      logger.info(`Broadcasting invoice_status_updated to room: ${userRoom}`);
-      safeEmit(userRoom, 'invoice_status_updated', populatedPayload);
-
+      const targetRooms = [`user:${targetUserId}`];
       if (populatedPayload.communityId) {
-        const orgRoom = `org:${populatedPayload.communityId}`;
-        logger.info(`Broadcasting invoice_status_updated to room: ${orgRoom}`);
-        safeEmit(orgRoom, 'invoice_status_updated', populatedPayload);
+        targetRooms.push(`org:${populatedPayload.communityId}`);
       }
+      logger.info(`Broadcasting invoice_status_updated to rooms: ${targetRooms.join(', ')}`);
+      safeEmit(targetRooms, 'invoice_status_updated', populatedPayload);
 
       if (populatedPayload.status === 'PAID') {
         try {

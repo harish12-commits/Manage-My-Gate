@@ -77,7 +77,7 @@ export function formatRelativeTime(date: string | Date, tFunc?: (key: string, fb
 
 const listCardVariants = cva(
   cn(
-    'bg-card rounded-2xl border border-border/70 mb-3 p-3.5 flex-row items-center active:bg-secondary/70 shadow-2xs',
+    'bg-card rounded-2xl border border-border/70 mb-3 p-3.5 active:bg-secondary/70 shadow-2xs',
     Platform.select({
       web: 'transition-all cursor-pointer select-none hover:border-border',
     })
@@ -188,15 +188,30 @@ const ListCard = React.forwardRef<View, ListCardProps>(
       </View>
     );
 
-    const renderCardHeaderRow = () => {
-      if (rightContent !== undefined) {
-        return (
+    const renderHeaderContent = () => (
+      <View className="flex-row items-center w-full">
+        {renderHeaderMainContent()}
+        {showDefaultChevron ? (
+          <View className="items-end justify-center ms-2 shrink-0">
+            <Icon as={ChevronRight} size={16} className={backgroundImage ? "text-white/70" : "text-muted-foreground"} />
+          </View>
+        ) : null}
+      </View>
+    );
+
+    if (rightContent !== undefined) {
+      return (
+        <View
+          ref={ref}
+          className={cn("bg-card rounded-2xl border border-border/70 mb-3 p-3.5 overflow-hidden shadow-2xs", className)}
+          style={style as any}
+        >
           <View className="flex-row items-center w-full">
             {onPress ? (
               <Pressable
                 onPress={onPress}
                 onLongPress={onLongPress}
-                className="flex-1 flex-row items-center shrink min-w-0"
+                className="flex-1 flex-row items-center shrink min-w-0 active:opacity-75"
                 accessibilityRole="button"
                 accessibilityLabel={props.accessibilityLabel || title}
               >
@@ -209,42 +224,21 @@ const ListCard = React.forwardRef<View, ListCardProps>(
               {rightContent}
             </View>
           </View>
-        );
-      }
-
-      return (
-        <View className="flex-row items-center w-full">
-          {renderHeaderMainContent()}
-          {showDefaultChevron ? (
-            <View className="items-end justify-center ms-2 shrink-0">
-              <Icon as={ChevronRight} size={16} className={backgroundImage ? "text-white/70" : "text-muted-foreground"} />
-            </View>
-          ) : null}
-        </View>
-      );
-    };
-
-    if (children || rightContent !== undefined) {
-      return (
-        <View
-          ref={ref}
-          className={cn("bg-card rounded-2xl border border-border/70 mb-3 p-3.5 overflow-hidden shadow-2xs", className)}
-          style={style as any}
-        >
-          {renderCardHeaderRow()}
           {typeof children === 'function' ? (children as any)({ pressed: false }) : children}
         </View>
       );
     }
 
+    const CardContainer = onPress ? Pressable : View;
+
     return (
-      <Pressable
+      <CardContainer
         ref={ref}
         onPress={onPress}
         onLongPress={onLongPress}
-        className={cn(listCardVariants(), 'overflow-hidden', className)}
-        style={style}
-        accessibilityRole="button"
+        className={cn(listCardVariants(), children ? 'flex-col items-stretch' : 'flex-row items-center', 'overflow-hidden', onPress ? 'active:opacity-80' : '', className)}
+        style={style as any}
+        accessibilityRole={onPress ? 'button' : undefined}
         {...props}
       >
         {/* Background Image & Overlay */}
@@ -259,8 +253,9 @@ const ListCard = React.forwardRef<View, ListCardProps>(
           </>
         ) : null}
 
-        {renderCardHeaderRow()}
-      </Pressable>
+        {renderHeaderContent()}
+        {typeof children === 'function' ? (children as any)({ pressed: false }) : children}
+      </CardContainer>
     );
   }
 );

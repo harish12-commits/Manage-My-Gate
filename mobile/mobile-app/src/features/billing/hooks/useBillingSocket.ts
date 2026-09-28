@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../store/store';
 import { useAppSocket } from '../../../hooks/useAppSocket';
@@ -16,6 +16,8 @@ import { checkIsAdmin } from '../../../utils/rbac';
  * Features:
  * 1. Community Isolation: Only updates dues and active invoices if the event belongs to the active community.
  * 2. RBAC Guard: Restricts admin-only calls (fetchAdminKPIs, fetchInvoicesGrid) to authorized admin roles.
+ * 3. Event Deduplication: Prevents duplicate execution if events arrive via multiple room channels.
+ * 4. Debounced Refetching: Batches REST API refetches to prevent main thread execution lag.
  */
 export const useBillingSocket = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -49,6 +51,10 @@ export const useBillingSocket = () => {
     return list;
   }, [userId, orgId]);
 
+  // Event Deduplication Cache & Debounce Timer Refs
+  const processedEventsRef = useRef<Map<string, number>>(new Map());
+  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (!socket) return;
 
@@ -71,75 +77,119 @@ export const useBillingSocket = () => {
       return String(eventCommunityId) === String(orgId);
     };
 
+    // Helper: Event Deduplicator within a 3-second rolling window
+    const isDuplicateEvent = (eventName: string, payload: any) => {
+      const eventId = payload?._id || payload?.id || payload?.invoiceId || payload?.invoice?._id;
+      if (!eventId) return false;
+
+      const key = `${eventName}:${eventId}:${payload?.status || ''}`;
+      const now = Date.now();
+      const lastSeen = processedEventsRef.current.get(key);
+
+      // Cache cleanup logic if map grows
+      if (processedEventsRef.current.size > 100) {
+        processedEventsRef.current.forEach((timestamp, k) => {
+          if (now - timestamp > 10000) processedEventsRef.current.delete(k);
+        });
+      }
+
+      if (lastSeen && now - lastSeen < 3000) {
+        return true;
+      }
+
+      processedEventsRef.current.set(key, now);
+      return false;
+    };
+
+    // Helper: Debounced REST Refetcher to prevent execution time violations
+    const triggerDebouncedRefetch = () => {
+      if (refetchTimerRef.current) {
+        clearTimeout(refetchTimerRef.current);
+      }
+      refetchTimerRef.current = setTimeout(() => {
+        if (orgId) {
+          dispatch(fetchMyDues(orgId));
+        }
+        if (orgId && canManageAdminBilling) {
+          dispatch(fetchAdminKPIs(orgId));
+          dispatch(fetchInvoicesGrid({ page: 1, limit: 10, filters: { communityId: orgId } }));
+        }
+      }, 300);
+    };
+
     // 1. Invoice Generation Handler
     const handleInvoiceGenerated = (payload: any) => {
+      if (isDuplicateEvent('invoice_generated', payload)) {
+        return;
+      }
       console.log('[Billing Socket] Real-time event: invoice_generated', payload);
       const isCurrentCommunity = isEventForCurrentCommunity(payload);
       if (payload && isCurrentCommunity) {
         dispatch(syncRealtimeInvoice(payload));
       }
       if (isCurrentCommunity) {
-        dispatch(fetchMyDues(orgId));
-      }
-      if (orgId && canManageAdminBilling) {
-        dispatch(fetchAdminKPIs(orgId));
-        dispatch(fetchInvoicesGrid({ page: 1, limit: 10, filters: { communityId: orgId } }));
+        triggerDebouncedRefetch();
       }
     };
 
     // 2. Invoice Status Update Handler
     const handleInvoiceStatusUpdated = (payload: any) => {
+      if (isDuplicateEvent('invoice_status_updated', payload)) {
+        return;
+      }
       console.log('[Billing Socket] Real-time event: invoice_status_updated / INVOICE_UPDATED', payload);
       const isCurrentCommunity = isEventForCurrentCommunity(payload);
       if (payload && isCurrentCommunity) {
         dispatch(syncRealtimeInvoice(payload));
       }
       if (isCurrentCommunity) {
-        dispatch(fetchMyDues(orgId));
-      }
-      if (orgId && canManageAdminBilling) {
-        dispatch(fetchAdminKPIs(orgId));
-        dispatch(fetchInvoicesGrid({ page: 1, limit: 10, filters: { communityId: orgId } }));
+        triggerDebouncedRefetch();
       }
     };
 
     // 3. Payment Success Handler
     const handlePaymentSuccess = (payload: any) => {
+      if (isDuplicateEvent('PAYMENT_SUCCESS', payload)) {
+        return;
+      }
       console.log('[Billing Socket] Real-time event: PAYMENT_SUCCESS', payload);
       const isCurrentCommunity = isEventForCurrentCommunity(payload?.invoice || payload);
       if (payload?.invoice && isCurrentCommunity) {
         dispatch(syncRealtimeInvoice(payload.invoice));
       }
       if (isCurrentCommunity) {
-        dispatch(fetchMyDues(orgId));
+        triggerDebouncedRefetch();
       }
       dispatch(fetchWalletBalance());
-      if (orgId && canManageAdminBilling) {
-        dispatch(fetchAdminKPIs(orgId));
-        dispatch(fetchInvoicesGrid({ page: 1, limit: 10, filters: { communityId: orgId } }));
-      }
     };
 
     // 4. Digital Wallet Update Handler
     const handleWalletUpdated = (payload: any) => {
+      if (isDuplicateEvent('WALLET_UPDATED', payload)) {
+        return;
+      }
       console.log('[Billing Socket] Real-time event: WALLET_UPDATED / walletUpdated', payload);
       if (payload) {
         dispatch(syncWalletBalance(payload));
       }
       dispatch(fetchWalletBalance());
-      dispatch(fetchMyDues(orgId));
+      if (orgId) {
+        dispatch(fetchMyDues(orgId));
+      }
     };
 
     // 5. Offline Payment Submission Handler
     const handleOfflinePaymentSubmitted = (payload: any) => {
+      if (isDuplicateEvent('offline_payment_submitted', payload)) {
+        return;
+      }
       console.log('[Billing Socket] Real-time event: offline_payment_submitted', payload);
       const isCurrentCommunity = isEventForCurrentCommunity(payload?.invoice || payload);
       if (payload?.invoice && isCurrentCommunity) {
         dispatch(syncRealtimeInvoice(payload.invoice));
       }
-      if (orgId && canManageAdminBilling) {
-        dispatch(fetchAdminKPIs(orgId));
-        dispatch(fetchInvoicesGrid({ page: 1, limit: 10, filters: { communityId: orgId } }));
+      if (isCurrentCommunity) {
+        triggerDebouncedRefetch();
       }
     };
 
@@ -161,6 +211,9 @@ export const useBillingSocket = () => {
 
     // Lifecycle Cleanup
     return () => {
+      if (refetchTimerRef.current) {
+        clearTimeout(refetchTimerRef.current);
+      }
       socket.off('invoice_generated', handleInvoiceGenerated);
       socket.off('invoice_status_updated', handleInvoiceStatusUpdated);
       socket.off('INVOICE_UPDATED', handleInvoiceStatusUpdated);

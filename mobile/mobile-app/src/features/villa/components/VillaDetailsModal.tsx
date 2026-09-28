@@ -198,7 +198,7 @@ export const VillaDetailsModal: React.FC<VillaDetailsModalProps> = ({
 
   return (
     <BottomSheet visible={visible} onClose={onClose} title={`Unit ${villa.unitNumber} Management`}>
-      <ScrollView className="max-h-[520px] py-1" showsVerticalScrollIndicator={false}>
+      <View className="py-1">
         <View className="space-y-4">
           {/* Top Metadata Box */}
           <View className="bg-muted/50 p-3.5 rounded-xl border border-border space-y-2">
@@ -536,7 +536,7 @@ export const VillaDetailsModal: React.FC<VillaDetailsModalProps> = ({
             </View>
           </View>
         </View>
-      </ScrollView>
+      </View>
 
       {/* Delete Resident Confirmation Modal */}
       <ConfirmationModal

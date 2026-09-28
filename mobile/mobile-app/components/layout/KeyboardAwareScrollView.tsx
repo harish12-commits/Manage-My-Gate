@@ -42,6 +42,20 @@ export const KeyboardAwareScrollView = forwardRef<ScrollView, KeyboardAwareScrol
     const scrollFocusedInputIntoView = () => {
       if (!enableAutoScroll || !scrollViewRef.current) return;
 
+      // On Web, findNodeHandle and UIManager.measureLayout are unsupported and throw errors
+      if (Platform.OS === 'web') {
+        const currentlyFocusedInput = TextInput.State.currentlyFocusedInput
+          ? TextInput.State.currentlyFocusedInput()
+          : (TextInput as any).State?.currentlyFocusedField
+          ? (TextInput as any).State.currentlyFocusedField()
+          : null;
+
+        if (currentlyFocusedInput && typeof (currentlyFocusedInput as any).scrollIntoView === 'function') {
+          (currentlyFocusedInput as any).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+        return;
+      }
+
       const currentlyFocusedInput = TextInput.State.currentlyFocusedInput
         ? TextInput.State.currentlyFocusedInput()
         : (TextInput as any).State?.currentlyFocusedField
@@ -50,24 +64,26 @@ export const KeyboardAwareScrollView = forwardRef<ScrollView, KeyboardAwareScrol
 
       if (!currentlyFocusedInput) return;
 
-      const inputHandle = findNodeHandle(currentlyFocusedInput);
-      const scrollHandle = findNodeHandle(scrollViewRef.current);
+      const inputHandle = typeof findNodeHandle === 'function' ? findNodeHandle(currentlyFocusedInput) : null;
+      const scrollHandle = typeof findNodeHandle === 'function' ? findNodeHandle(scrollViewRef.current) : null;
 
       if (!inputHandle || !scrollHandle) return;
 
-      UIManager.measureLayout(
-        inputHandle,
-        scrollHandle,
-        () => {}, // error callback
-        (left, top, width, height) => {
-          const inputBottom = top + height + extraScrollHeight;
-          // Scroll if input bottom is obscured or close to keyboard
-          scrollViewRef.current?.scrollTo({
-            y: Math.max(0, top - 60),
-            animated: true,
-          });
-        }
-      );
+      if (UIManager && typeof UIManager.measureLayout === 'function') {
+        UIManager.measureLayout(
+          inputHandle,
+          scrollHandle,
+          () => {}, // error callback
+          (left, top, width, height) => {
+            const inputBottom = top + height + extraScrollHeight;
+            // Scroll if input bottom is obscured or close to keyboard
+            scrollViewRef.current?.scrollTo({
+              y: Math.max(0, top - 60),
+              animated: true,
+            });
+          }
+        );
+      }
     };
 
     useEffect(() => {

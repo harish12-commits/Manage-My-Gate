@@ -4121,7 +4121,7 @@ export const en: Record<string, string> = {
   'choose_location': 'Choose Location',
   'cities': 'Cities',
   'city': 'City',
-  'clear_all': 'Clear all',
+  'clear_all': 'Clear All',
   'close_poll_confirm_desc': 'This poll will close immediately and no more votes can be submitted.',
   'comments': 'Comments',
   'comments_disabled_notice': 'Comments are disabled for this notice.',

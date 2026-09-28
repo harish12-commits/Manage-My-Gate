@@ -62,7 +62,7 @@ export const VillaCard: React.FC<VillaCardProps> = ({ villa, onPress }) => {
       showChevron
       onPress={() => onPress(villa)}
     >
-      <View className="flex-row items-center justify-between pt-1 border-t border-border/40 mt-1">
+      <View className="w-full flex-row items-center justify-between pt-2 border-t border-border/40 mt-2">
         <Text variant="muted" className="text-xs">
           Type: <Text className="font-semibold text-foreground">{villa.type || 'Apartment'}</Text>
         </Text>

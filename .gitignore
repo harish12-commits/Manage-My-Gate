@@ -36,6 +36,7 @@ expo-env.d.ts
 Thumbs.db
 *.zip
 mobile.zip
+.idea/
 
 # Spreadsheet & Credentials Data
 *.xlsx

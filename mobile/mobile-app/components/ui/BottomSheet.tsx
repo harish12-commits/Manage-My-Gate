@@ -52,6 +52,9 @@ function BottomSheet({
   const scrollMaxHeight = sheetMaxHeight - 65;
 
   const handleClose = () => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     Keyboard.dismiss();
     onClose();
   };

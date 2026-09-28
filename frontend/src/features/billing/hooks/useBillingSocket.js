@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useDispatch } from 'react-redux'
 import useSocket from '../../../hooks/useSocket.js'
 import { syncRealtimeInvoice, fetchMyDues } from '../store/billingSlice.js'
@@ -27,6 +27,10 @@ export const useBillingSocket = (userId, communityOrOrgId) => {
 
   const { socket, isConnected, emit } = useSocket()
 
+  // Deduplication cache & debounced refetch timer
+  const processedEventsRef = useRef(new Map())
+  const refetchTimerRef = useRef(null)
+
   useEffect(() => {
     if (!socket || !isConnected) return
 
@@ -35,43 +39,80 @@ export const useBillingSocket = (userId, communityOrOrgId) => {
     // Join rooms dynamically
     rooms.forEach(room => emit('join_room', room))
 
+    // Helper: Event Deduplicator within a 3-second window
+    const isDuplicateEvent = (eventName, payload) => {
+      const eventId = payload?._id || payload?.id || payload?.invoiceId || payload?.invoice?._id
+      if (!eventId) return false
+
+      const key = `${eventName}:${eventId}:${payload?.status || ''}`
+      const now = Date.now()
+      const lastSeen = processedEventsRef.current.get(key)
+
+      if (processedEventsRef.current.size > 100) {
+        processedEventsRef.current.forEach((timestamp, k) => {
+          if (now - timestamp > 10000) processedEventsRef.current.delete(k)
+        })
+      }
+
+      if (lastSeen && now - lastSeen < 3000) {
+        return true
+      }
+
+      processedEventsRef.current.set(key, now)
+      return false
+    }
+
+    // Helper: Debounced REST refetcher
+    const triggerDebouncedRefetch = () => {
+      if (refetchTimerRef.current) {
+        clearTimeout(refetchTimerRef.current)
+      }
+      refetchTimerRef.current = setTimeout(() => {
+        dispatch(fetchMyDues())
+      }, 300)
+    }
+
     // 1. Invoice Generation Handler
     const handleInvoiceGenerated = (payload) => {
+      if (isDuplicateEvent('invoice_generated', payload)) return
       logger.info('Real-time notification: invoice_generated', payload)
       if (payload) dispatch(syncRealtimeInvoice(payload))
-      dispatch(fetchMyDues())
+      triggerDebouncedRefetch()
     }
 
     // 2. Invoice Status Update Handler
     const handleInvoiceStatusUpdated = (payload) => {
+      if (isDuplicateEvent('invoice_status_updated', payload)) return
       logger.info('Real-time notification: invoice_status_updated / INVOICE_UPDATED', payload)
       if (payload) dispatch(syncRealtimeInvoice(payload))
-      dispatch(fetchMyDues())
+      triggerDebouncedRefetch()
     }
 
     // 3. Payment Success Handler (Cross-slice dispatching to billing + wallet)
     const handlePaymentSuccess = (payload) => {
+      if (isDuplicateEvent('PAYMENT_SUCCESS', payload)) return
       logger.info('Real-time notification: PAYMENT_SUCCESS', payload)
       if (payload?.invoice) dispatch(syncRealtimeInvoice(payload.invoice))
-      dispatch(fetchMyDues())
+      triggerDebouncedRefetch()
       dispatch(fetchWalletBalance())
     }
 
     // 4. Digital Wallet Update Handler (Cross-slice dispatching to wallet)
     const handleWalletUpdated = (payload) => {
+      if (isDuplicateEvent('WALLET_UPDATED', payload)) return
       logger.info('Real-time notification: WALLET_UPDATED / walletUpdated', payload)
       if (payload) {
         dispatch(syncWalletBalance(payload))
       }
       dispatch(fetchWalletBalance())
-      dispatch(fetchMyDues())
+      triggerDebouncedRefetch()
     }
 
     // Reconnect handler to ensure room re-subscription and state sync after network restoration
     const handleReconnect = () => {
       logger.info(`Socket reconnected. Re-subscribing to rooms: ${rooms.join(', ')}`)
       rooms.forEach(room => emit('join_room', room))
-      dispatch(fetchMyDues())
+      triggerDebouncedRefetch()
       dispatch(fetchWalletBalance())
     }
 
@@ -87,6 +128,7 @@ export const useBillingSocket = (userId, communityOrOrgId) => {
     
     // Listen for offline payment submission to update the admin billing ledger instantly
     socket.on('offline_payment_submitted', (payload) => {
+      if (isDuplicateEvent('offline_payment_submitted', payload)) return
       logger.info('Real-time notification: offline_payment_submitted', payload)
       if (payload?.invoice) {
         dispatch(syncRealtimeInvoice(payload.invoice))
@@ -95,6 +137,9 @@ export const useBillingSocket = (userId, communityOrOrgId) => {
 
     // Lifecycle Cleanup
     return () => {
+      if (refetchTimerRef.current) {
+        clearTimeout(refetchTimerRef.current)
+      }
       logger.info(`Cleaning up billing & wallet real-time listeners for rooms: ${rooms.join(', ')}`)
       socket.off('reconnect', handleReconnect)
       socket.off('invoice_generated', handleInvoiceGenerated)

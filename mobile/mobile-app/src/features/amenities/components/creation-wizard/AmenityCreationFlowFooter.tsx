@@ -101,6 +101,7 @@ export const AmenityCreationFlowFooter: React.FC<AmenityCreationFlowFooterProps>
           <>
             <Text numberOfLines={1} className="font-bold text-primary-foreground text-xs">Continue</Text>
             {!isCompactWidth && <ArrowRight size={15} className="text-primary-foreground" />}
+          </>
         )}
       </Button>
     </View>

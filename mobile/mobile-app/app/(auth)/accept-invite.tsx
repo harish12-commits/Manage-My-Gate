@@ -334,7 +334,7 @@ export default function AcceptInviteScreen() {
           ''
         ).trim();
 
-        if (inviteMeta?.isExisting || inviteMeta?.isAlreadyRegistered) {
+        if ((inviteMeta as any)?.isExisting || (inviteMeta as any)?.isAlreadyRegistered) {
           handleNavigateToLogin(targetEmail, inviteToken);
         } else {
           setApiError(null);
@@ -359,7 +359,7 @@ export default function AcceptInviteScreen() {
           searchParams.email ||
           ''
         ).trim();
-        if (inviteMeta?.isExisting || inviteMeta?.isAlreadyRegistered) {
+        if ((inviteMeta as any)?.isExisting || (inviteMeta as any)?.isAlreadyRegistered) {
           handleNavigateToLogin(targetEmail);
         } else {
           setApiError(null);

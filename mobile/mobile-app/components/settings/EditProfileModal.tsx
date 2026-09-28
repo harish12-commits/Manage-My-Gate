@@ -388,7 +388,7 @@ export const EditProfileModal = ({
                 ) : (
                   <Check size={18} className="text-primary-foreground" />
                 )}
-                <Text className="text-primary-foreground font-bold">
+                <Text className="text-primary-foreground font-bold" adjustsFontSizeToFit minimumFontScale={0.8} numberOfLines={1}>
                   {isSaving ? translate('saving', 'Saving...') : translate('save_changes', 'Save Changes')}
                 </Text>
               </Button>

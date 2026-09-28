@@ -91,6 +91,18 @@ export function ScreenShell({
     setIsCompact(false);
   }, [pathname, setIsCompact]);
 
+  // Web Accessibility Fix: Blur focused element when screen unmounts so aria-hidden doesn't trap activeElement
+  React.useEffect(() => {
+    return () => {
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        const activeEl = document.activeElement as HTMLElement | null;
+        if (activeEl && activeEl !== document.body && typeof activeEl.blur === 'function') {
+          activeEl.blur();
+        }
+      }
+    };
+  }, []);
+
   const isAuthScreen = pathname.includes('/(auth)') || pathname.includes('/login') || pathname.includes('/signup');
   const isSubFlowOrCreationScreen =
     pathname.includes('/create') ||

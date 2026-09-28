@@ -226,7 +226,11 @@ export function BookingHoldPaymentStep({
                 </View>
               </View>
 
-              <StatusBadge label="Instant" variant="info" className="shrink-0" />
+              <StatusBadge
+                label={isRazorpayConfigured ? 'Instant' : 'Disabled'}
+                variant={isRazorpayConfigured ? 'info' : 'neutral'}
+                className="shrink-0"
+              />
             </View>
           </TouchableOpacity>
 

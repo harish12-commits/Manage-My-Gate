@@ -276,6 +276,53 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
+  // Web Accessibility: Prevent Chrome "Blocked aria-hidden on an element because its descendant retained focus"
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    const handleAriaHiddenCheck = () => {
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (activeEl && activeEl !== document.body && typeof activeEl.blur === 'function') {
+        const hiddenAncestor = activeEl.closest('[aria-hidden="true"], [style*="display: none"]');
+        if (hiddenAncestor) {
+          activeEl.blur();
+        }
+      }
+    };
+
+    let observer: MutationObserver | null = null;
+    if (typeof MutationObserver !== 'undefined') {
+      observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (
+            mutation.type === 'attributes' &&
+            (mutation.attributeName === 'aria-hidden' || mutation.attributeName === 'style')
+          ) {
+            handleAriaHiddenCheck();
+          }
+        }
+      });
+      observer.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['aria-hidden', 'style'],
+        subtree: true,
+      });
+    }
+
+    const handleFocusOrBlur = () => {
+      handleAriaHiddenCheck();
+    };
+
+    window.addEventListener('focusin', handleFocusOrBlur, true);
+    window.addEventListener('blur', handleFocusOrBlur, true);
+
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('focusin', handleFocusOrBlur, true);
+      window.removeEventListener('blur', handleFocusOrBlur, true);
+    };
+  }, []);
+
   if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colorScheme === 'dark' ? '#131316' : '#FFF8EF' }}>

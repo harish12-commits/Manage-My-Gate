@@ -87,6 +87,7 @@ export function PaymentCheckoutSheet({
 
   // Deterministic operation ID for the checkout session (preserved across retries)
   const operationIdRef = React.useRef<string>(createOperationId());
+  const isSubmittingRef = React.useRef<boolean>(false);
 
   useEffect(() => {
     if (visible) {
@@ -112,8 +113,6 @@ export function PaymentCheckoutSheet({
     onClose();
     router.push('/(resident)/billing/wallet' as any);
   };
-
-  const isSubmittingRef = React.useRef<boolean>(false);
 
   const handleInitiatePayment = () => {
     if (isPaymentDisabled || isAmountInvalid || isSubmittingRef.current || isGlobalSettling) return;

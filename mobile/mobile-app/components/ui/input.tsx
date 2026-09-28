@@ -34,9 +34,12 @@ export const Input = React.forwardRef<TextInput, InputProps>(
 
           <TextInput
             ref={ref}
-            secureTextEntry={isPassword ? secureTextEntry : props.secureTextEntry}
             placeholderTextColor={props.placeholderTextColor || (isDark ? '#737c88' : '#9ca3af')}
             className={cn(`flex-1 text-foreground py-3.5 text-[16px] font-sans`, className)}
+            style={[
+              { includeFontPadding: false, textAlignVertical: props.multiline ? 'top' : 'center' },
+              props.style,
+            ]}
             {...props}
           />
 
