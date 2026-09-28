@@ -94,7 +94,13 @@ export const SocialAuthButton = ({
   const isGoogle = provider === 'google';
   const isApple = provider === 'apple';
   const providerName = isGoogle ? 'Google' : isApple ? 'Apple' : 'Microsoft';
-  const buttonLabel = isApple ? 'Sign in with Apple' : variant === 'full' ? `Sign in with ${providerName}` : providerName;
+  const buttonLabel = isApple
+    ? variant === 'full'
+      ? 'Sign in with Apple'
+      : 'Apple'
+    : variant === 'full'
+    ? `Sign in with ${providerName}`
+    : providerName;
   const contentClass = 'text-[#1C1917] dark:text-white';
   const indicatorColor = isGoogle ? '#4285F4' : isApple ? (colorScheme === 'dark' ? '#FFFFFF' : '#1C1917') : '#00A4EF';
 
@@ -123,7 +129,7 @@ export const SocialAuthButton = ({
             ) : (
               <MicrosoftIcon size={18} />
             )}
-            <Text className={`text-xs font-bold ${contentClass} font-sans`}>
+            <Text className={`text-xs font-bold ${contentClass}`}>
               {buttonLabel}
             </Text>
           </>

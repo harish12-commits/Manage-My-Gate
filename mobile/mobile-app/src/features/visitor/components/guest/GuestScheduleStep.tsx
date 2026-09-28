@@ -3,6 +3,7 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
 import { Calendar, Clock, Sparkles } from 'lucide-react-native';
+import { toLocalDateKey } from '../../utils/localDate';
 
 export interface GuestScheduleData {
   visitDate: string;
@@ -29,11 +30,11 @@ export const GuestScheduleStep: React.FC<GuestScheduleStepProps> = ({
   onChange,
 }) => {
   const handleSelectPreset = (id: string) => {
-    let visitDate = new Date().toISOString().split('T')[0];
+    let visitDate = toLocalDateKey();
     if (id === 'TOMORROW') {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      visitDate = tomorrow.toISOString().split('T')[0];
+      visitDate = toLocalDateKey(tomorrow);
     }
 
     onChange({
@@ -102,7 +103,7 @@ export const GuestScheduleStep: React.FC<GuestScheduleStepProps> = ({
         <View className="bg-card border border-border rounded-2xl p-4 gap-3">
           <Input
             label="Visit Date (YYYY-MM-DD)"
-            placeholder={new Date().toISOString().split('T')[0]}
+            placeholder={toLocalDateKey()}
             leftIcon={<Calendar size={18} className="text-muted-foreground" />}
             value={data.visitDate}
             onChangeText={(val) => onChange({ ...data, visitDate: val })}

@@ -154,4 +154,10 @@ export const mapBackendPassToHistoryItem = (backendPass: any): ExtendedVisitorPa
   };
 };
 
+/**
+ * Backend passes are nested (visitorDetails.name, shortKey, validity.*); list UIs read the flat
+ * display fields. Keeps the raw fields too, since cards also read villaId and passType.
+ */
+export const toListPass = (raw: any) => ({ ...mapBackendPassToHistoryItem(raw), ...raw });
+
 export default mapBackendPassToHistoryItem;

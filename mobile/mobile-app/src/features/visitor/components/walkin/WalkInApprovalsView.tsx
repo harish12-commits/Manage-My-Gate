@@ -10,6 +10,7 @@ export const WalkInApprovalsView: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<WalkInApprovalItem | null>(null);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const { walkIns, loadPendingWalkIns, resolveWalkIn } = useVisitorPass();
 
@@ -27,19 +28,22 @@ export const WalkInApprovalsView: React.FC = () => {
     setRefreshing(false);
   }, [loadData]);
 
-  const handleApprove = useCallback(
-    async (id: string) => {
-      await resolveWalkIn(id, 'APPROVE');
+  // A decision can fail (e.g. the request was already resolved elsewhere): say why and refresh.
+  const resolve = useCallback(
+    async (id: string, action: 'APPROVE' | 'REJECT') => {
+      const res: any = await resolveWalkIn(id, action);
+      if (res?.meta?.requestStatus === 'rejected') {
+        setActionError(String(res.payload || 'Could not update this walk-in request.'));
+        loadData();
+      } else {
+        setActionError(null);
+      }
     },
-    [resolveWalkIn]
+    [resolveWalkIn, loadData]
   );
 
-  const handleReject = useCallback(
-    async (id: string) => {
-      await resolveWalkIn(id, 'REJECT');
-    },
-    [resolveWalkIn]
-  );
+  const handleApprove = useCallback((id: string) => resolve(id, 'APPROVE'), [resolve]);
+  const handleReject = useCallback((id: string) => resolve(id, 'REJECT'), [resolve]);
 
   const isLoading = walkIns?.status === 'loading' && !refreshing && (walkIns?.pendingList?.length || 0) === 0;
 
@@ -62,7 +66,9 @@ export const WalkInApprovalsView: React.FC = () => {
         emptySubtitle="All visitor gate requests have been reviewed."
         contentContainerClassName="px-4 pt-3 pb-28 gap-3.5"
         ListHeaderComponent={
-          walkIns?.status === 'failed' ? (
+          actionError ? (
+            <ErrorBanner message={actionError} onDismiss={() => setActionError(null)} className="mb-3" />
+          ) : walkIns?.status === 'failed' ? (
             <ErrorBanner
               message={walkIns.error || 'Failed to load pending walk-in requests.'}
               onRetry={loadData}

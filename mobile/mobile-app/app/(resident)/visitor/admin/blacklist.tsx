@@ -5,6 +5,7 @@ import { PaginatedList } from '@/components/ui/PaginatedList';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { BlacklistEntryCard, BlacklistEntry } from '@/src/features/visitor/components/admin/BlacklistEntryCard';
 import { AdminBlacklistModal } from '@/src/features/visitor/components/admin/AdminBlacklistModal';
@@ -26,6 +27,7 @@ export default function AdminBlacklistScreen() {
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedRemoveId, setSelectedRemoveId] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   useEffect(() => {
     loadBlacklist();
@@ -48,7 +50,8 @@ export default function AdminBlacklistScreen() {
 
   const handleConfirmRemove = async () => {
     if (selectedRemoveId) {
-      await removeFromBlacklist(selectedRemoveId);
+      const res: any = await removeFromBlacklist(selectedRemoveId);
+      setRemoveError(res?.meta?.requestStatus === 'rejected' ? String(res.payload || 'Failed to remove entry.') : null);
       setSelectedRemoveId(null);
     }
   };
@@ -63,6 +66,9 @@ export default function AdminBlacklistScreen() {
 
   const renderHeader = () => (
     <View className="mb-3">
+      {removeError ? (
+        <ErrorBanner message={removeError} onDismiss={() => setRemoveError(null)} className="mb-3" />
+      ) : null}
       <SearchFilterBar
         searchValue={search}
         onSearchChange={setSearch}
@@ -116,7 +122,11 @@ export default function AdminBlacklistScreen() {
         loading={actionStatus === 'loading'}
         onClose={() => setModalOpen(false)}
         onSubmit={async (data) => {
-          await addToBlacklist(data);
+          const res: any = await addToBlacklist(data);
+          // Throwing keeps the form open with the reason (e.g. a duplicate entry).
+          if (res?.meta?.requestStatus === 'rejected') {
+            throw new Error(String(res.payload || 'Failed to blacklist visitor'));
+          }
         }}
       />
 

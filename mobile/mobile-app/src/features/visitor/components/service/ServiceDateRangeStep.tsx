@@ -3,6 +3,7 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
 import { Calendar, AlertCircle } from 'lucide-react-native';
+import { toLocalDateKey } from '../../utils/localDate';
 
 export interface ServiceDateRangeData {
   startDate: string;
@@ -37,8 +38,8 @@ export const ServiceDateRangeStep: React.FC<ServiceDateRangeStepProps> = ({
     const baseDate = isNaN(start.getTime()) ? new Date() : start;
     const end = new Date(baseDate);
     end.setMonth(end.getMonth() + months);
-    const endDateStr = end.toISOString().split('T')[0];
-    const startDateStr = baseDate.toISOString().split('T')[0];
+    const endDateStr = toLocalDateKey(end);
+    const startDateStr = toLocalDateKey(baseDate);
 
     onChange({
       startDate: startDateStr,
@@ -91,7 +92,7 @@ export const ServiceDateRangeStep: React.FC<ServiceDateRangeStepProps> = ({
       <View className="bg-card border border-border rounded-2xl p-4 gap-4">
         <Input
           label="Pass Start Date (YYYY-MM-DD)"
-          placeholder={new Date().toISOString().split('T')[0]}
+          placeholder={toLocalDateKey()}
           leftIcon={<Calendar size={18} className="text-muted-foreground" />}
           value={data.startDate}
           onChangeText={(val) => onChange({ ...data, startDate: val })}

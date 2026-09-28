@@ -23,7 +23,7 @@ export const VisitorAnalyticsCard: React.FC<VisitorAnalyticsCardProps> = ({
   const activeInside = analytics?.activeInsideCount ?? 0;
   const pending = analytics?.pendingApprovalsCount ?? 0;
   const blacklisted = analytics?.totalBlacklistedCount ?? 0;
-  const peakHour = analytics?.peakHour || '05:00 PM - 06:00 PM';
+  const peakHour = analytics?.peakHour || '—';
 
   const kpiCards: KPICardProps[] = [
     {

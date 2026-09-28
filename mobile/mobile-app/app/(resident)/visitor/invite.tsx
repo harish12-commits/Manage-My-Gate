@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { VisitorPassWizard } from '@/src/features/visitor/components/wizard/VisitorPassWizard';
 import { useVisitorPass } from '@/src/features/visitor/hooks/useVisitorPass';
-import { selectActiveOrgId, selectAuthUser } from '@/src/features/auth/store/authSelectors';
+import { selectActiveOrgId, selectActiveVillaId, selectAuthUser } from '@/src/features/auth/store/authSelectors';
 import { PassTypeKey } from '@/src/features/visitor/mocks/visitorMocks';
 
 export default function InviteVisitorScreen() {
@@ -12,6 +12,7 @@ export default function InviteVisitorScreen() {
   const routeParams = useLocalSearchParams<{ type?: string }>();
   const authUser = useSelector(selectAuthUser);
   const activeOrgId = useSelector(selectActiveOrgId);
+  const activeVillaId = useSelector(selectActiveVillaId);
   const { createNewPass } = useVisitorPass();
 
   const initialType: PassTypeKey =
@@ -36,6 +37,7 @@ export default function InviteVisitorScreen() {
     role: (isAdmin ? 'ADMIN' : 'RESIDENT') as 'ADMIN' | 'RESIDENT',
     orgId: activeOrgId,
     createdById: authUser?.id || authUser?._id,
+    villaId: activeVillaId || undefined,
   };
 
   return (

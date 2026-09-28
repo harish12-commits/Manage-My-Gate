@@ -13,8 +13,8 @@ export const visitorService = {
     return await apiClient.get(`/visitor-pass/code/${code}`);
   },
 
-  updatePassStatus: async (id: string, status: string) => {
-    return await apiClient.patch(`/visitor-pass/${id}/status`, { status });
+  updatePassStatus: async (id: string, status: string, reason?: string) => {
+    return await apiClient.patch(`/visitor-pass/${id}/status`, { status, ...(reason ? { reason } : {}) });
   },
 
   getPasses: async (orgId: string, params?: any) => {
@@ -44,6 +44,10 @@ export const visitorService = {
 
   getHistoryLogs: async (orgId: string, params?: any) => {
     return await apiClient.get(`/visitor-log/org/${orgId}`, { params });
+  },
+
+  getWalkInBoard: async (orgId: string, since: string) => {
+    return await apiClient.get(`/visitor-log/org/${orgId}/walk-ins`, { params: { since } });
   },
 
   getPendingApprovals: async (orgId: string) => {

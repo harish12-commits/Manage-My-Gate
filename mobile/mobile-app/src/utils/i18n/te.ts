@@ -3175,6 +3175,7 @@ export const te: Record<string, string> = {
   'no_villas_found': 'విల్లాలు ఏవీ కనుగొనబడలేదు',
   'no_estate_units_match_your_search_query': 'మీ శోధన ప్రశ్నకు సరిపోలే ఎస్టేట్ యూనిట్లు ఏవీ లేవు.',
   'denied_by_host': 'హోస్ట్ ద్వారా తిరస్కరించబడింది',
+  'approved_by_host': 'హోస్ట్ ద్వారా ఆమోదించబడింది',
   'pending_approval': 'ఆమోదం పెండింగ్‌లో ఉంది',
   'refresh_queue': 'క్యూను రిఫ్రెష్ చేయండి',
   'no_walk_in_requests_found': 'వాక్-ఇన్ అభ్యర్థనలు ఏవీ కనుగొనబడలేదు',

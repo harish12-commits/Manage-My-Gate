@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScrollView';
 import { Card } from '@/components/common/Card';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -598,11 +599,11 @@ export function ResidentRaiseTicketScreen() {
         </View>
 
         {/* MAIN FORM SCROLL AREA */}
-        <ScrollView
+        <KeyboardAwareScrollView
+          extraScrollHeight={56}
           className="flex-1 px-4 py-4"
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
-          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           contentContainerStyle={{ paddingBottom: 130 }}
         >
           {error ? (
@@ -874,7 +875,7 @@ export function ResidentRaiseTicketScreen() {
               )}
             </View>
           )}
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
         {/* STICKY BOTTOM ACTION FOOTER */}
         <View className="absolute bottom-0 left-0 right-0 p-4 bg-card border-t border-border/60 flex-row items-center gap-3">

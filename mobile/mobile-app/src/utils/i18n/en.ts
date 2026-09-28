@@ -3212,6 +3212,7 @@ export const en: Record<string, string> = {
   'no_villas_found': 'No Villas Found',
   'no_estate_units_match_your_search_query': 'No estate units match your search query.',
   'denied_by_host': 'DENIED BY HOST',
+  'approved_by_host': 'APPROVED BY HOST',
   'pending_approval': 'PENDING APPROVAL',
   'refresh_queue': 'Refresh Queue',
   'no_walk_in_requests_found': 'No Walk-In Requests Found',

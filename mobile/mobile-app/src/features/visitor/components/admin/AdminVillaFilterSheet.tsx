@@ -63,7 +63,11 @@ export const AdminVillaFilterSheet: React.FC<AdminVillaFilterSheetProps> = ({
         const villaId = v._id || v.id;
         const rawUnit = (v.unitNumber || v.name || '').trim();
         const formattedUnit = rawUnit.toLowerCase().startsWith('villa') ? rawUnit : `Villa ${rawUnit}`;
-        const villaName = `${formattedUnit}${v.blockOrBuilding ? ` - Block ${v.blockOrBuilding}` : ''}`;
+        // Block names are often stored as "Block A"; don't prefix a second "Block".
+        const blockLabel = v.blockOrBuilding
+          ? (/^block\b/i.test(v.blockOrBuilding.trim()) ? v.blockOrBuilding.trim() : `Block ${v.blockOrBuilding.trim()}`)
+          : '';
+        const villaName = `${formattedUnit}${blockLabel ? ` - ${blockLabel}` : ''}`;
         
         const primaryRes = v.primaryResidentId || (v.residents && v.residents[0]?.userId);
         const primaryResId = typeof primaryRes === 'object' ? (primaryRes._id || primaryRes.id) : primaryRes;

@@ -89,6 +89,7 @@ export class VisitorLogService {
     // Check Blacklist before initiating walk-in
     const isBanned = await blacklistService.checkMatch(walkInData.orgId, {
       name: walkInData.snapshot?.visitorName,
+      phone: walkInData.snapshot?.phone,
       plate: walkInData.snapshot?.vehicleNumber
     });
     if (isBanned) {
@@ -103,6 +104,7 @@ export class VisitorLogService {
       logStatus: 'PENDING',
       snapshot: {
         visitorName: walkInData.snapshot?.visitorName,
+        phone: walkInData.snapshot?.phone,
         idProofNumber: walkInData.snapshot?.idProofNumber,
         vehicleNumber: walkInData.snapshot?.vehicleNumber
       }
@@ -204,7 +206,7 @@ export class VisitorLogService {
       log._id,
       new Date(),
       getActorId(actor),
-      context.gateName,
+      { gateName: context.gateName, reason: context.reason },
       session
     );
     
@@ -250,6 +252,22 @@ export class VisitorLogService {
    * @param {string|null} residentId - Optional resident ID to filter by.
    * @returns {Promise<Object[]>}
    */
+  /**
+   * Walk-in requests raised since `since`, in every status, for the gate's walk-in board.
+   * @param {string} orgId - The organization ID.
+   * @param {Object} actor - The requesting user.
+   * @param {Date} since - Lower bound on request time.
+   * @returns {Promise<Object[]>}
+   */
+  async getWalkInBoard(orgId, actor, since) {
+    assertVisitorPermission(['gate', 'manager'], actor);
+    return await visitorLogRepository.findPendingApprovals({
+      orgId,
+      entryType: 'WALK_IN',
+      createdAt: { $gte: since },
+    });
+  }
+
   async getPendingApprovals(orgId, actor) {
     assertVisitorPermission(['resident', 'gate', 'manager'], actor);
     const query = {

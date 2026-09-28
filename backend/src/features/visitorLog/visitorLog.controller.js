@@ -1,6 +1,8 @@
 import visitorLogService from './visitorLog.service.js';
 import visitorPassTokenService from '../visitorPassToken/visitorPassToken.service.js';
 import HttpError from '../../utils/httpError.utils.js';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 import { assertVisitorPermission } from '../visitorPass/visitorPass.policy.js';
 
 export class VisitorLogController {
@@ -11,7 +13,7 @@ export class VisitorLogController {
     try {
       let { passId, code } = req.body;
       if (!passId && code) {
-        passId = await visitorPassTokenService.getPassIdByCode(code);
+        passId = await visitorPassTokenService.getPassIdByCode(code, null, req.tenant.orgId);
       }
       const data = await visitorLogService.logPreApprovedEntry(passId, req.user, {
         orgId: req.tenant.orgId,
@@ -64,7 +66,11 @@ export class VisitorLogController {
   async checkout(req, res, next) {
     try {
       const { id } = req.params;
-      const data = await visitorLogService.checkout(id, req.user, { orgId: req.tenant.orgId, gateName: req.body.gateName });
+      const data = await visitorLogService.checkout(id, req.user, {
+        orgId: req.tenant.orgId,
+        gateName: req.body.gateName,
+        reason: req.body.reason,
+      });
       res.success(data, 'Visitor checked out successfully');
     } catch (error) {
       next(error);
@@ -98,6 +104,26 @@ export class VisitorLogController {
       }
       const data = await visitorLogService.getPendingApprovals(orgId, req.user);
       res.success(data, 'Pending approvals retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get the gate's walk-in board: walk-ins raised since `since` (default: last 24 hours), any status.
+   */
+  async getWalkInBoard(req, res, next) {
+    try {
+      const { orgId } = req.params;
+      if (!req.tenant?.isPlatform && req.tenant?.orgId && String(req.tenant.orgId) !== String(orgId)) {
+        throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
+      }
+      const now = Date.now();
+      const requested = req.query.since ? new Date(req.query.since).getTime() : now - DAY_MS;
+      // Never reach back further than a week, whatever the client asks for.
+      const since = new Date(Math.max(Number.isNaN(requested) ? now - DAY_MS : requested, now - 7 * DAY_MS));
+      const data = await visitorLogService.getWalkInBoard(orgId, req.user, since);
+      res.success(data, 'Walk-in board retrieved successfully');
     } catch (error) {
       next(error);
     }

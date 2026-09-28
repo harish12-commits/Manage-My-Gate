@@ -1,5 +1,6 @@
 import blacklistService from './blacklist.service.js';
 import HttpError from '../../utils/httpError.utils.js';
+import { assertVisitorPermission } from '../visitorPass/visitorPass.policy.js';
 
 export class BlacklistController {
   /**
@@ -7,6 +8,7 @@ export class BlacklistController {
    */
   async create(req, res, next) {
     try {
+      assertVisitorPermission(['manager'], req.user);
       const { orgId, name, phone, plate, reason } = req.body;
       const targetOrgId = req.tenant?.orgId || orgId;
       if (!req.tenant?.isPlatform && req.tenant?.orgId && orgId && String(req.tenant.orgId) !== String(orgId)) {
@@ -34,8 +36,9 @@ export class BlacklistController {
    */
   async delete(req, res, next) {
     try {
+      assertVisitorPermission(['manager'], req.user);
       const { id } = req.params;
-      const data = await blacklistService.removeBlacklistEntry(id);
+      const data = await blacklistService.removeBlacklistEntry(id, req.tenant.orgId);
       res.success(data, 'Blacklisted profile unbanned successfully');
     } catch (error) {
       next(error);
@@ -47,6 +50,7 @@ export class BlacklistController {
    */
   async getByOrgPaginated(req, res, next) {
     try {
+      assertVisitorPermission(['gate', 'manager'], req.user);
       const { orgId } = req.params;
       if (!req.tenant?.isPlatform && req.tenant?.orgId && String(req.tenant.orgId) !== String(orgId)) {
         throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
@@ -67,6 +71,7 @@ export class BlacklistController {
    */
   async checkMatch(req, res, next) {
     try {
+      assertVisitorPermission(['gate', 'manager'], req.user);
       const { orgId } = req.params;
       if (!req.tenant?.isPlatform && req.tenant?.orgId && String(req.tenant.orgId) !== String(orgId)) {
         throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');

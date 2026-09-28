@@ -19,8 +19,9 @@ export class BlacklistRepository {
    * @param {import('mongoose').ClientSession} [session] - Mongoose session.
    * @returns {Promise<Object|null>} The deleted document.
    */
-  async deleteById(id, session = null) {
-    return await Blacklist.findByIdAndDelete(id, { ...(session ? { session } : {}) });
+  async deleteById(id, orgId, session = null) {
+    // Scoped to the caller's community so one tenant can never remove another's entries.
+    return await Blacklist.findOneAndDelete({ _id: id, orgId }, { ...(session ? { session } : {}) });
   }
 
   /**
@@ -33,7 +34,9 @@ export class BlacklistRepository {
     const query = { orgId: new mongoose.Types.ObjectId(orgId) };
     const matches = [];
 
-    if (name && name.trim() && name.trim() !== '—') matches.push({ name: new RegExp(`^${name.trim()}$`, 'i') });
+    // The name is visitor-supplied text, not a pattern: escape it (e.g. "Ravi (Jr" must not throw).
+    const escapedName = name ? name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+    if (name && name.trim() && name.trim() !== '—') matches.push({ name: new RegExp(`^${escapedName}$`, 'i') });
     if (phone && phone.trim() && phone.trim() !== '—') matches.push({ phone: phone.trim() });
     if (plate && plate.trim() && plate.trim() !== '—') matches.push({ plate: plate.trim().toUpperCase() });
 

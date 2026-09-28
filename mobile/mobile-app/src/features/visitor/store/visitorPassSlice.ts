@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import visitorService from '../services/visitorService';
 import { WalkInApprovalItem } from '../mocks/visitorMocks';
 import { mapBackendWalkInToApprovalItem } from '../utils/mapBackendWalkInToApprovalItem';
+import { toListPass } from '../utils/mapBackendPassToHistoryItem';
 
 import {
   fetchCommunityPasses,
@@ -53,6 +54,10 @@ export interface DashboardSummary {
 
 export interface WalkInState {
   pendingList: WalkInApprovalItem[];
+  /** Requests resolved while this session watched them, so the gate can see the outcome. */
+  resolvedList: WalkInApprovalItem[];
+  /** Today's walk-ins in every status, loaded from the backend for the gate's board. */
+  boardList: WalkInApprovalItem[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   actionStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
@@ -106,6 +111,8 @@ const initialState: VisitorPassState = {
   },
   walkIns: {
     pendingList: [],
+    resolvedList: [],
+    boardList: [],
     status: 'idle',
     actionStatus: 'idle',
     error: null,
@@ -143,7 +150,9 @@ export const createPass = createAsyncThunk(
       const body = response && (response as any).success !== undefined ? response : (response as any)?.data;
       return (body?.data || body) as any;
     } catch (error: any) {
-      return rejectWithValue(error?.response?.data?.message || error?.message || 'Failed to create visitor pass');
+      const data = error?.response?.data;
+      // Validation failures carry the specific field problem in details; prefer it over the generic summary.
+      return rejectWithValue(data?.details?.[0]?.message || data?.message || error?.message || 'Failed to create visitor pass');
     }
   }
 );
@@ -186,9 +195,9 @@ export const fetchPassByCode = createAsyncThunk(
 
 export const updatePassStatus = createAsyncThunk(
   'visitorPass/updatePassStatus',
-  async ({ id, status }: { id: string; status: string }, { rejectWithValue }) => {
+  async ({ id, status, reason }: { id: string; status: string; reason?: string }, { rejectWithValue }) => {
     try {
-      const response = await visitorService.updatePassStatus(id, status);
+      const response = await visitorService.updatePassStatus(id, status, reason);
       const body = response && (response as any).success !== undefined ? response : (response as any)?.data;
       if (body?.data || body?._id) {
         return (body?.data || body) as any;
@@ -216,11 +225,11 @@ export const getPasses = createAsyncThunk(
       const response = await visitorService.getPasses(orgId, queryParams);
       const body = response && (response as any).success !== undefined ? response : (response as any)?.data;
       const innerData = body?.data || body;
-      const dataArray = (Array.isArray(innerData) ? innerData : (innerData?.data || [])) as VisitorPass[];
+      const dataArray = (Array.isArray(innerData) ? innerData : (innerData?.data || [])) as any[];
       const totalRecords = typeof innerData?.totalRecords === 'number' ? innerData.totalRecords : dataArray.length;
 
       return {
-        data: dataArray,
+        data: dataArray.map(toListPass),
         totalRecords,
         page,
         limit,
@@ -256,6 +265,23 @@ export const fetchDashboardSummary = createAsyncThunk(
       };
     } catch (error: any) {
       return rejectWithValue(error?.response?.data?.message || error?.message || 'Failed to fetch dashboard summary');
+    }
+  }
+);
+
+export const fetchWalkInBoard = createAsyncThunk(
+  'visitorPass/fetchWalkInBoard',
+  async (orgId: string, { rejectWithValue }) => {
+    try {
+      // Start of the guard's local day, so the board survives app restarts within the shift.
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const response = await visitorService.getWalkInBoard(orgId, startOfDay.toISOString());
+      const body = response && (response as any).success !== undefined ? response : (response as any)?.data;
+      const logs = Array.isArray(body?.data || body) ? (body?.data || body) : [];
+      return logs.map((log: any) => mapBackendWalkInToApprovalItem(log));
+    } catch (error: any) {
+      return rejectWithValue(error?.response?.data?.message || error?.message || 'Failed to fetch walk-in board');
     }
   }
 );
@@ -385,6 +411,15 @@ export const visitorPassSlice = createSlice({
         (item) => item.id !== targetId && item.rawLog?._id !== targetId
       );
 
+      // Keep the outcome visible on the gate board (APPROVED / DENIED BY HOST).
+      if (action.payload.rawLog) {
+        const resolvedItem = mapBackendWalkInToApprovalItem(action.payload.rawLog);
+        state.walkIns.resolvedList = [
+          resolvedItem,
+          ...(state.walkIns.resolvedList || []).filter((item) => item.id !== resolvedItem.id),
+        ].slice(0, 50);
+      }
+
       state.dashboard.pendingWalkIns = state.dashboard.pendingWalkIns.filter(
         (p) => p._id !== targetId && p.id !== targetId
       );
@@ -454,6 +489,9 @@ export const visitorPassSlice = createSlice({
         state.walkIns.status = 'succeeded';
         state.walkIns.pendingList = action.payload.mapped;
         state.dashboard.pendingWalkIns = action.payload.rawLogs;
+      })
+      .addCase(fetchWalkInBoard.fulfilled, (state, action) => {
+        state.walkIns.boardList = action.payload;
       })
       .addCase(fetchPendingWalkIns.rejected, (state, action) => {
         state.walkIns.status = 'failed';

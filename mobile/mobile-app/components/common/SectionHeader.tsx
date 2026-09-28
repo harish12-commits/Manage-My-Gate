@@ -136,7 +136,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           containerClassName || className
         )}
       >
-        <Text className="text-[13px] font-bold font-sans uppercase tracking-wider text-muted-foreground">
+        <Text className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">
           {localizedTitle}
         </Text>
         {actionLabel && onAction && (
@@ -146,7 +146,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel={localizedActionLabel}
           >
-            <Text className="text-xs font-bold text-primary font-sans">{localizedActionLabel}</Text>
+            <Text className="text-xs font-bold text-primary">{localizedActionLabel}</Text>
             <ChevronRight size={13} className="text-primary" color={isDark ? '#FF8A3D' : '#C2410C'} />
           </Pressable>
         )}
@@ -183,7 +183,8 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
         <View className="flex-1 min-w-0 justify-center">
           <Text
             numberOfLines={1}
-            className="text-[19px] sm:text-[20px] font-bold font-sans text-foreground tracking-tight"
+            style={{ fontFamily: 'HankenGrotesk_700Bold' }}
+            className="text-[20px] sm:text-[21.5px] font-bold text-foreground tracking-tight"
           >
             {localizedTitle}
           </Text>
@@ -191,7 +192,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           {displaySubtitle ? (
             <Text
               numberOfLines={1}
-              className="text-[14px] sm:text-[14.5px] font-normal font-sans text-muted-foreground mt-1 tracking-normal"
+              className="text-[13.5px] sm:text-[14px] font-normal text-muted-foreground mt-0.5 tracking-normal"
             >
               {localizedSubtitle}
             </Text>
@@ -207,7 +208,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           accessibilityRole="button"
           accessibilityLabel={localizedActionLabel}
         >
-          <Text className="text-[13px] font-bold font-sans text-primary">
+          <Text className="text-[13px] font-bold text-primary">
             {localizedActionLabel}
           </Text>
           {isExpanded !== undefined ? (

@@ -6,14 +6,17 @@ import { StatusBadge, type StatusVariant } from '@/components/ui/StatusBadge';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { Button } from '@/components/ui/button';
 import { Clock, Phone, Car, RefreshCw, Building } from 'lucide-react-native';
+import { useDispatch, useSelector } from 'react-redux';
 import { useVisitorPass } from '../../hooks/useVisitorPass';
+import { fetchWalkInBoard } from '../../store/visitorPassSlice';
+import { selectActiveOrgId } from '../../../auth/store/authSelectors';
 import { useVisitorSocket } from '../../hooks/useVisitorSocket';
 import { WalkInApprovalItem } from '../../mocks/visitorMocks';
 
 const mapWalkInBadge = (status: 'PENDING' | 'APPROVED' | 'REJECTED'): { label: string; variant: StatusVariant } => {
   switch (status) {
     case 'APPROVED':
-      return { label: 'APPROVED', variant: 'success' };
+      return { label: 'APPROVED BY HOST', variant: 'success' };
     case 'REJECTED':
       return { label: 'DENIED BY HOST', variant: 'danger' };
     case 'PENDING':
@@ -30,18 +33,35 @@ export const GuardWalkInStatusView: React.FC = () => {
   useVisitorSocket();
 
   const { walkIns, loadPendingWalkIns } = useVisitorPass();
+  const dispatch = useDispatch<any>();
+  const activeOrgId = useSelector(selectActiveOrgId);
+
+  // Today's walk-ins in every status come from the backend, so outcomes survive an app restart.
+  const loadBoard = useCallback(async () => {
+    if (!activeOrgId) return;
+    await Promise.all([dispatch(fetchWalkInBoard(activeOrgId)), loadPendingWalkIns()]);
+  }, [dispatch, activeOrgId, loadPendingWalkIns]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadPendingWalkIns();
+    await loadBoard();
     setRefreshing(false);
-  }, [loadPendingWalkIns]);
+  }, [loadBoard]);
 
   useEffect(() => {
-    loadPendingWalkIns();
-  }, [loadPendingWalkIns]);
+    loadBoard();
+  }, [loadBoard]);
 
-  const items: WalkInApprovalItem[] = walkIns?.pendingList || [];
+  // Loaded board, then live pending requests, then live outcomes: later sources win per request.
+  const items: WalkInApprovalItem[] = useMemo(() => {
+    const byId = new Map<string, WalkInApprovalItem>();
+    [...(walkIns?.boardList || []), ...(walkIns?.pendingList || []), ...(walkIns?.resolvedList || [])].forEach((item) => {
+      if (item?.id) byId.set(item.id, item);
+    });
+    return [...byId.values()].sort(
+      (a, b) => new Date(b.requestTimestamp).getTime() - new Date(a.requestTimestamp).getTime()
+    );
+  }, [walkIns?.boardList, walkIns?.pendingList, walkIns?.resolvedList]);
 
   const filteredItems = useMemo(() => {
     if (filter === 'ALL') return items;
@@ -157,7 +177,11 @@ export const GuardWalkInStatusView: React.FC = () => {
                 <View className="flex-row items-center gap-1">
                   <Clock size={12} className="text-muted-foreground" />
                   <Text className="text-xs text-muted-foreground">
-                    {item.waitingDurationMinutes ? `Waiting ${item.waitingDurationMinutes} mins` : 'Just now'}
+                    {item.status !== 'PENDING' && item.resolvedAt
+                      ? `${item.status === 'APPROVED' ? 'Approved' : 'Denied'} at ${new Date(item.resolvedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                      : item.waitingDurationMinutes
+                      ? `Waiting ${item.waitingDurationMinutes} mins`
+                      : 'Just now'}
                   </Text>
                 </View>
               </View>

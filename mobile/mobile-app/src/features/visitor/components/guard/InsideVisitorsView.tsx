@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ListCard } from '@/components/ui/ListCard';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { selectActiveOrgId } from '@/src/features/auth/store/authSelectors';
 import { useVisitorPass } from '../../hooks/useVisitorPass';
 import { ActiveVisitorLog } from '../../store/visitorPassSlice';
@@ -22,6 +23,7 @@ export const InsideVisitorsView: React.FC = () => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const fetchLogs = useCallback(async () => {
     if (!activeOrgId) return;
@@ -42,23 +44,32 @@ export const InsideVisitorsView: React.FC = () => {
     if (selectedLogId) {
       try {
         await checkoutVisitor(selectedLogId);
+        setCheckoutError(null);
+      } catch (err: any) {
+        // e.g. already checked out at another gate: tell the guard and refresh the list.
+        setCheckoutError(err?.message || 'Failed to check out visitor.');
+        fetchLogs();
+      } finally {
         setSelectedLogId(null);
-      } catch (err) {
-        console.error('Failed to checkout visitor:', err);
       }
     }
   };
 
   const renderHeader = () => (
-    <View className="flex-row items-center justify-between bg-card border border-border rounded-2xl p-3.5 mb-3">
-      <View className="flex-row items-center gap-2">
-        <Users size={18} className="text-status-success" />
-        <Text className="text-sm font-bold text-foreground">Active Visitors Inside</Text>
+    <>
+      {checkoutError ? (
+        <ErrorBanner message={checkoutError} onDismiss={() => setCheckoutError(null)} className="mb-3" />
+      ) : null}
+      <View className="flex-row items-center justify-between bg-card border border-border rounded-2xl p-3.5 mb-3">
+        <View className="flex-row items-center gap-2">
+          <Users size={18} className="text-status-success" />
+          <Text className="text-sm font-bold text-foreground">Active Visitors Inside</Text>
+        </View>
+        <Text className="text-xs font-extrabold text-status-success bg-status-success/15 px-3 py-1 rounded-full">
+          {activeVisitors.length} On-Premises
+        </Text>
       </View>
-      <Text className="text-xs font-extrabold text-status-success bg-status-success/15 px-3 py-1 rounded-full">
-        {activeVisitors.length} On-Premises
-      </Text>
-    </View>
+    </>
   );
 
   return (

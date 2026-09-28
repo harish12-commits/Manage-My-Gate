@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { TextInput } from '@/components/forms/TextInput';
 import { DropdownSelect, DropdownOption } from '@/components/forms/DropdownSelect';
 import { Icon } from '@/components/ui/icon';
+import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScrollView';
 import { X, Landmark, Plus, Sliders } from 'lucide-react-native';
 import billingService from '../services/billingService';
 import { parseBackendError, validateNumber } from '@/src/utils/validation';
@@ -158,7 +159,7 @@ export const CreateAssessmentModal: React.FC<CreateAssessmentModalProps> = ({
   return (
     <Modal visible={visible} transparent statusBarTranslucent={true} animationType="slide" onRequestClose={handleModalClose}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         style={{ flex: 1 }}
       >
         <View className="flex-1 bg-black/60 justify-end">
@@ -186,11 +187,13 @@ export const CreateAssessmentModal: React.FC<CreateAssessmentModalProps> = ({
             </View>
 
             {/* Scrollable Form Body */}
-            <ScrollView
+            <KeyboardAwareScrollView
+              extraScrollHeight={48}
               className="p-5"
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+              keyboardDismissMode="on-drag"
+              contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
             >
               {errorMsg ? (
                 <View className="bg-destructive/10 border border-destructive/30 rounded-xl p-3 mb-3">
@@ -270,7 +273,7 @@ export const CreateAssessmentModal: React.FC<CreateAssessmentModalProps> = ({
               </View>
 
               <View className="h-4" />
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
             {/* Modal Bottom Action Footer */}
             <View className="flex-row items-center justify-end gap-3 px-5 py-4 border-t border-border bg-card">

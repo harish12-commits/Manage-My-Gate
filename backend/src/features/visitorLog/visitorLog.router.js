@@ -15,6 +15,7 @@ router.patch('/walk-in/:id/resolve', validate(resolveWalkInRules), visitorLogCon
 router.patch('/:id/checkout', validate(checkoutRules), visitorLogController.checkout);
 router.get('/org/:orgId/inside', visitorLogController.getInside);
 router.get('/org/:orgId/pending', visitorLogController.getPending);
+router.get('/org/:orgId/walk-ins', visitorLogController.getWalkInBoard);
 router.get('/org/:orgId', visitorLogController.getHistory);
 
 export default router;

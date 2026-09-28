@@ -32,8 +32,8 @@ export class BlacklistService {
    * @param {import('mongoose').ClientSession} [session] - Optional session.
    * @returns {Promise<Object>} Banned profile metadata.
    */
-  async removeBlacklistEntry(id, session = null) {
-    const deleted = await blacklistRepository.deleteById(id, session);
+  async removeBlacklistEntry(id, orgId, session = null) {
+    const deleted = await blacklistRepository.deleteById(id, orgId, session);
     if (!deleted) {
       throw new HttpError(404, `Blacklist rule with ID ${id} was not found.`);
     }

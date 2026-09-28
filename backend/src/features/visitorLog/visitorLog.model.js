@@ -45,6 +45,10 @@ const visitorLogSchema = new mongoose.Schema(
         type: String,
         trim: true,
       },
+      phone: {
+        type: String,
+        trim: true,
+      },
       idProofNumber: {
         type: String,
         trim: true,
@@ -65,6 +69,7 @@ const visitorLogSchema = new mongoose.Schema(
         action: { type: String, enum: ['REQUESTED', 'APPROVED', 'REJECTED', 'CHECKED_IN', 'CHECKED_OUT'], required: true },
         actorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         gateName: { type: String, trim: true, maxlength: 120 },
+        reason: { type: String, trim: true, maxlength: 500 },
         occurredAt: { type: Date, default: Date.now },
       },
     ],

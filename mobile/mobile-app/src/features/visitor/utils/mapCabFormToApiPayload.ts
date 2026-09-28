@@ -1,6 +1,7 @@
 import { CabVehicleData } from '../components/cab/CabVehicleStep';
 import { CabScheduleData } from '../components/cab/CabScheduleStep';
 import { UserAuthContext } from './mapGuestFormToApiPayload';
+import { toLocalDateKey } from './localDate';
 
 export interface ApiCabVisitorPassPayload {
   orgId?: string;
@@ -98,7 +99,7 @@ export const mapCabFormToApiPayload = (
     } else if (schedule.arrivalWindow === 'CUSTOM') {
       const visitDateStr = schedule.customVisitDate && schedule.customVisitDate.trim()
         ? schedule.customVisitDate.trim()
-        : now.toISOString().split('T')[0];
+        : toLocalDateKey(now);
       const baseDate = new Date(visitDateStr);
       
       if (schedule.customStartTime) {

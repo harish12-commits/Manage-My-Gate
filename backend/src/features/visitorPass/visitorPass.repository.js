@@ -24,6 +24,19 @@ export class VisitorPassRepository {
   }
 
   /**
+   * Find a VisitorPass with the unit and host resolved, for screens that show who is visiting whom.
+   * @param {string} id - The ID of the pass.
+   * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
+   * @returns {Promise<Object|null>} The pass document, or null if not found.
+   */
+  async findByIdWithParties(id, session = null) {
+    return await VisitorPass.findById(id)
+      .populate('villaId', 'unitNumber blockOrBuilding')
+      .populate('createdById', 'name')
+      .session(session || null);
+  }
+
+  /**
    * Update the status of a VisitorPass.
    * @param {string} id - The ID of the pass.
    * @param {string} status - The new status value (PENDING, ACTIVE, REVOKED, EXPIRED).
@@ -53,6 +66,38 @@ export class VisitorPassRepository {
     );
   }
 
+  /**
+   * Marks PENDING/ACTIVE passes whose validity has ended as EXPIRED, recording the transition.
+   * @param {string} orgId - The organization ID.
+   * @param {Date} [now] - The reference instant.
+   * @param {import('mongoose').ClientSession} [session] - Optional Mongoose session.
+   * @returns {Promise<Object>} The update result.
+   */
+  async expireEndedPasses(orgId, now = new Date(), session = null) {
+    return VisitorPass.updateMany(
+      {
+        orgId: new mongoose.Types.ObjectId(orgId),
+        status: { $in: ['PENDING', 'ACTIVE'] },
+        'validity.endDate': { $lt: now },
+      },
+      [
+        {
+          // $status still refers to the pre-update value inside this stage.
+          $set: {
+            statusHistory: {
+              $concatArrays: [
+                { $ifNull: ['$statusHistory', []] },
+                [{ fromStatus: '$status', toStatus: 'EXPIRED', reason: 'Validity period ended', occurredAt: now }],
+              ],
+            },
+            status: 'EXPIRED',
+          },
+        },
+      ],
+      { updatePipeline: true, ...(session ? { session } : {}) }
+    );
+  }
+
   /** Atomically consumes one pass use, preventing replayed QR scans from admitting twice. */
   async consumeForEntry(id, session = null) {
     return VisitorPass.findOneAndUpdate(
@@ -74,7 +119,8 @@ export class VisitorPassRepository {
           },
         },
       ],
-      { returnDocument: 'after', ...(session ? { session } : {}) }
+      // Mongoose 9 rejects pipeline (array) updates unless explicitly opted in.
+      { returnDocument: 'after', updatePipeline: true, ...(session ? { session } : {}) }
     );
   }
 

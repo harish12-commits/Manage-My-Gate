@@ -3207,6 +3207,7 @@ export const hi: Record<string, string> = {
   'no_villas_found': 'कोई विला नहीं मिला',
   'no_estate_units_match_your_search_query': 'आपकी खोज क्वेरी से मेल खाने वाली कोई एस्टेट इकाई नहीं है।',
   'denied_by_host': 'मेजबान द्वारा अस्वीकृत',
+  'approved_by_host': 'मेजबान द्वारा स्वीकृत',
   'pending_approval': 'स्वीकृति लंबित',
   'refresh_queue': 'कतार ताज़ा करें',
   'no_walk_in_requests_found': 'कोई वॉक-इन अनुरोध नहीं मिला',

@@ -9,10 +9,13 @@ export interface AppleSignInButtonProps {
   onSuccess?: (data: any) => void;
   onError?: (error: string) => void;
   disabled?: boolean;
+  variant?: 'full' | 'compact';
+  className?: string;
+  style?: any;
 }
 
 export function AppleSignInButton(props: AppleSignInButtonProps = {}) {
-  const { disabled = false, ...authOptions } = props;
+  const { disabled = false, variant = 'compact', className = '', style, ...authOptions } = props;
   const { handleAppleSignIn, loading, isAvailable } = useAppleAuthSession(authOptions);
 
   // Apple provides its approved system control on iOS. Android and web still
@@ -23,10 +26,11 @@ export function AppleSignInButton(props: AppleSignInButtonProps = {}) {
     return (
       <SocialAuthButton
         provider="apple"
-        variant="full"
+        variant={variant}
         onPress={handleAppleSignIn}
         loading={loading}
         disabled={disabled || loading}
+        className={className}
       />
     );
   }
@@ -34,7 +38,8 @@ export function AppleSignInButton(props: AppleSignInButtonProps = {}) {
   return (
     <View
       pointerEvents={disabled ? 'none' : 'auto'}
-      className={`h-12 w-full overflow-hidden rounded-xl ${disabled ? 'opacity-60' : ''}`}
+      style={style}
+      className={`h-12 flex-1 overflow-hidden rounded-xl ${disabled ? 'opacity-60' : ''} ${className}`}
     >
       <AppleAuthentication.AppleAuthenticationButton
         buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
@@ -47,7 +52,7 @@ export function AppleSignInButton(props: AppleSignInButtonProps = {}) {
       />
       {loading ? (
         <View pointerEvents="none" className="absolute inset-0 items-center justify-center">
-          <ActivityIndicator size="small" color="#FFFFFF" />
+          <ActivityIndicator size="small" color="#000000" />
         </View>
       ) : null}
     </View>

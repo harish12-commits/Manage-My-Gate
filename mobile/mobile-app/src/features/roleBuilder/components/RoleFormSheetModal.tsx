@@ -60,14 +60,8 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
       onClose={onClose}
       title={role ? `Edit ${role.name}` : 'New Security Role'}
     >
-      <ScrollView
-        className="max-h-[500px]"
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-      >
-        <View className="gap-3.5 pb-6">
-          {/* Role Name */}
+      <View className="gap-3.5 pb-6">
+        {/* Role Name */}
           <TextInput
             label="Role Name"
             placeholder="e.g. Branch Manager"
@@ -186,7 +180,6 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
             </Button>
           </View>
         </View>
-      </ScrollView>
     </BottomSheet>
   );
 };

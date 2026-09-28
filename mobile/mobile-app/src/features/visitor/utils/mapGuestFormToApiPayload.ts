@@ -37,6 +37,8 @@ export interface ApiVisitorPassPayload {
   };
 }
 
+const NOW_PASS_VALIDITY_MS = 4 * 60 * 60 * 1000;
+
 export const mapGuestFormToApiPayload = (
   details: GuestDetailsData,
   schedule: GuestScheduleData,
@@ -58,8 +60,13 @@ export const mapGuestFormToApiPayload = (
   startDate.setHours(0, 0, 0, 0);
 
   // Set end date to end of day
-  const endDate = new Date(startDateObj);
+  let endDate = new Date(startDateObj);
   endDate.setHours(23, 59, 59, 999);
+
+  // "Arriving Now" is promised as valid for 4 hours from issue, not until midnight.
+  if (schedule.timeSlot === 'NOW') {
+    endDate = new Date(now.getTime() + NOW_PASS_VALIDITY_MS);
+  }
 
   let timeWindowStart: string | undefined = undefined;
   let timeWindowEnd: string | undefined = undefined;
