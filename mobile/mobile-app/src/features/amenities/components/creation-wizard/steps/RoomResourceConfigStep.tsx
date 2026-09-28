@@ -5,6 +5,8 @@ import { TextInput } from '@/components/forms/TextInput';
 import { Chip } from '@/components/common/Chip';
 import { Button } from '@/components/ui/button';
 import { DoorOpen, Plus, Trash2, Sparkles } from 'lucide-react-native';
+import { useTranslation } from '@/src/utils/i18n';
+import type { RoomStayMode } from '../../../utils/mapAmenityCreationPayloadStrategy';
 import {
   ROOM_AMENITY_CHIPS,
   DURATION_PRESETS,
@@ -15,6 +17,10 @@ export interface RoomResourceConfigData {
   slotDurationMinutes: number | string;
   subRooms?: Array<{ id: string; name: string; capacity: number }>;
   roomAmenities?: string[];
+  stayMode?: RoomStayMode;
+  checkInTime?: string;
+  checkOutTime?: string;
+  maxNights?: number | string;
 }
 
 export interface RoomResourceConfigStepProps {
@@ -28,6 +34,8 @@ export const RoomResourceConfigStep: React.FC<RoomResourceConfigStepProps> = ({
   onChange,
   errors = {},
 }) => {
+  const { t } = useTranslation();
+  const stayMode: RoomStayMode = data.stayMode || 'HOURLY';
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomCap, setNewRoomCap] = useState('8');
 
@@ -186,7 +194,64 @@ export const RoomResourceConfigStep: React.FC<RoomResourceConfigStepProps> = ({
         </View>
       </View>
 
+      {/* Hourly rooms or overnight stays */}
+      <View className="bg-card p-4 rounded-3xl border border-border gap-3">
+        <Text className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          {t('amenity_create_stay_title', 'How are rooms booked?')}
+        </Text>
+        <View className="flex-row flex-wrap gap-2">
+          <Chip
+            label={t('amenity_create_stay_hourly', 'By the hour')}
+            selected={stayMode === 'HOURLY'}
+            onPress={() => onChange({ ...data, stayMode: 'HOURLY' })}
+            testID="room-stay-HOURLY"
+          />
+          <Chip
+            label={t('amenity_create_stay_overnight', 'Overnight stays')}
+            selected={stayMode === 'OVERNIGHT'}
+            onPress={() => onChange({ ...data, stayMode: 'OVERNIGHT' })}
+            testID="room-stay-OVERNIGHT"
+          />
+        </View>
+        {stayMode === 'OVERNIGHT' ? (
+          <View className="gap-2">
+            <View className="flex-row gap-2">
+              <View className="flex-1">
+                <TextInput
+                  label={t('amenity_create_check_in', 'Check-in (HH:MM)')}
+                  placeholder="14:00"
+                  value={data.checkInTime || ''}
+                  onChangeText={(checkInTime) => onChange({ ...data, checkInTime })}
+                  error={errors.checkInTime}
+                />
+              </View>
+              <View className="flex-1">
+                <TextInput
+                  label={t('amenity_create_check_out', 'Check-out (HH:MM)')}
+                  placeholder="11:00"
+                  value={data.checkOutTime || ''}
+                  onChangeText={(checkOutTime) => onChange({ ...data, checkOutTime })}
+                  error={errors.checkOutTime}
+                />
+              </View>
+            </View>
+            <TextInput
+              label={t('amenity_create_max_nights', 'Longest stay (nights)')}
+              placeholder="3"
+              keyboardType="numeric"
+              value={String(data.maxNights ?? '')}
+              onChangeText={(maxNights) => onChange({ ...data, maxNights })}
+              error={errors.maxNights}
+            />
+            <Text variant="muted" className="text-xs">
+              {t('amenity_create_overnight_hint', 'Use a daily rate on the pricing step: it is charged per night.')}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
       {/* Slot Duration Chips */}
+      {stayMode === 'HOURLY' ? (
       <View className="bg-card p-4 rounded-3xl border border-border gap-3">
         <Text className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
           Booking Slot Duration
@@ -202,6 +267,7 @@ export const RoomResourceConfigStep: React.FC<RoomResourceConfigStepProps> = ({
           ))}
         </View>
       </View>
+      ) : null}
     </ScrollView>
   );
 };

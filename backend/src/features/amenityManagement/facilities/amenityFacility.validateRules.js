@@ -100,6 +100,20 @@ export const createFacilityRules = [
   body('availableStock').optional().isInt({ min: 0 }).withMessage('availableStock cannot be negative'),
   body('maxLoanHours').optional().isInt({ min: 1 }).withMessage('maxLoanHours must be at least 1'),
   body('requiresInspection').optional().isBoolean().withMessage('requiresInspection must be a boolean'),
+  body('bookingMode').optional().isIn(['FULL_DAY', 'SESSION', 'HOURLY']).withMessage('bookingMode must be FULL_DAY, SESSION or HOURLY'),
+  body('sessions').optional().isArray().withMessage('sessions must be an array'),
+  body('sessions.*.name').optional().isString().trim().notEmpty().withMessage('Session name cannot be empty'),
+  body('sessions.*.startTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('Session startTime must be HH:MM'),
+  body('sessions.*.endTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('Session endTime must be HH:MM'),
+  body('sessions.*.price').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Session price cannot be negative'),
+  body('stayMode').optional().isIn(['HOURLY', 'OVERNIGHT']).withMessage('stayMode must be HOURLY or OVERNIGHT'),
+  body('checkInTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('checkInTime must be HH:MM'),
+  body('checkOutTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('checkOutTime must be HH:MM'),
+  body('maxNights').optional().isInt({ min: 1 }).withMessage('maxNights must be at least 1'),
+  body('paymentPolicy.mode').optional().isIn(['FULL', 'ADVANCE', 'PAY_AT_GATE']).withMessage('paymentPolicy.mode must be FULL, ADVANCE or PAY_AT_GATE'),
+  body('paymentPolicy.advanceType').optional().isIn(['FIXED', 'PERCENT']).withMessage('paymentPolicy.advanceType must be FIXED or PERCENT'),
+  body('paymentPolicy.advanceValue').optional().isFloat({ min: 0 }).withMessage('paymentPolicy.advanceValue cannot be negative'),
+  body('paymentPolicy').optional().custom((p) => !(p?.advanceType === 'PERCENT' && Number(p?.advanceValue) > 100)).withMessage('An advance percentage cannot exceed 100'),
   body('pricingConfig.pricingType')
     .optional()
     .isIn(['FREE', 'HOURLY', 'DAILY', 'FIXED_EVENT', 'TIERED'])
@@ -263,6 +277,20 @@ export const updateFacilityRules = [
   body('availableStock').optional().isInt({ min: 0 }).withMessage('availableStock cannot be negative'),
   body('maxLoanHours').optional().isInt({ min: 1 }).withMessage('maxLoanHours must be at least 1'),
   body('requiresInspection').optional().isBoolean().withMessage('requiresInspection must be a boolean'),
+  body('bookingMode').optional().isIn(['FULL_DAY', 'SESSION', 'HOURLY']).withMessage('bookingMode must be FULL_DAY, SESSION or HOURLY'),
+  body('sessions').optional().isArray().withMessage('sessions must be an array'),
+  body('sessions.*.name').optional().isString().trim().notEmpty().withMessage('Session name cannot be empty'),
+  body('sessions.*.startTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('Session startTime must be HH:MM'),
+  body('sessions.*.endTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('Session endTime must be HH:MM'),
+  body('sessions.*.price').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Session price cannot be negative'),
+  body('stayMode').optional().isIn(['HOURLY', 'OVERNIGHT']).withMessage('stayMode must be HOURLY or OVERNIGHT'),
+  body('checkInTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('checkInTime must be HH:MM'),
+  body('checkOutTime').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('checkOutTime must be HH:MM'),
+  body('maxNights').optional().isInt({ min: 1 }).withMessage('maxNights must be at least 1'),
+  body('paymentPolicy.mode').optional().isIn(['FULL', 'ADVANCE', 'PAY_AT_GATE']).withMessage('paymentPolicy.mode must be FULL, ADVANCE or PAY_AT_GATE'),
+  body('paymentPolicy.advanceType').optional().isIn(['FIXED', 'PERCENT']).withMessage('paymentPolicy.advanceType must be FIXED or PERCENT'),
+  body('paymentPolicy.advanceValue').optional().isFloat({ min: 0 }).withMessage('paymentPolicy.advanceValue cannot be negative'),
+  body('paymentPolicy').optional().custom((p) => !(p?.advanceType === 'PERCENT' && Number(p?.advanceValue) > 100)).withMessage('An advance percentage cannot exceed 100'),
   body('pricingConfig.pricingType')
     .optional()
     .isIn(['FREE', 'HOURLY', 'DAILY', 'FIXED_EVENT', 'TIERED'])
@@ -271,6 +299,15 @@ export const updateFacilityRules = [
     .optional()
     .isFloat({ min: 0 })
     .withMessage('baseRate must be a non-negative number'),
+  body('pricingConfig.taxPercentage')
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage('taxPercentage must be between 0 and 100'),
+  body('pricingConfig.securityDeposit')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('securityDeposit must be a non-negative number'),
+  body('pricingConfig.currency').optional().isString().isLength({ min: 3, max: 3 }).withMessage('currency must be 3-letter code'),
   body('cancellationPolicy.isAllowed')
     .optional()
     .isBoolean()

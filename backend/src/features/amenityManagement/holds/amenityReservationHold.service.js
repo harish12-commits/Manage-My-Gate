@@ -11,6 +11,9 @@ import resourceMutexService from '../domain/concurrency/resourceMutex.service.js
 import availabilityService from '../domain/availability/availability.service.js';
 import pricingService from '../domain/pricing/pricing.service.js';
 import { withTransactionRetry } from '../domain/concurrency/transaction.utils.js';
+import { getProfile, bookingRuleError } from '../domain/profiles/facilityProfiles.js';
+import amenitySettingsService from '../settings/amenitySettings.service.js';
+import { computeAmountSchedule } from '../domain/payments/amountSchedule.js';
 import amenityManagementEvents, { AMENITY_EVENTS } from '../amenityManagement.events.js';
 
 export class AmenityReservationHoldService {
@@ -60,213 +63,116 @@ export class AmenityReservationHoldService {
       quantity = 1,
       holdType = 'STANDARD',
       holdDurationMinutes = 10,
-      quotaLimit = null,
+      bookedBy = null,
     },
     session
   ) {
     const start = new Date(requestedStartDateTime);
     const end = new Date(requestedEndDateTime);
-
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
       throw new HttpError(400, 'Invalid reservation range: startDateTime must be earlier than endDateTime');
     }
+    const partySize = Math.max(1, Number(headcount) || 1);
+    const units = Math.max(1, Number(quantity) || 1);
 
-    const GRACE_PERIOD_MS = 2 * 60 * 1000;
-    if (start.getTime() + GRACE_PERIOD_MS < Date.now()) {
-      throw new HttpError(400, 'Reservation start time cannot be in the past');
-    }
-
-    // 1. Acquire Concurrency Mutex
-    await resourceMutexService.acquireMutex({ orgId, facilityId, resourceId }, session);
-
-    // 2. Verify Archetype-Aware Availability
-    const avail = await availabilityService.checkAvailability(
-      {
-        orgId,
-        facilityId,
-        resourceId,
-        startDateTime: start,
-        endDateTime: end,
-        requestedQuantity: quantity || headcount,
-      },
-      session
-    );
-
-    if (!avail.isAvailable) {
-      throw new HttpError(409, avail.reason || 'Requested time slot or resource is not available');
-    }
-
-    const effectiveStart = avail.effectiveStartDateTime;
-    const effectiveEnd = avail.effectiveEndDateTime;
-
-    // 3. Facility Lookup
+    // 1. Facility and target resource
     const facility = await amenityFacilityRepository.findById(facilityId, orgId, session);
     if (!facility) {
       throw new HttpError(404, 'Amenity facility not found');
     }
-    if (!facility.isActive || facility.isDraft || facility.status === 'DRAFT' || facility.status === 'INACTIVE') {
+    if (!facility.isActive || facility.isDraft || ['DRAFT', 'INACTIVE', 'MAINTENANCE'].includes(facility.status)) {
       throw new HttpError(400, 'Amenity facility is a draft or not active for reservations');
     }
 
-    // 4. Reserve Household Quota
-    const requestedUnits = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60));
-    const effectiveQuotaLimit =
-      Number(quotaLimit) ||
-      (facility.archetype === 'ROOM_RESOURCE' ? Math.max(10080, requestedUnits) : 2400);
+    const profile = getProfile(facility);
+    let resource = null;
+    let targetResourceId = resourceId || null;
+    if (!targetResourceId && profile.requiresResource) {
+      // A facility with a single bookable unit (e.g. one tool kit) needs no explicit pick.
+      const active = await amenityResourceRepository.findActiveByFacilityId(facilityId, orgId, session);
+      if (active.length === 1) targetResourceId = active[0]._id;
+    }
+    if (targetResourceId) {
+      resource = await amenityResourceRepository.findById(targetResourceId, orgId, session);
+      if (!resource || !resource.isActive || resource.isDeleted || String(resource.facilityId) !== String(facility._id)) {
+        throw new HttpError(400, 'Selected room or item is not available for booking');
+      }
+    }
+
+    // 2. Booking rules (notice, advance window, schedule shape, party size)
+    const ruleError = bookingRuleError(facility, { start, end, headcount: partySize, quantity: units, resource });
+    if (ruleError) {
+      throw new HttpError(400, ruleError);
+    }
+
+    // 3. Serialize every hold on this facility, then check occupancy inside the transaction
+    await resourceMutexService.acquireMutex({ orgId, facilityId }, session);
+    const avail = await availabilityService.checkAvailability(
+      {
+        orgId,
+        facilityId,
+        resourceId: targetResourceId,
+        startDateTime: start,
+        endDateTime: end,
+        headcount: partySize,
+        quantity: units,
+        enforceRules: false,
+      },
+      session
+    );
+    if (!avail.isAvailable) {
+      throw new HttpError(409, avail.reason || 'Requested time slot or resource is not available');
+    }
+
+    // 4. Reserve household quota (minutes of the requested window, community allowance)
+    const requestedUnits = Math.ceil((end.getTime() - start.getTime()) / 60000);
+    const settings = await amenitySettingsService.getSettings(orgId, session);
     await amenityQuotaAllocationService.reserveQuota(
       {
         orgId,
         unitId,
         facilityId,
-        quotaLimit: effectiveQuotaLimit,
+        quotaLimit: amenitySettingsService.quotaLimitFor(settings, facility, requestedUnits),
         requestedUnits,
         date: start,
       },
       session
     );
 
-    // 5. Compute Commercial Pricing Snapshot
-    const pricingSnapshot = pricingService.calculatePricingSnapshot({
-      pricingConfig: facility.pricingConfig || facility.pricing,
+    // 5. Price quoted now is the price held for the resident
+    const pricingSnapshot = pricingService.calculateForFacility(facility, {
       startDateTime: start,
       endDateTime: end,
-      headcount,
-      quantity,
+      headcount: partySize,
+      quantity: units,
     });
 
-    // 6. Create Hold Document
+    // 6. The hold itself is the allocation: occupancy is derived from active holds
+    //    and reservations, so expiry/cancellation frees capacity automatically.
     const expiresAt = new Date(Date.now() + holdDurationMinutes * 60 * 1000);
     const hold = await amenityReservationHoldRepository.create(
       {
         orgId,
         facilityId,
-        resourceId: resourceId || null,
+        resourceId: targetResourceId,
         residentId,
         unitId,
         requestedStartDateTime: start,
         requestedEndDateTime: end,
-        effectiveStartDateTime: effectiveStart,
-        effectiveEndDateTime: effectiveEnd,
-        headcount,
-        quantity,
+        effectiveStartDateTime: avail.effectiveStartDateTime,
+        effectiveEndDateTime: avail.effectiveEndDateTime,
+        headcount: partySize,
+        quantity: units,
         holdType,
         status: 'ACTIVE',
         expiresAt,
         pricingSnapshot,
+        amountSchedule: computeAmountSchedule(facility, pricingSnapshot),
+        bookedBy: bookedBy || null,
       },
       session
     );
 
-    // 7. Archetype-Specific Allocation & Ledger Record
-    switch (facility.archetype) {
-      case 'EXCLUSIVE_HOURLY': {
-        const slotStartUTC = start.toISOString();
-        const slotId = `SLOT:${orgId}:${facilityId}:${resourceId || 'ALL'}:${slotStartUTC}`;
-
-        await amenitySlotAllocationRepository.createDiscreteSlot(
-          {
-            _id: slotId,
-            orgId,
-            facilityId,
-            resourceId,
-            allocationType: 'EXCLUSIVE_DISCRETE',
-            slotStartDateTime: start,
-            slotEndDateTime: end,
-            status: 'HELD',
-            holdId: hold._id,
-            expiresAt,
-            version: 1,
-          },
-          session
-        );
-        break;
-      }
-
-      case 'SHARED_CAPACITY': {
-        const slotStartUTC = start.toISOString();
-        const bucketId = `BUCKET:${orgId}:${facilityId}:${slotStartUTC}`;
-
-        const bucket = await amenitySlotAllocationRepository.allocateCapacityBucket(
-          {
-            bucketId,
-            orgId,
-            facilityId,
-            slotStartDateTime: start,
-            slotEndDateTime: end,
-            requestedHeadcount: headcount,
-            maxCapacity: facility.maxCapacity || 10,
-          },
-          session
-        );
-
-        if (!bucket) {
-          throw new HttpError(409, 'Capacity exceeded for requested timeslot');
-        }
-
-        await amenityAllocationLedgerRepository.createEntry(
-          {
-            orgId,
-            facilityId,
-            holdId: hold._id,
-            allocationType: 'CAPACITY_HEADCOUNT',
-            bucketId,
-            allocatedQuantity: headcount,
-            status: 'HELD',
-          },
-          session
-        );
-        break;
-      }
-
-      case 'INVENTORY_TOOLS': {
-        const resource = resourceId
-          ? await amenityResourceRepository.findById(resourceId, orgId, session)
-          : null;
-
-        if (resource && !resource.isSerializedAsset) {
-          const dateToken = start.toISOString().split('T')[0];
-          const bucketId = `BULK:${orgId}:${facilityId}:${resourceId}:${dateToken}`;
-
-          const bucket = await amenitySlotAllocationRepository.allocateBulkDayBucket(
-            {
-              bucketId,
-              orgId,
-              facilityId,
-              resourceId,
-              dateToken,
-              requestedQty: quantity,
-              totalStock: resource.totalBulkStock || 0,
-            },
-            session
-          );
-
-          if (!bucket) {
-            throw new HttpError(409, 'Insufficient inventory stock for requested date');
-          }
-
-          await amenityAllocationLedgerRepository.createEntry(
-            {
-              orgId,
-              facilityId,
-              holdId: hold._id,
-              allocationType: 'BULK_INVENTORY',
-              bucketId,
-              allocatedQuantity: quantity,
-              status: 'HELD',
-            },
-            session
-          );
-        }
-        break;
-      }
-
-      case 'EVENT_SPACE':
-      case 'ROOM_RESOURCE':
-      default:
-        break;
-    }
-
-    // 8. Emit Domain Event
     amenityManagementEvents.emit(AMENITY_EVENTS.HOLD_CREATED, {
       holdId: hold._id,
       orgId,
@@ -275,6 +181,20 @@ export class AmenityReservationHoldService {
     });
 
     return { hold, pricingSnapshot };
+  }
+
+  /**
+   * The unit (villa) a resident books for in this community. Staff booking on a
+   * resident's behalf must name someone who is an active member here.
+   * @returns {Promise<string>}
+   */
+  async resolveResidentUnit(orgId, userId) {
+    const OrgMembership = mongoose.models.OrgMembership || (await import('../../orgMembership/orgMembership.model.js')).default;
+    const membership = await OrgMembership.findOne({ orgId, userId, status: 'Active' }).lean();
+    if (!membership) {
+      throw new HttpError(404, 'Resident is not an active member of this community');
+    }
+    return membership.villaId || membership.units?.[0]?.villaId || userId;
   }
 
   /**
@@ -343,8 +263,7 @@ export class AmenityReservationHoldService {
 
     // 3. Release Reserved Quota
     const requestedUnits = Math.ceil(
-      (updatedHold.effectiveEndDateTime.getTime() - updatedHold.effectiveStartDateTime.getTime()) /
-        (1000 * 60)
+      (updatedHold.requestedEndDateTime.getTime() - updatedHold.requestedStartDateTime.getTime()) / 60000
     );
 
     await amenityQuotaAllocationService.releaseQuota(

@@ -14,6 +14,7 @@ router.get('/kpi', authorizePermission('amenities', 'dashboard'), dashboardContr
 router.get('/revenue', authorizePermission('amenities', 'dashboard'), dashboardController.getRevenue);
 router.get('/occupancy', authorizePermission('amenities', 'dashboard'), dashboardController.getOccupancy);
 router.get('/trends', authorizePermission('amenities', 'dashboard'), dashboardController.getTrends);
+router.get('/ledger', authorizePermission('amenities', ['ledgers', 'dashboard']), dashboardController.getLedger);
 router.get('/recent-activity', authorizePermission('amenities', 'dashboard'), dashboardController.getRecentActivity);
 
 // Calendar Gated by view_admin_calendar permission

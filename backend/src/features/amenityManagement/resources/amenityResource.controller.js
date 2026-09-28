@@ -77,7 +77,9 @@ export class AmenityResourceController {
     try {
       const { resourceId } = req.params;
       const orgId = req.tenant.orgId;
-      const { _id, orgId: bodyOrgId, concurrencyVersion, isDeleted, deletedAt, ...cleanBody } = req.body;
+      // A resource never changes owner: facilityId is fixed at creation (moving it could
+      // re-parent it under another community's facility).
+      const { _id, orgId: bodyOrgId, facilityId: bodyFacilityId, concurrencyVersion, isDeleted, deletedAt, ...cleanBody } = req.body;
       const updated = await amenityResourceService.updateResource(resourceId, orgId, cleanBody);
       return res.success(updated, 'Resource updated successfully');
     } catch (error) {

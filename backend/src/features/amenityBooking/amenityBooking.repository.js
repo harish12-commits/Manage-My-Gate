@@ -546,88 +546,10 @@ export class AmenityBookingRepository {
       query.status = filters.status.toLowerCase();
     }
 
-    const v1Bookings = await AmenityBooking.find(query)
+    return await AmenityBooking.find(query)
       .sort({ bookingDate: -1, startTime: -1 })
       .populate('amenityId', 'name type images location bookingRules pricing')
       .exec();
-
-    try {
-      const AmenityReservation = (await import('../amenityManagement/reservations/amenityReservation.model.js')).default;
-      const resvOrgFilter = { $or: [{ orgId: targetOrgId }, { orgId: String(orgId) }] };
-      const resvUserFilter = { $or: [{ residentId: targetUserId }, { residentId: String(userId) }] };
-      const resvQuery = { $and: [resvOrgFilter, resvUserFilter] };
-
-      if (filters.status && filters.status !== 'All' && filters.status !== 'ALL') {
-        const s = filters.status.toUpperCase();
-        resvQuery.bookingStatus = s;
-      }
-
-      const v2Reservations = await AmenityReservation.find(resvQuery)
-        .populate('facilityId', 'name type images category location pricingConfig operatingHours')
-        .populate('resourceId', 'name identifier')
-        .sort({ createdAt: -1 })
-        .exec();
-
-      const moment = (await import('moment-timezone')).default;
-      const TIMEZONE = 'Asia/Kolkata';
-
-      const adaptedV2 = v2Reservations.map((r) => {
-        const fac = r.facilityId || {};
-        const startDt = r.effectiveStartDateTime || r.requestedStartDateTime;
-        const endDt = r.effectiveEndDateTime || r.requestedEndDateTime;
-        const startM = startDt ? moment.tz(startDt, TIMEZONE) : null;
-        const endM = endDt ? moment.tz(endDt, TIMEZONE) : null;
-
-        const pConfig = fac.pricingConfig || {};
-
-        return {
-          _id: r._id,
-          bookingNumber: r.reservationNumber || String(r._id),
-          orgId: r.orgId,
-          userId: r.residentId,
-          amenityId: {
-            _id: fac._id || r.facilityId,
-            name: fac.name || 'Amenity Facility',
-            type: (fac.category || fac.archetype || 'general').toLowerCase(),
-            images: fac.images || (fac.imageUrl ? [fac.imageUrl] : []),
-            location: fac.location || '',
-            pricing: {
-              baseRate: pConfig.baseRate || 0,
-              pricingType: (pConfig.pricingType || 'FREE').toLowerCase(),
-            },
-          },
-          bookingDate: startM ? startM.format('YYYY-MM-DD') : '',
-          startTime: startM ? startM.format('HH:mm') : '',
-          endTime: endM ? endM.format('HH:mm') : '',
-          status: (r.bookingStatus || 'CONFIRMED').toLowerCase(),
-          paymentStatus: (r.paymentStatus || 'NOT_REQUIRED').toLowerCase(),
-          numberOfPersons: r.headcount || r.quantity || 1,
-          totalPrice: r.totalAmount || r.pricingSnapshot?.totalAmount || 0,
-          createdAt: r.createdAt,
-          updatedAt: r.updatedAt,
-        };
-      });
-
-      const existingIds = new Set(v1Bookings.map((b) => b._id.toString()));
-      const merged = [...v1Bookings];
-
-      for (const item of adaptedV2) {
-        if (!existingIds.has(item._id.toString())) {
-          merged.push(item);
-        }
-      }
-
-      merged.sort((a, b) => {
-        const dateA = a.bookingDate || a.createdAt || '';
-        const dateB = b.bookingDate || b.createdAt || '';
-        return String(dateB).localeCompare(String(dateA));
-      });
-
-      return merged;
-    } catch (err) {
-      console.error('[findByUser] Failed to fetch v2 reservations:', err);
-      return v1Bookings;
-    }
   }
 
   async findEventsForCalendar(orgId, startDate, endDate, filters = {}) {
@@ -816,36 +738,6 @@ export class AmenityBookingRepository {
       { $set: { status, ...reviewData } },
       { returnDocument: 'after', session }
     ).populate('amenityId userId');
-
-    try {
-      const AmenityReservation = (await import('../amenityManagement/reservations/amenityReservation.model.js')).default;
-      const targetId = updated?._id || (mongoose.Types.ObjectId.isValid(cleanId) ? new mongoose.Types.ObjectId(cleanId) : null);
-      if (targetId) {
-        const resvUpdate = {
-          bookingStatus: (status || 'CONFIRMED').toUpperCase(),
-          updatedAt: new Date(),
-        };
-        if (reviewData.paymentStatus) {
-          resvUpdate.paymentStatus = String(reviewData.paymentStatus).toUpperCase();
-        }
-        if (reviewData.cancellationReason) {
-          resvUpdate.cancellationReason = reviewData.cancellationReason;
-        }
-        if (reviewData.refundAmount !== undefined) {
-          resvUpdate.refundAmount = reviewData.refundAmount;
-        }
-        if (reviewData.refundPercentage !== undefined) {
-          resvUpdate.refundPercentage = reviewData.refundPercentage;
-        }
-        await AmenityReservation.updateOne(
-          { _id: targetId },
-          { $set: resvUpdate },
-          session ? { session } : undefined
-        );
-      }
-    } catch (rErr) {
-      // Non-blocking sync warning
-    }
 
     return updated;
   }

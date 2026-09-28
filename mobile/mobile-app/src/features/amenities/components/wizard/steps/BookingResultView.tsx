@@ -22,6 +22,7 @@ import {
 } from '../../../utils/amenityStateHelpers';
 import { CheckCircle2, AlertCircle, Clock, QrCode, Share2 } from 'lucide-react-native';
 import { useTranslation } from '@/src/utils/i18n';
+import { formatBookingWindow } from '../../../utils/amenityStateHelpers';
 
 export interface BookingResultViewProps {
   facility: AmenityFacility;
@@ -56,7 +57,10 @@ export function BookingResultView({
   const isPendingApproval = rawBookingStatus === 'PENDING_APPROVAL' || rawBookingStatus === 'PENDING';
   const isConfirmed = rawBookingStatus === 'CONFIRMED' || rawBookingStatus === 'APPROVED';
   const isRejected = rawBookingStatus === 'REJECTED' || rawBookingStatus === 'CANCELLED';
-  const isPayAtGatePending = isConfirmed && (rawPaymentStatus === 'PENDING' || rawPaymentStatus === 'PAYMENT_DUE') && (rawPaymentMethod === 'PAY_AT_GATE' || rawPaymentMethod === 'CASH');
+  // A confirmed booking with part of the price still to pay (advance paid, or pay at gate).
+  const balanceDue = Number(reservation.balanceAmount || 0);
+  const isPayAtGatePending = isConfirmed && balanceDue > 0;
+  void rawPaymentMethod;
 
   const primaryPass = accessPasses?.[0];
 
@@ -111,7 +115,7 @@ export function BookingResultView({
 
         <Text variant="h2" className="text-center font-bold text-foreground">
           {isPayAtGatePending
-            ? 'Booking Confirmed — Cash Collection Pending'
+            ? t('amenity_booking_result_balance_due', 'Booking confirmed — balance due')
             : isConfirmed
             ? 'Reservation Confirmed!'
             : isPendingApproval
@@ -256,31 +260,19 @@ export function BookingResultView({
         {reservation.reservationNumber ? (
           <DetailRow label="Reservation #" value={reservation.reservationNumber} />
         ) : null}
-        {formatReservationDate(
-          reservation.startDateTime || (reservation as any).effectiveStartDateTime,
-          facility.timezone || reservation.facilityTimezone || 'Asia/Kolkata'
-        ) ? (
-          <DetailRow
-            label="Date"
-            value={formatReservationDate(
-              reservation.startDateTime || (reservation as any).effectiveStartDateTime,
-              facility.timezone || reservation.facilityTimezone || 'Asia/Kolkata'
-            )}
-          />
+        <DetailRow
+          label={t('amenity_booking_when', 'When')}
+          value={formatBookingWindow(
+            reservation.requestedStartDateTime || reservation.startDateTime,
+            reservation.requestedEndDateTime || reservation.endDateTime,
+            facility.timezone || reservation.facilityTimezone || 'Asia/Kolkata'
+          )}
+        />
+        {Number(reservation.paidAmount || 0) > 0 ? (
+          <DetailRow label={t('amenity_booking_paid', 'Paid')} value={`₹${Number(reservation.paidAmount).toLocaleString('en-IN')}`} />
         ) : null}
-        {formatReservationTimeRange(
-          reservation.startDateTime || (reservation as any).effectiveStartDateTime,
-          reservation.endDateTime || (reservation as any).effectiveEndDateTime,
-          facility.timezone || reservation.facilityTimezone || 'Asia/Kolkata'
-        ) ? (
-          <DetailRow
-            label="Time"
-            value={formatReservationTimeRange(
-              reservation.startDateTime || (reservation as any).effectiveStartDateTime,
-              reservation.endDateTime || (reservation as any).effectiveEndDateTime,
-              facility.timezone || reservation.facilityTimezone || 'Asia/Kolkata'
-            )}
-          />
+        {balanceDue > 0 ? (
+          <DetailRow label={t('amenity_booking_balance_due', 'Balance due')} value={`₹${balanceDue.toLocaleString('en-IN')}`} />
         ) : null}
         <DetailRow label="Headcount" value={String(reservation.headcount || 1)} />
         {reservation.paymentReference ? (

@@ -28,6 +28,7 @@ export interface UseResidentReservationDetailResult {
   isCancelling: boolean;
   cancelModalOpen: boolean;
   setCancelModalOpen: (open: boolean) => void;
+  cancelError: string | null;
   error: AmenityErrorDetails | null;
   isCancellable: boolean;
   refresh: () => Promise<void>;
@@ -58,7 +59,12 @@ export function useResidentReservationDetail(
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpenState] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const setCancelModalOpen = useCallback((open: boolean) => {
+    setCancelError(null);
+    setCancelModalOpenState(open);
+  }, []);
   const [passesLoading, setPassesLoading] = useState(false);
 
   // Authoritative server reservation: preferred from currentReservation if matching id, else fallback to list cache during fetch
@@ -120,6 +126,7 @@ export function useResidentReservationDetail(
         throw new Error('No reservation ID available to cancel');
       }
       setIsCancelling(true);
+      setCancelError(null);
       try {
         const payload = reason ? { reason } : undefined;
         const res = await (dispatch as any)(
@@ -133,8 +140,11 @@ export function useResidentReservationDetail(
           // Swallow pass refresh error; cancellation already succeeded
         }
 
-        setCancelModalOpen(false);
+        setCancelModalOpenState(false);
         return res;
+      } catch (err: any) {
+        setCancelError(err?.message || 'The booking could not be cancelled.');
+        throw err;
       } finally {
         setIsCancelling(false);
       }
@@ -168,6 +178,7 @@ export function useResidentReservationDetail(
     isCancelling,
     cancelModalOpen,
     setCancelModalOpen,
+    cancelError,
     error: v2Error,
     isCancellable,
     refresh,

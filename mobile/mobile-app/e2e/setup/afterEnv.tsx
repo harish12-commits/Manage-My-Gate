@@ -73,6 +73,10 @@ jest.mock('expo-camera', () => {
   };
 });
 
+// ── WebView (payment checkout page): native; tests complete checkout by calling the
+//    modal's onSuccess with a gateway response, exactly as the WebView bridge does ──
+jest.mock('react-native-webview', () => ({ WebView: () => null, default: () => null }));
+
 jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
 jest.mock('@gorhom/bottom-sheet', () => require('@gorhom/bottom-sheet/mock'));
 

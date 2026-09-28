@@ -26,6 +26,17 @@ const mockClearV2Errors = jest.fn();
 
 jest.mock('../store/amenityBookingSlice', () => ({
   __esModule: true,
+  fetchCancellationPreviewThunk: (id: any) => ({
+    type: 'amenityBookings/fetchCancellationPreview',
+    unwrap: () =>
+      Promise.resolve({
+        allowed: true,
+        blockReason: null,
+        refund: { percentage: 100, bookingRefund: 500, depositRefund: 0, total: 500 },
+        refundTo: 'WALLET',
+        policy: null,
+      }),
+  }),
   fetchReservationsThunk: (params: any) => ({
     type: 'amenityBookings/fetchReservations',
     unwrap: () => mockFetchReservationsThunk(params),
@@ -394,10 +405,10 @@ describe('Amenity Management Phase 6C.3: Resident Reservation Detail & Access Pa
         />
       );
 
-      expect(screen.getByText('100 SAR')).toBeTruthy();
-      expect(screen.getByText('15 SAR')).toBeTruthy();
-      expect(screen.getByText('50 SAR')).toBeTruthy();
-      expect(screen.getByText('165 SAR')).toBeTruthy();
+      // Price (incl. taxes), refundable deposit and total come straight from the server snapshot.
+      expect(screen.getByText('₹115')).toBeTruthy();
+      expect(screen.getByText('₹50')).toBeTruthy();
+      expect(screen.getByText('₹165')).toBeTruthy();
     });
 
     it('Scenario 14 & 15: Displays payment reference as display metadata only', async () => {
@@ -454,10 +465,10 @@ describe('Amenity Management Phase 6C.3: Resident Reservation Detail & Access Pa
         fireEvent.press(cancelBtn);
       });
 
-      expect(screen.getByText('Cancel Reservation')).toBeTruthy();
+      expect(await screen.findByText('₹500 will be refunded to your wallet.')).toBeTruthy();
 
       await act(async () => {
-        fireEvent.press(screen.getByText('Yes, Cancel Booking'));
+        fireEvent.press(screen.getByTestId('cancel-sheet-confirm'));
       });
 
       expect(mockCancelReservationThunk).toHaveBeenCalledWith({

@@ -56,10 +56,10 @@ export class AmenityAccessPassRepository {
    * @param {string} [params.gateId]
    * @param {mongoose.ClientSession} [session]
    */
-  async recordCheckIn({ orgId, passTokenHash, gateId, guardId }, session) {
+  async recordCheckIn({ orgId, passTokenHash, gateId, guardId, earlyMinutes = 15 }, session) {
     const now = new Date();
-    // 15-minute early arrival grace window (validFrom <= now + 15 mins)
-    const earlyArrivalBoundary = new Date(now.getTime() + 15 * 60 * 1000);
+    // Early arrival window from community settings (validFrom <= now + earlyMinutes)
+    const earlyArrivalBoundary = new Date(now.getTime() + earlyMinutes * 60 * 1000);
     // 1-minute end-time tolerance (validUntil >= now - 1 min)
     const endToleranceBoundary = new Date(now.getTime() - 1 * 60 * 1000);
 

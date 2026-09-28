@@ -96,66 +96,15 @@ export async function validateAuthoritativeAmount(domain, referenceId, requested
   }
 
   if (domain === PAYMENT_DOMAINS.AMENITY) {
-    const AmenityReservationHold = (await import('../amenityManagement/holds/amenityReservationHold.model.js')).default;
-    const holdQuery = AmenityReservationHold.findById(referenceId);
-    if (session) holdQuery.session(session);
-    const hold = await holdQuery;
-
-    if (hold) {
-      const holdOrgId = hold.orgId?.toString();
-      if (options.orgId && holdOrgId && holdOrgId !== String(options.orgId)) {
-        throw new HttpError(403, 'Cross-tenant payment forbidden: reservation hold belongs to a different community.');
-      }
-      const holdUserId = (hold.residentId || hold.userId)?.toString();
-      if (options.userId && holdUserId && holdUserId !== String(options.userId)) {
-        throw new HttpError(403, 'Forbidden. This reservation hold belongs to another resident.');
-      }
-      if (hold.status === 'EXPIRED' || (hold.expiresAt && new Date(hold.expiresAt) <= new Date())) {
-        throw new HttpError(400, 'Reservation hold has expired.');
-      }
-      if (hold.status === 'RELEASED') {
-        throw new HttpError(400, 'Reservation hold was released.');
-      }
-
-      let totalExpected = Number(
-        hold.pricingSnapshot?.totalAmount !== undefined
-          ? hold.pricingSnapshot.totalAmount
-          : hold.totalAmount !== undefined
-          ? hold.totalAmount
-          : hold.amount
-      );
-
-      if (isNaN(totalExpected) || (!hold.pricingSnapshot && totalExpected === 0)) {
-        try {
-          const amenityFacilityRepository = (await import('../amenityManagement/facilities/amenityFacility.repository.js')).default;
-          const pricingService = (await import('../amenityManagement/domain/pricing/pricing.service.js')).default;
-          const facility = await amenityFacilityRepository.findById(hold.facilityId, hold.orgId, session);
-          if (facility) {
-            const snapshot = pricingService.calculatePricingSnapshot({
-              pricingConfig: facility.pricingConfig || facility.pricing,
-              startDateTime: hold.requestedStartDateTime,
-              endDateTime: hold.requestedEndDateTime,
-              headcount: hold.headcount,
-              quantity: hold.quantity,
-            });
-            totalExpected = Number(snapshot?.totalAmount || 0);
-          }
-        } catch {
-          // Keep totalExpected as calculated
-        }
-      }
-
-      totalExpected = Number(totalExpected || 0);
-
-      if (Math.abs(amount - totalExpected) > 0.01) {
-        throw new HttpError(
-          400,
-          `Requested payment amount (₹${amount}) does not match required hold total of ₹${totalExpected}.`
-        );
-      }
-
-      return { isValid: true, payableAmount: totalExpected, entity: hold };
-    }
+    // V2 amenity holds/reservations: the amenity module owns the payable amount
+    // (amount due now for a hold, the outstanding balance for a reservation).
+    const { amenityPaymentService } = await import('../amenityManagement/payments/amenityPayment.service.js');
+    const v2 = await amenityPaymentService.resolvePayable(
+      referenceId,
+      { orgId: options.orgId, userId: options.userId, amount },
+      session
+    );
+    if (v2) return v2;
     const AmenityBooking = (await import('../amenityBooking/amenityBooking.model.js')).default;
     const query = AmenityBooking.findById(referenceId);
     if (session) query.session(session);

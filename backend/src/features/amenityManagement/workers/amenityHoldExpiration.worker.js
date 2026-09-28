@@ -18,6 +18,20 @@ export class AmenityHoldExpirationWorker {
    * @param {number} [options.intervalMs]
    * @param {number} [options.batchSize]
    */
+  async dropLegacyHoldTtlIndex() {
+    try {
+      const { AmenityReservationHold } = await import('../holds/amenityReservationHold.model.js');
+      const indexes = await AmenityReservationHold.collection.indexes();
+      if (indexes.some((i) => i.name === 'idx_reservation_holds_ttl')) {
+        await AmenityReservationHold.collection.dropIndex('idx_reservation_holds_ttl');
+        await AmenityReservationHold.syncIndexes();
+        logger.info('[AmenityHoldWorker] Replaced the hold TTL index with 30-day retention');
+      }
+    } catch (err) {
+      logger.warn(`[AmenityHoldWorker] Hold index migration skipped: ${err.message}`);
+    }
+  }
+
   initWorker(options = {}) {
     if (this.intervalId) {
       logger.warn('[AmenityHoldWorker] Worker already running. Skipping duplicate init.');
@@ -28,6 +42,10 @@ export class AmenityHoldExpirationWorker {
     if (options.batchSize) this.batchSize = options.batchSize;
 
     logger.info(`⚙️ [AmenityHoldWorker] Initialized. Polling every ${this.intervalMs}ms (batchSize: ${this.batchSize})`);
+
+    // Holds used to be deleted by a TTL index the moment they expired, before this worker
+    // could release their quota, and before a late gateway capture could be matched.
+    this.dropLegacyHoldTtlIndex();
 
     this.intervalId = setInterval(async () => {
       try {

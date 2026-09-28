@@ -1,57 +1,9 @@
 import amenityReservationService from './amenityReservation.service.js';
 import amenityIdempotencyService from '../idempotency/amenityIdempotencyRecord.service.js';
 import HttpError from '../../../utils/httpError.utils.js';
-import { getPermissionsForUser } from '../../../middlewares/rbac.middleware.js';
-import { mapPermission } from '../../../utils/permissionMapper.js';
+import { hasAmenityAdminScope } from '../domain/access/amenityAdminScope.js';
 
-/**
- * Resolves whether a user has administrative scope for amenity operations based on permissions.
- *
- * @param {object} user - The authenticated user object from req.user
- * @param {string[]} requiredPermissions - Required permission strings
- * @returns {Promise<boolean>} - True if user has administrative scope, false if resident-restricted
- */
-const checkAmenityAdminScope = async (user, requiredPermissions = ['amenities:admin_calander', 'amenities:manage_bookings']) => {
-  if (!user) return false;
-
-  // Platform and Organization-level super admins bypass permission checks
-  if (
-    user.isPlatform ||
-    user.isPlatformSuperAdmin ||
-    ['Super Admin', 'Platform Super Admin', 'Community Admin', 'Admin', 'SuperAdmin'].includes(user.role)
-  ) {
-    return true;
-  }
-
-  const normalizedRequired = requiredPermissions.map(mapPermission);
-
-  // If user payload directly carries permissions (e.g., in JWT claims or mocks)
-  if (Array.isArray(user.permissions)) {
-    if (user.permissions.includes('*')) return true;
-    const userPerms = user.permissions.map(mapPermission);
-    if (normalizedRequired.some((reqPerm) => userPerms.includes(reqPerm))) {
-      return true;
-    }
-  }
-
-  // Dynamically resolve permissions from database via RBAC engine
-  try {
-    const normalizedUser = {
-      ...user,
-      id: user.id || user._id,
-    };
-    const permissions = await getPermissionsForUser(normalizedUser);
-    if (Array.isArray(permissions)) {
-      if (permissions.includes('*')) return true;
-      const userPerms = permissions.map(mapPermission);
-      return normalizedRequired.some((reqPerm) => userPerms.includes(reqPerm));
-    }
-  } catch (err) {
-    console.error('[AmenityRBAC] Error resolving user permissions in reservation controller:', err.message);
-  }
-
-  return false;
-};
+const checkAmenityAdminScope = (user, requiredPermissions) => hasAmenityAdminScope(user, requiredPermissions);
 
 export class AmenityReservationController {
   /**
@@ -60,17 +12,17 @@ export class AmenityReservationController {
   async confirm(req, res, next) {
     try {
       const orgId = req.tenant.orgId;
-      const residentId = req.user.id || req.user._id;
-      const unitId = req.user.villaId || req.user.unitId || req.user.id || req.user._id;
+      const actorId = req.user.id || req.user._id;
+      const hasAdminScope = await checkAmenityAdminScope(req.user, ['amenities:admin_calander', 'amenities:manage_bookings']);
       const idempotencyKey = req.headers['x-idempotency-key'] || req.headers['idempotency-key'];
 
       const confirmParams = {
         holdId: req.body.holdId,
         orgId,
-        residentId,
-        unitId,
+        residentId: actorId,
+        actorId,
+        hasAdminScope,
         paymentMethod: req.body.paymentMethod,
-        paymentId: req.body.paymentId,
         notes: req.body.notes,
       };
 
@@ -97,6 +49,96 @@ export class AmenityReservationController {
   }
 
   /**
+   * Refund the caller would get by cancelling now (read-only).
+   */
+  async cancellationPreview(req, res, next) {
+    try {
+      const { reservationId } = req.params;
+      const orgId = req.tenant.orgId;
+      const reservation = await amenityReservationService.getReservationById(reservationId);
+      if (!reservation || reservation.orgId.toString() !== orgId.toString()) {
+        throw new HttpError(404, 'Reservation not found');
+      }
+      if (!(await amenityReservationService.canUserAccessReservation(req.user, reservation))) {
+        throw new HttpError(403, 'Forbidden. You do not have permission to view this reservation.');
+      }
+      const userId = req.user.id || req.user._id;
+      const hasAdminScope = await checkAmenityAdminScope(req.user, ['amenities:admin_calander', 'amenities:manage_bookings']);
+      const bookedBy = reservation.residentId?._id || reservation.residentId;
+      const preview = amenityReservationService.cancellationPreview(reservation, {
+        isManagement: hasAdminScope && String(bookedBy) !== String(userId),
+      });
+      return res.success(preview, 'Cancellation preview computed');
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * Resident (or a member of the same household) pays the outstanding balance from the wallet.
+   */
+  async payBalance(req, res, next) {
+    try {
+      const { reservationId } = req.params;
+      const orgId = req.tenant.orgId;
+      const reservation = await amenityReservationService.getReservationById(reservationId);
+      if (!reservation || reservation.orgId.toString() !== orgId.toString()) {
+        throw new HttpError(404, 'Reservation not found');
+      }
+      if (!(await amenityReservationService.canUserAccessReservation(req.user, reservation))) {
+        throw new HttpError(403, 'Forbidden. You do not have permission to pay for this reservation.');
+      }
+      const result = await amenityReservationService.payBalanceFromWallet({
+        reservationId,
+        orgId,
+        payerId: req.user.id || req.user._id,
+      });
+      return res.success(result, 'Balance paid successfully');
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * Gate staff collect the outstanding balance in cash and issue a receipt.
+   */
+  async collectPayment(req, res, next) {
+    try {
+      const { reservationId } = req.params;
+      const orgId = req.tenant.orgId;
+      const result = await amenityReservationService.collectBalanceInCash({
+        reservationId,
+        orgId,
+        amount: Number(req.body.amount),
+        collectedBy: req.user.id || req.user._id,
+      });
+      return res.success(result, 'Payment collected successfully');
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * Amenity staff decide a flagged booking (no-show, unpaid balance, overdue return).
+   */
+  async resolveReview(req, res, next) {
+    try {
+      const { default: lifecycle } = await import('./amenityReservationLifecycle.service.js');
+      const result = await lifecycle.resolveReview({
+        reservationId: req.params.reservationId,
+        orgId: req.tenant.orgId,
+        action: req.body.action,
+        refundPercentage: req.body.refundPercentage,
+        notes: req.body.notes,
+        adminId: req.user.id || req.user._id,
+      });
+      return res.success(result, 'Review decision recorded');
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
    * Cancels an existing reservation.
    */
   async cancel(req, res, next) {
@@ -117,12 +159,18 @@ export class AmenityReservationController {
         throw new HttpError(403, 'Forbidden. You do not have permission to cancel this reservation.');
       }
 
+      // Staff cancelling another resident's booking is a management cancellation (full
+      // refund, not subject to the resident cancellation policy).
+      const bookedBy = reservation.residentId?._id || reservation.residentId;
+      const isManagementCancellation = hasAdminScope && String(bookedBy) !== String(userId);
+
       const result = await amenityReservationService.cancelReservation({
         reservationId,
         orgId,
-        residentId: reservation.residentId,
+        residentId: bookedBy,
         cancelledBy: userId,
         cancellationReason: reason,
+        isManagementCancellation,
       });
 
       return res.success(result, 'Reservation cancelled successfully');
@@ -185,6 +233,8 @@ export class AmenityReservationController {
         bookingStatus: req.query.bookingStatus,
         paymentStatus: req.query.paymentStatus,
         approvalStatus: req.query.approvalStatus,
+        // The staff review queue is staff-only.
+        adminReviewStatus: hasAdminScope ? req.query.adminReviewStatus : undefined,
         startDate: req.query.startDate ? new Date(req.query.startDate) : undefined,
         endDate: req.query.endDate ? new Date(req.query.endDate) : undefined,
         search: req.query.search,

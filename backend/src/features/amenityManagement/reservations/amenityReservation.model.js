@@ -38,7 +38,7 @@ const approvalActionSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: {
-        values: ['REQUESTED', 'APPROVED', 'REJECTED'],
+        values: ['REQUESTED', 'APPROVED', 'REJECTED', 'EXPIRED', 'RESCHEDULED'],
         message: '{VALUE} is not a valid approval action',
       },
     },
@@ -147,9 +147,11 @@ const amenityReservationSchema = new mongoose.Schema(
           'NOT_APPLICABLE',
           'PENDING',
           'HELD_AUTHORIZED',
+          'ADVANCE_PAID',
           'PAID',
           'REFUND_PENDING',
           'REFUNDED',
+          'PARTIALLY_REFUNDED',
           'FAILED',
         ],
         message: '{VALUE} is not a valid paymentStatus',
@@ -161,7 +163,7 @@ const amenityReservationSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Approval status is required'],
       enum: {
-        values: ['NOT_REQUIRED', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'],
+        values: ['NOT_REQUIRED', 'PENDING_REVIEW', 'APPROVED', 'REJECTED', 'EXPIRED'],
         message: '{VALUE} is not a valid approvalStatus',
       },
       default: 'NOT_REQUIRED',
@@ -210,8 +212,75 @@ const amenityReservationSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['NONE', 'WALLET', 'RAZORPAY'],
+      enum: ['NONE', 'WALLET', 'RAZORPAY', 'CASH', 'WAIVED'],
       default: 'NONE',
+    },
+    amountSchedule: {
+      mode: { type: String, enum: ['FULL', 'ADVANCE', 'PAY_AT_GATE'], default: 'FULL' },
+      priceAmount: { type: Number, default: 0 },
+      depositAmount: { type: Number, default: 0 },
+      advanceAmount: { type: Number, default: 0 },
+      dueNowAmount: { type: Number, default: 0 },
+      balanceAmount: { type: Number, default: 0 },
+    },
+    // Price still to be paid (online before the slot, or collected at the gate).
+    balanceAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Balance cannot be negative'],
+    },
+    // Every settled payment against this reservation (booking payment, balance, gate cash).
+    payments: [
+      {
+        _id: false,
+        paymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
+        purpose: { type: String, enum: ['BOOKING', 'BALANCE'] },
+        method: { type: String, enum: ['WALLET', 'RAZORPAY', 'CASH'] },
+        amount: { type: Number },
+        receiptNumber: { type: String, default: null },
+        receivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+        paidAt: { type: Date, default: Date.now },
+      },
+    ],
+    // Lifecycle stamps written by the gate (check-in/out) and the lifecycle worker.
+    checkedInAt: { type: Date, default: null },
+    checkedInBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    checkedOutAt: { type: Date, default: null },
+    checkedOutBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    completedAt: { type: Date, default: null },
+    // Refundable deposit outcome (returned at check-out / completion, minus damage).
+    depositSettlement: {
+      refunded: { type: Number, default: null },
+      retained: { type: Number, default: null },
+      notes: { type: String, default: null },
+      settledAt: { type: Date, default: null },
+    },
+    // Bookings the lifecycle worker hands to amenity staff to decide (no-show, unpaid
+    // balance at the slot, item not returned). Staff forfeit, refund or extend.
+    adminReview: {
+      status: { type: String, enum: ['NONE', 'PENDING', 'RESOLVED'], default: 'NONE', index: true },
+      reason: { type: String, enum: ['NO_SHOW', 'UNPAID_BALANCE', 'OVERDUE_RETURN', null], default: null },
+      flaggedAt: { type: Date, default: null },
+      resolution: {
+        type: String,
+        enum: ['FORFEIT', 'REFUND_POLICY', 'REFUND_CUSTOM', 'EXTEND', 'ARRIVED', 'RETURNED', null],
+        default: null,
+      },
+      refundPercentage: { type: Number, default: null },
+      refundAmount: { type: Number, default: null },
+      notes: { type: String, default: null },
+      resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      resolvedAt: { type: Date, default: null },
+    },
+    bookedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    waivedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
     // Audit references are written only after the backend has settled the
     // selected payment method; they are never accepted as proof from the app.
@@ -235,6 +304,27 @@ const amenityReservationSchema = new mongoose.Schema(
       type: String,
       enum: ['WALLET', 'RAZORPAY', null],
       default: null,
+    },
+    refundPercentage: {
+      type: Number,
+      default: null,
+      min: [0, 'Refund percentage cannot be negative'],
+      max: [100, 'Refund percentage cannot exceed 100'],
+    },
+    refundBreakdown: {
+      bookingRefund: { type: Number, default: 0 },
+      depositRefund: { type: Number, default: 0 },
+      reason: { type: String, default: null },
+    },
+    // Facility terms frozen at confirmation; later facility edits never change them.
+    policySnapshot: {
+      cancellation: {
+        isAllowed: { type: Boolean, default: true },
+        refundCutoffHours: { type: Number, default: 24 },
+        refundPercentage: { type: Number, default: 100 },
+      },
+      archetype: { type: String, default: null },
+      timezone: { type: String, default: null },
     },
     depositAmount: {
       type: Number,

@@ -480,10 +480,8 @@ describe('Mobile Phase 4 — Offline, Cash & Pay-at-Gate Financial Flows', () =>
 
       // Verify the Cash Collection Pending notice is prominently displayed
       expect(screen.getByTestId('pay-at-gate-pending-notice')).toBeTruthy();
-      expect(screen.getByText('Cash Collection Pending at Gate')).toBeTruthy();
-      expect(
-        screen.getByText(/Please present your digital access pass at the gate or amenity counter/)
-      ).toBeTruthy();
+      expect(screen.getByText('Balance due: ₹590')).toBeTruthy();
+      expect(screen.getByText(/Pay at the gate before entry/)).toBeTruthy();
 
       // Verify both independent statuses are rendered in authoritative status section
       expect(screen.getAllByText(/confirmed/i).length).toBeGreaterThan(0);

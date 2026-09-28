@@ -26,6 +26,10 @@ export interface ScanResultData {
   entryTime?: string;
   amenityName?: string;
   metadata?: Record<string, string>;
+  /** Overrides the status badge text (e.g. "BALANCE DUE" for a PENDING result). */
+  statusLabel?: string;
+  /** Extra rows shown under Pass Details. */
+  details?: { label: string; value: string }[];
 }
 
 export interface ScanResultSheetProps {
@@ -56,14 +60,14 @@ export const ScanResultSheet: React.FC<ScanResultSheetProps> = ({
   const requiresServerDecision = result.status === 'PENDING';
 
   let statusVariant: StatusVariant = 'danger';
-  let statusLabel = 'ACCESS REJECTED';
+  let statusLabel = result.statusLabel || 'ACCESS REJECTED';
 
   if (isSuccess) {
     statusVariant = 'success';
-    statusLabel = 'VERIFIED ACCESS';
+    statusLabel = result.statusLabel || 'VERIFIED ACCESS';
   } else if (requiresServerDecision) {
     statusVariant = 'warning';
-    statusLabel = 'SERVER CHECK REQUIRED';
+    statusLabel = result.statusLabel || 'SERVER CHECK REQUIRED';
   } else if (isExpired) {
     statusVariant = 'neutral';
     statusLabel = 'PASS EXPIRED';
@@ -161,6 +165,9 @@ export const ScanResultSheet: React.FC<ScanResultSheetProps> = ({
           {Boolean(result.validityWindow) && (
             <DetailRow label="Validity Window" value={result.validityWindow!} iconName="Clock" />
           )}
+          {(result.details || []).map((row) => (
+            <DetailRow key={row.label} label={row.label} value={row.value} />
+          ))}
           {Boolean(result.bookingReference) && (
             <DetailRow
               label="Pass Code Ref"

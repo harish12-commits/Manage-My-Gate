@@ -33,6 +33,7 @@ import {
   formatBookingStatusLabel,
   formatPaymentStatusLabel,
   formatAmenityPassCode,
+  formatAmenityAmount,
 } from '../utils/amenityStateHelpers';
 
 export interface ResidentReservationCardProps {
@@ -171,6 +172,11 @@ export function ResidentReservationCard({
   // Only reservations for which the server generated a credential may expose
   // the pass action. This prevents an approval-pending booking from presenting
   // an unusable or fabricated barcode.
+  const balanceDue =
+    ['CONFIRMED', 'PENDING_APPROVAL'].includes(reservation.bookingStatus) &&
+    reservation.completionStatus !== 'NO_SHOW'
+      ? Number(reservation.balanceAmount || 0)
+      : 0;
   const canShowQR =
     reservation.bookingStatus !== 'CANCELLED' &&
     reservation.bookingStatus !== 'REJECTED' &&
@@ -203,7 +209,12 @@ export function ResidentReservationCard({
         variant: getBookingStatusVariant(reservation.bookingStatus),
       }}
       secondaryBadge={
-        detailed
+        balanceDue > 0
+          ? {
+              label: t('amenity_card_balance_due', 'Balance {amount} due', { amount: formatAmenityAmount(balanceDue) }),
+              variant: 'warning',
+            }
+          : detailed
           ? {
               label: formatPaymentStatusLabel(reservation.paymentStatus),
               variant: getPaymentStatusVariant(reservation.paymentStatus),

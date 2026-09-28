@@ -7,6 +7,7 @@ import { Text } from './text';
 import { Icon } from './icon';
 import { StatusBadge, type StatusVariant } from './StatusBadge';
 import { cn } from '../../lib/utils';
+import { useTranslation, i18n } from '../../src/utils/i18n';
 
 export interface ListCardProps extends Omit<React.ComponentPropsWithoutRef<typeof Pressable>, 'title'> {
   title: string;
@@ -32,8 +33,6 @@ export interface ListCardProps extends Omit<React.ComponentPropsWithoutRef<typeo
   onLongPress?: () => void;
   className?: string;
 }
-
-import { useTranslation, i18n } from '../../src/utils/i18n';
 
 export function formatDate(date: string | Date): string {
   if (!date) return '';
@@ -199,13 +198,9 @@ const ListCard = React.forwardRef<View, ListCardProps>(
       </View>
     );
 
-    if (rightContent !== undefined) {
-      return (
-        <View
-          ref={ref}
-          className={cn("bg-card rounded-2xl border border-border/70 mb-3 p-3.5 overflow-hidden shadow-2xs", className)}
-          style={style as any}
-        >
+    const renderCardHeaderRow = () => {
+      if (rightContent !== undefined) {
+        return (
           <View className="flex-row items-center w-full">
             {onPress ? (
               <Pressable
@@ -224,6 +219,32 @@ const ListCard = React.forwardRef<View, ListCardProps>(
               {rightContent}
             </View>
           </View>
+        );
+      }
+
+      return (
+        <View className="flex-row items-center w-full">
+          {renderHeaderMainContent()}
+          {showDefaultChevron ? (
+            <View className="items-end justify-center ms-2 shrink-0">
+              <Icon as={ChevronRight} size={16} className={backgroundImage ? "text-white/70" : "text-muted-foreground"} />
+            </View>
+          ) : null}
+        </View>
+      );
+    };
+
+    if (children || rightContent !== undefined) {
+      return (
+        <View
+          ref={ref}
+          className={cn("bg-card rounded-2xl border border-border/70 mb-3 p-3.5 overflow-hidden shadow-2xs", className)}
+          style={style as any}
+          testID={(props as any).testID}
+          accessibilityLabel={(props as any).accessibilityLabel}
+          accessibilityHint={(props as any).accessibilityHint}
+        >
+          {renderCardHeaderRow()}
           {typeof children === 'function' ? (children as any)({ pressed: false }) : children}
         </View>
       );

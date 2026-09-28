@@ -203,5 +203,9 @@ export {
   AmenityOutboxWorker,
   amenityOutboxWorker,
 } from './workers/amenityOutbox.worker.js';
+export {
+  AmenityReservationLifecycleWorker,
+  amenityReservationLifecycleWorker,
+} from './workers/amenityReservationLifecycle.worker.js';
 export { AMENITY_WORKER_CONFIG } from './config/amenityWorker.config.js';
 

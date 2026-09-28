@@ -7,6 +7,9 @@ import {
   reservationIdParamRules,
   reservationNumberParamRules,
   listReservationsRules,
+  payBalanceRules,
+  collectPaymentRules,
+  resolveReviewRules,
 } from './amenityReservation.validateRules.js';
 import validate from '../../../middlewares/validator.middleware.js';
 import isAuthenticated from '../../../middlewares/auth.middleware.js';
@@ -29,9 +32,41 @@ router.post(
 // POST /:reservationId/cancel - Cancel reservation
 router.post(
   '/:reservationId/cancel',
-  authorizePermission('amenities', ['amenities', 'my_booking']),
+  authorizePermission('amenities', ['amenities', 'my_booking', 'admin_calander']),
   validate(cancelReservationRules),
   amenityReservationController.cancel
+);
+
+// GET /:reservationId/cancellation-preview - What cancelling now would refund
+router.get(
+  '/:reservationId/cancellation-preview',
+  authorizePermission('amenities', ['amenities', 'my_booking', 'admin_calander']),
+  validate(reservationIdParamRules),
+  amenityReservationController.cancellationPreview
+);
+
+// POST /:reservationId/pay-balance - Resident pays the outstanding balance from the wallet
+router.post(
+  '/:reservationId/pay-balance',
+  authorizePermission('amenities', ['amenities', 'my_booking']),
+  validate(payBalanceRules),
+  amenityReservationController.payBalance
+);
+
+// POST /:reservationId/collect-payment - Gate staff collect the balance in cash
+router.post(
+  '/:reservationId/collect-payment',
+  authorizePermission('amenities', ['scanner', 'admin_calander', 'amenities']),
+  validate(collectPaymentRules),
+  amenityReservationController.collectPayment
+);
+
+// POST /:reservationId/resolve-review - Staff decision on a flagged booking
+router.post(
+  '/:reservationId/resolve-review',
+  authorizePermission('amenities', ['amenities', 'admin_calander']),
+  validate(resolveReviewRules),
+  amenityReservationController.resolveReview
 );
 
 // POST /:reservationId/review - Maker-checker review (Approve/Reject)

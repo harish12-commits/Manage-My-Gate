@@ -67,7 +67,10 @@ export class AmenityBookingController {
     try {
       const orgId = req.tenant.orgId;
       const userId = req.user.id;
-      const bookingData = { ...req.body, orgId, userId };
+      // Only booking inputs are accepted from the client; price, payment and status
+      // fields are always derived server-side.
+      const { amenityId, bookingDate, startTime, endTime, numberOfPersons, paymentMethod, resourceId, notes } = req.body;
+      const bookingData = { amenityId, bookingDate, startTime, endTime, numberOfPersons, paymentMethod, resourceId, notes, orgId, userId };
       
       const created = await amenityBookingService.createBooking(bookingData);
       res.success(created, 'Booking placed successfully', 201);

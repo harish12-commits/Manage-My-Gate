@@ -41,15 +41,19 @@ export function BookingDetailModal({
 
   const userObj = typeof booking.userId === 'object' && booking.userId ? booking.userId : null;
   const residentName = booking.residentName || userObj?.name || userObj?.username || (booking as any).userName || 'Community Resident';
-  const villaNumber = (booking as any).villaNumber || (booking as any).flatNumber || userObj?.villaNumber || userObj?.flatNumber || userObj?.unit || 'Villa 101';
+  const villaNumber = (booking as any).villaNumber || (booking as any).flatNumber || userObj?.villaNumber || userObj?.flatNumber || userObj?.unit || '—';
 
-  const isConfirmed = booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED';
-  const statusLabel = isConfirmed ? 'CONFIRMED' : booking.status;
-  const statusVariant: StatusVariant = isConfirmed ? 'success' : booking.status === 'COMPLETED' ? 'neutral' : 'danger';
+  const statusLabel = String(booking.status || 'CONFIRMED').replace('_', ' ');
+  const statusVariant: StatusVariant =
+    booking.status === 'CANCELLED' ? 'danger' : booking.status === 'PENDING' ? 'warning' : booking.status === 'COMPLETED' ? 'neutral' : 'success';
 
-  const isPaid = booking.paymentStatus !== 'REFUNDED';
-  const paymentStatusLabel = isPaid ? 'PAID' : booking.paymentStatus || 'PAID';
-  const paymentVariant: StatusVariant = isPaid ? 'success' : 'neutral';
+  // The booking's real payment state (a balance still owed is not "paid").
+  const paymentStatusLabel =
+    Number((booking as any).remainingAmount || 0) > 0
+      ? 'BALANCE DUE'
+      : String(booking.paymentStatus || 'PENDING').replace('_', ' ');
+  const paymentVariant: StatusVariant =
+    paymentStatusLabel === 'PAID' ? 'success' : paymentStatusLabel === 'REFUNDED' || paymentStatusLabel === 'NOT REQUIRED' ? 'neutral' : 'warning';
 
   const bookingIdDisplay = booking.bookingId || booking._id;
 

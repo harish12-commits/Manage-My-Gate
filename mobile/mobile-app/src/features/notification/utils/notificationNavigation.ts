@@ -187,6 +187,22 @@ export const resolveNotificationRoute = (payload?: StructuredNotificationPayload
       return '/(resident)/amenities/discover';
     }
 
+    // Amenity Management V2: a booking's detail, and the staff Booking Queue.
+    if (cleanUrl.includes('amenities/reservations/')) {
+      const resId = cleanUrl.split('amenities/reservations/')[1]?.split(/[?#/]/)[0];
+      if (resId) return `/(resident)/amenities/reservations/${encodeURIComponent(resId)}`;
+      return '/(resident)/amenities/my-bookings';
+    }
+
+    if (cleanUrl.includes('amenities/admin-bookings')) {
+      return '/(resident)/amenities/admin-bookings';
+    }
+
+    // Older pass links carry a pass id, which has no screen of its own.
+    if (cleanUrl.includes('amenities/passes')) {
+      return '/(resident)/amenities/my-bookings';
+    }
+
     if (cleanUrl.includes('amenities/booking/')) {
       const bkgId = cleanUrl.split('amenities/booking/')[1]?.split(/[?#]/)[0];
       if (bkgId) return `/(resident)/amenities/booking/${bkgId}`;
@@ -271,8 +287,9 @@ export const resolveNotificationRoute = (payload?: StructuredNotificationPayload
 
     case 'AMENITY_BOOKING':
     case 'AMENITY':
+      // The id is a booking: open its detail (the booking wizard takes a facility id).
       return entityId
-        ? `/(resident)/amenities/booking/${encodeURIComponent(entityId)}`
+        ? `/(resident)/amenities/reservations/${encodeURIComponent(entityId)}`
         : '/(resident)/amenities/my-bookings';
 
     case 'NOTICE':

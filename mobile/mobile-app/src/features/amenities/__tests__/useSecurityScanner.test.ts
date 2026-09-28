@@ -282,13 +282,16 @@ describe('Amenity Management: Unified Single Security Scanner Tests', () => {
       expect(hookContent).toMatch(/checkInPassThunk/);
     });
 
-    it('verifies scanner.tsx does NOT contain dual-mode tabs (SCAN_MODE_TABS) or checkout inspection sheets', () => {
+    it('verifies scanner.tsx only gates access and the console has a single scan flow (no mode tabs, no log deletion)', () => {
       const scannerContent = fs.readFileSync(scannerPath, 'utf8');
+      const consoleContent = fs.readFileSync(path.resolve(__dirname, '../components/AmenityGateConsole.tsx'), 'utf8');
 
-      expect(scannerContent).toMatch(/v2CheckInResult/);
-      expect(scannerContent).not.toMatch(/SCAN_MODE_TABS/);
-      expect(scannerContent).not.toMatch(/isInspectionModalOpen/);
-      expect(scannerContent).not.toMatch(/Equipment & Facility Return Inspection/);
+      expect(scannerContent).toMatch(/<AmenityGateConsole \/>/);
+      expect(scannerContent).not.toMatch(/useSecurityScanner/);
+      expect(consoleContent).not.toMatch(/SCAN_MODE_TABS/);
+      // Exit is offered by the server's answer to a scan (ALREADY_CHECKED_IN), not by a mode switch.
+      expect(consoleContent).toMatch(/runPrimaryAction/);
+      expect(consoleContent).not.toMatch(/onDelete=/);
     });
   });
 });

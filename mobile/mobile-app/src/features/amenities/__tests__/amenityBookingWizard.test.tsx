@@ -380,22 +380,27 @@ describe('Amenity Management Phase 6B.2: Resident Booking Wizard Tests', () => {
   // ==========================================
   // Test 11: Unavailable Slot Handled Correctly
   // ==========================================
-  it('Test 11: renders unavailable warning message when slot is full', async () => {
+  it('Test 11: shows the server reason and an empty state when nothing can be booked', async () => {
     await render(
       <DateTimeStep
         facility={mockSharedFacility}
         selectedDate="2026-09-10"
-        startTime="09:00"
-        endTime="10:00"
         onDateChange={jest.fn()}
-        onTimeChange={jest.fn()}
-        availabilityResult={{ available: false, reason: 'Slot capacity reached' }}
-        onCheckAvailability={jest.fn().mockResolvedValue(false)}
+        slots={[]}
+        selectedSlot={null}
+        onSelectSlot={jest.fn()}
+        nights={1}
+        onNightsChange={jest.fn()}
+        loanDays={0}
+        onLoanDaysChange={jest.fn()}
+        maxLoanDays={0}
+        endUtcIso=""
+        error="Only 0 of 10 place(s) left for the requested time"
       />
     );
 
-    expect(screen.getByText('Selected Slot is Unavailable')).toBeTruthy();
-    expect(screen.getByText('Slot capacity reached')).toBeTruthy();
+    expect(screen.getByText('Nothing available on this day')).toBeTruthy();
+    expect(screen.getByText('Only 0 of 10 place(s) left for the requested time')).toBeTruthy();
   });
 
   // ==========================================
@@ -564,20 +569,18 @@ describe('Amenity Management Phase 6B.2: Resident Booking Wizard Tests', () => {
         activeHold={mockActiveHold}
         holdRemainingSeconds={0}
         isHoldExpired={true}
-        totalAmount={0}
+        schedule={{ mode: 'FULL', priceAmount: 0, depositAmount: 0, advanceAmount: 0, dueNowAmount: 0, balanceAmount: 0 } as any}
         paymentMethod="WALLET"
         onPaymentMethodChange={jest.fn()}
         balance={100}
         onOpenTopUp={jest.fn()}
-        onLaunchRazorpay={jest.fn()}
-        onConfirmReservation={onConfirm}
+        onConfirm={onConfirm}
         onRestartBooking={jest.fn()}
       />
     );
 
-    expect(screen.getAllByText('Hold Expired').length).toBeGreaterThanOrEqual(1);
-    const button = screen.getByLabelText('Confirm Reservation Button');
-    fireEvent.press(button);
+    expect(screen.getAllByText('Hold expired').length).toBeGreaterThanOrEqual(1);
+    fireEvent.press(screen.getByLabelText('Confirm booking'));
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
@@ -596,50 +599,51 @@ describe('Amenity Management Phase 6B.2: Resident Booking Wizard Tests', () => {
   // ==========================================
   // Test 22: Payment-Required Flow Uses Existing Billing
   // ==========================================
-  it('Test 22: payment step displays Digital Wallet and Razorpay options when total > 0', async () => {
+  it('Test 22: payment step shows the amount due now with wallet and online options', async () => {
     await render(
       <BookingHoldPaymentStep
         activeHold={mockActiveHold}
         holdRemainingSeconds={300}
         isHoldExpired={false}
-        totalAmount={157.5}
+        schedule={{ mode: 'ADVANCE', priceAmount: 5000, depositAmount: 2000, advanceAmount: 1250, dueNowAmount: 3250, balanceAmount: 3750 } as any}
         paymentMethod="WALLET"
         onPaymentMethodChange={jest.fn()}
-        balance={200}
+        balance={5000}
+        isRazorpayConfigured
         onOpenTopUp={jest.fn()}
-        onLaunchRazorpay={jest.fn()}
-        onConfirmReservation={jest.fn()}
+        onConfirm={jest.fn()}
         onRestartBooking={jest.fn()}
       />
     );
 
-    expect(screen.getByText('Digital Wallet Balance')).toBeTruthy();
-    expect(screen.getByText('Online Payment (Cards, UPI, NetBanking)')).toBeTruthy();
-    expect(screen.getAllByText(/157\.5/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Digital Wallet')).toBeTruthy();
+    expect(screen.getByText('Pay online')).toBeTruthy();
+    expect(screen.getByText('Pay ₹3,250 from wallet')).toBeTruthy();
+    expect(screen.getByText('₹3,750')).toBeTruthy();
   });
 
   // ==========================================
-  // Test 23: Payment-Not-Required Flow Skips Payment
+  // Test 23: Nothing due online (free or pay at gate)
   // ==========================================
-  it('Test 23: renders Zero Payment Required banner for free facilities', async () => {
+  it('Test 23: confirms without payment when nothing is due online', async () => {
     await render(
       <BookingHoldPaymentStep
         activeHold={mockActiveHold}
         holdRemainingSeconds={300}
         isHoldExpired={false}
-        totalAmount={0}
+        schedule={{ mode: 'PAY_AT_GATE', priceAmount: 4500, depositAmount: 0, advanceAmount: 0, dueNowAmount: 0, balanceAmount: 4500 } as any}
         paymentMethod="WALLET"
         onPaymentMethodChange={jest.fn()}
         balance={0}
         onOpenTopUp={jest.fn()}
-        onLaunchRazorpay={jest.fn()}
-        onConfirmReservation={jest.fn()}
+        onConfirm={jest.fn()}
         onRestartBooking={jest.fn()}
       />
     );
 
-    expect(screen.getByText('Zero Payment Required')).toBeTruthy();
-    expect(screen.getByText('Confirm Free Reservation')).toBeTruthy();
+    expect(screen.getByText('Nothing now')).toBeTruthy();
+    expect(screen.getByText('Confirm booking')).toBeTruthy();
+    expect(screen.queryByText('Pay with')).toBeNull();
   });
 
   // ==========================================

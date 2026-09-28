@@ -25,12 +25,14 @@ export type AmenityPaymentStatus =
   | 'NOT_REQUIRED'
   | 'PENDING'
   | 'HELD_AUTHORIZED'
+  | 'ADVANCE_PAID'
   | 'PAID'
   | 'REFUND_PENDING'
   | 'REFUNDED'
+  | 'PARTIALLY_REFUNDED'
   | 'FAILED';
 
-export type AmenityApprovalStatus = 'NOT_REQUIRED' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
+export type AmenityApprovalStatus = 'NOT_REQUIRED' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
 
 export type AmenityAccessStatus =
   'NOT_APPLICABLE' | 'PASS_GENERATED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'ACCESS_REVOKED';

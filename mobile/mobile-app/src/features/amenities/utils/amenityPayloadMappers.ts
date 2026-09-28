@@ -188,8 +188,33 @@ export const normalizeFacilityFromApi = (raw: ApiAmenityFacility | any): Amenity
     images: Array.isArray(raw.images) ? [...raw.images] : (raw.imageUrl ? [raw.imageUrl] : []),
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
+    advanceBookingDays: raw.advanceBookingDays ?? rawBookingRules.advanceBookingDays,
+    minNoticeHours: raw.minNoticeHours ?? rawBookingRules.minNoticeHours,
+    bookingMode: raw.bookingMode,
+    sessions: Array.isArray(raw.sessions) ? raw.sessions.map((s: any) => ({ ...s })) : [],
+    stayMode: raw.stayMode,
+    checkInTime: raw.checkInTime,
+    checkOutTime: raw.checkOutTime,
+    maxNights: raw.maxNights,
+    maxLoanHours: raw.maxLoanHours,
+    requiresInspection: raw.requiresInspection,
+    paymentPolicy: raw.paymentPolicy ? { ...raw.paymentPolicy } : { mode: 'FULL' },
+    cancellationPolicy: raw.cancellationPolicy ? { ...raw.cancellationPolicy } : undefined,
   };
 };
+
+/** Normalizes the server's amount schedule (amounts due now / later). */
+export const normalizeAmountSchedule = (raw: any) =>
+  raw
+    ? {
+        mode: raw.mode || 'FULL',
+        priceAmount: Number(raw.priceAmount || 0),
+        depositAmount: Number(raw.depositAmount || 0),
+        advanceAmount: Number(raw.advanceAmount || 0),
+        dueNowAmount: Number(raw.dueNowAmount || 0),
+        balanceAmount: Number(raw.balanceAmount || 0),
+      }
+    : undefined;
 
 export const normalizeResourceFromApi = (raw: ApiAmenityResource | any): AmenityResource => {
   return {
@@ -249,6 +274,8 @@ export const normalizeHoldFromApi = (
     status: raw.status,
     expiresAt: raw.expiresAt,
     pricingSnapshot: snapshotToUse ? normalizePricingSnapshot(snapshotToUse) : undefined,
+    amountSchedule: normalizeAmountSchedule(raw.amountSchedule),
+    reservationId: raw.reservationId ? String(raw.reservationId) : null,
   };
 };
 
@@ -347,9 +374,32 @@ export const normalizeReservationFromApi = (payload: any): AmenityReservation =>
     holdId: doc.holdId,
     paymentReference: doc.paymentReference,
     paymentMethod: doc.paymentMethod,
-    paidAmount: Number(doc.paidAmount ?? pricingSource?.totalAmount ?? 0),
+    // What was actually paid (never assume the full price was paid).
+    paidAmount: Number(doc.paidAmount ?? 0),
     refundAmount: Number(doc.refundAmount || 0),
     refundMethod: doc.refundMethod,
+    totalAmount: Number(doc.totalAmount ?? pricingSource?.totalAmount ?? 0),
+    depositAmount: Number(doc.depositAmount ?? pricingSource?.depositAmount ?? 0),
+    balanceAmount: Number(doc.balanceAmount ?? 0),
+    amountSchedule: normalizeAmountSchedule(doc.amountSchedule),
+    payments: Array.isArray(doc.payments)
+      ? doc.payments.map((p: any) => ({
+          purpose: p.purpose,
+          method: p.method,
+          amount: Number(p.amount || 0),
+          receiptNumber: p.receiptNumber || null,
+          paidAt: p.paidAt,
+        }))
+      : [],
+    refundPercentage: doc.refundPercentage ?? null,
+    refundBreakdown: doc.refundBreakdown || undefined,
+    depositSettlement: doc.depositSettlement || undefined,
+    adminReview: doc.adminReview || { status: 'NONE' },
+    policySnapshot: doc.policySnapshot || undefined,
+    checkedInAt: doc.checkedInAt || null,
+    checkedOutAt: doc.checkedOutAt || null,
+    completedAt: doc.completedAt || null,
+    bookedBy: doc.bookedBy ? String(doc.bookedBy?._id || doc.bookedBy) : null,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };

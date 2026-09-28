@@ -50,6 +50,16 @@ class AmenityDashboardController {
     }
   }
 
+  /** Booking ledger (V2): one row per booking with its money, plus a summary. */
+  async getLedger(req, res, next) {
+    try {
+      const data = await dashboardService.getLedger(req.tenant.orgId, req.query);
+      res.success(data, 'Amenity ledger retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getCalendarEvents(req, res, next) {
     try {
       const orgId = req.tenant.orgId;

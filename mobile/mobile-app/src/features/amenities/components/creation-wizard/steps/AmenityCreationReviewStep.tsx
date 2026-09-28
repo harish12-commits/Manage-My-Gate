@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/src/utils/i18n';
 import { AmenityCreationFormState } from '../../../utils/mapAmenityCreationPayloadStrategy';
 import { ARCHETYPE_CATALOG_OPTIONS, DAYS_NAMES } from '../../../constants/amenityCatalogPresets';
 
@@ -31,6 +32,38 @@ export const AmenityCreationReviewStep: React.FC<AmenityCreationReviewStepProps>
     ARCHETYPE_CATALOG_OPTIONS.find((o) => o.archetype === form.archetype) ||
     ARCHETYPE_CATALOG_OPTIONS[0];
   const IconComp = archetypeMeta.icon;
+  const { t } = useTranslation();
+
+  // How it is booked (event spaces and rooms), in words
+  const bookingSummary =
+    form.archetype === 'EVENT_SPACE'
+      ? form.bookingMode === 'SESSION'
+        ? t('amenity_review_booked_sessions', 'Booked by session: {list}', {
+            list: (form.sessions || []).map((x) => `${x.name} ${x.startTime}–${x.endTime}`).join(', '),
+          })
+        : form.bookingMode === 'HOURLY'
+        ? t('amenity_review_booked_hourly', 'Booked by the hour ({n} min slots)', { n: form.slotDurationMinutes })
+        : t('amenity_review_booked_day', 'Booked for the whole day')
+      : form.archetype === 'ROOM_RESOURCE'
+      ? form.stayMode === 'OVERNIGHT'
+        ? t('amenity_review_booked_overnight', 'Overnight stays: check-in {in}, check-out {out}, up to {n} nights', {
+            in: form.checkInTime,
+            out: form.checkOutTime,
+            n: form.maxNights,
+          })
+        : t('amenity_review_booked_hourly', 'Booked by the hour ({n} min slots)', { n: form.slotDurationMinutes })
+      : null;
+
+  const paymentSummary =
+    form.pricingType === 'FREE'
+      ? null
+      : form.paymentMode === 'ADVANCE'
+      ? t('amenity_review_pay_advance', 'Advance {value} when booking, balance later', {
+          value: form.advanceType === 'FIXED' ? `₹${form.advanceValue}` : `${form.advanceValue}%`,
+        })
+      : form.paymentMode === 'PAY_AT_GATE'
+      ? t('amenity_review_pay_gate', 'Paid at the gate before entry')
+      : t('amenity_review_pay_full', 'Paid in full when booking');
 
   const activeDayNames = form.openDays
     .map((idx) => DAYS_NAMES[idx])
@@ -287,6 +320,24 @@ export const AmenityCreationReviewStep: React.FC<AmenityCreationReviewStepProps>
                   Refundable Deposit: ₹{form.securityDeposit}
                 </Text>
               )}
+              {paymentSummary ? (
+                <Text testID="review-payment-summary" className="text-xs text-foreground">
+                  {paymentSummary}
+                </Text>
+              ) : null}
+              {bookingSummary ? (
+                <Text testID="review-booking-summary" className="text-xs text-foreground">
+                  {bookingSummary}
+                </Text>
+              ) : null}
+              <Text className="text-xs text-muted-foreground">
+                {form.isCancellationAllowed
+                  ? t('amenity_review_refund', '{pct}% refunded when cancelled {h}h or more ahead', {
+                      pct: form.refundPercentage,
+                      h: form.refundCutoffHours,
+                    })
+                  : t('amenity_review_no_cancel', 'Residents cannot cancel')}
+              </Text>
             </View>
           </View>
         </View>

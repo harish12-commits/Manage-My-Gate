@@ -145,6 +145,8 @@ export class AmenityReservationRepository {
     bookingStatus,
     paymentStatus,
     approvalStatus,
+    adminReviewStatus,
+    search,
     page = 1,
     limit = 10,
   }) {
@@ -177,112 +179,38 @@ export class AmenityReservationRepository {
       matchConditions.push({ approvalStatus: approvalStatus.toUpperCase() });
     }
 
+    if (adminReviewStatus) {
+      matchConditions.push({ 'adminReview.status': adminReviewStatus });
+    }
+
+    // Staff search: booking number, or the resident's name / username.
+    const term = String(search || '').trim();
+    if (term) {
+      const rx = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const User = mongoose.models.User || (await import('../../user/user.model.js')).default;
+      const users = await User.find({ $or: [{ name: rx }, { username: rx }] }).select('_id').limit(200).lean();
+      matchConditions.push({ $or: [{ reservationNumber: rx }, { residentId: { $in: users.map((u) => u._id) } }] });
+    }
+
     const match = matchConditions.length === 1 ? matchConditions[0] : { $and: matchConditions };
 
-    const v2Reservations = await AmenityReservation.find(match)
-      .populate('facilityId', 'name type images category location pricingConfig operatingHours')
-      .populate('resourceId', 'name identifier type')
-      .populate('residentId', 'name username email phone profilePicture')
-      .populate('unitId', 'unitNumber villaNumber block floor')
-      .sort({ createdAt: -1 })
-      .lean();
+    const pageNum = Math.max(1, Number(page) || 1);
+    const pageSize = Math.max(1, Number(limit) || 10);
+    const [items, total] = await Promise.all([
+      AmenityReservation.find(match)
+        .populate('facilityId', 'name type images category location pricingConfig operatingHours')
+        .populate('resourceId', 'name identifier type')
+        .populate('residentId', 'name username email phone profilePicture')
+        .populate('unitId', 'unitNumber villaNumber block floor')
+        .sort({ createdAt: -1, _id: -1 })
+        .skip((pageNum - 1) * pageSize)
+        .limit(pageSize)
+        .lean(),
+      AmenityReservation.countDocuments(match),
+    ]);
+    const totalPages = Math.ceil(total / pageSize) || 1;
 
-    // Query legacy amenity_bookings collection for complete dual-collection sync
-    let v1Bookings = [];
-    try {
-      const AmenityBooking = (await import('../../amenityBooking/amenityBooking.model.js')).default;
-      const v1MatchConditions = [
-        { $or: [{ orgId: targetOrgId }, { orgId: String(orgId) }] }
-      ];
-      if (facilityId) {
-        const targetFacId = mongoose.Types.ObjectId.isValid(facilityId) ? new mongoose.Types.ObjectId(facilityId) : facilityId;
-        v1MatchConditions.push({ $or: [{ amenityId: targetFacId }, { amenityId: String(facilityId) }] });
-      }
-      if (residentId) {
-        const targetResId = mongoose.Types.ObjectId.isValid(residentId) ? new mongoose.Types.ObjectId(residentId) : residentId;
-        v1MatchConditions.push({ $or: [{ userId: targetResId }, { userId: String(residentId) }] });
-      }
-      if (bookingStatus && bookingStatus !== 'All' && bookingStatus !== 'ALL') {
-        v1MatchConditions.push({ status: bookingStatus.toLowerCase() });
-      }
-      const v1Query = v1MatchConditions.length === 1 ? v1MatchConditions[0] : { $and: v1MatchConditions };
-
-      v1Bookings = await AmenityBooking.find(v1Query)
-        .populate('amenityId', 'name type images location bookingRules pricing category')
-        .populate('userId', 'name username email phone profilePicture')
-        .sort({ createdAt: -1 })
-        .lean();
-    } catch (v1Err) {
-      // Graceful fallback
-    }
-
-    // Adapt v1 bookings into v2 AmenityReservation shape
-    const moment = (await import('moment-timezone')).default;
-    const TIMEZONE = 'Asia/Kolkata';
-
-    const adaptedV1 = v1Bookings.map((b) => {
-      const fac = b.amenityId || {};
-      const bookingDateStr = b.bookingDate || '';
-      const startTimeStr = b.startTime || '00:00';
-      const endTimeStr = b.endTime || '23:59';
-      
-      let startDt = b.createdAt;
-      let endDt = b.createdAt;
-      if (bookingDateStr) {
-        startDt = moment.tz(`${bookingDateStr}T${startTimeStr}`, 'YYYY-MM-DDTHH:mm', TIMEZONE).toDate();
-        endDt = moment.tz(`${bookingDateStr}T${endTimeStr}`, 'YYYY-MM-DDTHH:mm', TIMEZONE).toDate();
-      }
-
-      const pConfig = fac.pricing || fac.pricingConfig || {};
-
-      return {
-        _id: b._id,
-        orgId: b.orgId,
-        facilityId: typeof fac === 'object' && fac._id ? fac : { _id: b.amenityId, name: fac.name || 'Amenity Facility' },
-        resourceId: b.resourceId ? { _id: b.resourceId, name: 'Resource' } : null,
-        residentId: typeof b.userId === 'object' && b.userId ? b.userId : { _id: b.userId },
-        unitId: b.unitId ? { _id: b.unitId } : null,
-        reservationNumber: b.bookingId || b.bookingNumber || String(b._id),
-        requestedStartDateTime: startDt,
-        requestedEndDateTime: endDt,
-        effectiveStartDateTime: startDt,
-        effectiveEndDateTime: endDt,
-        startDateTime: startDt,
-        endDateTime: endDt,
-        headcount: b.numberOfPersons || 1,
-        quantity: 1,
-        bookingStatus: (b.status || 'CONFIRMED').toUpperCase(),
-        paymentStatus: (b.paymentStatus === 'success' || b.paymentStatus === 'paid') ? 'PAID' : (b.paymentStatus || 'NOT_REQUIRED').toUpperCase(),
-        approvalStatus: 'NOT_REQUIRED',
-        accessStatus: 'PASS_GENERATED',
-        completionStatus: 'PENDING',
-        totalAmount: b.totalPrice || b.pricingDetails?.totalAmount || 0,
-        paidAmount: b.totalPrice || 0,
-        paymentMethod: (b.paymentMethod || 'NONE').toUpperCase(),
-        createdAt: b.createdAt || new Date(),
-        updatedAt: b.updatedAt || new Date(),
-      };
-    });
-
-    // Merge v2 reservations and adapted v1 bookings, deduplicating by _id string
-    const existingIds = new Set(v2Reservations.map((r) => String(r._id)));
-    const merged = [...v2Reservations];
-    for (const item of adaptedV1) {
-      if (!existingIds.has(String(item._id))) {
-        existingIds.add(String(item._id));
-        merged.push(item);
-      }
-    }
-
-    // Sort by createdAt descending
-    merged.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-    const total = merged.length;
-    const skip = (page - 1) * limit;
-    const paginatedItems = merged.slice(skip, skip + limit);
-    const totalPages = Math.ceil(total / limit) || 1;
-
-    return { data: paginatedItems, items: paginatedItems, total, page, limit, totalPages };
+    return { data: items, items, total, page: pageNum, limit: pageSize, totalPages };
   }
 
   /**

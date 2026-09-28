@@ -1,6 +1,9 @@
 import { getIO } from '../../config/socket.js';
 import logger from '../../utils/logger.utils.js';
 
+/** Room ids from a payload whose refs may be populated documents. */
+const idOf = (ref) => (ref && typeof ref === 'object' && ref._id ? String(ref._id) : ref ? String(ref) : null);
+
 /**
  * Socket.io Dispatcher for Amenity Management.
  * Decoupled from service business logic.
@@ -16,10 +19,10 @@ export class AmenityManagementSocket {
       const io = getIO();
       if (!io) return;
       if (payload.residentId) {
-        io.to(`user:${payload.residentId}`).emit('AMENITY_HOLD_UPDATE', payload);
+        io.to(`user:${idOf(payload.residentId)}`).emit('AMENITY_HOLD_UPDATE', payload);
       }
       if (payload.orgId) {
-        io.to(`org:${payload.orgId}`).emit('AMENITY_HOLD_UPDATED', {
+        io.to(`org:${idOf(payload.orgId)}`).emit('AMENITY_HOLD_UPDATED', {
           holdId: payload.holdId,
           status: payload.status,
         });
@@ -38,11 +41,11 @@ export class AmenityManagementSocket {
       const io = getIO();
       if (!io) return;
       if (payload.residentId) {
-        io.to(`user:${payload.residentId}`).emit(eventType, payload);
+        io.to(`user:${idOf(payload.residentId)}`).emit(eventType, payload);
       }
       if (payload.orgId) {
-        io.to(`org:${payload.orgId}`).emit(eventType, {
-          reservationId: payload._id || payload.reservationId,
+        io.to(`org:${idOf(payload.orgId)}`).emit(eventType, {
+          reservationId: idOf(payload._id || payload.reservationId),
           reservationNumber: payload.reservationNumber,
           bookingStatus: payload.bookingStatus,
         });
@@ -61,7 +64,7 @@ export class AmenityManagementSocket {
       const io = getIO();
       if (!io) return;
       if (payload.residentId) {
-        io.to(`user:${payload.residentId}`).emit('GATE_PASS_ISSUED', payload);
+        io.to(`user:${idOf(payload.residentId)}`).emit('GATE_PASS_ISSUED', payload);
       }
     } catch (err) {
       logger.warn('Failed to emit GATE_PASS_ISSUED socket event:', { error: err.message });
@@ -77,7 +80,7 @@ export class AmenityManagementSocket {
       const io = getIO();
       if (!io) return;
       if (payload.orgId) {
-        io.to(`org:${payload.orgId}`).emit('MAINTENANCE_SCHEDULED', payload);
+        io.to(`org:${idOf(payload.orgId)}`).emit('MAINTENANCE_SCHEDULED', payload);
       }
     } catch (err) {
       logger.warn('Failed to emit MAINTENANCE_SCHEDULED socket event:', { error: err.message });
@@ -94,7 +97,7 @@ export class AmenityManagementSocket {
       const io = getIO();
       if (!io) return;
       if (payload.orgId) {
-        io.to(`org:${payload.orgId}`).emit(eventType, payload);
+        io.to(`org:${idOf(payload.orgId)}`).emit(eventType, payload);
       }
     } catch (err) {
       logger.warn(`Failed to emit ${eventType} socket event:`, { error: err.message });

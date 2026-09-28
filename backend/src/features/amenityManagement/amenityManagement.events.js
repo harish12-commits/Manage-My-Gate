@@ -6,6 +6,7 @@ export const AMENITY_EVENTS = {
   HOLD_EXPIRED: 'amenity:hold:expired',
   RESERVATION_CONFIRMED: 'amenity:reservation:confirmed',
   RESERVATION_CANCELLED: 'amenity:reservation:cancelled',
+  RESERVATION_UPDATED: 'amenity:reservation:updated',
   GATE_PASS_ISSUED: 'amenity:pass:issued',
   APPROVAL_REQUESTED: 'amenity:approval:requested',
   MAINTENANCE_SCHEDULED: 'amenity:maintenance:scheduled',
@@ -41,6 +42,10 @@ amenityManagementEvents.on(AMENITY_EVENTS.RESERVATION_CONFIRMED, (payload) => {
 
 amenityManagementEvents.on(AMENITY_EVENTS.RESERVATION_CANCELLED, (payload) => {
   amenityManagementSocket.dispatchReservationEvent('RESERVATION_CANCELLED', payload);
+});
+
+amenityManagementEvents.on(AMENITY_EVENTS.RESERVATION_UPDATED, (payload) => {
+  amenityManagementSocket.dispatchReservationEvent('RESERVATION_UPDATED', payload);
 });
 
 amenityManagementEvents.on(AMENITY_EVENTS.APPROVAL_REQUESTED, (payload) => {

@@ -13,10 +13,15 @@ import { CalendarX } from 'lucide-react-native';
 import { useResidentReservationDetail } from '@/src/features/amenities/hooks/useResidentReservationDetail';
 import { ResidentReservationDetailView } from '@/src/features/amenities/components/ResidentReservationDetailView';
 import { ResidentCancelModal } from '@/src/features/amenities/components/ResidentCancelModal';
+import { useCancellationPreview } from '@/src/features/amenities/hooks/useCancellationPreview';
+import { useReservationBalancePayment } from '@/src/features/amenities/hooks/useReservationBalancePayment';
+import { RazorpayCheckoutModal } from '@/src/features/billing/components/RazorpayCheckoutModal';
+import { useTranslation } from '@/src/utils/i18n';
 
 export default function ReservationDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
 
   const {
     reservation,
@@ -26,6 +31,7 @@ export default function ReservationDetailScreen() {
     isCancelling,
     cancelModalOpen,
     setCancelModalOpen,
+    cancelError,
     error,
     isCancellable,
     refresh,
@@ -33,12 +39,15 @@ export default function ReservationDetailScreen() {
     clearError,
   } = useResidentReservationDetail(id);
 
+  const cancelPreview = useCancellationPreview(cancelModalOpen ? reservation?._id : null);
+  const balancePayment = useReservationBalancePayment(reservation);
+
   const handleConfirmCancel = useCallback(
     async (reason?: string) => {
       try {
         await cancelReservation(reason);
       } catch {
-        // Error is surfaced through error state
+        // Shown inside the cancel sheet (cancelError)
       }
     },
     [cancelReservation]
@@ -51,8 +60,8 @@ export default function ReservationDetailScreen() {
 
   return (
     <ScreenShell
-      title="Reservation Details"
-      subtitle={reservation?.facilityName || 'Amenity Booking'}
+      title={t('amenity_reservation_detail_title', 'Reservation Details')}
+      subtitle={reservation?.facilityName || t('amenity_booking_label', 'Amenity Booking')}
       iconName="CalendarCheck"
       loading={loading && !reservation}
       error={error?.message || null}
@@ -63,9 +72,9 @@ export default function ReservationDetailScreen() {
         <View className="flex-1 items-center justify-center p-4">
           <EmptyState
             icon={CalendarX}
-            title="Reservation Not Found"
-            description="The requested reservation could not be found or you do not have permission to view it."
-            actionLabel="Back to My Bookings"
+            title={t('amenity_reservation_not_found', 'Reservation Not Found')}
+            description={t('amenity_reservation_not_found_body', 'The requested reservation could not be found or you do not have permission to view it.')}
+            actionLabel={t('amenity_back_to_bookings', 'Back to My Bookings')}
             onAction={() => router.back()}
           />
         </View>
@@ -76,6 +85,15 @@ export default function ReservationDetailScreen() {
             accessPasses={accessPasses}
             isCancellable={isCancellable}
             onCancelPress={() => setCancelModalOpen(true)}
+            payment={{
+              canPayBalance: balancePayment.canPay,
+              walletBalance: balancePayment.walletBalance,
+              isRazorpayConfigured: balancePayment.isRazorpayConfigured,
+              paying: balancePayment.paying,
+              error: balancePayment.error,
+              onPayFromWallet: balancePayment.payFromWallet,
+              onPayOnline: balancePayment.payOnline,
+            }}
             testID="reservation-detail-view"
           />
 
@@ -85,8 +103,21 @@ export default function ReservationDetailScreen() {
             onClose={() => setCancelModalOpen(false)}
             onConfirm={handleConfirmCancel}
             loading={isCancelling}
+            preview={cancelPreview.preview}
+            previewLoading={cancelPreview.loading}
+            error={cancelError}
             testID="resident-detail-cancel-modal"
           />
+
+          {balancePayment.razorpayOptions ? (
+            <RazorpayCheckoutModal
+              visible={balancePayment.isRazorpayOpen}
+              options={balancePayment.razorpayOptions}
+              onSuccess={balancePayment.onRazorpaySuccess}
+              onDismiss={balancePayment.onRazorpayDismiss}
+              onError={balancePayment.onRazorpayError}
+            />
+          ) : null}
         </View>
       ) : null}
     </ScreenShell>

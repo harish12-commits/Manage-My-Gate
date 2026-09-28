@@ -9,6 +9,7 @@ import villaReducer from '../features/villa/store/villaSlice';
 import amenityReducer from '../features/amenities/store/amenitySlice';
 import securityLogReducer from '../features/amenities/store/securityLogSlice';
 import amenityBookingReducer from '../features/amenities/store/amenityBookingSlice';
+import amenitySettingsReducer from '../features/amenities/store/amenitySettingsSlice';
 import walletReducer from '../features/wallet/store/walletSlice';
 import dashboardReducer from '../features/dashboard/dashboardSlice';
 import notificationReducer from '../features/notification/store/notificationSlice';
@@ -42,6 +43,7 @@ export const store = configureStore({
     amenities: amenityReducer,
     securityLogs: securityLogReducer,
     amenityBookings: amenityBookingReducer,
+    amenitySettings: amenitySettingsReducer,
     wallet: walletReducer,
     dashboard: dashboardReducer,
     notification: notificationReducer,

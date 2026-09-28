@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import useAppSocket from '../../../hooks/useAppSocket';
 import { upsertAmenity, removeAmenity } from '../store/amenitySlice';
-import { upsertBooking } from '../store/amenityBookingSlice';
+import { upsertBooking, upsertV2Reservation, fetchPassesByReservationThunk } from '../store/amenityBookingSlice';
 import { fetchWalletThunk } from '../../wallet/store/walletSlice';
 
 export const useAmenitySocket = () => {
@@ -49,6 +49,16 @@ export const useAmenitySocket = () => {
       (dispatch as any)(fetchWalletThunk());
     };
 
+    // --- V2 reservation events (payload is the full booking, sent to the resident's room) ---
+    const handleReservationChanged = (reservation: any) => {
+      if (!reservation?._id || !reservation?.bookingStatus) return;
+      dispatch(upsertV2Reservation(reservation));
+      (dispatch as any)(fetchPassesByReservationThunk(String(reservation._id)));
+      (dispatch as any)(fetchWalletThunk());
+    };
+    const V2_RESERVATION_EVENTS = ['RESERVATION_CONFIRMED', 'RESERVATION_CANCELLED', 'RESERVATION_UPDATED', 'APPROVAL_REQUESTED'];
+    V2_RESERVATION_EVENTS.forEach((event) => socket.on(event, handleReservationChanged));
+
     // Attach listeners (v1 & v2 events)
     socket.on('AMENITY_CREATED', handleAmenityCreated);
     socket.on('AMENITY_UPDATED', handleAmenityUpdated);
@@ -65,6 +75,7 @@ export const useAmenitySocket = () => {
 
     // Cleanup listeners on unmount
     return () => {
+      V2_RESERVATION_EVENTS.forEach((event) => socket.off(event, handleReservationChanged));
       socket.off('AMENITY_CREATED', handleAmenityCreated);
       socket.off('AMENITY_UPDATED', handleAmenityUpdated);
       socket.off('AMENITY_DELETED', handleAmenityDeleted);
