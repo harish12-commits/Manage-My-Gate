@@ -13,6 +13,7 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:e2e:visitor": "jest -c e2e/jest.e2e.config.js --runInBand --forceExit",
+    "test:e2e:amenity": "jest -c e2e/jest.amenity.config.js --runInBand --forceExit",
     "postinstall": "node scripts/patch-css-interop.js",
     "build:aab": "eas build --platform android --profile production",
     "build:android": "eas build --platform android --profile production",

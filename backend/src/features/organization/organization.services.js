@@ -2,6 +2,7 @@ import organizationRepository from './organization.repository.js';
 import HttpError from '../../utils/httpError.utils.js';
 import mongoose from 'mongoose';
 import orgEventEmitter from './organization.events.js';
+import { DEFAULT_ROLE_PERMISSIONS } from './defaultRolePermissions.js';
 
 
 export class OrganizationService {
@@ -271,13 +272,7 @@ export class OrganizationService {
         { name: 'Resident Owner', description: 'Villa Owner residing in the community.', orgId: newOrg._id, isTenantRole: true },
         session
       );
-      const ownerPerms = getPermissionIds([
-        'villas:read', 'users:read', 
-        'amenities:discover', 'amenities:my_booking', 
-        'amenities:wallet', 'amenities:history', 'amenities:amenities',
-        'notices:read',
-        'billing:action_center'
-      ]);
+      const ownerPerms = getPermissionIds(DEFAULT_ROLE_PERMISSIONS['Resident Owner']);
       await rolePermissionService.updateRolePermissions(ownerRole._id.toString(), ownerPerms, session);
 
       // Create Resident Tenant Role
@@ -285,13 +280,7 @@ export class OrganizationService {
         { name: 'Resident Tenant', description: 'Villa Tenant residing in the community.', orgId: newOrg._id, isTenantRole: true },
         session
       );
-      const tenantPerms = getPermissionIds([
-        'villas:read', 'users:read', 
-        'amenities:discover', 'amenities:my_booking', 
-        'amenities:wallet', 'amenities:history', 'amenities:amenities',
-        'notices:read',
-        'billing:action_center'
-      ]);
+      const tenantPerms = getPermissionIds(DEFAULT_ROLE_PERMISSIONS['Resident Tenant']);
       await rolePermissionService.updateRolePermissions(tenantRole._id.toString(), tenantPerms, session);
 
       // Create Family Member Role
@@ -299,15 +288,7 @@ export class OrganizationService {
         { name: 'Family Member', description: 'Family member of a resident.', orgId: newOrg._id, isTenantRole: true },
         session
       );
-      const familyPerms = getPermissionIds([
-        'villas:read', 
-        'amenities:discover', 'amenities:my_booking', 'amenities:history', 'amenities:wallet',
-        'notices:read', 'notices:active_board',
-        'complaints:raise_ticket', 'complaints:track_requests',
-        'visitor:resident',
-        'billing:action_center',
-        'billing:dashboard'
-      ]);
+      const familyPerms = getPermissionIds(DEFAULT_ROLE_PERMISSIONS['Family Member']);
       await rolePermissionService.updateRolePermissions(familyRole._id.toString(), familyPerms, session);
 
       // Create Security Guard Role
@@ -315,11 +296,7 @@ export class OrganizationService {
         { name: 'Security Guard', description: 'Security gate staff.', orgId: newOrg._id, isTenantRole: false },
         session
       );
-      const guardPerms = getPermissionIds([
-        'villas:read', 'users:read', 
-        'amenities:scanner', 'amenities:security_logs',
-        'notices:read'
-      ]);
+      const guardPerms = getPermissionIds(DEFAULT_ROLE_PERMISSIONS['Security Guard']);
       await rolePermissionService.updateRolePermissions(guardRole._id.toString(), guardPerms, session);
 
       // 3. Create the Organization Membership linking user, org, and role

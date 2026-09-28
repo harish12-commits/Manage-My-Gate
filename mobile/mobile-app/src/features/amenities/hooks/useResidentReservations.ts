@@ -52,7 +52,12 @@ export function useResidentReservations(initialParams: ReservationFilterParams =
 
   const [selectedTab, setSelectedTab] = useState<ReservationFilterTab>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [cancelTarget, setCancelTarget] = useState<AmenityReservation | null>(null);
+  const [cancelTarget, setCancelTargetState] = useState<AmenityReservation | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const setCancelTarget = useCallback((target: AmenityReservation | null) => {
+    setCancelError(null);
+    setCancelTargetState(target);
+  }, []);
   const [isCancelling, setIsCancelling] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [backendFilters, setBackendFilters] = useState<ReservationFilterParams>(initialParams);
@@ -122,13 +127,17 @@ export function useResidentReservations(initialParams: ReservationFilterParams =
   const handleCancelReservation = useCallback(
     async (reservationId: string, reason?: string) => {
       setIsCancelling(true);
+      setCancelError(null);
       try {
         const payload = reason ? { reason } : undefined;
         const res = await dispatch(
           cancelReservationThunk({ id: reservationId, payload })
         ).unwrap();
-        setCancelTarget(null);
+        setCancelTargetState(null);
         return res;
+      } catch (err: any) {
+        setCancelError(err?.message || 'The booking could not be cancelled.');
+        throw err;
       } finally {
         setIsCancelling(false);
       }
@@ -214,6 +223,7 @@ export function useResidentReservations(initialParams: ReservationFilterParams =
     // Cancellation Modal State Helpers
     cancelTarget,
     setCancelTarget,
+    cancelError,
 
     // Actions
     fetchReservations: loadReservations,

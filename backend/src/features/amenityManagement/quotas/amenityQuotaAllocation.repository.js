@@ -37,12 +37,14 @@ export class AmenityQuotaAllocationRepository {
     let quota = await AmenityQuotaAllocation.findOneAndUpdate(
       {
         _id: quotaId,
+        // The current community allowance applies (not the one stored when the period began).
         $expr: {
-          $lte: [{ $add: ['$reservedAmount', '$consumedAmount', requestedUnits] }, '$quotaLimit'],
+          $lte: [{ $add: ['$reservedAmount', '$consumedAmount', requestedUnits] }, quotaLimit],
         },
       },
       {
         $inc: { reservedAmount: requestedUnits, version: 1 },
+        $set: { quotaLimit },
       },
       { session: validSession, returnDocument: 'after' }
     );
@@ -88,11 +90,12 @@ export class AmenityQuotaAllocationRepository {
           {
             _id: quotaId,
             $expr: {
-              $lte: [{ $add: ['$reservedAmount', '$consumedAmount', requestedUnits] }, '$quotaLimit'],
+              $lte: [{ $add: ['$reservedAmount', '$consumedAmount', requestedUnits] }, quotaLimit],
             },
           },
           {
             $inc: { reservedAmount: requestedUnits, version: 1 },
+            $set: { quotaLimit },
           },
           { session: validSession, returnDocument: 'after' }
         );

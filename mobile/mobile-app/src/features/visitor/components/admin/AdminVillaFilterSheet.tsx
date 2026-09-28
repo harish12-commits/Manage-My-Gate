@@ -6,24 +6,13 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { Building2, Check, User, ChevronRight } from 'lucide-react-native';
 
-import { useSelector } from 'react-redux';
-import { RootState } from '@/src/store/store';
-import { useVilla } from '../../../villa/hooks/useVilla';
+import {
+  useVillaResidentOptions,
+  VillaOption,
+  VillaResidentOption,
+} from '../../../villa/hooks/useVillaResidentOptions';
 
-export interface VillaResidentOption {
-  id: string; // User ID
-  name: string; // User Name
-  type: string; // Residency Type e.g. Primary Resident, Owner, Tenant
-  phone?: string;
-}
-
-export interface VillaOption {
-  id: string; // Villa ID
-  name: string; // e.g. "Villa 101 - Block A"
-  primaryResidentId?: string;
-  primaryResidentName?: string;
-  residents: VillaResidentOption[];
-}
+export type { VillaOption, VillaResidentOption };
 
 export interface AdminVillaFilterSheetProps {
   visible: boolean;
@@ -48,68 +37,7 @@ export const AdminVillaFilterSheet: React.FC<AdminVillaFilterSheetProps> = ({
   const [search, setSearch] = useState('');
   const [expandedVillaId, setExpandedVillaId] = useState<string | null>(null);
 
-  const { fetchVillas, loading } = useVilla();
-  const reduxVillas = useSelector((state: RootState) => (state as any).villa?.villas);
-
-  useEffect(() => {
-    if (visible && (!reduxVillas || reduxVillas.length === 0)) {
-      fetchVillas({ page: 1, limit: 200 });
-    }
-  }, [visible, reduxVillas, fetchVillas]);
-
-  const villaOptions: VillaOption[] = React.useMemo(() => {
-    if (Array.isArray(reduxVillas) && reduxVillas.length > 0) {
-      return reduxVillas.map((v: any) => {
-        const villaId = v._id || v.id;
-        const rawUnit = (v.unitNumber || v.name || '').trim();
-        const formattedUnit = rawUnit.toLowerCase().startsWith('villa') ? rawUnit : `Villa ${rawUnit}`;
-        // Block names are often stored as "Block A"; don't prefix a second "Block".
-        const blockLabel = v.blockOrBuilding
-          ? (/^block\b/i.test(v.blockOrBuilding.trim()) ? v.blockOrBuilding.trim() : `Block ${v.blockOrBuilding.trim()}`)
-          : '';
-        const villaName = `${formattedUnit}${blockLabel ? ` - ${blockLabel}` : ''}`;
-        
-        const primaryRes = v.primaryResidentId || (v.residents && v.residents[0]?.userId);
-        const primaryResId = typeof primaryRes === 'object' ? (primaryRes._id || primaryRes.id) : primaryRes;
-        const primaryResName = typeof primaryRes === 'object' ? (primaryRes.name || primaryRes.username) : 'Primary Resident';
-
-        const residentsList: VillaResidentOption[] = [];
-
-        if (Array.isArray(v.residents) && v.residents.length > 0) {
-          v.residents.forEach((r: any) => {
-            const userObj = typeof r.userId === 'object' ? r.userId : null;
-            const rId = userObj?._id || userObj?.id || r.userId || r.id;
-            const rName = userObj?.name || userObj?.username || userObj?.phone || 'Resident';
-            if (rId) {
-              residentsList.push({
-                id: rId,
-                name: rName,
-                type: r.residencyType || (r.isPrimary ? 'Primary Resident' : 'Resident'),
-                phone: userObj?.phone,
-              });
-            }
-          });
-        }
-
-        if (residentsList.length === 0 && primaryResId) {
-          residentsList.push({
-            id: primaryResId,
-            name: primaryResName,
-            type: 'Primary Resident',
-          });
-        }
-
-        return {
-          id: villaId,
-          name: villaName,
-          primaryResidentId: primaryResId,
-          primaryResidentName: primaryResName,
-          residents: residentsList,
-        };
-      });
-    }
-    return [];
-  }, [reduxVillas]);
+  const { options: villaOptions } = useVillaResidentOptions(visible);
 
   const filteredVillas = villaOptions.filter((v) =>
     v.name.toLowerCase().includes(search.toLowerCase()) ||

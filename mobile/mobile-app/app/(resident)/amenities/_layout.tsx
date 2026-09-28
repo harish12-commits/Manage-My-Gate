@@ -11,6 +11,7 @@ export default function AmenitiesLayout() {
       <Stack.Screen name="detail/[id]" />
       <Stack.Screen name="calendar" />
       <Stack.Screen name="booking/[id]" />
+      <Stack.Screen name="admin-bookings" />
       <Stack.Screen name="admin-calendar" />
       <Stack.Screen name="admin-master" />
       <Stack.Screen name="ledgers" />

@@ -50,3 +50,6 @@ jest.mock('lucide-react-native', () => {
   const MockIcon = () => null;
   return new Proxy({}, { get: () => MockIcon });
 });
+
+// WebView (payment checkout page) is native; screens that can open checkout render it.
+jest.mock('react-native-webview', () => ({ WebView: () => null, default: () => null }));

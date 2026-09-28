@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import amenityPaymentController from './amenityPayment.controller.js';
 import {
-  paymentWebhookRules,
   createAmenityPaymentOrderRules,
   verifyAmenityPaymentRules,
 } from './amenityPayment.validateRules.js';
@@ -12,15 +11,9 @@ import authorizePermission from '../../../middlewares/rbac.middleware.js';
 
 const router = Router();
 
-// POST /webhook - Payment webhook endpoint
-router.post(
-  '/webhook',
-  validate(paymentWebhookRules),
-  amenityPaymentController.handleWebhook
-);
-
-// Browser and mobile checkout routes are tenant-scoped. The public webhook
-// remains above this middleware because Razorpay does not carry app auth.
+// No public webhook here: gateway callbacks are verified and settled by the unified
+// payment webhook (/api/webhooks/razorpay), which is the only path allowed to mark
+// a payment captured.
 router.use(isAuthenticated, tenantContext);
 
 router.post(

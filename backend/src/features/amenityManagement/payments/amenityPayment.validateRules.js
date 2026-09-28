@@ -14,7 +14,9 @@ export const paymentWebhookRules = [
 ];
 
 export const createAmenityPaymentOrderRules = [
-  body('holdId').notEmpty().withMessage('holdId is required').isMongoId().withMessage('Invalid holdId'),
+  body('holdId').optional().isMongoId().withMessage('Invalid holdId'),
+  body('reservationId').optional().isMongoId().withMessage('Invalid reservationId'),
+  body().custom((b) => Boolean(b?.holdId) !== Boolean(b?.reservationId)).withMessage('Provide either holdId or reservationId'),
 ];
 
 export const verifyAmenityPaymentRules = [

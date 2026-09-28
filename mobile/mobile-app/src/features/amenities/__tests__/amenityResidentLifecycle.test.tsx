@@ -41,6 +41,17 @@ const mockClearV2Errors = jest.fn();
 
 jest.mock('../store/amenityBookingSlice', () => ({
   __esModule: true,
+  fetchCancellationPreviewThunk: (id: any) => ({
+    type: 'amenityBookings/fetchCancellationPreview',
+    unwrap: () =>
+      Promise.resolve({
+        allowed: true,
+        blockReason: null,
+        refund: { percentage: 100, bookingRefund: 500, depositRefund: 0, total: 500 },
+        refundTo: 'WALLET',
+        policy: null,
+      }),
+  }),
   fetchReservationsThunk: (params: any) => ({
     type: 'amenityBookings/fetchReservations',
     unwrap: () => mockFetchReservationsThunk(params),
@@ -373,10 +384,9 @@ describe('Phase 6C.4 — Final Resident Amenity Lifecycle Integration & Hardenin
           accessPasses={[basePassFixture]}
         />
       );
-      expect(screen.getByText('50 SAR')).toBeTruthy();
-      expect(screen.getByText('7.5 SAR')).toBeTruthy();
-      expect(screen.getByText('20 SAR')).toBeTruthy();
-      expect(screen.getByText('77.5 SAR')).toBeTruthy();
+      expect(screen.getByText('₹57.5')).toBeTruthy();
+      expect(screen.getByText('₹20')).toBeTruthy();
+      expect(screen.getByText('₹77.5')).toBeTruthy();
     });
   });
 
@@ -589,9 +599,9 @@ describe('Phase 6C.4 — Final Resident Amenity Lifecycle Integration & Hardenin
       await act(async () => {
         fireEvent.press(confirmCancelBtn);
       });
-      expect(screen.getByText('Cancel Reservation')).toBeTruthy();
+      expect(await screen.findByText('₹500 will be refunded to your wallet.')).toBeTruthy();
 
-      const confirmBtn = screen.getByText('Yes, Cancel Booking');
+      const confirmBtn = screen.getByTestId('cancel-sheet-confirm');
       await act(async () => {
         fireEvent.press(confirmBtn);
       });
@@ -620,8 +630,8 @@ describe('Phase 6C.4 — Final Resident Amenity Lifecycle Integration & Hardenin
           loading={true}
         />
       );
-      expect(screen.getByText('Yes, Cancel Booking')).toBeTruthy();
-      expect(screen.getByText('Keep Reservation')).toBeTruthy();
+      expect(screen.getByText('Cancelling…')).toBeTruthy();
+      expect(screen.getByTestId('cancel-sheet-keep')).toBeTruthy();
     });
 
     it('Scenario 25: Server cancellation state reflected (reason displayed)', async () => {
@@ -644,7 +654,7 @@ describe('Phase 6C.4 — Final Resident Amenity Lifecycle Integration & Hardenin
       await render(
         <ResidentReservationDetailView reservation={refundPendingRes} accessPasses={[]} />
       );
-      expect(screen.getAllByText('REFUND_PENDING').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Refund In Progress').length).toBeGreaterThanOrEqual(1);
     });
   });
 

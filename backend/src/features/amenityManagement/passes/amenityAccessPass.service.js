@@ -132,18 +132,13 @@ export class AmenityAccessPassService {
         ? token.toUpperCase()
         : `RES-${token.toUpperCase()}`;
 
-      const seqMatch = token.match(/\d+$/);
-      const seq = seqMatch ? seqMatch[0] : null;
-
+      // A typed code is not a secret, so it only ever resolves inside the guard's own
+      // community, and only by an exact reservation number (never a numeric suffix).
       const orConditions = [
         { reservationNumber: token },
         { reservationNumber: cleanRef },
         { reservationNumber: token.replace(/^[A-Z]{2,6}-/i, '') },
       ];
-
-      if (seq) {
-        orConditions.push({ reservationNumber: new RegExp(`${seq}$`) });
-      }
 
       if (mongoose.Types.ObjectId.isValid(token)) {
         orConditions.push({ _id: new mongoose.Types.ObjectId(token) });
@@ -154,6 +149,7 @@ export class AmenityAccessPassService {
         (await import('../reservations/amenityReservation.model.js')).default;
 
       const matchedRes = await AmenityReservation.findOne({
+        orgId: new mongoose.Types.ObjectId(String(orgId)),
         $or: orConditions,
       }).session(session);
 
@@ -184,23 +180,51 @@ export class AmenityAccessPassService {
         );
       }
 
-      // Step 3: Anti-replay validation
+      // Step 3: Anti-replay validation. The gate may record the exit instead.
       if (pass.checkInTimestamp !== null) {
+        const usedReservation = await amenityReservationRepository.findById(pass.reservationId, session);
+        const usedFacility = usedReservation?.facilityId
+          ? await amenityFacilityRepository.findById(usedReservation.facilityId?._id || usedReservation.facilityId, orgId, session)
+          : null;
+        const { requiresReturnInspection } = await import('../reservations/amenityReservationLifecycle.service.js');
         throw new HttpError(
           409,
-          `Anti-replay violation: pass was already used for check-in at ${pass.checkInTimestamp.toISOString()}`
+          `Anti-replay violation: pass was already used for check-in at ${pass.checkInTimestamp.toISOString()}`,
+          {
+            code: 'ALREADY_CHECKED_IN',
+            checkedInAt: pass.checkInTimestamp,
+            canCheckOut: !pass.checkOutTimestamp,
+            requiresInspection: Boolean(usedFacility && requiresReturnInspection(usedFacility)),
+            reservationId: usedReservation ? String(usedReservation._id) : null,
+            reservationNumber: usedReservation?.reservationNumber || null,
+            depositAmount: Number(usedReservation?.amountSchedule?.depositAmount ?? usedReservation?.depositAmount ?? 0),
+          }
         );
       }
 
       // Step 4: Pass validity window
-      // 15-minute early arrival window; 1-minute end tolerance
+      // Community early-arrival window (default 15 minutes); 1-minute end tolerance
       const now = new Date();
-      const earlyArrivalStart = new Date(pass.validFrom.getTime() - 15 * 60 * 1000);
+      const { default: amenitySettingsService } = await import('../settings/amenitySettings.service.js');
+      const settings = await amenitySettingsService.getSettings(orgId, session);
+      const earlyMinutes = Number.isFinite(Number(settings?.checkInEarlyMinutes)) ? Number(settings.checkInEarlyMinutes) : 15;
+      const earlyArrivalStart = new Date(pass.validFrom.getTime() - earlyMinutes * 60 * 1000);
       const toleranceEnd = new Date(pass.validUntil.getTime() + 1 * 60 * 1000);
 
       if (now < earlyArrivalStart) {
-        const allowedTimeStr = earlyArrivalStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        throw new HttpError(403, `This pass is not yet valid. Entry permitted from ${allowedTimeStr}`);
+        const early = await amenityReservationRepository.findById(pass.reservationId, session);
+        const timeZone = early?.facilityId?.timezone || 'Asia/Kolkata';
+        let allowedTimeStr;
+        try {
+          allowedTimeStr = new Intl.DateTimeFormat('en-IN', { timeZone, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(earlyArrivalStart);
+        } catch {
+          allowedTimeStr = earlyArrivalStart.toISOString();
+        }
+        throw new HttpError(403, `This pass is not yet valid. Entry permitted from ${allowedTimeStr}`, {
+          code: 'NOT_YET_VALID',
+          allowedFrom: earlyArrivalStart,
+          timezone: timeZone,
+        });
       }
       if (now > toleranceEnd) {
         throw new HttpError(403, 'This amenity pass has expired');
@@ -218,6 +242,20 @@ export class AmenityAccessPassService {
         );
       }
 
+      // Step 5b: Any outstanding balance is collected at the gate before entry
+      const balanceDue = Number(reservation.balanceAmount || 0);
+      if (balanceDue > 0) {
+        const resident = reservation.residentId && typeof reservation.residentId === 'object' ? reservation.residentId : null;
+        throw new HttpError(402, `Balance of ₹${balanceDue} is due. Collect payment before entry.`, {
+          code: 'BALANCE_DUE',
+          reservationId: String(reservation._id),
+          reservationNumber: reservation.reservationNumber,
+          balanceAmount: balanceDue,
+          residentName: resident?.name || resident?.fullName || resident?.username || null,
+          facilityName: reservation.facilityId?.name || null,
+        });
+      }
+
       // Step 6: Facility publication & deletion validation
       const facility = await amenityFacilityRepository.findById(reservation.facilityId, orgId, session);
       if (!facility || facility.isDeleted) {
@@ -228,11 +266,14 @@ export class AmenityAccessPassService {
       }
 
       // Step 7: Operational & Maintenance validation
+      // (facility/resource are populated on this read; queries need their ids)
+      const reservedFacilityId = reservation.facilityId?._id || reservation.facilityId;
+      const reservedResourceId = reservation.resourceId?._id || reservation.resourceId || null;
       const activeBlocks = await amenityMaintenanceBlockRepository.findOverlappingBlocks(
         {
           orgId,
-          facilityId: reservation.facilityId,
-          resourceId: reservation.resourceId || null,
+          facilityId: reservedFacilityId,
+          resourceId: reservedResourceId,
           startDateTime: now,
           endDateTime: now,
         },
@@ -242,7 +283,7 @@ export class AmenityAccessPassService {
       const activeClosure = activeBlocks.find(
         (b) =>
           (b.status === 'IN_PROGRESS' || b.status === 'SCHEDULED') &&
-          (b.isCompleteClosure || (reservation.resourceId && b.resourceId?.toString() === reservation.resourceId.toString()))
+          (b.isCompleteClosure || (reservedResourceId && b.resourceId?.toString() === reservedResourceId.toString()))
       );
 
       if (activeClosure) {
@@ -254,13 +295,23 @@ export class AmenityAccessPassService {
 
       // All checks passed -> Record turnstile check-in atomically
       const updatedPass = await amenityAccessPassRepository.recordCheckIn(
-        { orgId, passTokenHash: pass.passTokenHash, gateId, guardId },
+        { orgId, passTokenHash: pass.passTokenHash, gateId, guardId, earlyMinutes },
         session
       );
 
       if (!updatedPass) {
         throw new HttpError(409, 'Anti-replay violation: pass was checked in concurrently');
       }
+
+      // The booking itself records the entry (and a late arrival clears a no-show flag).
+      const ReservationModel = mongoose.models.AmenityReservation;
+      await ReservationModel.updateOne(
+        { _id: reservation._id, accessStatus: 'PASS_GENERATED' },
+        { $set: { accessStatus: 'CHECKED_IN', checkedInAt: updatedPass.checkInTimestamp, checkedInBy: guardId || null } },
+        { session: session || undefined }
+      );
+      const { default: lifecycle } = await import('../reservations/amenityReservationLifecycle.service.js');
+      await lifecycle.clearReviewOnArrival(reservation._id, 'ARRIVED', session);
 
       // Populate resident, unit, organization, guard details
       const User = mongoose.models.User || (await import('../../user/user.model.js')).default;
@@ -310,11 +361,11 @@ export class AmenityAccessPassService {
           id: reservation._id,
           bookingId: reservation.reservationNumber,
           reservationNumber: reservation.reservationNumber,
-          date: reservation.date,
-          startTime: reservation.startTime,
-          endTime: reservation.endTime,
+          startDateTime: reservation.effectiveStartDateTime || reservation.requestedStartDateTime,
+          endDateTime: reservation.effectiveEndDateTime || reservation.requestedEndDateTime,
           status: reservation.bookingStatus,
-          headcount: reservation.partySize || 1,
+          headcount: reservation.headcount || 1,
+          quantity: reservation.quantity || 1,
         },
         organisation: {
           id: org?._id || orgId,
@@ -329,14 +380,17 @@ export class AmenityAccessPassService {
 
     // Step 2: Fallback to V1 AmenityBooking
     const AmenityBooking = mongoose.models.AmenityBooking || (await import('../../amenityBooking/amenityBooking.model.js')).default;
+    // Secret pass tokens may match across communities (the org check below then refuses
+    // them); typed booking ids and object ids only ever match inside this community.
+    const typedCodeConditions = [{ bookingId: token }];
+    if (mongoose.Types.ObjectId.isValid(token)) {
+      typedCodeConditions.push({ _id: new mongoose.Types.ObjectId(token) });
+    }
     const orConditions = [
       { passTokenHash },
       { passToken: token },
-      { bookingId: token },
+      { orgId: new mongoose.Types.ObjectId(String(orgId)), $or: typedCodeConditions },
     ];
-    if (mongoose.Types.ObjectId.isValid(token)) {
-      orConditions.push({ _id: new mongoose.Types.ObjectId(token) });
-    }
 
     const bookingAcrossOrgs = await AmenityBooking.findOne({ $or: orConditions }).session(session);
 
@@ -517,44 +571,109 @@ export class AmenityAccessPassService {
    * @param {import('mongoose').ClientSession} [session]
    * @returns {Promise<any>}
    */
-  async recordCheckOut({ orgId, rawToken, inspectionDetails }, session) {
-    const passTokenHash = this.hashToken(rawToken);
+  /**
+   * Resolves a scanned QR or a typed reservation number to this community's pass.
+   * @private
+   */
+  async _findPassForGate(orgId, rawToken, session) {
+    const mongoose = (await import('mongoose')).default;
+    const token = this.normalizeScanToken(rawToken);
+    if (!token) throw new HttpError(400, 'Invalid token: QR scan or token string is required');
+    const byHash = await amenityAccessPassRepository.findByTokenHash(orgId, this.hashToken(token), session);
+    if (byHash) return byHash;
+    if (token.length > 30) return null;
+    const ReservationModel = mongoose.models.AmenityReservation;
+    const candidates = [token, token.toUpperCase().startsWith('RES-') ? token.toUpperCase() : `RES-${token.toUpperCase()}`];
+    const reservation = await ReservationModel.findOne({
+      orgId: new mongoose.Types.ObjectId(String(orgId)),
+      $or: [
+        { reservationNumber: { $in: candidates } },
+        ...(mongoose.Types.ObjectId.isValid(token) ? [{ _id: new mongoose.Types.ObjectId(token) }] : []),
+      ],
+    }).session(session || null);
+    if (!reservation) return null;
+    const passes = await amenityAccessPassRepository.findByReservationId(reservation._id, session);
+    return (passes || []).find((p) => !p.isRevoked) || (passes || [])[0] || null;
+  }
 
-    const updatedPass = await amenityAccessPassRepository.recordCheckOut(
-      { orgId, passTokenHash, inspectionDetails },
-      session
-    );
+  /**
+   * Check-out at the gate. Borrowed items need a return inspection; any damage charge
+   * is kept from the refundable deposit and the rest is returned to the wallet. The
+   * booking is marked checked out and completed.
+   *
+   * @param {Object} params
+   * @param {Object} [params.inspectionDetails] - { isDamaged, damageNotes, damageCharge | assessedPenaltyAmount }
+   */
+  async recordCheckOut({ orgId, rawToken, inspectionDetails, guardId = null }, session) {
+    const { withTransactionRetry } = await import('../domain/concurrency/transaction.utils.js');
+    const run = async (trx) => {
+      const pass = await this._findPassForGate(orgId, rawToken, trx);
+      if (!pass) throw new HttpError(404, 'Invalid pass: token not found for this organization');
+      if (pass.isRevoked) throw new HttpError(403, 'Access denied: pass is revoked');
+      if (!pass.checkInTimestamp) throw new HttpError(400, 'Check-out rejected: pass has not been checked in yet');
+      if (pass.checkOutTimestamp) throw new HttpError(409, 'Pass has already been checked out');
 
-    if (updatedPass) {
-      return updatedPass;
-    }
+      const reservation = await amenityReservationRepository.findById(pass.reservationId, null, trx);
+      if (!reservation) throw new HttpError(404, 'Associated reservation not found');
+      const facility = await amenityFacilityRepository.findById(reservation.facilityId?._id || reservation.facilityId, orgId, trx);
+      const { default: lifecycle, requiresReturnInspection, depositPaidOf } = await import(
+        '../reservations/amenityReservationLifecycle.service.js'
+      );
 
-    const existingPass = await amenityAccessPassRepository.findByTokenHash(
-      orgId,
-      passTokenHash,
-      session
-    );
-
-    if (!existingPass) {
-      throw new HttpError(404, 'Invalid pass: token not found for this organization');
-    }
-
-    if (!existingPass.checkInTimestamp) {
-      if (existingPass.isRevoked) {
-        throw new HttpError(403, 'Access denied: pass is revoked');
+      const inspected = inspectionDetails && typeof inspectionDetails === 'object';
+      if (requiresReturnInspection(facility) && !inspected) {
+        throw new HttpError(400, 'A return inspection is required to check this item back in');
       }
-      throw new HttpError(400, 'Check-out rejected: pass has not been checked in yet');
-    }
+      const isDamaged = Boolean(inspectionDetails?.isDamaged);
+      const damageCharge = isDamaged
+        ? Math.max(0, Number(inspectionDetails?.damageCharge ?? inspectionDetails?.assessedPenaltyAmount ?? 0))
+        : 0;
+      if (isDamaged && !String(inspectionDetails?.damageNotes || '').trim()) {
+        throw new HttpError(400, 'Describe the damage when marking an item as damaged');
+      }
 
-    if (existingPass.checkOutTimestamp) {
-      throw new HttpError(409, 'Pass has already been checked out');
-    }
+      const updatedPass = await amenityAccessPassRepository.recordCheckOut(
+        {
+          orgId,
+          passTokenHash: pass.passTokenHash,
+          inspectionDetails: inspected
+            ? {
+                checkedOutByStaff: pass.inspectionDetails?.checkedOutByStaff || null,
+                returnInspectedByStaff: guardId,
+                damageNotes: inspectionDetails.damageNotes || null,
+                damageCharges: damageCharge,
+              }
+            : undefined,
+        },
+        trx
+      );
+      if (!updatedPass) throw new HttpError(409, 'Pass has already been checked out');
 
-    if (existingPass.isRevoked) {
-      throw new HttpError(403, 'Access denied: pass is revoked');
-    }
+      const retained = Math.min(damageCharge, depositPaidOf(reservation));
+      const completed = await lifecycle.completeWithDeposit(
+        reservation,
+        {
+          retained,
+          notes: isDamaged ? String(inspectionDetails.damageNotes).trim() : null,
+          actorId: guardId,
+          checkedOut: true,
+        },
+        trx
+      );
+      await lifecycle.clearReviewOnArrival(reservation._id, 'RETURNED', trx);
 
-    throw new HttpError(400, 'Check-out validation failed');
+      return {
+        pass: updatedPass,
+        reservation: completed,
+        deposit: {
+          paid: depositPaidOf(reservation),
+          retained,
+          refunded: completed.depositSettlement?.refunded || 0,
+          uncoveredDamage: Math.max(0, damageCharge - retained),
+        },
+      };
+    };
+    return session ? run(session) : withTransactionRetry(run);
   }
 
   /**

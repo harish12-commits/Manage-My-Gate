@@ -9,6 +9,9 @@ import {
   AmenityPricingSnapshot,
   AmenityAvailabilityResult,
   AmenityErrorDetails,
+  AmenityCancellationPreview,
+  AmenityCheckOutResult,
+  AmenityFacility,
 } from '../types/amenityDomain.types';
 import {
   CreateHoldApiPayload,
@@ -25,6 +28,7 @@ import {
   normalizeAccessPassFromApi,
   normalizePricingSnapshot,
   normalizeAvailabilityFromApi,
+  normalizeFacilityFromApi,
 } from '../utils/amenityPayloadMappers';
 import { mapAmenityApiError } from '../utils/amenityErrorMapper';
 
@@ -92,11 +96,11 @@ export const normalizeAmenityBooking = (raw: any): AmenityBooking => {
     rawStatus === 'CHECKED_IN' ? 'CHECKED_IN' :
     rawStatus === 'COMPLETED' ? 'COMPLETED' :
     rawStatus === 'CANCELLED' || rawStatus === 'REJECTED' ? 'CANCELLED' :
-    rawStatus === 'PENDING' ? 'PENDING' : 'CONFIRMED';
+    rawStatus === 'PENDING' || rawStatus === 'PENDING_APPROVAL' ? 'PENDING' : 'CONFIRMED';
 
   const userObj = typeof raw.userId === 'object' && raw.userId ? raw.userId : null;
   const residentName = raw.residentName || userObj?.name || userObj?.username || raw.userName || 'Community Resident';
-  const villaNumber = raw.villaNumber || raw.flatNumber || userObj?.villaNumber || userObj?.flatNumber || userObj?.unit || 'Villa 101';
+  const villaNumber = raw.villaNumber || raw.flatNumber || userObj?.villaNumber || userObj?.flatNumber || userObj?.unit || '';
 
   const amenityObj = typeof raw.amenityId === 'object' && raw.amenityId ? raw.amenityId : null;
   const amenityName = amenityObj?.name || raw.amenityName || raw.amenity?.name || 'Amenity Pass';
@@ -186,14 +190,85 @@ export interface AmenityBookingState {
 
   // v2 Guard Pass State
   v2CheckInResult: AmenityAccessPass | null;
-  v2CheckOutResult: AmenityAccessPass | null;
+  v2CheckOutResult: AmenityCheckOutResult | null;
   v2PassActionLoading: boolean;
   v2PassError: AmenityErrorDetails | null;
 
   // Master Ledger Summary Stats
   ledgerSummary: any;
   amenitySummary: any[];
+
+  // Staff booking queue (V2)
+  adminQueue: {
+    items: AmenityReservation[];
+    pagination: PaginationMeta;
+    tab: AdminQueueTab;
+    search: string;
+    counts: { approvals: number; review: number };
+    loading: boolean;
+    error: string | null;
+  };
+
+  // Amenity ledger (V2 bookings with their money)
+  ledger: {
+    items: AmenityBooking[];
+    pagination: PaginationMeta;
+    summary: AmenityLedgerSummary | null;
+    view: AmenityLedgerView;
+    search: string;
+    loading: boolean;
+    error: string | null;
+  };
+
+  // Published facilities staff can book for a resident
+  bookableFacilities: AmenityFacility[];
+  bookableFacilitiesLoading: boolean;
 }
+
+export type AdminQueueTab = 'APPROVALS' | 'REVIEW' | 'UPCOMING' | 'ALL';
+
+/** Ledger pills: which bookings' money to show. */
+export type AmenityLedgerView = 'ALL' | 'PAID' | 'DUE' | 'REFUNDED' | 'CANCELLED';
+
+export interface AmenityLedgerSummary {
+  totalRevenue: number;
+  todayRevenue: number;
+  totalBookings: number;
+  paidBookings: number;
+  pendingPayments: number;
+  refundedAmount: number;
+  cancelledBookings: number;
+}
+
+/** Server filters for each ledger pill. */
+export const LEDGER_VIEW_FILTERS: Record<AmenityLedgerView, Record<string, any>> = {
+  ALL: {},
+  PAID: { paymentStatus: 'PAID' },
+  DUE: { balanceDue: true },
+  REFUNDED: { paymentStatus: 'REFUNDED' },
+  CANCELLED: { status: 'CANCELLED' },
+};
+
+/** Server filters for each staff queue tab. */
+export const ADMIN_QUEUE_FILTERS: Record<AdminQueueTab, Record<string, string>> = {
+  APPROVALS: { bookingStatus: 'PENDING_APPROVAL' },
+  REVIEW: { adminReviewStatus: 'PENDING' },
+  UPCOMING: { bookingStatus: 'CONFIRMED' },
+  ALL: {},
+};
+
+/** The API returns total/page/limit/totalPages at the top level of the list payload. */
+const paginationFromPayload = (payload: any, fallbackCount: number): PaginationMeta => {
+  const p = payload?.pagination || payload || {};
+  const limit = Number(p.limit) || 10;
+  const total = Number(p.total ?? p.totalRecords ?? fallbackCount) || 0;
+  return {
+    currentPage: Number(p.page ?? p.currentPage) || 1,
+    totalPages: Number(p.totalPages ?? p.pages) || Math.max(1, Math.ceil(total / limit)),
+    totalRecords: total,
+    limit,
+  };
+};
 
 const initialState: AmenityBookingState = {
   // Legacy
@@ -238,6 +313,29 @@ const initialState: AmenityBookingState = {
   // Master Ledger Summary Stats
   ledgerSummary: null,
   amenitySummary: [],
+
+  adminQueue: {
+    items: [],
+    pagination: { currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 },
+    tab: 'APPROVALS',
+    search: '',
+    counts: { approvals: 0, review: 0 },
+    loading: false,
+    error: null,
+  },
+
+  bookableFacilities: [],
+  bookableFacilitiesLoading: false,
+
+  ledger: {
+    items: [],
+    pagination: { currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 },
+    summary: null,
+    view: 'ALL',
+    search: '',
+    loading: false,
+    error: null,
+  },
 };
 
 // ==========================================
@@ -417,6 +515,8 @@ export const checkAvailabilityThunk = createAsyncThunk(
       startDateTime: string;
       endDateTime: string;
       requestedQuantity?: number;
+      headcount?: number;
+      quantity?: number;
     },
     { rejectWithValue }
   ) => {
@@ -511,10 +611,9 @@ export const fetchReservationsThunk = createAsyncThunk(
       const res = await amenityManagementService.getReservations(params);
       const rawPayload = res?.data || res;
       const rawList = rawPayload?.items || (Array.isArray(rawPayload) ? rawPayload : []);
-      const pagination = rawPayload?.pagination || { page: 1, limit: 10, total: rawList.length, pages: 1 };
       return {
         items: rawList.map(normalizeReservationFromApi),
-        pagination,
+        pagination: paginationFromPayload(rawPayload, rawList.length),
       };
     } catch (err) {
       return rejectWithValue(mapAmenityApiError(err));
@@ -543,6 +642,64 @@ export const cancelReservationThunk = createAsyncThunk(
     try {
       const res = await amenityManagementService.cancelReservation(id, payload);
       return normalizeReservationFromApi(res?.data || res);
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+export const fetchCancellationPreviewThunk = createAsyncThunk(
+  'amenityBookings/fetchCancellationPreview',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const res = await amenityManagementService.getCancellationPreview(id);
+      return (res?.data || res) as AmenityCancellationPreview;
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Pays the booking's outstanding balance from the digital wallet. */
+export const payReservationBalanceThunk = createAsyncThunk(
+  'amenityBookings/payReservationBalance',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const res = await amenityManagementService.payReservationBalance(id);
+      return normalizeReservationFromApi(res?.data || res);
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Opens an online payment order for the booking's outstanding balance. */
+export const createBalancePaymentOrderThunk = createAsyncThunk(
+  'amenityBookings/createBalancePaymentOrder',
+  async (reservationId: string, { rejectWithValue }) => {
+    try {
+      const res = await amenityManagementService.createReservationPaymentOrder({ reservationId });
+      return (res?.data || res) as any;
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Verifies an online payment; the server settles it and returns the updated booking. */
+export const verifyReservationPaymentThunk = createAsyncThunk(
+  'amenityBookings/verifyReservationPayment',
+  async (
+    payload: { paymentId: string; orderId: string; razorpayPaymentId: string; razorpaySignature: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await amenityManagementService.verifyReservationPayment(payload);
+      const data: any = res?.data || res;
+      return {
+        fulfilled: Boolean(data?.fulfilled),
+        reservation: data?.reservation ? normalizeReservationFromApi(data.reservation) : null,
+      };
     } catch (err) {
       return rejectWithValue(mapAmenityApiError(err));
     }
@@ -580,7 +737,163 @@ export const checkOutPassThunk = createAsyncThunk(
   async (payload: CheckOutPassApiPayload, { rejectWithValue }) => {
     try {
       const res = await amenityManagementService.checkOutPass(payload);
-      return normalizeAccessPassFromApi(res?.data || res);
+      const data: any = res?.data || res;
+      return {
+        pass: normalizeAccessPassFromApi(data?.pass || data),
+        reservation: data?.reservation ? normalizeReservationFromApi(data.reservation) : null,
+        deposit: data?.deposit || null,
+      } as AmenityCheckOutResult;
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Staff booking queue: one tab's page (tab, search and page come from the slice unless given). */
+export const fetchAdminQueueThunk = createAsyncThunk(
+  'amenityBookings/fetchAdminQueue',
+  async ({ page = 1 }: { page?: number } = {}, { getState, rejectWithValue }) => {
+    try {
+      const { tab, search, pagination } = (getState() as any).amenityBookings.adminQueue;
+      const res = await amenityManagementService.getReservations({
+        page,
+        limit: pagination.limit,
+        ...ADMIN_QUEUE_FILTERS[tab as AdminQueueTab],
+        ...(search?.trim() ? { search: search.trim() } : {}),
+      });
+      const raw: any = res?.data || res;
+      const list = raw?.items || [];
+      return { items: list.map(normalizeReservationFromApi), pagination: paginationFromPayload(raw, list.length) };
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Amenity ledger page (view, search and page size come from the slice). */
+export const fetchAmenityLedgerThunk = createAsyncThunk(
+  'amenityBookings/fetchAmenityLedger',
+  async ({ page = 1 }: { page?: number } = {}, { getState, rejectWithValue }) => {
+    try {
+      const { view, search, pagination } = (getState() as any).amenityBookings.ledger;
+      const res: any = await amenityService.getAmenityLedger({
+        page,
+        limit: pagination.limit,
+        ...LEDGER_VIEW_FILTERS[view as AmenityLedgerView],
+        ...(search?.trim() ? { search: search.trim() } : {}),
+      });
+      const payload = res?.data?.data ? res.data : res?.data || res;
+      return {
+        items: (payload?.data || []).map(normalizeAmenityBooking) as AmenityBooking[],
+        pagination: payload?.pagination as PaginationMeta,
+        summary: (payload?.summary || null) as AmenityLedgerSummary | null,
+      };
+    } catch (err: any) {
+      return rejectWithValue(err?.response?.data?.message || err?.message || 'Could not load the ledger.');
+    }
+  }
+);
+
+/** Every ledger row matching the current view and search (for CSV export). */
+export const exportAmenityLedgerThunk = createAsyncThunk(
+  'amenityBookings/exportAmenityLedger',
+  async (_: void, { getState, rejectWithValue }) => {
+    try {
+      const { view, search } = (getState() as any).amenityBookings.ledger;
+      const rows: AmenityBooking[] = [];
+      for (let page = 1; page <= 50; page++) {
+        const res: any = await amenityService.getAmenityLedger({
+          page,
+          limit: 100,
+          ...LEDGER_VIEW_FILTERS[view as AmenityLedgerView],
+          ...(search?.trim() ? { search: search.trim() } : {}),
+        });
+        const payload = res?.data?.data ? res.data : res?.data || res;
+        rows.push(...(payload?.data || []).map(normalizeAmenityBooking));
+        if (page >= Number(payload?.pagination?.totalPages || 1)) break;
+      }
+      return rows;
+    } catch (err: any) {
+      return rejectWithValue(err?.response?.data?.message || err?.message || 'Could not export the ledger.');
+    }
+  }
+);
+
+/** Published (active) facilities, for staff booking on a resident's behalf. */
+export const fetchBookableFacilitiesThunk = createAsyncThunk(
+  'amenityBookings/fetchBookableFacilities',
+  async (_: void, { rejectWithValue }) => {
+    try {
+      const res = await amenityManagementService.getFacilities({ page: 1, limit: 100, status: 'ACTIVE' });
+      const raw: any = res?.data || res;
+      const list = raw?.items || raw?.data || (Array.isArray(raw) ? raw : []);
+      return list.map(normalizeFacilityFromApi) as AmenityFacility[];
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Totals shown on the queue's KPI cards. */
+export const fetchAdminQueueCountsThunk = createAsyncThunk(
+  'amenityBookings/fetchAdminQueueCounts',
+  async (_: void, { rejectWithValue }) => {
+    try {
+      const [approvals, review] = await Promise.all([
+        amenityManagementService.getReservations({ page: 1, limit: 1, ...ADMIN_QUEUE_FILTERS.APPROVALS }),
+        amenityManagementService.getReservations({ page: 1, limit: 1, ...ADMIN_QUEUE_FILTERS.REVIEW }),
+      ]);
+      const totalOf = (r: any) => Number((r?.data || r)?.total || 0);
+      return { approvals: totalOf(approvals), review: totalOf(review) };
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Staff approve or reject a booking that needs approval (a reason is required to reject). */
+export const reviewReservationThunk = createAsyncThunk(
+  'amenityBookings/reviewReservation',
+  async (
+    { id, action, rejectionReason }: { id: string; action: 'APPROVE' | 'REJECT'; rejectionReason?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await amenityManagementService.reviewReservation(id, { action, rejectionReason } as any);
+      return normalizeReservationFromApi((res as any)?.data || res);
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Staff decision on a flagged booking (no-show, unpaid balance, overdue return). */
+export const resolveReservationReviewThunk = createAsyncThunk(
+  'amenityBookings/resolveReservationReview',
+  async (
+    { id, ...payload }: { id: string; action: 'FORFEIT' | 'REFUND_POLICY' | 'REFUND_CUSTOM' | 'EXTEND'; refundPercentage?: number; notes?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await amenityManagementService.resolveReservationReview(id, payload);
+      return normalizeReservationFromApi((res as any)?.data || res);
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Gate staff collect a booking's outstanding balance in cash before entry. */
+export const collectBalancePaymentThunk = createAsyncThunk(
+  'amenityBookings/collectBalancePayment',
+  async ({ reservationId, amount }: { reservationId: string; amount: number }, { rejectWithValue }) => {
+    try {
+      const res = await amenityManagementService.collectReservationPayment(reservationId, amount);
+      const data: any = res?.data || res;
+      return {
+        reservation: data?.reservation ? normalizeReservationFromApi(data.reservation) : null,
+        receiptNumber: data?.receiptNumber || null,
+      };
     } catch (err) {
       return rejectWithValue(mapAmenityApiError(err));
     }
@@ -602,6 +915,24 @@ export const revokePassThunk = createAsyncThunk(
 // ==========================================
 // Slice Definition
 // ==========================================
+
+/**
+ * Replaces every cached copy of a booking with a newer server version. Pushed or action
+ * payloads may not carry populated names, so the names already shown are kept.
+ */
+const applyReservationUpdate = (state: AmenityBookingState, incoming: AmenityReservation | null) => {
+  if (!incoming?._id) return;
+  const merge = (current: AmenityReservation): AmenityReservation => ({
+    ...incoming,
+    facilityName: incoming.facilityName || current.facilityName,
+    facilityTimezone: incoming.facilityTimezone || current.facilityTimezone,
+    resourceName: incoming.resourceName || current.resourceName,
+    userName: incoming.userName || current.userName,
+  });
+  if (state.v2CurrentReservation?._id === incoming._id) state.v2CurrentReservation = merge(state.v2CurrentReservation);
+  state.v2Reservations = state.v2Reservations.map((r) => (r._id === incoming._id ? merge(r) : r));
+  state.adminQueue.items = state.adminQueue.items.map((r) => (r._id === incoming._id ? merge(r) : r));
+};
 
 const amenityBookingSlice = createSlice({
   name: 'amenityBookings',
@@ -652,6 +983,28 @@ const amenityBookingSlice = createSlice({
     },
     clearV2Errors: (state) => {
       state.v2Error = null;
+    },
+    setLedgerView: (state, action: PayloadAction<AmenityLedgerView>) => {
+      state.ledger.view = action.payload;
+    },
+    setLedgerSearch: (state, action: PayloadAction<string>) => {
+      state.ledger.search = action.payload;
+    },
+    clearLedgerError: (state) => {
+      state.ledger.error = null;
+    },
+    setAdminQueueTab: (state, action: PayloadAction<AdminQueueTab>) => {
+      state.adminQueue.tab = action.payload;
+    },
+    setAdminQueueSearch: (state, action: PayloadAction<string>) => {
+      state.adminQueue.search = action.payload;
+    },
+    clearAdminQueueError: (state) => {
+      state.adminQueue.error = null;
+    },
+    /** A booking pushed by the server (socket) or returned by an action: refresh every copy. */
+    upsertV2Reservation: (state, action: PayloadAction<any>) => {
+      applyReservationUpdate(state, normalizeReservationFromApi(action.payload));
     },
     clearAmenityBookingErrors: (state) => {
       state.error = null;
@@ -954,13 +1307,13 @@ const amenityBookingSlice = createSlice({
       })
       .addCase(fetchReservationsThunk.fulfilled, (state, action) => {
         state.v2Loading = false;
-        state.v2Reservations = action.payload.items;
-        state.pagination = {
-          currentPage: action.payload.pagination.page,
-          totalPages: action.payload.pagination.pages,
-          totalRecords: action.payload.pagination.total,
-          limit: action.payload.pagination.limit,
-        };
+        const { items, pagination } = action.payload;
+        // Later pages extend the list; page 1 replaces it.
+        state.v2Reservations =
+          pagination.currentPage > 1
+            ? [...state.v2Reservations, ...items.filter((i) => !state.v2Reservations.some((r) => r._id === i._id))]
+            : items;
+        state.pagination = pagination;
       })
       .addCase(fetchReservationsThunk.rejected, (state, action) => {
         state.v2Loading = false;
@@ -996,9 +1349,17 @@ const amenityBookingSlice = createSlice({
           r._id === updated._id ? updated : r
         );
       })
-      .addCase(cancelReservationThunk.rejected, (state, action) => {
+      // Cancel errors are shown in the cancel sheet, not as a screen error.
+      .addCase(cancelReservationThunk.rejected, (state) => {
         state.v2Loading = false;
-        state.v2Error = action.payload as AmenityErrorDetails;
+      })
+
+      // Balance payments (wallet / verified online) return the updated booking
+      .addCase(payReservationBalanceThunk.fulfilled, (state, action) => {
+        applyReservationUpdate(state, action.payload);
+      })
+      .addCase(verifyReservationPaymentThunk.fulfilled, (state, action) => {
+        applyReservationUpdate(state, action.payload.reservation);
       })
 
       // Fetch Passes
@@ -1045,6 +1406,76 @@ const amenityBookingSlice = createSlice({
         state.v2PassError = action.payload as AmenityErrorDetails;
       })
 
+      // Staff booking queue
+      .addCase(fetchAdminQueueThunk.pending, (state) => {
+        state.adminQueue.loading = true;
+        state.adminQueue.error = null;
+      })
+      .addCase(fetchAdminQueueThunk.fulfilled, (state, action) => {
+        const { items, pagination } = action.payload;
+        state.adminQueue.loading = false;
+        state.adminQueue.items =
+          pagination.currentPage > 1
+            ? [...state.adminQueue.items, ...items.filter((i: AmenityReservation) => !state.adminQueue.items.some((r) => r._id === i._id))]
+            : items;
+        state.adminQueue.pagination = pagination;
+      })
+      .addCase(fetchAdminQueueThunk.rejected, (state, action) => {
+        state.adminQueue.loading = false;
+        state.adminQueue.error = (action.payload as AmenityErrorDetails)?.message || 'Could not load bookings.';
+      })
+      // Amenity ledger
+      .addCase(fetchAmenityLedgerThunk.pending, (state) => {
+        state.ledger.loading = true;
+        state.ledger.error = null;
+      })
+      .addCase(fetchAmenityLedgerThunk.fulfilled, (state, action) => {
+        const { items, pagination, summary } = action.payload;
+        state.ledger.loading = false;
+        const page = pagination?.currentPage || 1;
+        // Later pages extend the list; page 1 replaces it.
+        state.ledger.items =
+          page > 1 ? [...state.ledger.items, ...items.filter((i) => !state.ledger.items.some((r) => r._id === i._id))] : items;
+        if (pagination) state.ledger.pagination = pagination;
+        state.ledger.summary = summary;
+      })
+      .addCase(fetchAmenityLedgerThunk.rejected, (state, action) => {
+        state.ledger.loading = false;
+        state.ledger.error = (action.payload as string) || 'Could not load the ledger.';
+      })
+      .addCase(fetchBookableFacilitiesThunk.pending, (state) => {
+        state.bookableFacilitiesLoading = true;
+      })
+      .addCase(fetchBookableFacilitiesThunk.fulfilled, (state, action) => {
+        state.bookableFacilitiesLoading = false;
+        state.bookableFacilities = action.payload;
+      })
+      .addCase(fetchBookableFacilitiesThunk.rejected, (state) => {
+        state.bookableFacilitiesLoading = false;
+      })
+      .addCase(fetchAdminQueueCountsThunk.fulfilled, (state, action) => {
+        state.adminQueue.counts = action.payload;
+      })
+      .addCase(reviewReservationThunk.fulfilled, (state, action) => {
+        applyReservationUpdate(state, action.payload);
+      })
+      .addCase(resolveReservationReviewThunk.fulfilled, (state, action) => {
+        applyReservationUpdate(state, action.payload);
+      })
+
+      // Gate cash collection
+      .addCase(collectBalancePaymentThunk.pending, (state) => {
+        state.v2PassActionLoading = true;
+      })
+      .addCase(collectBalancePaymentThunk.fulfilled, (state, action) => {
+        state.v2PassActionLoading = false;
+        applyReservationUpdate(state, action.payload.reservation);
+      })
+      .addCase(collectBalancePaymentThunk.rejected, (state, action) => {
+        state.v2PassActionLoading = false;
+        state.v2PassError = action.payload as AmenityErrorDetails;
+      })
+
       // V2 Revoke Pass
       .addCase(revokePassThunk.pending, (state) => {
         state.v2PassActionLoading = true;
@@ -1070,6 +1501,13 @@ export const {
   setActiveHold,
   clearActiveHold,
   clearV2Errors,
+  upsertV2Reservation,
+  setAdminQueueTab,
+  setAdminQueueSearch,
+  clearAdminQueueError,
+  setLedgerView,
+  setLedgerSearch,
+  clearLedgerError,
   clearAmenityBookingErrors,
   resetV2BookingState,
   clearV2PassResults,

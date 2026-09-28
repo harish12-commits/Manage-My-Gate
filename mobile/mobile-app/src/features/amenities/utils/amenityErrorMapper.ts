@@ -81,10 +81,21 @@ export const mapAmenityApiError = (error: any): AmenityErrorDetails => {
       statusCode: 403,
       code: errorCode,
       reason: errorReason,
+      details: responseData?.details,
       message:
         baseMessage === 'Operation failed'
           ? 'You do not have permission to perform this action in this community.'
           : baseMessage,
+    };
+  }
+
+  // HTTP 402 - Payment Required (e.g. a booking balance to collect at the gate)
+  if (status === 402) {
+    return {
+      statusCode: 402,
+      code: errorCode,
+      message: baseMessage,
+      details: responseData?.details,
     };
   }
 
@@ -145,6 +156,7 @@ export const mapAmenityApiError = (error: any): AmenityErrorDetails => {
 
     return {
       statusCode: 409,
+      code: errorCode,
       isConflict: true,
       conflictType,
       message: baseMessage || 'A scheduling or inventory conflict occurred.',

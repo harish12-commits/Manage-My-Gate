@@ -25,6 +25,7 @@ import outboxWorker from './src/workers/outbox.worker.js';
 import {
   amenityHoldExpirationWorker,
   amenityOutboxWorker,
+  amenityReservationLifecycleWorker,
 } from './src/features/amenityManagement/index.js';
 
 const initCronJobs = () => {
@@ -42,9 +43,12 @@ const startServer = async () => {
     initCronJobs();
     outboxWorker.init();
 
-    if (config.nodeEnv !== 'test') {
+    // Unit/integration tests drive the workers directly; the E2E suite opts in so the
+    // real in-process workers (and their socket/notification emits) run.
+    if (config.nodeEnv !== 'test' || process.env.AMENITY_WORKERS_ENABLED === 'true') {
       amenityHoldExpirationWorker.initWorker();
       amenityOutboxWorker.initWorker();
+      amenityReservationLifecycleWorker.initWorker();
       logger.info('Amenity Management Background Workers Initialized');
     }
 
@@ -88,6 +92,7 @@ const startServer = async () => {
       try {
         amenityHoldExpirationWorker.stopWorker();
         amenityOutboxWorker.stopWorker();
+        amenityReservationLifecycleWorker.stopWorker();
       } catch (err) {
         logger.error('Error stopping amenity workers during shutdown:', err);
       }

@@ -91,6 +91,36 @@ export interface AmenityFacility {
   images?: string[];
   createdAt: string;
   updatedAt: string;
+
+  // Archetype profile (server-enforced booking rules)
+  advanceBookingDays?: number;
+  minNoticeHours?: number;
+  /** EVENT_SPACE: how the venue is booked */
+  bookingMode?: 'FULL_DAY' | 'SESSION' | 'HOURLY';
+  sessions?: Array<{ name: string; startTime: string; endTime: string; price?: number | null }>;
+  /** ROOM_RESOURCE: hourly rooms or overnight stays */
+  stayMode?: 'HOURLY' | 'OVERNIGHT';
+  checkInTime?: string;
+  checkOutTime?: string;
+  maxNights?: number;
+  /** INVENTORY_TOOLS: longest loan and whether returns are inspected */
+  maxLoanHours?: number;
+  requiresInspection?: boolean;
+  paymentPolicy?: { mode: AmenityPaymentMode; advanceType?: 'FIXED' | 'PERCENT'; advanceValue?: number };
+  cancellationPolicy?: { isAllowed?: boolean; refundCutoffHours?: number; refundPercentage?: number };
+}
+
+/** How the price is collected: all when booking, an advance + balance, or at the gate. */
+export type AmenityPaymentMode = 'FULL' | 'ADVANCE' | 'PAY_AT_GATE';
+
+/** Amounts fixed by the server when a slot is held (residents never enter amounts). */
+export interface AmenityAmountSchedule {
+  mode: AmenityPaymentMode;
+  priceAmount: number;
+  depositAmount: number;
+  advanceAmount: number;
+  dueNowAmount: number;
+  balanceAmount: number;
 }
 
 // Resource Domain Model
@@ -167,6 +197,8 @@ export interface AmenityHoldState {
   status: AmenityHoldStatus;
   expiresAt: string; // Authoritative backend expiration timestamp
   pricingSnapshot?: AmenityPricingSnapshot;
+  amountSchedule?: AmenityAmountSchedule;
+  reservationId?: string | null;
 }
 
 // Complete Reservation Domain Model with Five Independent Status Dimensions
@@ -209,8 +241,51 @@ export interface AmenityReservation {
   paidAmount?: number;
   refundAmount?: number;
   refundMethod?: 'WALLET' | 'RAZORPAY' | string;
+  totalAmount?: number;
+  depositAmount?: number;
+  /** Price still to be paid, online before the slot or at the gate */
+  balanceAmount?: number;
+  amountSchedule?: AmenityAmountSchedule;
+  payments?: Array<{
+    purpose: 'BOOKING' | 'BALANCE';
+    method: 'WALLET' | 'RAZORPAY' | 'CASH';
+    amount: number;
+    receiptNumber?: string | null;
+    paidAt?: string;
+  }>;
+  refundPercentage?: number | null;
+  refundBreakdown?: { bookingRefund: number; depositRefund: number; reason?: string | null };
+  depositSettlement?: { refunded?: number | null; retained?: number | null; notes?: string | null; settledAt?: string | null };
+  adminReview?: {
+    status: 'NONE' | 'PENDING' | 'RESOLVED';
+    reason?: 'NO_SHOW' | 'UNPAID_BALANCE' | 'OVERDUE_RETURN' | null;
+    resolution?: string | null;
+    refundAmount?: number | null;
+    notes?: string | null;
+  };
+  policySnapshot?: { cancellation?: { isAllowed?: boolean; refundCutoffHours?: number; refundPercentage?: number } };
+  checkedInAt?: string | null;
+  checkedOutAt?: string | null;
+  completedAt?: string | null;
+  bookedBy?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** What cancelling a booking now would do (computed by the server, nothing changes). */
+export interface AmenityCancellationPreview {
+  allowed: boolean;
+  blockReason: string | null;
+  refund: { percentage: number; bookingRefund: number; depositRefund: number; total: number; reason?: string | null };
+  refundTo: 'WALLET' | null;
+  policy: { isAllowed?: boolean; refundCutoffHours?: number; refundPercentage?: number } | null;
+}
+
+/** Gate check-out: the closed pass, the completed booking and how the deposit was settled. */
+export interface AmenityCheckOutResult {
+  pass: AmenityAccessPass;
+  reservation: AmenityReservation | null;
+  deposit: { paid: number; retained: number; refunded: number; uncoveredDamage: number } | null;
 }
 
 // Access Pass Domain Model

@@ -26,6 +26,7 @@ import {
 } from './ResidentReservationCard';
 import { ResidentAccessPassCard } from './ResidentAccessPassCard';
 import { AmenityPassDetailsModal } from './AmenityPassDetailsModal';
+import { ReservationPaymentSection, ReservationPaymentSectionProps } from './ReservationPaymentSection';
 import { useTranslation } from '@/src/utils/i18n';
 import { QrCode } from 'lucide-react-native';
 import {
@@ -43,15 +44,24 @@ export interface ResidentReservationDetailViewProps {
   accessPasses: AmenityAccessPass[];
   onCancelPress?: () => void;
   isCancellable?: boolean;
+  /** Balance payment state/actions (from useReservationBalancePayment) */
+  payment?: Omit<ReservationPaymentSectionProps, 'reservation'>;
   className?: string;
   testID?: string;
 }
+
+const REVIEW_MESSAGES: Record<string, [string, string]> = {
+  NO_SHOW: ['amenity_review_no_show', 'You did not check in for this booking. The management is reviewing it and will decide on any refund.'],
+  UNPAID_BALANCE: ['amenity_review_unpaid', 'The balance was not paid before the booking started. The management is reviewing it.'],
+  OVERDUE_RETURN: ['amenity_review_overdue', 'This item has not been returned on time. Please return it to the gate as soon as possible.'],
+};
 
 export function ResidentReservationDetailView({
   reservation,
   accessPasses,
   onCancelPress,
   isCancellable = false,
+  payment,
   className = '',
   testID = 'resident-reservation-detail-view',
 }: ResidentReservationDetailViewProps) {
@@ -60,14 +70,7 @@ export function ResidentReservationDetailView({
 
   const facilityName = reservation.facilityName || 'Amenity Facility';
   const reservationNumber = reservation.reservationNumber || reservation._id;
-  const pricing = reservation.pricingSnapshot || {
-    baseAmount: reservation.totalAmount || 0,
-    taxAmount: 0,
-    depositAmount: reservation.depositAmount || 0,
-    totalAmount: reservation.totalAmount || 0,
-    currency: 'INR',
-  };
-  const baseAmountVal = pricing.baseAmount !== undefined ? pricing.baseAmount : (pricing.totalAmount || reservation.totalAmount || 0);
+  const review = reservation.adminReview?.status === 'PENDING' ? REVIEW_MESSAGES[reservation.adminReview.reason || ''] : null;
 
   const tz = reservation.facilityTimezone || 'Asia/Kolkata';
   const rawStart =
@@ -150,25 +153,26 @@ export function ResidentReservationDetailView({
         </View>
       </View>
 
-      {/* Pay-at-Gate / Cash Collection Pending Notice */}
-      {reservation.bookingStatus === 'CONFIRMED' &&
-      reservation.paymentStatus === 'PENDING' &&
-      (pricing?.totalAmount ?? 0) > 0 ? (
+      {/* Staff review (no-show, unpaid balance, overdue return) */}
+      {review ? (
         <View
-          testID="pay-at-gate-pending-notice"
-          className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex-row items-start gap-3"
+          testID="reservation-review-notice"
+          className="bg-status-warning/10 border border-status-warning/30 p-4 rounded-2xl flex-row items-start gap-3"
         >
-          <AlertCircle size={20} className="text-amber-500 mt-0.5" />
+          <AlertCircle size={20} className="text-status-warning mt-0.5" />
           <View className="flex-1 gap-1">
             <Text className="font-semibold text-sm text-foreground">
-              Cash Collection Pending at Gate
+              {t('amenity_review_title', 'Under review by the management')}
             </Text>
-            <Text variant="muted" className="text-xs text-muted-foreground leading-relaxed">
-              Your booking is confirmed. Please present your digital access pass at the gate or amenity counter to complete your cash payment before entering.
+            <Text variant="muted" className="text-xs leading-relaxed">
+              {t(review[0], review[1])}
             </Text>
           </View>
         </View>
       ) : null}
+
+      {/* Payment: balance due + pay actions, amounts, refunds, deposit */}
+      <ReservationPaymentSection reservation={reservation} {...payment} />
 
       {/* 2. Digital Access Pass Section */}
       <View className="gap-2.5">
@@ -300,56 +304,6 @@ export function ResidentReservationDetailView({
         ) : null}
       </DetailSection>
 
-      {/* 5. Server-Authoritative Pricing & Payment */}
-      <DetailSection
-        title="Pricing & Payment"
-        iconName="CreditCard"
-        className="bg-card border border-border"
-      >
-        <DetailRow
-          label="Base Amount"
-          value={`${baseAmountVal} ${pricing.currency || 'INR'}`}
-        />
-        {pricing.taxAmount > 0 ? (
-          <DetailRow
-            label="Taxes & Fees"
-            value={`${pricing.taxAmount} ${pricing.currency}`}
-          />
-        ) : null}
-        {pricing.depositAmount > 0 ? (
-          <DetailRow
-            label="Refundable Deposit"
-            value={`${pricing.depositAmount} ${pricing.currency}`}
-          />
-        ) : null}
-        <DetailRow
-          label="Total Amount"
-          value={
-            <Text className="font-bold text-base text-foreground">
-              {pricing.totalAmount} {pricing.currency}
-            </Text>
-          }
-        />
-        <DetailRow
-          label="Payment Status"
-          value={
-            <StatusBadge
-              label={reservation.paymentStatus}
-              variant={getPaymentStatusVariant(reservation.paymentStatus)}
-            />
-          }
-          isLast={!reservation.paymentReference}
-        />
-        {reservation.paymentReference ? (
-          <DetailRow
-            label="Payment Reference"
-            value={reservation.paymentReference}
-            copyable={true}
-            isLast={true}
-          />
-        ) : null}
-      </DetailSection>
-
       {/* 6. Cancellation Action */}
       {canCancel ? (
         <View className="mt-2">
@@ -360,7 +314,7 @@ export function ResidentReservationDetailView({
             accessibilityRole="button"
             accessibilityLabel="Cancel Booking"
           >
-            <Ban size={16} color="#ffffff" />
+            <Ban size={16} className="text-destructive-foreground" />
             <Text className="font-bold text-sm text-destructive-foreground">Cancel Booking</Text>
           </Button>
         </View>

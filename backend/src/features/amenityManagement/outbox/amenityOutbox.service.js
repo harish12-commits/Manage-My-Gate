@@ -2,6 +2,54 @@ import amenityOutboxEventRepository from './amenityOutboxEvent.repository.js';
 import notificationService from '../../notification/notification.service.js';
 import logger from '../../../utils/logger.utils.js';
 
+/**
+ * Amenity staff to notify in a community: members whose role grants
+ * amenities:admin_calander, plus Community Admins.
+ */
+const amenityStaffRecipients = async (orgId) => {
+  const mongoose = (await import('mongoose')).default;
+  const { Permission } = await import('../../permission/permission.model.js');
+  const { RolePermission } = await import('../../rolePermission/rolePermission.model.js');
+  const Role = mongoose.models.Role || (await import('../../role/role.model.js')).default;
+  const OrgMembership = mongoose.models.OrgMembership || (await import('../../orgMembership/orgMembership.model.js')).default;
+
+  const perm = await Permission.findOne({ name: 'amenities:admin_calander' }).select('_id').lean();
+  const grantedRoleIds = perm
+    ? (await RolePermission.find({ permissionId: perm._id }).select('roleId').lean()).map((rp) => rp.roleId)
+    : [];
+  const roles = await Role.find({
+    orgId,
+    $or: [{ _id: { $in: grantedRoleIds } }, { name: 'Community Admin' }],
+  })
+    .select('_id')
+    .lean();
+  const roleIds = roles.map((r) => r._id);
+  if (!roleIds.length) return [];
+  const memberships = await OrgMembership.find({
+    orgId,
+    status: 'Active',
+    $or: [{ roleId: { $in: roleIds } }, { roleIds: { $in: roleIds } }],
+  })
+    .select('userId')
+    .lean();
+  return [...new Set(memberships.map((m) => String(m.userId)))];
+};
+
+const REVIEW_COPY = {
+  NO_SHOW: {
+    resident: (n) => `You did not check in for booking #${n}. Amenity staff will review it.`,
+    staff: (n) => `Booking #${n} was not used (no check-in). Decide on a refund or forfeit.`,
+  },
+  UNPAID_BALANCE: {
+    resident: (n) => `Booking #${n} still has an unpaid balance and was not used. Amenity staff will review it.`,
+    staff: (n) => `Booking #${n} was not used and its balance was never paid. Review it.`,
+  },
+  OVERDUE_RETURN: {
+    resident: (n) => `Please return the items borrowed on booking #${n}; the loan period has ended.`,
+    staff: (n) => `Items on booking #${n} are overdue for return.`,
+  },
+};
+
 export class AmenityOutboxService {
   constructor(options = {}) {
     this.baseRetryDelayMs = options.baseRetryDelayMs || parseInt(process.env.AMENITY_OUTBOX_BASE_RETRY_DELAY_MS || '2000', 10);
@@ -81,7 +129,10 @@ export class AmenityOutboxService {
             title: 'Amenity Access Pass Issued',
             body: 'Your digital QR access pass is now active for facility entry.',
             type: 'INFO',
-            actionUrl: `/resident/amenities/passes/${payload.passId || aggregateId}`,
+            // The pass belongs to a booking; open the booking (it shows the pass).
+            actionUrl: payload.reservationId
+              ? `/resident/amenities/reservations/${payload.reservationId}`
+              : '/resident/amenities/my-bookings',
             metadata: { passId: payload.passId || aggregateId, reservationId: payload.reservationId, eventType },
           });
         }
@@ -100,7 +151,7 @@ export class AmenityOutboxService {
             title: 'Amenity Hold Expired',
             body: 'Your temporary reservation hold has expired and reserved capacity has been released.',
             type: 'INFO',
-            actionUrl: '/resident/amenities',
+            actionUrl: '/resident/amenities/discover',
             metadata: { holdId: payload.holdId || aggregateId, eventType },
           });
         }
@@ -111,6 +162,17 @@ export class AmenityOutboxService {
         break;
 
       case 'APPROVAL_REQUESTED':
+        for (const staffId of await amenityStaffRecipients(orgId)) {
+          await notificationService.createNotification({
+            recipientId: staffId,
+            orgId,
+            title: 'Amenity Booking Awaiting Approval',
+            body: `Booking #${payload?.reservationNumber || ''} is waiting for your review.`,
+            type: 'INFO',
+            actionUrl: '/resident/amenities/admin-bookings',
+            metadata: { reservationId: payload?.reservationId || aggregateId, eventType, audience: 'STAFF' },
+          });
+        }
         if (payload?.residentId) {
           await notificationService.createNotification({
             recipientId: payload.residentId,
@@ -176,6 +238,98 @@ export class AmenityOutboxService {
             settlementStatus: 'EXTERNAL_REFUND_PENDING',
           }
         );
+        break;
+
+      case 'APPROVAL_EXPIRED':
+        if (payload?.residentId) {
+          await notificationService.createNotification({
+            recipientId: payload.residentId,
+            orgId,
+            title: 'Amenity Booking Not Approved in Time',
+            body: `Booking #${payload.reservationNumber || ''} was not reviewed before its deadline and has been closed.${
+              payload.refundAmount > 0 ? ` ₹${payload.refundAmount} has been returned to your Digital Wallet.` : ''
+            }`,
+            type: 'WARNING',
+            actionUrl: `/resident/amenities/reservations/${payload.reservationId || aggregateId}`,
+            metadata: { reservationId: payload.reservationId || aggregateId, eventType },
+          });
+        }
+        break;
+
+      case 'RESERVATION_REVIEW_REQUIRED': {
+        const copy = REVIEW_COPY[payload?.reason] || REVIEW_COPY.NO_SHOW;
+        const n = payload?.reservationNumber || '';
+        for (const staffId of await amenityStaffRecipients(orgId)) {
+          await notificationService.createNotification({
+            recipientId: staffId,
+            orgId,
+            title: 'Amenity Booking Needs Review',
+            body: copy.staff(n),
+            type: 'WARNING',
+            actionUrl: '/resident/amenities/admin-bookings',
+            metadata: { reservationId: payload?.reservationId || aggregateId, eventType, reason: payload?.reason, audience: 'STAFF' },
+          });
+        }
+        if (payload?.residentId) {
+          await notificationService.createNotification({
+            recipientId: payload.residentId,
+            orgId,
+            title: 'Amenity Booking Update',
+            body: copy.resident(n),
+            type: 'WARNING',
+            actionUrl: `/resident/amenities/reservations/${payload.reservationId || aggregateId}`,
+            metadata: { reservationId: payload.reservationId || aggregateId, eventType, reason: payload.reason },
+          });
+        }
+        break;
+      }
+
+      case 'RESERVATION_REVIEW_RESOLVED':
+        if (payload?.residentId) {
+          await notificationService.createNotification({
+            recipientId: payload.residentId,
+            orgId,
+            title: 'Amenity Booking Reviewed',
+            body: `Booking #${payload.reservationNumber || ''} has been reviewed by amenity staff.${
+              payload.refundAmount > 0 ? ` ₹${payload.refundAmount} has been returned to your Digital Wallet.` : ''
+            }`,
+            type: 'INFO',
+            actionUrl: `/resident/amenities/reservations/${payload.reservationId || aggregateId}`,
+            metadata: { reservationId: payload.reservationId || aggregateId, eventType, resolution: payload.resolution },
+          });
+        }
+        break;
+
+      case 'RESERVATION_COMPLETED':
+        if (payload?.residentId && (payload.depositRefunded > 0 || payload.depositRetained > 0)) {
+          await notificationService.createNotification({
+            recipientId: payload.residentId,
+            orgId,
+            title: 'Amenity Deposit Settled',
+            body: `Booking #${payload.reservationNumber || ''} is complete. ₹${payload.depositRefunded || 0} of your deposit has been returned to your Digital Wallet${
+              payload.depositRetained > 0 ? ` (₹${payload.depositRetained} kept for damage)` : ''
+            }.`,
+            type: 'INFO',
+            actionUrl: `/resident/amenities/reservations/${payload.reservationId || aggregateId}`,
+            metadata: { reservationId: payload.reservationId || aggregateId, eventType },
+          });
+        }
+        break;
+
+      case 'RESERVATION_RESCHEDULED':
+        logger.info(`[AmenityOutbox] RESERVATION_RESCHEDULED acknowledged for ${payload?.reservationNumber || aggregateId}`);
+        break;
+
+      // Facility lifecycle events carry no resident-facing notification: live UI updates
+      // are already emitted in-process, and affected residents are notified through
+      // their own RESERVATION_CANCELLED events. Acknowledge so they never dead-letter.
+      case 'FACILITY_CREATED':
+      case 'FACILITY_PUBLISHED':
+      case 'FACILITY_DEACTIVATED':
+        logger.info(`[AmenityOutbox] ${eventType} acknowledged for facility ${payload?.code || aggregateId}`, {
+          orgId,
+          facilityId: payload?.facilityId || aggregateId,
+        });
         break;
 
       default:

@@ -50,9 +50,19 @@ module.exports = async () => {
     PORT: String(E2E.port),
     NODE_ENV: 'test',
     MONGODB_URI: E2E.mongoUri,
+    ...(E2E.suite === 'amenity'
+      ? {
+          AMENITY_WORKERS_ENABLED: 'true',
+          AMENITY_HOLD_WORKER_INTERVAL_MS: '1000',
+          AMENITY_OUTBOX_WORKER_INTERVAL_MS: '1000',
+          AMENITY_LIFECYCLE_WORKER_INTERVAL_MS: '1000',
+          AMENITY_OUTBOX_BASE_RETRY_DELAY_MS: '200',
+          AMENITY_OUTBOX_MAX_RETRY_DELAY_MS: '1000',
+        }
+      : {}),
   };
 
-  execFileSync(process.execPath, ['tests/e2e/visitor/seedVisitorE2E.mjs', E2E.fixtureFile], {
+  execFileSync(process.execPath, [E2E.seedScript, E2E.fixtureFile], {
     cwd: E2E.backendDir,
     env,
     stdio: ['ignore', 'ignore', 'inherit'],

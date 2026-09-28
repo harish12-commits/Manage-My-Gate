@@ -19,6 +19,7 @@ import {
 } from '@/src/features/amenities/hooks/useResidentReservations';
 import { ResidentReservationCard } from '@/src/features/amenities/components/ResidentReservationCard';
 import { ResidentCancelModal } from '@/src/features/amenities/components/ResidentCancelModal';
+import { useCancellationPreview } from '@/src/features/amenities/hooks/useCancellationPreview';
 import { AmenityPassDetailsModal } from '@/src/features/amenities/components/AmenityPassDetailsModal';
 import { AmenityReservation } from '@/src/features/amenities/types/amenityDomain.types';
 import { useAuth } from '@/src/features/auth/hooks/useAuth';
@@ -57,11 +58,13 @@ export default function MyBookingsScreen() {
     setSearchQuery,
     cancelTarget,
     setCancelTarget,
+    cancelError,
     cancelReservation,
     refresh,
     loadMore,
   } = useResidentReservations();
 
+  const cancelPreview = useCancellationPreview(cancelTarget?._id);
   const [selectedPassReservation, setSelectedPassReservation] = React.useState<AmenityReservation | null>(null);
   const [passModalOpen, setPassModalOpen] = React.useState(false);
 
@@ -86,7 +89,7 @@ export default function MyBookingsScreen() {
     try {
       await cancelReservation(cancelTarget._id, reason);
     } catch {
-      // Error is caught and surfaced in state error
+      // Shown inside the cancel sheet (cancelError)
     }
   };
 
@@ -183,6 +186,9 @@ export default function MyBookingsScreen() {
         onClose={() => setCancelTarget(null)}
         onConfirm={handleConfirmCancel}
         loading={isCancelling}
+        preview={cancelPreview.preview}
+        previewLoading={cancelPreview.loading}
+        error={cancelError}
         testID="resident-cancel-modal"
       />
     </ScreenShell>

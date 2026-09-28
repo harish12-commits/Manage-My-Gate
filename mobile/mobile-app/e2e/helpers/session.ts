@@ -5,7 +5,18 @@ import storage from '@/src/utils/storage';
 
 const E2E = require('../setup/constants');
 
-export type Actor = 'adminA' | 'guardA' | 'residentA' | 'residentB' | 'guardOther' | 'residentOther';
+export type Actor =
+  | 'adminA'
+  | 'guardA'
+  | 'residentA'
+  | 'residentB'
+  | 'guardOther'
+  | 'residentOther'
+  // amenity suite only
+  | 'familyA'
+  | 'managerA'
+  | 'adminOther'
+  | 'crossAdmin';
 
 export interface ActorInfo {
   id: string;
@@ -22,6 +33,8 @@ export interface Fixture {
   password: string;
   orgs: Record<'A' | 'B', string>;
   villas: Record<string, string>;
+  /** amenity suite only: seeded facility ids keyed by fixture name (e.g. "pool", "court") */
+  facilities?: Record<string, { id: string; code: string; name: string; archetype: string; orgKey: 'A' | 'B'; resourceIds: string[] }>;
   actors: Record<Actor, ActorInfo>;
   sessions: Record<Actor, { token: string; refreshToken: string; user: any; availableWorkspaces: any[] }>;
 }

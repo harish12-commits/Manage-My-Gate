@@ -22,6 +22,8 @@ export interface GuestQuantityStepProps {
   onQuantityChange: (qty: number) => void;
   onGuestsChange: (guests: AmenityGuest[]) => void;
   onNotesChange: (notes: string) => void;
+  /** Largest party / quantity this booking allows (players, venue capacity, room seats or stock). */
+  maxParty?: number;
   error?: string | null;
 }
 
@@ -35,10 +37,11 @@ export function GuestQuantityStep({
   onQuantityChange,
   onGuestsChange,
   onNotesChange,
+  maxParty,
   error,
 }: GuestQuantityStepProps) {
   const isTool = facility.archetype === 'INVENTORY_TOOLS';
-  const maxHeadcount = facility.maxHeadcountPerReservation || facility.maxCapacity || 10;
+  const maxHeadcount = maxParty || facility.maxHeadcountPerReservation || facility.maxCapacity || 10;
 
   // Local guest input fields
   const [newGuestName, setNewGuestName] = useState<string>('');
@@ -100,7 +103,7 @@ export function GuestQuantityStep({
             <QuantitySelector
               value={quantity}
               min={1}
-              max={10}
+              max={maxHeadcount}
               onChange={onQuantityChange}
             />
           ) : (

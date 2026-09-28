@@ -64,6 +64,17 @@ export const generateUUID = (): string => {
  * Derives the host dynamically from the active runtime configuration and guarantees
  * an absolute URL starting with http(s):// to prevent Axios from prepending /api/v1.
  */
+/** A bookable window offered by the server (slot, session, full day, check-in or pickup). */
+export interface ApiDailySlot {
+  start: string;
+  end: string;
+  label: string;
+  startUtc: string;
+  endUtc: string;
+  availableUnits?: number;
+  maxCapacity?: number;
+}
+
 export const getAmenityV2Url = (endpointPath: string): string => {
   const rawBase = (typeof getApiBaseUrl === 'function' ? getApiBaseUrl() : '') || apiClient.defaults.baseURL || '';
   const cleanHost = rawBase.replace(/\/api(\/v1)?\/?$/, '').replace(/\/+$/, '');
@@ -222,6 +233,8 @@ export const amenityManagementService = {
     startDateTime: string;
     endDateTime: string;
     requestedQuantity?: number;
+    headcount?: number;
+    quantity?: number;
   }): Promise<ApiResponse<ApiAvailabilityResponse>> {
     const query = new URLSearchParams();
     query.append('facilityId', params.facilityId);
@@ -229,6 +242,8 @@ export const amenityManagementService = {
     query.append('endDateTime', params.endDateTime);
     if (params.resourceId) query.append('resourceId', params.resourceId);
     if (params.requestedQuantity) query.append('requestedQuantity', String(params.requestedQuantity));
+    if (params.headcount) query.append('headcount', String(params.headcount));
+    if (params.quantity) query.append('quantity', String(params.quantity));
 
     const url = getAmenityV2Url(`/availability?${query.toString()}`);
     const response = await apiClient.get<ApiResponse<ApiAvailabilityResponse>>(url);
@@ -240,15 +255,19 @@ export const amenityManagementService = {
     date: string;
     resourceId?: string;
     requestedQuantity?: number;
-  }): Promise<ApiResponse<{ slots: Array<{ start: string; end: string; label: string; startUtc: string; endUtc: string }> }>> {
+    headcount?: number;
+    quantity?: number;
+  }): Promise<ApiResponse<{ slots: ApiDailySlot[] }>> {
     const query = new URLSearchParams();
     query.append('facilityId', params.facilityId);
     query.append('date', params.date);
     if (params.resourceId) query.append('resourceId', params.resourceId);
     if (params.requestedQuantity) query.append('requestedQuantity', String(params.requestedQuantity));
+    if (params.headcount) query.append('headcount', String(params.headcount));
+    if (params.quantity) query.append('quantity', String(params.quantity));
 
     const url = getAmenityV2Url(`/availability/daily-slots?${query.toString()}`);
-    const response = await apiClient.get<ApiResponse<{ slots: Array<{ start: string; end: string; label: string; startUtc: string; endUtc: string }> }>>(url);
+    const response = await apiClient.get<ApiResponse<{ slots: ApiDailySlot[] }>>(url);
     return extractEnvelope(response);
   },
 
@@ -284,8 +303,9 @@ export const amenityManagementService = {
     return extractEnvelope(response);
   },
 
+  /** Releases a hold early (the resident abandoned the booking). */
   async releaseHold(id: string): Promise<ApiResponse<{ success: boolean; message: string }>> {
-    const url = getAmenityV2Url(`/holds/${id}/release`);
+    const url = getAmenityV2Url(`/holds/${id}/expire`);
     const response = await apiClient.post<ApiResponse<{ success: boolean; message: string }>>(url);
     return extractEnvelope(response);
   },
@@ -311,25 +331,48 @@ export const amenityManagementService = {
   // ==========================================
   // 6A. Amenity Payment (/payments)
   // ==========================================
+  /**
+   * Online payment order for the amount due now on a hold (`holdId`) or for the
+   * outstanding balance of a booking (`reservationId`). Amounts come from the server.
+   */
   async createReservationPaymentOrder(
-    holdId: string
+    target: string | { holdId?: string; reservationId?: string }
   ): Promise<ApiResponse<ApiAmenityPaymentOrder>> {
+    const body = typeof target === 'string' ? { holdId: target } : target;
     const url = getAmenityV2Url('/payments/orders');
-    const response = await apiClient.post<ApiResponse<ApiAmenityPaymentOrder>>(url, { holdId });
+    const response = await apiClient.post<ApiResponse<ApiAmenityPaymentOrder>>(url, body);
     return extractEnvelope(response);
   },
 
+  /** Verifies the gateway response; the server settles it and returns the booking it created or completed. */
   async verifyReservationPayment(payload: {
     paymentId: string;
     orderId: string;
     razorpayPaymentId: string;
     razorpaySignature: string;
-  }): Promise<ApiResponse<{ payment: { _id: string }; paymentId: string }>> {
+  }): Promise<ApiResponse<{ payment: { _id: string }; paymentId: string; reservation: any; fulfilled: boolean }>> {
     const url = getAmenityV2Url('/payments/verify');
-    const response = await apiClient.post<ApiResponse<{ payment: { _id: string }; paymentId: string }>>(
-      url,
-      payload
-    );
+    const response = await apiClient.post<
+      ApiResponse<{ payment: { _id: string }; paymentId: string; reservation: any; fulfilled: boolean }>
+    >(url, payload);
+    return extractEnvelope(response);
+  },
+
+  /** Pays a booking's outstanding balance from the digital wallet. */
+  async payReservationBalance(reservationId: string): Promise<ApiResponse<any>> {
+    const url = getAmenityV2Url(`/reservations/${reservationId}/pay-balance`);
+    const response = await apiClient.post<ApiResponse<any>>(url, { paymentMethod: 'WALLET' });
+    return extractEnvelope(response);
+  },
+
+  /** Community-wide amenity rules (quota, approval timeout, check-in window, no-show grace). */
+  async getAmenitySettings(): Promise<ApiResponse<any>> {
+    const response = await apiClient.get<ApiResponse<any>>(getAmenityV2Url('/settings'));
+    return extractEnvelope(response);
+  },
+
+  async updateAmenitySettings(update: Record<string, any>): Promise<ApiResponse<any>> {
+    const response = await apiClient.put<ApiResponse<any>>(getAmenityV2Url('/settings'), update);
     return extractEnvelope(response);
   },
 
@@ -341,6 +384,9 @@ export const amenityManagementService = {
     residentId?: string;
     bookingStatus?: string;
     paymentStatus?: string;
+    approvalStatus?: string;
+    adminReviewStatus?: string;
+    search?: string;
     unitId?: string;
     startDate?: string;
     endDate?: string;
@@ -353,6 +399,9 @@ export const amenityManagementService = {
     if (params.residentId) query.append('residentId', params.residentId);
     if (params.bookingStatus) query.append('bookingStatus', params.bookingStatus);
     if (params.paymentStatus) query.append('paymentStatus', params.paymentStatus);
+    if (params.approvalStatus) query.append('approvalStatus', params.approvalStatus);
+    if (params.adminReviewStatus) query.append('adminReviewStatus', params.adminReviewStatus);
+    if (params.search) query.append('search', params.search);
     if (params.unitId) query.append('unitId', params.unitId);
     if (params.startDate) query.append('startDate', params.startDate);
     if (params.endDate) query.append('endDate', params.endDate);
@@ -369,12 +418,29 @@ export const amenityManagementService = {
     return extractEnvelope(response);
   },
 
+  /** Refund the resident would get by cancelling now; changes nothing. */
+  async getCancellationPreview(id: string): Promise<ApiResponse<any>> {
+    const url = getAmenityV2Url(`/reservations/${id}/cancellation-preview`);
+    const response = await apiClient.get<ApiResponse<any>>(url);
+    return extractEnvelope(response);
+  },
+
   async cancelReservation(
     id: string,
     payload?: CancelReservationApiPayload
   ): Promise<ApiResponse<ApiAmenityReservation>> {
     const url = getAmenityV2Url(`/reservations/${id}/cancel`);
     const response = await apiClient.post<ApiResponse<ApiAmenityReservation>>(url, payload || {});
+    return extractEnvelope(response);
+  },
+
+  /** Staff decision on a booking flagged for review (no-show, unpaid balance, overdue return). */
+  async resolveReservationReview(
+    id: string,
+    payload: { action: 'FORFEIT' | 'REFUND_POLICY' | 'REFUND_CUSTOM' | 'EXTEND'; refundPercentage?: number; notes?: string }
+  ): Promise<ApiResponse<ApiAmenityReservation>> {
+    const url = getAmenityV2Url(`/reservations/${id}/resolve-review`);
+    const response = await apiClient.post<ApiResponse<ApiAmenityReservation>>(url, payload);
     return extractEnvelope(response);
   },
 
@@ -406,9 +472,16 @@ export const amenityManagementService = {
     return extractEnvelope(response);
   },
 
-  async checkOutPass(payload: CheckOutPassApiPayload): Promise<ApiResponse<ApiAmenityAccessPass>> {
+  async checkOutPass(payload: CheckOutPassApiPayload): Promise<ApiResponse<any>> {
     const url = getAmenityV2Url('/passes/check-out');
-    const response = await apiClient.post<ApiResponse<ApiAmenityAccessPass>>(url, payload);
+    const response = await apiClient.post<ApiResponse<any>>(url, payload);
+    return extractEnvelope(response);
+  },
+
+  /** Gate staff record the booking balance collected in cash (the exact amount due). */
+  async collectReservationPayment(reservationId: string, amount: number): Promise<ApiResponse<any>> {
+    const url = getAmenityV2Url(`/reservations/${reservationId}/collect-payment`);
+    const response = await apiClient.post<ApiResponse<any>>(url, { amount });
     return extractEnvelope(response);
   },
 

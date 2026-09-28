@@ -18,7 +18,8 @@ router.post('/manual', authorizePermission('amenities', ['scanner', 'amenities',
 // List security logs with filters
 router.get('/', authorizePermission('amenities', ['security_logs', 'scanner', 'amenities', 'dashboard']), getLogs);
 
-// Delete security log
-router.delete('/:id', authorizePermission('amenities', ['security_logs', 'scanner', 'amenities', 'dashboard']), deleteLog);
+// Delete security log: an audit record, so only amenity administrators may remove one
+// (never gate staff, whose own actions the log records).
+router.delete('/:id', authorizePermission('amenities', ['dashboard']), deleteLog);
 
 export default router;

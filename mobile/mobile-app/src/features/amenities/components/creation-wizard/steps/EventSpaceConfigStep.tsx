@@ -4,7 +4,10 @@ import { Text } from '@/components/ui/text';
 import { Chip } from '@/components/common/Chip';
 import { TextInput } from '@/components/forms/TextInput';
 import { ToggleSwitch } from '@/components/forms/ToggleSwitch';
-import { Sparkles, Calendar, Clock, ShieldCheck } from 'lucide-react-native';
+import { Sparkles, Calendar, Clock, ShieldCheck, LayoutGrid } from 'lucide-react-native';
+import { useTranslation } from '@/src/utils/i18n';
+import { EventSessionsEditor } from '../EventSessionsEditor';
+import type { EventBookingMode, EventSessionForm } from '../../../utils/mapAmenityCreationPayloadStrategy';
 import {
   EVENT_NOTICE_PRESETS,
   ADVANCE_DAYS_PRESETS,
@@ -15,6 +18,9 @@ export interface EventSpaceConfigData {
   requiresApproval: boolean;
   advanceNoticeHours: number | string;
   advanceBookingDays: number | string;
+  bookingMode?: EventBookingMode;
+  sessions?: EventSessionForm[];
+  slotDurationMinutes?: number | string;
 }
 
 export interface EventSpaceConfigStepProps {
@@ -23,11 +29,21 @@ export interface EventSpaceConfigStepProps {
   errors?: Partial<Record<keyof EventSpaceConfigData, string>>;
 }
 
+const BOOKING_MODES: { value: EventBookingMode; key: string; label: string }[] = [
+  { value: 'FULL_DAY', key: 'amenity_create_mode_full_day', label: 'Whole day' },
+  { value: 'SESSION', key: 'amenity_create_mode_session', label: 'Sessions' },
+  { value: 'HOURLY', key: 'amenity_create_mode_hourly', label: 'By the hour' },
+];
+const HOURLY_SLOT_PRESETS = [60, 120, 180, 240];
+
 export const EventSpaceConfigStep: React.FC<EventSpaceConfigStepProps> = ({
   data,
   onChange,
   errors = {},
 }) => {
+  const { t } = useTranslation();
+  const mode: EventBookingMode = data.bookingMode || 'FULL_DAY';
+  const slot = parseInt(String(data.slotDurationMinutes || 60), 10);
   const currentNotice = String(data.advanceNoticeHours || '72');
   const currentAdvanceDays = parseInt(String(data.advanceBookingDays || 30), 10);
 
@@ -71,6 +87,60 @@ export const EventSpaceConfigStep: React.FC<EventSpaceConfigStepProps> = ({
           onChangeText={(val) => onChange({ ...data, maxCapacity: val })}
           error={errors.maxCapacity}
         />
+      </View>
+
+      {/* How the venue is booked */}
+      <View className="bg-card p-4 rounded-3xl border border-border gap-3">
+        <View className="flex-row items-center gap-3">
+          <View className="w-10 h-10 rounded-2xl bg-primary/10 items-center justify-center">
+            <LayoutGrid size={20} className="text-primary" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-sm font-bold text-foreground">{t('amenity_create_mode_title', 'How is it booked?')}</Text>
+            <Text variant="muted" className="text-xs">
+              {t('amenity_create_mode_sub', 'The whole day, published sessions, or by the hour.')}
+            </Text>
+          </View>
+        </View>
+        <View className="flex-row flex-wrap gap-2">
+          {BOOKING_MODES.map((m) => (
+            <Chip
+              key={m.value}
+              label={t(m.key, m.label)}
+              selected={mode === m.value}
+              onPress={() =>
+                onChange({
+                  ...data,
+                  bookingMode: m.value,
+                  ...(m.value === 'HOURLY' && !data.slotDurationMinutes ? { slotDurationMinutes: 60 } : {}),
+                })
+              }
+              testID={`event-mode-${m.value}`}
+            />
+          ))}
+        </View>
+        {mode === 'SESSION' ? (
+          <EventSessionsEditor
+            sessions={data.sessions || []}
+            onChange={(sessions) => onChange({ ...data, sessions })}
+            error={errors.sessions}
+          />
+        ) : null}
+        {mode === 'HOURLY' ? (
+          <View className="gap-2">
+            <Text className="text-xs font-semibold text-foreground">{t('amenity_create_slot_length', 'Slot length')}</Text>
+            <View className="flex-row flex-wrap gap-2">
+              {HOURLY_SLOT_PRESETS.map((minutes) => (
+                <Chip
+                  key={minutes}
+                  label={t('amenity_create_hours_n', '{n} h', { n: minutes / 60 })}
+                  selected={slot === minutes}
+                  onPress={() => onChange({ ...data, slotDurationMinutes: minutes })}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
       </View>
 
       {/* Mandatory Admin Approval Toggle */}

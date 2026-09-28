@@ -230,6 +230,10 @@ const ListCard = React.forwardRef<View, ListCardProps>(
           ref={ref}
           className={cn("bg-card rounded-2xl border border-border/70 mb-3 p-3.5 overflow-hidden shadow-2xs", className)}
           style={style as any}
+          // Keep the card's test id and accessibility props on this layout too.
+          testID={(props as any).testID}
+          accessibilityLabel={(props as any).accessibilityLabel}
+          accessibilityHint={(props as any).accessibilityHint}
         >
           {renderCardHeaderRow()}
           {typeof children === 'function' ? (children as any)({ pressed: false }) : children}

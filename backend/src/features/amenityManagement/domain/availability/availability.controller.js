@@ -7,7 +7,7 @@ export class AvailabilityController {
   async check(req, res, next) {
     try {
       const orgId = req.tenant.orgId;
-      const { facilityId, resourceId, startDateTime, endDateTime, requestedQuantity } = req.query;
+      const { facilityId, resourceId, startDateTime, endDateTime, requestedQuantity, headcount, quantity } = req.query;
 
       const result = await availabilityService.checkAvailability({
         orgId,
@@ -16,6 +16,8 @@ export class AvailabilityController {
         startDateTime: new Date(startDateTime),
         endDateTime: new Date(endDateTime),
         requestedQuantity: Number(requestedQuantity) || 1,
+        headcount: headcount !== undefined ? Number(headcount) : undefined,
+        quantity: quantity !== undefined ? Number(quantity) : undefined,
       });
 
       return res.success(result, 'Availability evaluated successfully');
@@ -31,7 +33,7 @@ export class AvailabilityController {
   async getDailySlots(req, res, next) {
     try {
       const orgId = req.tenant.orgId;
-      const { facilityId, resourceId, date, requestedQuantity } = req.query;
+      const { facilityId, resourceId, date, requestedQuantity, headcount, quantity } = req.query;
 
       const result = await availabilityService.getDailySlots({
         orgId,
@@ -39,6 +41,8 @@ export class AvailabilityController {
         resourceId: resourceId || null,
         dateStr: date,
         requestedQuantity: Number(requestedQuantity) || 1,
+        headcount: headcount !== undefined ? Number(headcount) : undefined,
+        quantity: quantity !== undefined ? Number(quantity) : undefined,
       });
 
       return res.success(result, 'Daily slots retrieved successfully');

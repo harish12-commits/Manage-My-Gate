@@ -101,6 +101,27 @@ const amenityReservationHoldSchema = new mongoose.Schema(
       type: pricingSnapshotSchema,
       default: null,
     },
+    // Amounts due now / later under the facility payment policy, fixed at hold time.
+    amountSchedule: {
+      mode: { type: String, enum: ['FULL', 'ADVANCE', 'PAY_AT_GATE'], default: 'FULL' },
+      priceAmount: { type: Number, default: 0 },
+      depositAmount: { type: Number, default: 0 },
+      advanceAmount: { type: Number, default: 0 },
+      dueNowAmount: { type: Number, default: 0 },
+      balanceAmount: { type: Number, default: 0 },
+    },
+    // Staff member who created the hold on the resident's behalf (null when self-booked).
+    bookedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    // Set when the hold is promoted, so a late gateway confirmation finds the booking.
+    reservationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'AmenityReservation',
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -108,10 +129,11 @@ const amenityReservationHoldSchema = new mongoose.Schema(
   }
 );
 
-// TTL Index for ephemeral cleanup
+// Holds are expired by the hold worker (which releases quota and notifies) and kept
+// for 30 days so a late gateway capture can still be matched to its hold.
 amenityReservationHoldSchema.index(
   { expiresAt: 1 },
-  { expireAfterSeconds: 0, name: 'idx_reservation_holds_ttl' }
+  { expireAfterSeconds: 30 * 24 * 3600, name: 'idx_reservation_holds_retention' }
 );
 
 amenityReservationHoldSchema.index(

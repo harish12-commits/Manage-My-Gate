@@ -12,15 +12,13 @@ import { DetailSection } from '@/components/ui/DetailSection';
 import { DetailRow } from '@/components/ui/DetailRow';
 import { AmenityFacility, AmenityResource, AmenityPricingSnapshot } from '../../../types/amenityDomain.types';
 import { getArchetypeMeta } from '../../../utils/amenityPresentation';
-import { formatTimeRange12Hour } from '../../../utils/amenityStateHelpers';
 import { ShieldCheck, Sparkles, AlertCircle } from 'lucide-react-native';
 
 export interface BookingReviewStepProps {
   facility: AmenityFacility;
   selectedResource: AmenityResource | null;
-  selectedDate: string;
-  startTime: string;
-  endTime: string;
+  /** The requested window, already formatted in the facility timezone. */
+  windowLabel: string;
   headcount: number;
   quantity: number;
   pricingSnapshot: AmenityPricingSnapshot | null;
@@ -32,9 +30,7 @@ export interface BookingReviewStepProps {
 export function BookingReviewStep({
   facility,
   selectedResource,
-  selectedDate,
-  startTime,
-  endTime,
+  windowLabel,
   headcount,
   quantity,
   pricingSnapshot,
@@ -70,11 +66,7 @@ export function BookingReviewStep({
           />
         ) : null}
 
-        <DetailRow label="Date" value={selectedDate} />
-        <DetailRow
-          label="Time Window"
-          value={`${formatTimeRange12Hour(startTime, endTime)} (${facility.timezone || 'Asia/Kolkata'})`}
-        />
+        <DetailRow label="When" value={windowLabel} />
 
         <DetailRow
           label={isTool ? 'Quantity' : 'Total Participants'}

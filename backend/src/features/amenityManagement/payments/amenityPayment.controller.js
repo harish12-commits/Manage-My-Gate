@@ -1,111 +1,54 @@
 import amenityReservationService from '../reservations/amenityReservation.service.js';
-import amenityReservationHoldRepository from '../holds/amenityReservationHold.repository.js';
-import amenityFacilityRepository from '../facilities/amenityFacility.repository.js';
-import pricingService from '../domain/pricing/pricing.service.js';
-import paymentService from '../../payment/payment.service.js';
-import Payment from '../../payment/payment.model.js';
+import amenityPaymentService from './amenityPayment.service.js';
 import HttpError from '../../../utils/httpError.utils.js';
 import crypto from 'crypto';
 import logger from '../../../utils/logger.utils.js';
 
 export class AmenityPaymentController {
   /**
-   * Creates (or safely resumes) the one Razorpay order associated with an
-   * active amenity hold. Amount and merchant credentials come from the
-   * community's Integration Hub, never from the device.
+   * Creates (or safely resumes) the Razorpay order for an amenity booking: the amount
+   * due now on a hold (`holdId`), or the outstanding balance of a booking
+   * (`reservationId`). Amounts come from the server, never from the device.
    */
   async createOrder(req, res, next) {
     try {
       const orgId = req.tenant?.orgId;
-      const residentId = req.user?.id || req.user?._id;
-      const { holdId } = req.body;
+      const userId = req.user?.id || req.user?._id;
+      const { holdId, reservationId } = req.body;
 
-      const hold = await amenityReservationHoldRepository.findActiveById(holdId);
-      if (!hold || String(hold.orgId) !== String(orgId) || String(hold.residentId) !== String(residentId)) {
-        throw new HttpError(404, 'Active reservation hold not found');
+      let reservation = null;
+      if (!holdId) {
+        reservation = await amenityReservationService.getReservationById(reservationId);
+        if (!reservation || String(reservation.orgId) !== String(orgId)) {
+          throw new HttpError(404, 'Reservation not found');
+        }
+        if (!(await amenityReservationService.canUserAccessReservation(req.user, reservation))) {
+          throw new HttpError(403, 'Forbidden. You do not have permission to pay for this reservation.');
+        }
       }
 
-      const facility = await amenityFacilityRepository.findById(hold.facilityId, orgId);
-      if (!facility) {
-        throw new HttpError(404, 'Amenity facility not found');
+      const order = await amenityPaymentService.createGatewayOrder({ orgId, userId, holdId, reservation });
+      if (order.alreadyVerified) {
+        return res.success(order, 'Payment has already been verified.');
       }
-
-      const pricingSnapshot = pricingService.calculatePricingSnapshot({
-        pricingConfig: facility.pricingConfig || facility.pricing,
-        startDateTime: hold.requestedStartDateTime,
-        endDateTime: hold.requestedEndDateTime,
-        headcount: hold.headcount,
-        quantity: hold.quantity,
-      });
-      const amount = Number(pricingSnapshot.totalAmount || 0);
-      if (amount <= 0) {
-        throw new HttpError(400, 'This reservation does not require an online payment');
-      }
-
-      const existingPayment = await Payment.findOne({
-        orgId,
-        userId: residentId,
-        referenceId: hold._id,
-        referenceType: 'AmenityReservationHold',
-        status: { $in: ['pending', 'success'] },
-      }).sort({ createdAt: -1 });
-
-      if (existingPayment?.status === 'success') {
-        return res.success(
-          { paymentId: existingPayment._id, alreadyVerified: true },
-          'Payment has already been verified. Confirm the reservation to finish booking.'
-        );
-      }
-
-      const paymentOrder = existingPayment
-        ? await paymentService.getCheckoutDetails(existingPayment)
-        : await paymentService.createPaymentOrder({
-            orgId,
-            userId: residentId,
-            referenceId: hold._id,
-            referenceType: 'AmenityReservationHold',
-            amount,
-            currency: pricingSnapshot.currency || 'INR',
-            gateway: 'razorpay',
-          });
-
-      return res.success(paymentOrder, 'Amenity payment order created successfully', 201);
+      return res.success(order, 'Amenity payment order created successfully', 201);
     } catch (error) {
       return next(error);
     }
   }
 
   /**
-   * Verifies Razorpay's signed response before a paid reservation can be
-   * promoted. A raw Razorpay payment ID from the browser is not trusted.
+   * Verifies Razorpay's signed response and settles it server-side: a hold payment
+   * creates the booking, a balance payment completes it.
    */
   async verifyPayment(req, res, next) {
     try {
-      const orgId = req.tenant?.orgId;
-      const residentId = req.user?.id || req.user?._id;
-      const { paymentId, orderId, razorpayPaymentId, razorpaySignature } = req.body;
-
-      const payment = await paymentService.assertPaymentAccess(paymentId, {
-        orgId,
-        userId: residentId,
+      const result = await amenityPaymentService.verifyGatewayPayment({
+        orgId: req.tenant?.orgId,
+        userId: req.user?.id || req.user?._id,
+        ...req.body,
       });
-      if (payment.referenceType !== 'AmenityReservationHold' || payment.gateway !== 'razorpay') {
-        throw new HttpError(400, 'Payment is not an amenity Razorpay payment');
-      }
-
-      const result = await paymentService.verifyPaymentSignature({
-        orgId,
-        paymentId,
-        orderId,
-        razorpayPaymentId,
-        razorpaySignature,
-      });
-      const verifiedPayment = result.payment?.toObject ? result.payment.toObject() : result.payment;
-
-      return res.success(
-        { payment: verifiedPayment, paymentId: verifiedPayment?._id },
-        'Amenity payment verified successfully'
-      );
+      return res.success(result, 'Amenity payment verified successfully');
     } catch (error) {
       return next(error);
     }

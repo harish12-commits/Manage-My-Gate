@@ -24,6 +24,7 @@ import {
   Sparkles,
   Megaphone,
   AlertCircle,
+  ClipboardCheck,
 } from 'lucide-react-native';
 
 import { useAuth } from '@/src/features/auth/hooks/useAuth';
@@ -92,7 +93,9 @@ export const GlobalNavModal: React.FC<GlobalNavModalProps> = ({ visible, onClose
         { id: 'a-discover', labelKey: 'feature_amenities_discover_name', defaultLabel: 'Discover Amenities', route: '/(resident)/amenities/discover', icon: Building2, color: '#14b8a6', permission: 'amenities:discover' },
         { id: 'a-bookings', labelKey: 'feature_amenities_my_booking_name', defaultLabel: 'My Booking Passes', route: '/(resident)/amenities/my-bookings', icon: Calendar, color: '#6366f1', permission: 'amenities:my_booking' },
         { id: 'a-scanner', labelKey: 'feature_amenities_scanner_name', defaultLabel: 'QR Scanner', route: '/(resident)/amenities/scanner', icon: QrCode, color: '#a855f7', permission: 'amenities:scanner' },
+        { id: 'a-settings', labelKey: 'feature_amenities_settings_name', defaultLabel: 'Amenity Settings', route: '/(resident)/amenities/settings', icon: Settings, color: '#6366f1', permission: 'amenities:settings' },
         { id: 'a-dashboard', labelKey: 'feature_amenities_dashboard_name', defaultLabel: 'Amenity Dashboard', route: '/(resident)/amenities/dashboard', icon: Sliders, color: '#2563eb', permission: 'amenities:dashboard' },
+        { id: 'a-queue', labelKey: 'feature_amenities_admin_bookings_name', defaultLabel: 'Booking Queue', route: '/(resident)/amenities/admin-bookings', icon: ClipboardCheck, color: '#d97706', permission: 'amenities:admin_calander' },
         { id: 'a-calendar', labelKey: 'feature_amenities_admin_calendar_name', defaultLabel: 'Admin Calendar', route: '/(resident)/amenities/admin-calendar', icon: Calendar, color: '#7c3aed', permission: 'amenities:admin_calander' },
         { id: 'a-master', labelKey: 'feature_amenities_master_name', defaultLabel: 'Amenity Master', route: '/(resident)/amenities/admin-master', icon: Sliders, color: '#ea580c', permission: 'amenities:amenities' },
         { id: 'a-maintenance', labelKey: 'feature_amenities_maintenance_name', defaultLabel: 'Maintenance Scheduler', route: '/(resident)/amenities/maintenance', icon: Wrench, color: '#f59e0b', permission: 'amenities:maintenance' },
