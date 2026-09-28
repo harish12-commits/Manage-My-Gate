@@ -25,7 +25,6 @@ export class AmenityReservationHoldController {
         headcount: req.body.headcount,
         quantity: req.body.quantity,
         holdType: req.body.holdType,
-        quotaLimit: req.body.quotaLimit,
         orgId,
         residentId,
         unitId,

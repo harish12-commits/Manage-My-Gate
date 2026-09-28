@@ -413,6 +413,15 @@ export class AmenityFacilityService {
       // Clean non-schema metadata
       const { bookingAction, cancelledBy, ...cleanUpdate } = updateData;
 
+      // Nested policy blocks are merged, so a partial edit (e.g. only baseRate) keeps
+      // the other pricing / cancellation fields instead of resetting them to defaults.
+      for (const key of ['pricingConfig', 'cancellationPolicy']) {
+        if (cleanUpdate[key] && typeof cleanUpdate[key] === 'object') {
+          const current = existing[key]?.toObject ? existing[key].toObject() : existing[key] || {};
+          cleanUpdate[key] = { ...current, ...cleanUpdate[key] };
+        }
+      }
+
       const updated = await amenityFacilityRepository.update(facilityId, orgId, cleanUpdate, trxSession);
       if (!updated) {
         throw new HttpError(404, 'Facility not found');

@@ -30,13 +30,16 @@ export class AmenityPaymentController {
         throw new HttpError(404, 'Amenity facility not found');
       }
 
-      const pricingSnapshot = pricingService.calculatePricingSnapshot({
-        pricingConfig: facility.pricingConfig || facility.pricing,
-        startDateTime: hold.requestedStartDateTime,
-        endDateTime: hold.requestedEndDateTime,
-        headcount: hold.headcount,
-        quantity: hold.quantity,
-      });
+      // The hold carries the price the resident was quoted when the slot was held.
+      const pricingSnapshot =
+        hold.pricingSnapshot?.totalAmount !== undefined && hold.pricingSnapshot !== null
+          ? hold.pricingSnapshot
+          : pricingService.calculateForFacility(facility, {
+              startDateTime: hold.requestedStartDateTime,
+              endDateTime: hold.requestedEndDateTime,
+              headcount: hold.headcount,
+              quantity: hold.quantity,
+            });
       const amount = Number(pricingSnapshot.totalAmount || 0);
       if (amount <= 0) {
         throw new HttpError(400, 'This reservation does not require an online payment');

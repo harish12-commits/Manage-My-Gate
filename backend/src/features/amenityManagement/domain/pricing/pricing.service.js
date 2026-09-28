@@ -1,8 +1,27 @@
+import { priceBooking } from '../profiles/facilityProfiles.js';
+
 /**
  * Pricing Domain Service for Amenity Management.
  * Computes an immutable pricing snapshot for reservations.
  */
 export class PricingService {
+  /**
+   * Archetype-aware price for a booking on `facility` (per person for shared access,
+   * per court/venue/room otherwise, per item for inventory; deposit may apply to free
+   * facilities). This is the price residents are quoted, held and charged.
+   *
+   * @param {Object} facility - AmenityFacility document
+   * @param {{ startDateTime: Date, endDateTime: Date, headcount?: number, quantity?: number }} params
+   */
+  calculateForFacility(facility, { startDateTime, endDateTime, headcount = 1, quantity = 1 }) {
+    return priceBooking(facility, {
+      start: new Date(startDateTime),
+      end: new Date(endDateTime),
+      headcount,
+      quantity,
+    });
+  }
+
   /**
    * Calculates commercial breakdown and produces an immutable pricing snapshot.
    *

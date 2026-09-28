@@ -1,15 +1,34 @@
 import moment from 'moment-timezone';
-import HttpError from '../../../../utils/httpError.utils.js';
 import amenityFacilityRepository from '../../facilities/amenityFacility.repository.js';
 import amenityResourceRepository from '../../resources/amenityResource.repository.js';
 import amenityMaintenanceBlockRepository from '../../maintenance/amenityMaintenanceBlock.repository.js';
-import amenitySlotAllocationRepository from '../../allocations/amenitySlotAllocation.repository.js';
 import amenityReservationHoldRepository from '../../holds/amenityReservationHold.repository.js';
 import amenityReservationRepository from '../../reservations/amenityReservation.repository.js';
+import {
+  getProfile,
+  bookingRuleError,
+  effectiveWindow,
+  candidateWindows,
+  DEFAULT_TIMEZONE,
+} from '../profiles/facilityProfiles.js';
+
+const isBookableFacility = (facility) =>
+  facility &&
+  facility.isActive &&
+  !facility.isDraft &&
+  !facility.isDeleted &&
+  !['DRAFT', 'INACTIVE', 'MAINTENANCE'].includes(facility.status);
+
+const formatTo12Hour = (m) => m.format('h:mm A');
 
 export class AvailabilityService {
   /**
-   * Checks availability for a requested window according to the facility's archetype.
+   * Checks whether a window can be booked, according to the facility's archetype profile.
+   *
+   * Occupancy is uniform across archetypes: the units taken by overlapping active holds
+   * and reservations (headcount for shared facilities, quantity for bulk inventory,
+   * one for everything exclusive) plus the request must fit the capacity. Callers that
+   * allocate (hold creation) run this under the facility mutex inside a transaction.
    *
    * @param {Object} params
    * @param {string|import('mongoose').Types.ObjectId} params.orgId
@@ -17,451 +36,152 @@ export class AvailabilityService {
    * @param {string|import('mongoose').Types.ObjectId} [params.resourceId]
    * @param {Date} params.startDateTime
    * @param {Date} params.endDateTime
-   * @param {number} [params.requestedQuantity=1]
+   * @param {number} [params.headcount=1]
+   * @param {number} [params.quantity=1]
+   * @param {number} [params.requestedQuantity] - legacy alias used when headcount/quantity are absent
+   * @param {string} [params.excludeReservationId] - ignore this reservation (e.g. when moving it)
+   * @param {boolean} [params.enforceRules=true] - apply booking rules (notice, windows, party size)
    * @param {import('mongoose').ClientSession} [session]
-   * @returns {Promise<{
-   *   isAvailable: boolean,
-   *   reason?: string,
-   *   availableUnits?: number,
-   *   maxCapacity?: number,
-   *   effectiveStartDateTime: Date,
-   *   effectiveEndDateTime: Date
-   * }>}
    */
   async checkAvailability(
-    { orgId, facilityId, resourceId, startDateTime, endDateTime, requestedQuantity = 1 },
+    {
+      orgId,
+      facilityId,
+      resourceId,
+      startDateTime,
+      endDateTime,
+      headcount,
+      quantity,
+      requestedQuantity,
+      excludeReservationId = null,
+      enforceRules = true,
+    },
     session
   ) {
     const start = new Date(startDateTime);
     const end = new Date(endDateTime);
+    const unavailable = (reason, extra = {}) => ({
+      isAvailable: false,
+      reason,
+      effectiveStartDateTime: extra.effectiveStart || start,
+      effectiveEndDateTime: extra.effectiveEnd || end,
+      ...extra.fields,
+    });
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
-      throw new HttpError(400, 'Invalid date range: startDateTime must be earlier than endDateTime');
-    }
-
-    const GRACE_PERIOD_MS = 2 * 60 * 1000;
-    if (start.getTime() + GRACE_PERIOD_MS < Date.now()) {
-      return {
-        isAvailable: false,
-        reason: 'Reservation start time cannot be in the past',
-        effectiveStartDateTime: start,
-        effectiveEndDateTime: end,
-      };
-    }
-
-    // 1. Fetch Facility
     const facility = await amenityFacilityRepository.findById(facilityId, orgId, session);
-    if (
-      !facility ||
-      !facility.isActive ||
-      facility.isDraft ||
-      facility.isDeleted ||
-      facility.status === 'DRAFT' ||
-      facility.status === 'INACTIVE'
-    ) {
-      return {
-        isAvailable: false,
-        reason: 'Facility is not active or does not exist',
-        effectiveStartDateTime: start,
-        effectiveEndDateTime: end,
-      };
-    }
+    if (!isBookableFacility(facility)) return unavailable('Facility is not active or does not exist');
 
-    // 1b. Operating Hours Envelope Check (interpreted in facility's configured IANA timezone)
-    // Multi-day room resources (guest houses/transit rooms) represent overnight stays and are not bounded by intraday operating hours.
-    if (facility.archetype !== 'ROOM_RESOURCE' && facility.operatingHours && facility.operatingHours.length > 0) {
-      const tz = facility.timezone || 'UTC';
-      const mStart = moment(start).tz(tz);
-      const mEnd = moment(end).tz(tz);
-      const dayOfWeek = mStart.day();
-      const dayRule = facility.operatingHours.find((h) => h.dayOfWeek === dayOfWeek);
-
-      if (!dayRule || !dayRule.isOpen) {
-        return {
-          isAvailable: false,
-          reason: 'Facility is closed on this day',
-          effectiveStartDateTime: start,
-          effectiveEndDateTime: end,
-        };
-      }
-
-      const [openHour, openMin] = dayRule.openTime.split(':').map(Number);
-      const [closeHour, closeMin] = dayRule.closeTime.split(':').map(Number);
-      const openMinutes = openHour * 60 + openMin;
-      const closeMinutes = closeHour * 60 + closeMin;
-
-      const startMinutes = mStart.hour() * 60 + mStart.minute();
-      let endMinutes = mEnd.hour() * 60 + mEnd.minute();
-      if (mEnd.format('YYYY-MM-DD') !== mStart.format('YYYY-MM-DD')) {
-        endMinutes += 24 * 60;
-      }
-
-      if (startMinutes < openMinutes || endMinutes > closeMinutes) {
-        return {
-          isAvailable: false,
-          reason: `Requested time is outside facility operating hours (${dayRule.openTime} - ${dayRule.closeTime})`,
-          effectiveStartDateTime: start,
-          effectiveEndDateTime: end,
-        };
-      }
-    }
-
-    // 2. Fetch Resource if provided
     let resource = null;
-    let setupBufferMs = 0;
-    let teardownBufferMs = 0;
-
     if (resourceId) {
       resource = await amenityResourceRepository.findById(resourceId, orgId, session);
-      if (!resource || !resource.isActive || resource.isDeleted) {
-        return {
-          isAvailable: false,
-          reason: 'Resource is not active or does not exist',
-          effectiveStartDateTime: start,
-          effectiveEndDateTime: end,
-        };
+      if (!resource || !resource.isActive || resource.isDeleted || String(resource.facilityId) !== String(facility._id)) {
+        return unavailable('Resource is not active or does not exist');
       }
-      setupBufferMs = (resource.setupBufferMinutes || 0) * 60 * 1000;
-      teardownBufferMs = (resource.teardownBufferMinutes || 0) * 60 * 1000;
     }
 
-    const effectiveStart = new Date(start.getTime() - setupBufferMs);
-    const effectiveEnd = new Date(end.getTime() + teardownBufferMs);
+    const profile = getProfile(facility);
+    const hc = Math.max(1, Number(headcount ?? requestedQuantity) || 1);
+    const qty = Math.max(1, Number(quantity ?? requestedQuantity) || 1);
 
-    // 3. Maintenance Block Check
+    if (enforceRules) {
+      const ruleError = bookingRuleError(facility, { start, end, headcount: hc, quantity: qty, resource });
+      if (ruleError) return unavailable(ruleError);
+    } else if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
+      return unavailable('Invalid date range: start must be earlier than end');
+    }
+
+    const { effectiveStart, effectiveEnd } = effectiveWindow(facility, resource, start, end);
+    const win = { effectiveStart, effectiveEnd };
+
+    // Maintenance: a complete closure blocks; a partial one reduces pooled capacity.
     const maintenanceBlocks = await amenityMaintenanceBlockRepository.findOverlappingBlocks(
       { orgId, facilityId, resourceId, startDateTime: effectiveStart, endDateTime: effectiveEnd },
       session
     );
+    const closure = maintenanceBlocks.find((b) => b.isCompleteClosure);
+    if (closure) return unavailable(`Maintenance blackout active: ${closure.reason}`, win);
+    const degraded = maintenanceBlocks
+      .filter((b) => !b.isCompleteClosure && (b.degradedCapacity || 0) > 0)
+      .reduce((sum, b) => sum + (b.degradedCapacity || 0), 0);
 
-    const completeClosure = maintenanceBlocks.find((b) => b.isCompleteClosure);
-    if (completeClosure) {
-      return {
-        isAvailable: false,
-        reason: `Maintenance blackout active: ${completeClosure.reason}`,
-        effectiveStartDateTime: effectiveStart,
-        effectiveEndDateTime: effectiveEnd,
-      };
+    const scope = { orgId, facilityId, resourceId: profile.requiresResource ? resourceId : resourceId || undefined };
+    const [holds, reservations] = await Promise.all([
+      amenityReservationHoldRepository.findOverlappingActiveHolds(
+        { ...scope, effectiveStartDateTime: effectiveStart, effectiveEndDateTime: effectiveEnd },
+        session
+      ),
+      amenityReservationRepository.findOverlappingActiveReservations(
+        { ...scope, effectiveStartDateTime: effectiveStart, effectiveEndDateTime: effectiveEnd },
+        session
+      ),
+    ]);
+
+    const used = [...holds, ...reservations.filter((r) => String(r._id) !== String(excludeReservationId))].reduce(
+      (sum, b) => sum + profile.unitsOf(b, resource),
+      0
+    );
+    const baseCapacity = profile.capacity({ facility, resource });
+    const capacity = facility.archetype === 'SHARED_CAPACITY' ? Math.max(0, baseCapacity - degraded) : baseCapacity;
+    const requestedUnits = profile.unitsOf({ headcount: hc, quantity: qty }, resource);
+    const availableUnits = Math.max(0, capacity - used);
+
+    if (requestedUnits > availableUnits) {
+      const reason =
+        capacity <= 1
+          ? 'Requested time is already booked or held'
+          : `Only ${availableUnits} of ${capacity} place(s) left for the requested time`;
+      return unavailable(reason, { ...win, fields: { availableUnits, maxCapacity: capacity } });
     }
 
-    // 4. Archetype-Specific Availability Logic
-    switch (facility.archetype) {
-      case 'EXCLUSIVE_HOURLY': {
-        // Discrete slot check
-        const overlappingSlots = await amenitySlotAllocationRepository.findOverlappingExclusiveSlots(
-          { orgId, facilityId, resourceId, startDateTime: effectiveStart, endDateTime: effectiveEnd },
-          session
-        );
-        if (overlappingSlots.length > 0) {
-          return {
-            isAvailable: false,
-            reason: 'Requested slot is already allocated or held',
-            effectiveStartDateTime: effectiveStart,
-            effectiveEndDateTime: effectiveEnd,
-          };
-        }
-
-        // Active holds check
-        const activeHolds = await amenityReservationHoldRepository.findOverlappingActiveHolds(
-          { orgId, facilityId, resourceId, effectiveStartDateTime: effectiveStart, effectiveEndDateTime: effectiveEnd },
-          session
-        );
-        if (activeHolds.length > 0) {
-          return {
-            isAvailable: false,
-            reason: 'Requested time is locked by an active hold',
-            effectiveStartDateTime: effectiveStart,
-            effectiveEndDateTime: effectiveEnd,
-          };
-        }
-
-        // Active confirmed reservations check
-        const activeResvs = await amenityReservationRepository.findOverlappingActiveReservations(
-          { orgId, facilityId, resourceId, effectiveStartDateTime: effectiveStart, effectiveEndDateTime: effectiveEnd },
-          session
-        );
-        if (activeResvs.length > 0) {
-          return {
-            isAvailable: false,
-            reason: 'Requested time is booked by a confirmed reservation',
-            effectiveStartDateTime: effectiveStart,
-            effectiveEndDateTime: effectiveEnd,
-          };
-        }
-
-        return {
-          isAvailable: true,
-          effectiveStartDateTime: effectiveStart,
-          effectiveEndDateTime: effectiveEnd,
-        };
-      }
-
-      case 'SHARED_CAPACITY': {
-        // If someone booked or held this slot, check if active reservations/holds exist
-        const activeHolds = await amenityReservationHoldRepository.findOverlappingActiveHolds(
-          { orgId, facilityId, resourceId, effectiveStartDateTime: effectiveStart, effectiveEndDateTime: effectiveEnd },
-          session
-        );
-        if (activeHolds.length > 0) {
-          return {
-            isAvailable: false,
-            reason: 'Requested time is locked by an active hold',
-            effectiveStartDateTime: effectiveStart,
-            effectiveEndDateTime: effectiveEnd,
-          };
-        }
-
-        const activeResvs = await amenityReservationRepository.findOverlappingActiveReservations(
-          { orgId, facilityId, resourceId, effectiveStartDateTime: effectiveStart, effectiveEndDateTime: effectiveEnd },
-          session
-        );
-        if (activeResvs.length > 0) {
-          return {
-            isAvailable: false,
-            reason: 'Requested time is booked by a confirmed reservation',
-            effectiveStartDateTime: effectiveStart,
-            effectiveEndDateTime: effectiveEnd,
-          };
-        }
-
-        const slotStartUTC = start.toISOString();
-        const bucketId = `BUCKET:${orgId}:${facilityId}:${slotStartUTC}`;
-        const bucket = await amenitySlotAllocationRepository.findById(bucketId, session);
-
-        // Sum degraded capacity from non-closure maintenance blocks
-        const totalDegradedCapacity = maintenanceBlocks
-          .filter((b) => !b.isCompleteClosure && (b.degradedCapacity || 0) > 0)
-          .reduce((sum, b) => sum + (b.degradedCapacity || 0), 0);
-
-        const currentAllocated = bucket ? bucket.allocatedHeadcount : 0;
-        const baseCap = facility.maxCapacity || 1;
-        const maxCap = Math.max(0, baseCap - totalDegradedCapacity);
-        const availableHeadcount = Math.max(0, maxCap - currentAllocated);
-
-        if (requestedQuantity > availableHeadcount) {
-          return {
-            isAvailable: false,
-            reason: `Requested headcount (${requestedQuantity}) exceeds available capacity (${availableHeadcount})`,
-            availableUnits: availableHeadcount,
-            maxCapacity: maxCap,
-            effectiveStartDateTime: effectiveStart,
-            effectiveEndDateTime: effectiveEnd,
-          };
-        }
-
-        return {
-          isAvailable: true,
-          availableUnits: availableHeadcount,
-          maxCapacity: maxCap,
-          effectiveStartDateTime: effectiveStart,
-          effectiveEndDateTime: effectiveEnd,
-        };
-      }
-
-      case 'EVENT_SPACE':
-      case 'ROOM_RESOURCE': {
-        // Continuous range check with buffers
-        const activeHolds = await amenityReservationHoldRepository.findOverlappingActiveHolds(
-          { orgId, facilityId, resourceId, effectiveStartDateTime: effectiveStart, effectiveEndDateTime: effectiveEnd },
-          session
-        );
-        if (activeHolds.length > 0) {
-          return {
-            isAvailable: false,
-            reason: 'Requested interval overlaps with an existing hold',
-            effectiveStartDateTime: effectiveStart,
-            effectiveEndDateTime: effectiveEnd,
-          };
-        }
-
-        const activeResvs = await amenityReservationRepository.findOverlappingActiveReservations(
-          { orgId, facilityId, resourceId, effectiveStartDateTime: effectiveStart, effectiveEndDateTime: effectiveEnd },
-          session
-        );
-        if (activeResvs.length > 0) {
-          return {
-            isAvailable: false,
-            reason: 'Requested interval overlaps with an existing reservation',
-            effectiveStartDateTime: effectiveStart,
-            effectiveEndDateTime: effectiveEnd,
-          };
-        }
-
-        return {
-          isAvailable: true,
-          effectiveStartDateTime: effectiveStart,
-          effectiveEndDateTime: effectiveEnd,
-        };
-      }
-
-      case 'INVENTORY_TOOLS': {
-        if (resource && resource.isSerializedAsset) {
-          // Serialized asset behaves like an exclusive resource
-          const activeHolds = await amenityReservationHoldRepository.findOverlappingActiveHolds(
-            { orgId, facilityId, resourceId, effectiveStartDateTime: effectiveStart, effectiveEndDateTime: effectiveEnd },
-            session
-          );
-          if (activeHolds.length > 0) {
-            return {
-              isAvailable: false,
-              reason: 'Serialized asset is currently reserved by an active hold',
-              effectiveStartDateTime: effectiveStart,
-              effectiveEndDateTime: effectiveEnd,
-            };
-          }
-
-          const activeResvs = await amenityReservationRepository.findOverlappingActiveReservations(
-            { orgId, facilityId, resourceId, effectiveStartDateTime: effectiveStart, effectiveEndDateTime: effectiveEnd },
-            session
-          );
-          if (activeResvs.length > 0) {
-            return {
-              isAvailable: false,
-              reason: 'Serialized asset is booked for the requested period',
-              effectiveStartDateTime: effectiveStart,
-              effectiveEndDateTime: effectiveEnd,
-            };
-          }
-
-          return {
-            isAvailable: true,
-            effectiveStartDateTime: effectiveStart,
-            effectiveEndDateTime: effectiveEnd,
-          };
-        }
-
-        // Bulk Inventory
-        const totalStock = resource?.totalBulkStock || 0;
-        return {
-          isAvailable: totalStock >= requestedQuantity,
-          availableUnits: totalStock,
-          reason: totalStock < requestedQuantity ? 'Insufficient bulk inventory stock' : undefined,
-          effectiveStartDateTime: effectiveStart,
-          effectiveEndDateTime: effectiveEnd,
-        };
-      }
-
-      default:
-        return {
-          isAvailable: true,
-          effectiveStartDateTime: effectiveStart,
-          effectiveEndDateTime: effectiveEnd,
-        };
-    }
+    return {
+      isAvailable: true,
+      availableUnits,
+      maxCapacity: capacity,
+      effectiveStartDateTime: effectiveStart,
+      effectiveEndDateTime: effectiveEnd,
+    };
   }
 
   /**
-   * Generates and evaluates all daily time slots for a facility on a given date.
-   * Excludes past time slots (with 2-min grace period) and slots that are booked,
-   * held, or blocked by maintenance.
+   * Bookable windows a facility offers on a local date (slots, sessions, full day,
+   * overnight check-in or loan pickups, depending on the archetype profile). Windows
+   * that are past, outside the booking rules, full or under maintenance are omitted.
    *
-   * @param {Object} params
-   * @param {string|import('mongoose').Types.ObjectId} params.orgId
-   * @param {string|import('mongoose').Types.ObjectId} params.facilityId
-   * @param {string|import('mongoose').Types.ObjectId} [params.resourceId]
-   * @param {string} params.dateStr - 'YYYY-MM-DD'
-   * @param {number} [params.requestedQuantity=1]
-   * @param {import('mongoose').ClientSession} [session]
-   * @returns {Promise<{ slots: Array<{ start: string, end: string, label: string, startUtc: string, endUtc: string }> }>}
+   * @returns {Promise<{ slots: Array<{ start: string, end: string, label: string, startUtc: string, endUtc: string, availableUnits?: number, maxCapacity?: number }> }>}
    */
-  async getDailySlots({ orgId, facilityId, resourceId, dateStr, requestedQuantity = 1 }, session) {
+  async getDailySlots({ orgId, facilityId, resourceId, dateStr, requestedQuantity = 1, headcount, quantity }, session) {
     const facility = await amenityFacilityRepository.findById(facilityId, orgId, session);
-    if (
-      !facility ||
-      !facility.isActive ||
-      facility.isDraft ||
-      facility.isDeleted ||
-      facility.status === 'DRAFT' ||
-      facility.status === 'INACTIVE'
-    ) {
-      return { slots: [] };
+    if (!isBookableFacility(facility)) return { slots: [] };
+
+    const tz = facility.timezone || DEFAULT_TIMEZONE;
+    const slots = [];
+    for (const candidate of candidateWindows(facility, dateStr)) {
+      const avail = await this.checkAvailability(
+        {
+          orgId,
+          facilityId,
+          resourceId,
+          startDateTime: candidate.start,
+          endDateTime: candidate.end,
+          headcount: headcount ?? requestedQuantity,
+          quantity: quantity ?? requestedQuantity,
+        },
+        session
+      );
+      if (!avail.isAvailable) continue;
+      const ms = moment(candidate.start).tz(tz);
+      const me = moment(candidate.end).tz(tz);
+      slots.push({
+        start: ms.format('HH:mm'),
+        end: me.format('HH:mm'),
+        label: candidate.label || `${formatTo12Hour(ms)} - ${formatTo12Hour(me)}`,
+        startUtc: candidate.start.toISOString(),
+        endUtc: candidate.end.toISOString(),
+        availableUnits: avail.availableUnits,
+        maxCapacity: avail.maxCapacity,
+      });
     }
-
-    const tz = facility.timezone || 'Asia/Kolkata';
-    const targetDate = moment.tz(dateStr, 'YYYY-MM-DD', tz).startOf('day');
-    const dayOfWeek = targetDate.day();
-
-    const dayRule = facility.operatingHours?.find((h) => h.dayOfWeek === dayOfWeek);
-    if (!dayRule || !dayRule.isOpen) {
-      return { slots: [] };
-    }
-
-    const opensAtStr = dayRule.openTime || dayRule.opensAt || '06:00';
-    const closesAtStr = dayRule.closeTime || dayRule.closesAt || '22:00';
-    const duration = facility.slotDurationMinutes || 60;
-
-    const [openH, openM] = typeof opensAtStr === 'string' ? opensAtStr.split(':').map(Number) : [6, 0];
-    const [closeH, closeM] = typeof closesAtStr === 'string' ? closesAtStr.split(':').map(Number) : [22, 0];
-
-    const startMinutes = openH * 60 + openM;
-    const endMinutes = closeH * 60 + closeM;
-
-    const pad = (n) => String(n).padStart(2, '0');
-    const nowMs = Date.now();
-    const GRACE_PERIOD_MS = 2 * 60 * 1000;
-
-    const availableSlots = [];
-    let current = startMinutes;
-
-    while (current + duration <= endMinutes) {
-      const slotStartH = Math.floor(current / 60);
-      const slotStartM = current % 60;
-      const slotEndH = Math.floor((current + duration) / 60);
-      const slotEndM = (current + duration) % 60;
-
-      const startStr = `${pad(slotStartH)}:${pad(slotStartM)}`;
-      const endStr = `${pad(slotEndH)}:${pad(slotEndM)}`;
-
-      const slotStartUtc = moment.tz(`${dateStr}T${startStr}`, 'YYYY-MM-DDTHH:mm', tz).toDate();
-      let slotEndUtc = moment.tz(`${dateStr}T${endStr}`, 'YYYY-MM-DDTHH:mm', tz).toDate();
-      if (slotEndUtc <= slotStartUtc) {
-        slotEndUtc = moment(slotEndUtc).add(1, 'days').toDate();
-      }
-
-      // 1. Past time check: if slot start time has already passed, it disappears
-      const isPast = slotStartUtc.getTime() + GRACE_PERIOD_MS < nowMs;
-
-      if (!isPast) {
-        // 2. Archetype availability check: checks overlapping holds, confirmed reservations, discrete allocations, maintenance
-        const avail = await this.checkAvailability(
-          {
-            orgId,
-            facilityId,
-            resourceId,
-            startDateTime: slotStartUtc,
-            endDateTime: slotEndUtc,
-            requestedQuantity: Number(requestedQuantity) || 1,
-          },
-          session
-        );
-
-        // "if someone booked that slot it should disappear"
-        if (avail.isAvailable) {
-          const formatTo12Hour = (tStr) => {
-            const [hStr, mStr = '00'] = (tStr || '').split(':');
-            const h = parseInt(hStr, 10);
-            const m = parseInt(mStr, 10);
-            if (isNaN(h)) return tStr;
-            const period = h >= 12 ? 'PM' : 'AM';
-            const hour12 = h % 12 === 0 ? 12 : h % 12;
-            const minutePad = isNaN(m) ? '00' : String(m).padStart(2, '0');
-            return `${hour12}:${minutePad} ${period}`;
-          };
-
-          availableSlots.push({
-            start: startStr,
-            end: endStr,
-            label: `${formatTo12Hour(startStr)} - ${formatTo12Hour(endStr)}`,
-            startUtc: slotStartUtc.toISOString(),
-            endUtc: slotEndUtc.toISOString(),
-          });
-        }
-      }
-
-      current += duration;
-    }
-
-    return { slots: availableSlots };
+    return { slots };
   }
 }
 

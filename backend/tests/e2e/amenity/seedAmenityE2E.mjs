@@ -119,8 +119,27 @@ const FACILITIES = [
   },
   {
     key: 'tools', orgKey: 'A', archetype: 'INVENTORY_TOOLS', name: 'Tool Kit', code: 'TOOLS', category: 'General',
-    maxCapacity: 3, availableStock: 3, maxLoanHours: 4, requiresInspection: true, slotDurationMinutes: 240,
-    operatingHours: allDays('08:00', '20:00'), pricingConfig: { pricingType: 'FREE', baseRate: 0, currency: 'INR' },
+    maxCapacity: 3, availableStock: 3, maxLoanHours: 72, requiresInspection: true, slotDurationMinutes: 240,
+    operatingHours: allDays('08:00', '20:00'),
+    // Free to borrow, but each item carries a refundable deposit.
+    pricingConfig: { pricingType: 'FREE', baseRate: 0, securityDeposit: 500, currency: 'INR' },
+  },
+  {
+    key: 'hallSessions', orgKey: 'A', archetype: 'EVENT_SPACE', name: 'Community Lawn', code: 'LAWN', category: 'Event Space',
+    maxCapacity: 60, bookingMode: 'SESSION', requiresApproval: false, advanceBookingDays: 30, slotDurationMinutes: 60,
+    operatingHours: allDays('08:00', '22:00'),
+    sessions: [
+      { name: 'Morning', startTime: '08:00', endTime: '13:00', price: 3000 },
+      { name: 'Evening', startTime: '16:00', endTime: '22:00', price: 4500 },
+    ],
+    pricingConfig: { pricingType: 'FIXED_EVENT', baseRate: 4000, currency: 'INR' },
+  },
+  {
+    key: 'guestRoom', orgKey: 'A', archetype: 'ROOM_RESOURCE', name: 'Guest Suites', code: 'GUEST', category: 'Workspace',
+    stayMode: 'OVERNIGHT', checkInTime: '14:00', checkOutTime: '11:00', maxNights: 3, slotDurationMinutes: 60,
+    isMultiResourceFacility: true, operatingHours: allDays('08:00', '20:00'),
+    subRooms: [{ id: 'SUITE-1', name: 'Suite 1', capacity: 2 }],
+    pricingConfig: { pricingType: 'DAILY', baseRate: 1500, currency: 'INR' },
   },
   {
     key: 'draft', orgKey: 'A', archetype: 'EVENT_SPACE', name: 'Draft Lounge', code: 'DRAFT', category: 'Event Space',

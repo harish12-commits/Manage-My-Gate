@@ -13,7 +13,6 @@ export const createHoldRules = [
     .withMessage('Invalid holdType'),
   body('holdDurationMinutes').optional().isInt({ min: 1, max: 60 }).withMessage('holdDurationMinutes must be between 1 and 60'),
   body('unitId').optional().isMongoId().withMessage('Invalid unitId'),
-  body('quotaLimit').optional().isInt({ min: 1 }).withMessage('quotaLimit must be a positive integer'),
 ];
 
 export const holdIdParamRules = [

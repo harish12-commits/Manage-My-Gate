@@ -16,6 +16,9 @@ import amenityManagementEvents, { AMENITY_EVENTS } from '../amenityManagement.ev
 import walletService from '../../wallet/wallet.service.js';
 import Payment from '../../payment/payment.model.js';
 
+/** Id of a possibly-populated reference. */
+const idOf = (ref) => (ref && typeof ref === 'object' && ref._id ? ref._id : ref);
+
 export class AmenityReservationService {
   /**
    * Promotes an active hold into a confirmed or pending-approval reservation.
@@ -87,14 +90,17 @@ export class AmenityReservationService {
       throw new HttpError(404, 'Amenity facility not found');
     }
 
-    // 3. Compute Final Pricing Snapshot
-    const pricingSnapshot = pricingService.calculatePricingSnapshot({
-      pricingConfig: facility.pricingConfig || facility.pricing,
-      startDateTime: hold.requestedStartDateTime,
-      endDateTime: hold.requestedEndDateTime,
-      headcount: hold.headcount,
-      quantity: hold.quantity,
-    });
+    // 3. The price is the one quoted and held for the resident; a facility price
+    //    change between hold and confirm must not change what they pay.
+    const pricingSnapshot =
+      hold.pricingSnapshot && hold.pricingSnapshot.totalAmount !== undefined && hold.pricingSnapshot.totalAmount !== null
+        ? (hold.pricingSnapshot.toObject ? hold.pricingSnapshot.toObject() : hold.pricingSnapshot)
+        : pricingService.calculateForFacility(facility, {
+            startDateTime: hold.requestedStartDateTime,
+            endDateTime: hold.requestedEndDateTime,
+            headcount: hold.headcount,
+            quantity: hold.quantity,
+          });
 
     // 4. Resolve payment exclusively from server-side state. The old flow
     // trusted a client-provided paymentReference, which meant a booking could
@@ -279,15 +285,9 @@ export class AmenityReservationService {
       session
     );
 
-    if (facility.archetype === 'EXCLUSIVE_HOURLY') {
-      const slotStartUTC = hold.requestedStartDateTime.toISOString();
-      const slotId = `SLOT:${orgId}:${hold.facilityId}:${hold.resourceId || 'ALL'}:${slotStartUTC}`;
-      await amenitySlotAllocationRepository.promoteDiscreteSlot(slotId, reservation._id, session);
-    }
-
     // 10. Consume Household Quota (Promote from reserved to consumed)
     const requestedUnits = Math.ceil(
-      (hold.effectiveEndDateTime.getTime() - hold.effectiveStartDateTime.getTime()) / 60000
+      (hold.requestedEndDateTime.getTime() - hold.requestedStartDateTime.getTime()) / 60000
     );
     await amenityQuotaAllocationService.promoteQuota(
       {
@@ -473,7 +473,9 @@ export class AmenityReservationService {
         resourceId: targetResourceId,
         startDateTime: start,
         endDateTime: end,
-        requestedQuantity: reservation.headcount || reservation.quantity || 1,
+        headcount: reservation.headcount || 1,
+        quantity: reservation.quantity || 1,
+        excludeReservationId: reservation._id,
       },
       session
     );
@@ -601,27 +603,8 @@ export class AmenityReservationService {
     const isWalletPayment =
       (reservation.paymentStatus === 'PAID' || reservation.paymentStatus === 'REFUND_PENDING') &&
       reservation.paymentMethod === 'WALLET';
-    let refundAmount = Number(reservation.paidAmount || reservation.totalAmount || 0);
-    if (refundAmount <= 0 && (reservation.paymentStatus === 'PAID' || reservation.paymentStatus === 'REFUND_PENDING') && reservation.facilityId) {
-      try {
-        const facilityId = reservation.facilityId._id || reservation.facilityId;
-        const facility = await amenityFacilityRepository.findById(facilityId, orgId, session);
-        if (facility && facility.pricingConfig) {
-          const calc = pricingService.calculatePricingSnapshot({
-            pricingConfig: facility.pricingConfig,
-            startDateTime: reservation.requestedStartDateTime || reservation.effectiveStartDateTime,
-            endDateTime: reservation.requestedEndDateTime || reservation.effectiveEndDateTime,
-            headcount: reservation.headcount || 1,
-            quantity: reservation.quantity || 1,
-          });
-          if (calc.totalAmount > 0) {
-            refundAmount = calc.totalAmount;
-          }
-        }
-      } catch (reCalcErr) {
-        // Non-blocking fallback
-      }
-    }
+    // Refunds are based on what was actually paid, never on the facility's current price.
+    const refundAmount = Number(reservation.paidAmount || 0);
     let newPaymentStatus = reservation.paymentStatus;
     if (reservation.paymentStatus === 'PAID' || reservation.paymentStatus === 'REFUND_PENDING') {
       newPaymentStatus = isWalletPayment ? 'REFUNDED' : 'REFUND_PENDING';
@@ -701,21 +684,16 @@ export class AmenityReservationService {
       }
     }
 
-    const slotStartUTC = reservation.requestedStartDateTime.toISOString();
-    const slotId = `SLOT:${reservation.orgId}:${reservation.facilityId}:${reservation.resourceId || 'ALL'}:${slotStartUTC}`;
-    await amenitySlotAllocationRepository.releaseDiscreteSlot(slotId, session);
-
-    // 5. Refund Consumed Quota
+    // 5. Refund Consumed Quota (ids may be populated documents on this read)
     const requestedUnits = Math.ceil(
-      (reservation.effectiveEndDateTime.getTime() - reservation.effectiveStartDateTime.getTime()) /
-        60000
+      (reservation.requestedEndDateTime.getTime() - reservation.requestedStartDateTime.getTime()) / 60000
     );
 
     await amenityQuotaAllocationService.refundQuota(
       {
         orgId,
-        unitId: reservation.unitId,
-        facilityId: reservation.facilityId,
+        unitId: idOf(reservation.unitId),
+        facilityId: idOf(reservation.facilityId),
         requestedUnits,
         date: reservation.requestedStartDateTime,
       },
@@ -990,22 +968,16 @@ export class AmenityReservationService {
         }
       }
 
-      const slotStartUTC = reservation.requestedStartDateTime.toISOString();
-      const slotId = `SLOT:${reservation.orgId}:${reservation.facilityId}:${reservation.resourceId || 'ALL'}:${slotStartUTC}`;
-      await amenitySlotAllocationRepository.releaseDiscreteSlot(slotId, session);
-
-      // Refund Quota
+      // Refund Quota (ids may be populated documents on this read)
       const requestedUnits = Math.ceil(
-        (reservation.effectiveEndDateTime.getTime() -
-          reservation.effectiveStartDateTime.getTime()) /
-          60000
+        (reservation.requestedEndDateTime.getTime() - reservation.requestedStartDateTime.getTime()) / 60000
       );
 
       await amenityQuotaAllocationService.refundQuota(
         {
           orgId,
-          unitId: reservation.unitId,
-          facilityId: reservation.facilityId,
+          unitId: idOf(reservation.unitId),
+          facilityId: idOf(reservation.facilityId),
           requestedUnits,
           date: reservation.requestedStartDateTime,
         },

@@ -37,7 +37,7 @@ export const amenityApiAs = async <T = any>(
   return { status: res.status, body: parsed };
 };
 
-export type FacilityKey = 'pool' | 'gym' | 'court' | 'hall' | 'rooms' | 'tools' | 'draft' | 'poolOther';
+export type FacilityKey = 'pool' | 'gym' | 'court' | 'hall' | 'hallSessions' | 'rooms' | 'guestRoom' | 'tools' | 'draft' | 'poolOther';
 
 export const facility = (key: FacilityKey) => {
   const f = fixture().facilities?.[key];
@@ -66,6 +66,8 @@ export const idemKey = (prefix = 'e2e') => `${prefix}-${Date.now()}-${++keySeq}`
 export interface HoldInput {
   facilityKey: FacilityKey;
   daysAhead?: number;
+  /** For bookings that end on a later day (stays, multi-day loans). Defaults to daysAhead. */
+  endDaysAhead?: number;
   start: string;
   end: string;
   headcount?: number;
@@ -85,7 +87,7 @@ export const createHoldAs = (who: Actor, input: HoldInput) => {
       facilityId: f.id,
       ...(input.resourceIndex !== undefined ? { resourceId: f.resourceIds[input.resourceIndex] } : {}),
       requestedStartDateTime: istAt(days, input.start),
-      requestedEndDateTime: istAt(days, input.end),
+      requestedEndDateTime: istAt(input.endDaysAhead ?? days, input.end),
       headcount: input.headcount ?? 1,
       quantity: input.quantity ?? 1,
       holdType: 'STANDARD',

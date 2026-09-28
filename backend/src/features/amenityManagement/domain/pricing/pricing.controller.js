@@ -12,8 +12,7 @@ export class PricingController {
 
       const facility = await amenityFacilityService.getFacilityById(facilityId, orgId);
 
-      const pricingSnapshot = pricingService.calculatePricingSnapshot({
-        pricingConfig: facility.pricingConfig || facility.pricing,
+      const pricingSnapshot = pricingService.calculateForFacility(facility, {
         startDateTime: new Date(startDateTime),
         endDateTime: new Date(endDateTime),
         headcount: Number(headcount) || 1,

@@ -17,8 +17,8 @@ afterAll(closeDb);
 describe('P0 amenity harness: mobile app ↔ real backend', () => {
   it('seeds one facility per archetype with its archetype resources', () => {
     const f = fixture().facilities!;
-    expect(Object.values(f).filter((x) => x.orgKey === 'A' && x.code !== 'DRAFT').map((x) => x.archetype).sort()).toEqual(
-      ['EVENT_SPACE', 'EXCLUSIVE_HOURLY', 'INVENTORY_TOOLS', 'ROOM_RESOURCE', 'SHARED_CAPACITY', 'SHARED_CAPACITY']
+    expect([...new Set(Object.values(f).filter((x) => x.orgKey === 'A').map((x) => x.archetype))].sort()).toEqual(
+      ['EVENT_SPACE', 'EXCLUSIVE_HOURLY', 'INVENTORY_TOOLS', 'ROOM_RESOURCE', 'SHARED_CAPACITY']
     );
     expect(facility('rooms').resourceIds).toHaveLength(2);
     expect(facility('tools').resourceIds).toHaveLength(1);

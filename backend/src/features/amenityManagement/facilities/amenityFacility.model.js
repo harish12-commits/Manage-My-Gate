@@ -109,6 +109,17 @@ const subRoomSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const eventSessionSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    startTime: { type: String, required: true, match: [/^([01]\d|2[0-3]):[0-5]\d$/, 'Session startTime must be HH:MM'] },
+    endTime: { type: String, required: true, match: [/^([01]\d|2[0-3]):[0-5]\d$/, 'Session endTime must be HH:MM'] },
+    // Optional flat price for this session; falls back to pricingConfig.baseRate.
+    price: { type: Number, default: null, min: [0, 'Session price cannot be negative'] },
+  },
+  { _id: false }
+);
+
 const amenityFacilitySchema = new mongoose.Schema(
   {
     orgId: {
@@ -242,6 +253,37 @@ const amenityFacilitySchema = new mongoose.Schema(
     requiresInspection: {
       type: Boolean,
       default: true,
+    },
+    // EVENT_SPACE: how the venue is booked.
+    bookingMode: {
+      type: String,
+      enum: ['FULL_DAY', 'SESSION', 'HOURLY'],
+      default: 'FULL_DAY',
+    },
+    sessions: {
+      type: [eventSessionSchema],
+      default: [],
+    },
+    // ROOM_RESOURCE: hourly rooms or overnight stays.
+    stayMode: {
+      type: String,
+      enum: ['HOURLY', 'OVERNIGHT'],
+      default: 'HOURLY',
+    },
+    checkInTime: {
+      type: String,
+      default: '14:00',
+      match: [/^([01]\d|2[0-3]):[0-5]\d$/, 'checkInTime must be HH:MM'],
+    },
+    checkOutTime: {
+      type: String,
+      default: '11:00',
+      match: [/^([01]\d|2[0-3]):[0-5]\d$/, 'checkOutTime must be HH:MM'],
+    },
+    maxNights: {
+      type: Number,
+      default: 7,
+      min: [1, 'maxNights must be at least 1'],
     },
     pricingConfig: {
       type: pricingConfigSchema,
