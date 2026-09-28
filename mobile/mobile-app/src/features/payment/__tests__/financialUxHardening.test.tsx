@@ -434,12 +434,12 @@ describe('Mobile Phase 5 — Financial UX Hardening, Accessibility & Recovery Po
 
       // Decoupled orthogonal confirmation
       expect(screen.getByTestId('pay-at-gate-pending-notice')).toBeTruthy();
-      expect(screen.getByText('Cash Collection Pending at Gate')).toBeTruthy();
-      expect(screen.getByText(/Please present your digital access pass at the gate or amenity counter to complete your cash payment/i)).toBeTruthy();
+      expect(screen.getByText('Balance due: ₹1,200')).toBeTruthy();
+      expect(screen.getByText(/Pay at the gate before entry/i)).toBeTruthy();
 
       // Booking status is CONFIRMED, payment is PENDING
       expect(screen.getAllByText('Confirmed').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText('Pending')).toBeTruthy();
+      expect(screen.getAllByText('Payment Due').length).toBeGreaterThanOrEqual(1);
     });
   });
 

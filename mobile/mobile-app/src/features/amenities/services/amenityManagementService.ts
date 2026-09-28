@@ -401,6 +401,13 @@ export const amenityManagementService = {
     return extractEnvelope(response);
   },
 
+  /** Refund the resident would get by cancelling now; changes nothing. */
+  async getCancellationPreview(id: string): Promise<ApiResponse<any>> {
+    const url = getAmenityV2Url(`/reservations/${id}/cancellation-preview`);
+    const response = await apiClient.get<ApiResponse<any>>(url);
+    return extractEnvelope(response);
+  },
+
   async cancelReservation(
     id: string,
     payload?: CancelReservationApiPayload

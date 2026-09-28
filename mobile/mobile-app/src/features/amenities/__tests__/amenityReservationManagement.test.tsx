@@ -41,6 +41,17 @@ jest.mock('../store/amenityBookingSlice', () => ({
     type: 'amenityBookings/fetchPassesByReservation',
     unwrap: () => mockFetchPassesByReservationThunk(id),
   }),
+  fetchCancellationPreviewThunk: (id: any) => ({
+    type: 'amenityBookings/fetchCancellationPreview',
+    unwrap: () =>
+      Promise.resolve({
+        allowed: true,
+        blockReason: null,
+        refund: { percentage: 50, bookingRefund: 250, depositRefund: 0, total: 250 },
+        refundTo: 'WALLET',
+        policy: null,
+      }),
+  }),
   clearV2Errors: () => mockClearV2Errors(),
 }));
 
@@ -534,50 +545,45 @@ describe('Amenity Management Phase 6C.1: Resident Reservation Management Foundat
   // Cancellation Modal Tests (ResidentCancelModal)
   // ==========================================
   describe('ResidentCancelModal Component', () => {
+    const preview = { allowed: true, blockReason: null, refund: { percentage: 50, bookingRefund: 250, depositRefund: 500, total: 750 }, refundTo: 'WALLET' as const, policy: null };
+
     it('Scenario 16: Opens correctly when visible is true', async () => {
       await render(
-        <ResidentCancelModal
-          visible={true}
-          reservation={mockReservation}
-          onConfirm={jest.fn()}
-          onClose={jest.fn()}
-        />
+        <ResidentCancelModal visible={true} reservation={mockReservation} preview={preview} onConfirm={jest.fn()} onClose={jest.fn()} />
       );
 
-      expect(screen.getByText('Cancel Reservation')).toBeTruthy();
+      expect(screen.getByTestId('cancel-sheet-confirm')).toBeTruthy();
     });
 
-    it('Scenario 17: Displays reservation context including facility name and reservation number', async () => {
+    it('Scenario 17: Shows the booking and the refund the server will credit to the wallet', async () => {
       await render(
-        <ResidentCancelModal
-          visible={true}
-          reservation={mockReservation}
-          onConfirm={jest.fn()}
-          onClose={jest.fn()}
-        />
+        <ResidentCancelModal visible={true} reservation={mockReservation} preview={preview} onConfirm={jest.fn()} onClose={jest.fn()} />
       );
 
-      expect(
-        screen.getByText(
-          /Are you sure you want to cancel your reservation for Infinity Swimming Pool \(RES-2026-00042\)\?/
-        )
-      ).toBeTruthy();
+      expect(screen.getByText(/Infinity Swimming Pool · #RES-2026-00042/)).toBeTruthy();
+      expect(screen.getByText('₹750 will be refunded to your wallet.')).toBeTruthy();
+      expect(screen.getByText('Booking: ₹250 (50%)')).toBeTruthy();
+      expect(screen.getByText('Deposit: ₹500 (always returned)')).toBeTruthy();
     });
 
     it('Scenario 18 & 19: Captures optional reason and calls onConfirm with trimmed string or undefined', async () => {
       const onConfirmMock = jest.fn();
       await render(
-        <ResidentCancelModal
-          visible={true}
-          reservation={mockReservation}
-          onConfirm={onConfirmMock}
-          onClose={jest.fn()}
-          initialReason="Change of plans"
-        />
+        <ResidentCancelModal visible={true} reservation={mockReservation} preview={preview} onConfirm={onConfirmMock} onClose={jest.fn()} />
       );
 
-      fireEvent.press(screen.getByText('Yes, Cancel Booking'));
-      expect(onConfirmMock).toHaveBeenCalledWith('Change of plans');
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('cancel-sheet-confirm'));
+      });
+      expect(onConfirmMock).toHaveBeenLastCalledWith(undefined);
+
+      await act(async () => {
+        fireEvent.changeText(screen.getByPlaceholderText('Tell the management why you are cancelling'), '  Change of plans  ');
+      });
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('cancel-sheet-confirm'));
+      });
+      expect(onConfirmMock).toHaveBeenLastCalledWith('Change of plans');
     });
 
     it('Scenario 20: Disables confirm button and prevents duplicate submission while loading is true', async () => {
@@ -586,29 +592,55 @@ describe('Amenity Management Phase 6C.1: Resident Reservation Management Foundat
         <ResidentCancelModal
           visible={true}
           reservation={mockReservation}
+          preview={preview}
           onConfirm={onConfirmMock}
           onClose={jest.fn()}
           loading={true}
         />
       );
 
-      fireEvent.press(screen.getByText('Yes, Cancel Booking'));
+      fireEvent.press(screen.getByTestId('cancel-sheet-confirm'));
       expect(onConfirmMock).not.toHaveBeenCalled();
     });
 
     it('Scenario 21: Closes correctly when cancel action is tapped', async () => {
       const onCloseMock = jest.fn();
       await render(
+        <ResidentCancelModal visible={true} reservation={mockReservation} preview={preview} onConfirm={jest.fn()} onClose={onCloseMock} />
+      );
+
+      fireEvent.press(screen.getByTestId('cancel-sheet-keep'));
+      expect(onCloseMock).toHaveBeenCalled();
+    });
+
+    it('Scenario 21b: Explains why a blocked booking cannot be cancelled and offers no confirm', async () => {
+      await render(
         <ResidentCancelModal
           visible={true}
           reservation={mockReservation}
+          preview={{ ...preview, allowed: false, blockReason: 'This facility does not allow cancellations' }}
           onConfirm={jest.fn()}
-          onClose={onCloseMock}
+          onClose={jest.fn()}
         />
       );
 
-      fireEvent.press(screen.getByText('Keep Reservation'));
-      expect(onCloseMock).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('This facility does not allow cancellations')).toBeTruthy();
+      expect(screen.queryByTestId('cancel-sheet-confirm')).toBeNull();
+    });
+
+    it('Scenario 21c: Shows the server error inside the sheet', async () => {
+      await render(
+        <ResidentCancelModal
+          visible={true}
+          reservation={mockReservation}
+          preview={preview}
+          error="Booking already started"
+          onConfirm={jest.fn()}
+          onClose={jest.fn()}
+        />
+      );
+
+      expect(screen.getByText('Booking already started')).toBeTruthy();
     });
   });
 
@@ -845,15 +877,11 @@ describe('Amenity Management Phase 6C.1: Resident Reservation Management Foundat
         fireEvent.press(confirmCancelBtn);
       });
 
-      expect(screen.getByText('Cancel Reservation')).toBeTruthy();
-      expect(
-        screen.getByText(
-          /Are you sure you want to cancel your reservation for Infinity Swimming Pool \(RES-2026-00042\)\?/
-        )
-      ).toBeTruthy();
+      expect(screen.getByText(/Infinity Swimming Pool · #RES-2026-00042/)).toBeTruthy();
+      expect(await screen.findByText('₹250 will be refunded to your wallet.')).toBeTruthy();
 
       await act(async () => {
-        fireEvent.press(screen.getByText('Yes, Cancel Booking'));
+        fireEvent.press(screen.getByTestId('cancel-sheet-confirm'));
       });
       expect(mockCancelReservationThunk).toHaveBeenCalledWith({
         id: 'res-abc-101',

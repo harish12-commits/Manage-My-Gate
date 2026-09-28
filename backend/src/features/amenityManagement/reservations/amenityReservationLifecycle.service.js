@@ -9,6 +9,7 @@ import amenityAccessPassService from '../passes/amenityAccessPass.service.js';
 import amenityPaymentService from '../payments/amenityPayment.service.js';
 import amenitySettingsService from '../settings/amenitySettings.service.js';
 import { withTransactionRetry } from '../domain/concurrency/transaction.utils.js';
+import amenityManagementEvents, { AMENITY_EVENTS } from '../amenityManagement.events.js';
 
 const idOf = (ref) => (ref && typeof ref === 'object' && ref._id ? ref._id : ref);
 const round2 = (n) => Math.round(Number(n || 0) * 100) / 100;
@@ -202,7 +203,7 @@ export class AmenityReservationLifecycleService {
    *  EXTEND         — unpaid balance / overdue return only: keep the booking going
    */
   async resolveReview({ reservationId, orgId, action, refundPercentage, notes, adminId }) {
-    return withTransactionRetry(async (session) => {
+    const updated = await withTransactionRetry(async (session) => {
       const reservation = await AmenityReservation.findOne({ _id: reservationId, orgId }).session(session);
       if (!reservation) throw new HttpError(404, 'Reservation not found');
       if (reservation.adminReview?.status !== 'PENDING') {
@@ -262,6 +263,8 @@ export class AmenityReservationLifecycleService {
         session
       );
     });
+    if (updated) amenityManagementEvents.emit(AMENITY_EVENTS.RESERVATION_UPDATED, updated);
+    return updated;
   }
 
   async _closeReview(reservation, { resolution, notes, adminId, now, refundPercentage = null, refundAmount = null }, extraSet, session) {

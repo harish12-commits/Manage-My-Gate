@@ -339,6 +339,10 @@ export const formatBookingStatusLabel = (status?: string): string => {
 /**
  * Maps raw backend payment status enums to friendly resident UI display labels.
  */
+/** Rupee amount for display, e.g. ₹3,750. */
+export const formatAmenityAmount = (amount?: number | null): string =>
+  `₹${Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+
 export const formatPaymentStatusLabel = (status?: string): string => {
   switch (status) {
     case 'NOT_REQUIRED':

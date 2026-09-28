@@ -37,6 +37,14 @@ router.post(
   amenityReservationController.cancel
 );
 
+// GET /:reservationId/cancellation-preview - What cancelling now would refund
+router.get(
+  '/:reservationId/cancellation-preview',
+  authorizePermission('amenities', ['amenities', 'my_booking', 'admin_calander']),
+  validate(reservationIdParamRules),
+  amenityReservationController.cancellationPreview
+);
+
 // POST /:reservationId/pay-balance - Resident pays the outstanding balance from the wallet
 router.post(
   '/:reservationId/pay-balance',

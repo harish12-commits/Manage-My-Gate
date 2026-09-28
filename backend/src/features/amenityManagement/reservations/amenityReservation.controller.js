@@ -49,6 +49,32 @@ export class AmenityReservationController {
   }
 
   /**
+   * Refund the caller would get by cancelling now (read-only).
+   */
+  async cancellationPreview(req, res, next) {
+    try {
+      const { reservationId } = req.params;
+      const orgId = req.tenant.orgId;
+      const reservation = await amenityReservationService.getReservationById(reservationId);
+      if (!reservation || reservation.orgId.toString() !== orgId.toString()) {
+        throw new HttpError(404, 'Reservation not found');
+      }
+      if (!(await amenityReservationService.canUserAccessReservation(req.user, reservation))) {
+        throw new HttpError(403, 'Forbidden. You do not have permission to view this reservation.');
+      }
+      const userId = req.user.id || req.user._id;
+      const hasAdminScope = await checkAmenityAdminScope(req.user, ['amenities:admin_calander', 'amenities:manage_bookings']);
+      const bookedBy = reservation.residentId?._id || reservation.residentId;
+      const preview = amenityReservationService.cancellationPreview(reservation, {
+        isManagement: hasAdminScope && String(bookedBy) !== String(userId),
+      });
+      return res.success(preview, 'Cancellation preview computed');
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
    * Resident (or a member of the same household) pays the outstanding balance from the wallet.
    */
   async payBalance(req, res, next) {

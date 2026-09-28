@@ -385,6 +385,26 @@ export class AmenityReservationService {
   }
 
   /**
+   * What cancelling this booking now would do, without changing anything: whether it is
+   * allowed and how much would be refunded to the wallet (booking share + deposit).
+   */
+  cancellationPreview(reservation, { isManagement = false, now = new Date() } = {}) {
+    const blockReason = cancellationBlockReason(reservation, { isManagement, now });
+    const wasPaid =
+      ['PAID', 'ADVANCE_PAID', 'REFUND_PENDING'].includes(reservation.paymentStatus) && Number(reservation.paidAmount) > 0;
+    const refund = wasPaid
+      ? computeCancellationRefund(reservation, { isManagement, now })
+      : { percentage: 0, bookingRefund: 0, depositRefund: 0, total: 0, reason: 'Nothing was paid' };
+    return {
+      allowed: !blockReason && ['CONFIRMED', 'PENDING_APPROVAL'].includes(reservation.bookingStatus),
+      blockReason: blockReason || null,
+      refund,
+      refundTo: refund.total > 0 ? 'WALLET' : null,
+      policy: reservation.policySnapshot?.cancellation || null,
+    };
+  }
+
+  /**
    * Pays a reservation's outstanding balance from the payer's digital wallet.
    */
   async payBalanceFromWallet({ reservationId, orgId, payerId }, session) {
@@ -400,7 +420,10 @@ export class AmenityReservationService {
         trx
       );
     };
-    return session ? run(session) : withTransactionRetry(run);
+    if (session) return run(session);
+    const updated = await withTransactionRetry(run);
+    if (updated) amenityManagementEvents.emit(AMENITY_EVENTS.RESERVATION_UPDATED, updated);
+    return updated;
   }
 
   /**
@@ -413,7 +436,10 @@ export class AmenityReservationService {
       if (reservation.bookingStatus !== 'CONFIRMED') throw new HttpError(400, 'Only confirmed bookings can be paid at the gate');
       return amenityPaymentService.collectCash({ reservation, amount, collectedBy }, trx);
     };
-    return session ? run(session) : withTransactionRetry(run);
+    if (session) return run(session);
+    const result = await withTransactionRetry(run);
+    if (result?.reservation) amenityManagementEvents.emit(AMENITY_EVENTS.RESERVATION_UPDATED, result.reservation);
+    return result;
   }
 
   /**

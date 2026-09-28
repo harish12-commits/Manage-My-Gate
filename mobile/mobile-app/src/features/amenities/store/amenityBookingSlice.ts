@@ -9,6 +9,7 @@ import {
   AmenityPricingSnapshot,
   AmenityAvailabilityResult,
   AmenityErrorDetails,
+  AmenityCancellationPreview,
 } from '../types/amenityDomain.types';
 import {
   CreateHoldApiPayload,
@@ -551,6 +552,64 @@ export const cancelReservationThunk = createAsyncThunk(
   }
 );
 
+export const fetchCancellationPreviewThunk = createAsyncThunk(
+  'amenityBookings/fetchCancellationPreview',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const res = await amenityManagementService.getCancellationPreview(id);
+      return (res?.data || res) as AmenityCancellationPreview;
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Pays the booking's outstanding balance from the digital wallet. */
+export const payReservationBalanceThunk = createAsyncThunk(
+  'amenityBookings/payReservationBalance',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const res = await amenityManagementService.payReservationBalance(id);
+      return normalizeReservationFromApi(res?.data || res);
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Opens an online payment order for the booking's outstanding balance. */
+export const createBalancePaymentOrderThunk = createAsyncThunk(
+  'amenityBookings/createBalancePaymentOrder',
+  async (reservationId: string, { rejectWithValue }) => {
+    try {
+      const res = await amenityManagementService.createReservationPaymentOrder({ reservationId });
+      return (res?.data || res) as any;
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Verifies an online payment; the server settles it and returns the updated booking. */
+export const verifyReservationPaymentThunk = createAsyncThunk(
+  'amenityBookings/verifyReservationPayment',
+  async (
+    payload: { paymentId: string; orderId: string; razorpayPaymentId: string; razorpaySignature: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await amenityManagementService.verifyReservationPayment(payload);
+      const data: any = res?.data || res;
+      return {
+        fulfilled: Boolean(data?.fulfilled),
+        reservation: data?.reservation ? normalizeReservationFromApi(data.reservation) : null,
+      };
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
 export const fetchPassesByReservationThunk = createAsyncThunk(
   'amenityBookings/fetchPassesByReservation',
   async (reservationId: string, { rejectWithValue }) => {
@@ -605,6 +664,23 @@ export const revokePassThunk = createAsyncThunk(
 // Slice Definition
 // ==========================================
 
+/**
+ * Replaces every cached copy of a booking with a newer server version. Pushed or action
+ * payloads may not carry populated names, so the names already shown are kept.
+ */
+const applyReservationUpdate = (state: AmenityBookingState, incoming: AmenityReservation | null) => {
+  if (!incoming?._id) return;
+  const merge = (current: AmenityReservation): AmenityReservation => ({
+    ...incoming,
+    facilityName: incoming.facilityName || current.facilityName,
+    facilityTimezone: incoming.facilityTimezone || current.facilityTimezone,
+    resourceName: incoming.resourceName || current.resourceName,
+    userName: incoming.userName || current.userName,
+  });
+  if (state.v2CurrentReservation?._id === incoming._id) state.v2CurrentReservation = merge(state.v2CurrentReservation);
+  state.v2Reservations = state.v2Reservations.map((r) => (r._id === incoming._id ? merge(r) : r));
+};
+
 const amenityBookingSlice = createSlice({
   name: 'amenityBookings',
   initialState,
@@ -654,6 +730,10 @@ const amenityBookingSlice = createSlice({
     },
     clearV2Errors: (state) => {
       state.v2Error = null;
+    },
+    /** A booking pushed by the server (socket) or returned by an action: refresh every copy. */
+    upsertV2Reservation: (state, action: PayloadAction<any>) => {
+      applyReservationUpdate(state, normalizeReservationFromApi(action.payload));
     },
     clearAmenityBookingErrors: (state) => {
       state.error = null;
@@ -998,9 +1078,17 @@ const amenityBookingSlice = createSlice({
           r._id === updated._id ? updated : r
         );
       })
-      .addCase(cancelReservationThunk.rejected, (state, action) => {
+      // Cancel errors are shown in the cancel sheet, not as a screen error.
+      .addCase(cancelReservationThunk.rejected, (state) => {
         state.v2Loading = false;
-        state.v2Error = action.payload as AmenityErrorDetails;
+      })
+
+      // Balance payments (wallet / verified online) return the updated booking
+      .addCase(payReservationBalanceThunk.fulfilled, (state, action) => {
+        applyReservationUpdate(state, action.payload);
+      })
+      .addCase(verifyReservationPaymentThunk.fulfilled, (state, action) => {
+        applyReservationUpdate(state, action.payload.reservation);
       })
 
       // Fetch Passes
@@ -1072,6 +1160,7 @@ export const {
   setActiveHold,
   clearActiveHold,
   clearV2Errors,
+  upsertV2Reservation,
   clearAmenityBookingErrors,
   resetV2BookingState,
   clearV2PassResults,

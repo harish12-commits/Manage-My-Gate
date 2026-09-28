@@ -272,6 +272,15 @@ export interface AmenityReservation {
   updatedAt: string;
 }
 
+/** What cancelling a booking now would do (computed by the server, nothing changes). */
+export interface AmenityCancellationPreview {
+  allowed: boolean;
+  blockReason: string | null;
+  refund: { percentage: number; bookingRefund: number; depositRefund: number; total: number; reason?: string | null };
+  refundTo: 'WALLET' | null;
+  policy: { isAllowed?: boolean; refundCutoffHours?: number; refundPercentage?: number } | null;
+}
+
 // Access Pass Domain Model
 export interface AmenityAccessPass {
   _id: string;
