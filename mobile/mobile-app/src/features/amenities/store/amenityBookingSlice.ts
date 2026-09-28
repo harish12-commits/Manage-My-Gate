@@ -417,6 +417,8 @@ export const checkAvailabilityThunk = createAsyncThunk(
       startDateTime: string;
       endDateTime: string;
       requestedQuantity?: number;
+      headcount?: number;
+      quantity?: number;
     },
     { rejectWithValue }
   ) => {

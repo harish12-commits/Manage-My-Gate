@@ -18,7 +18,8 @@ import { AmenityBookingWizard } from '../../../../src/features/amenities/compone
 import { AlertTriangle, ArrowLeft } from 'lucide-react-native';
 
 export default function AmenityBookingRoute() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `date` (YYYY-MM-DD) pre-selects a day, e.g. when arriving from the calendar.
+  const { id, date } = useLocalSearchParams<{ id: string; date?: string }>();
   const router = useRouter();
 
   const [facility, setFacility] = useState<AmenityFacility | null>(null);
@@ -134,6 +135,7 @@ export default function AmenityBookingRoute() {
   return (
     <AmenityBookingWizard
       facility={facility}
+      initialDate={typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined}
       onClose={() => {
         if (router.canGoBack()) {
           router.back();

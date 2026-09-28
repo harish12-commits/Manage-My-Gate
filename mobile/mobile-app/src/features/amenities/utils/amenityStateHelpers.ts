@@ -213,6 +213,25 @@ export const formatReservationTimeRange = (
 };
 
 /**
+ * Formats a booking window in the facility timezone. Same-day windows read
+ * "17 Sep 2026 · 6:00 AM - 7:00 AM"; stays and loans spanning days read
+ * "17 Sep 2026 2:00 PM → 19 Sep 2026 11:00 AM".
+ */
+export const formatBookingWindow = (
+  startIso?: string | Date | null,
+  endIso?: string | Date | null,
+  timezone: string = 'Asia/Kolkata'
+): string => {
+  if (!startIso || !endIso) return '';
+  const s = formatUtcToLocalDisplay(startIso, timezone);
+  const e = formatUtcToLocalDisplay(endIso, timezone);
+  if (s.dateStr === e.dateStr) {
+    return `${s.humanDate} · ${formatTimeRange12Hour(s.timeStr, e.timeStr)}`;
+  }
+  return `${s.humanDate} ${formatTo12Hour(s.timeStr)} → ${e.humanDate} ${formatTo12Hour(e.timeStr)}`;
+};
+
+/**
  * Formats a 24-hour time string ("HH:mm") into 12-hour Indian format (e.g., "12:00 PM", "1:00 PM", "2:00 PM").
  */
 export const formatTo12Hour = (timeStr: string): string => {
@@ -326,6 +345,10 @@ export const formatPaymentStatusLabel = (status?: string): string => {
       return 'Free';
     case 'PAID':
       return 'Paid';
+    case 'ADVANCE_PAID':
+      return 'Advance Paid';
+    case 'PARTIALLY_REFUNDED':
+      return 'Partly Refunded';
     case 'PENDING':
       return 'Payment Due';
     case 'HELD_AUTHORIZED':

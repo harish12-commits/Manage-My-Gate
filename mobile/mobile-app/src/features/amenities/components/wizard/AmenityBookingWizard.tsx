@@ -8,6 +8,7 @@ import React from 'react';
 import { View, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { formatBookingWindow } from '../../utils/amenityStateHelpers';
 import { AmenityFacility } from '../../types/amenityDomain.types';
 import { useAmenityBookingWizard } from '../../hooks/useAmenityBookingWizard';
 import { AmenityBookingFlowHeader } from './AmenityBookingFlowHeader';
@@ -28,12 +29,27 @@ import { RazorpayCheckoutModal } from '../../../billing/components/RazorpayCheck
 
 export interface AmenityBookingWizardProps {
   facility: AmenityFacility;
+  /** Day to start on (YYYY-MM-DD); defaults to today. */
+  initialDate?: string;
   onClose?: () => void;
 }
 
-export function AmenityBookingWizard({ facility, onClose }: AmenityBookingWizardProps) {
+export function AmenityBookingWizard({ facility, initialDate, onClose }: AmenityBookingWizardProps) {
   const router = useRouter();
-  const wizard = useAmenityBookingWizard(facility);
+  const wizard = useAmenityBookingWizard(facility, { initialDate });
+
+  const windowLabel = formatBookingWindow(wizard.startUtcIso, wizard.endUtcIso, facility.timezone || 'Asia/Kolkata');
+  // Largest party the facility type allows for this booking.
+  const maxParty =
+    facility.archetype === 'INVENTORY_TOOLS'
+      ? wizard.selectedResource?.isSerializedAsset
+        ? 1
+        : wizard.selectedResource?.totalBulkStock || facility.maxCapacity
+      : facility.archetype === 'ROOM_RESOURCE'
+        ? wizard.selectedResource?.totalBulkStock || facility.maxCapacity
+        : facility.archetype === 'EVENT_SPACE'
+          ? facility.maxCapacity
+          : facility.maxHeadcountPerReservation || facility.maxCapacity;
 
   const isPaymentStep = wizard.currentStep.key === 'payment';
   const isResultStep = wizard.currentStep.key === 'result';
@@ -108,18 +124,18 @@ export function AmenityBookingWizard({ facility, onClose }: AmenityBookingWizard
           <DateTimeStep
             facility={facility}
             selectedDate={wizard.selectedDate}
-            startTime={wizard.startTime}
-            endTime={wizard.endTime}
             onDateChange={wizard.setSelectedDate}
-            onTimeChange={(start, end) => {
-              wizard.setStartTime(start);
-              wizard.setEndTime(end);
-            }}
-            checkingAvailability={wizard.checkingAvailability}
-            availabilityResult={wizard.availabilityResult}
-            onCheckAvailability={wizard.handleEvaluateAvailability}
-            availableSlots={wizard.availableDailySlots}
+            slots={wizard.availableDailySlots}
             slotsLoading={wizard.loadingDailySlots}
+            selectedSlot={wizard.selectedSlot}
+            onSelectSlot={wizard.selectWindow}
+            nights={wizard.nights}
+            onNightsChange={wizard.setNights}
+            loanDays={wizard.loanDays}
+            onLoanDaysChange={wizard.setLoanDays}
+            maxLoanDays={wizard.maxLoanDays}
+            endUtcIso={wizard.endUtcIso}
+            availabilityResult={wizard.availabilityResult}
             error={wizard.stepError}
           />
         )}
@@ -135,6 +151,7 @@ export function AmenityBookingWizard({ facility, onClose }: AmenityBookingWizard
             onQuantityChange={wizard.setQuantity}
             onGuestsChange={wizard.setGuests}
             onNotesChange={wizard.setBookingNotes}
+            maxParty={maxParty}
             error={wizard.stepError}
           />
         )}
@@ -143,9 +160,7 @@ export function AmenityBookingWizard({ facility, onClose }: AmenityBookingWizard
           <BookingReviewStep
             facility={facility}
             selectedResource={wizard.selectedResource}
-            selectedDate={wizard.selectedDate}
-            startTime={wizard.startTime}
-            endTime={wizard.endTime}
+            windowLabel={windowLabel}
             headcount={wizard.headcount}
             quantity={wizard.quantity}
             pricingSnapshot={wizard.pricingSnapshot ?? wizard.activeHold?.pricingSnapshot ?? null}
@@ -160,15 +175,14 @@ export function AmenityBookingWizard({ facility, onClose }: AmenityBookingWizard
             activeHold={wizard.activeHold}
             holdRemainingSeconds={wizard.holdRemainingSeconds}
             isHoldExpired={wizard.isHoldExpired}
-            totalAmount={wizard.pricingSnapshot?.totalAmount ?? wizard.activeHold?.pricingSnapshot?.totalAmount ?? 0}
-            currency={wizard.pricingSnapshot?.currency ?? wizard.activeHold?.pricingSnapshot?.currency ?? 'INR'}
+            schedule={wizard.amountSchedule}
+            currency={wizard.currency}
             paymentMethod={wizard.paymentMethod}
             onPaymentMethodChange={wizard.setPaymentMethod}
             balance={wizard.balance}
             isRazorpayConfigured={wizard.isRazorpayConfigured}
             onOpenTopUp={() => wizard.setIsTopUpOpen(true)}
-            onLaunchRazorpay={wizard.handleLaunchRazorpay}
-            onConfirmReservation={wizard.handleConfirmReservation}
+            onConfirm={wizard.handleConfirmReservation}
             onRestartBooking={wizard.handleRestartBooking}
             confirming={wizard.v2Confirming}
             error={wizard.stepError}
@@ -199,7 +213,7 @@ export function AmenityBookingWizard({ facility, onClose }: AmenityBookingWizard
           currency={wizard.pricingSnapshot?.currency ?? wizard.activeHold?.pricingSnapshot?.currency ?? 'INR'}
           loading={wizard.checkingAvailability || wizard.calculatingPricing || wizard.v2Holding}
           disabled={
-            (wizard.currentStep.key === 'datetime' && wizard.availabilityResult?.available === false) ||
+            (wizard.currentStep.key === 'datetime' && !wizard.selectedSlot) ||
             (wizard.currentStep.key === 'resource' && !wizard.selectedResource)
           }
         />
