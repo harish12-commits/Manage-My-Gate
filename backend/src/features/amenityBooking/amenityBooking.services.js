@@ -1,6 +1,18 @@
 import amenityBookingRepository from './amenityBooking.repository.js';
 import { amenityBookingEventEmitter, AMENITY_BOOKING_CREATED, AMENITY_BOOKING_CANCELLED, AMENITY_BOOKING_CHECKED_IN, AMENITY_BOOKING_DENIED } from './amenityBooking.events.js';
 import HttpError from '../../utils/httpError.utils.js';
+import AmenityFacility from '../amenityManagement/facilities/amenityFacility.model.js';
+
+/**
+ * Facilities managed by Amenity Management (V2) are booked only through
+ * /api/v2/amenity-management, so V2 availability, payments and passes see every booking.
+ * Their legacy catalog copies share the same _id.
+ */
+const assertNotManagedFacility = async (amenityId) => {
+  if (await AmenityFacility.exists({ _id: amenityId })) {
+    throw new HttpError(410, 'This facility is booked through Amenity Management. Please update the app.');
+  }
+};
 import paymentService from '../payment/payment.service.js';
 
 export class AmenityBookingService {
@@ -106,6 +118,7 @@ export class AmenityBookingService {
 
     try {
       let { orgId, amenityId, userId, bookingDate, startTime, endTime } = bookingData;
+      await assertNotManagedFacility(amenityId);
       
       // 3. Amenity Validation
       const amenityService = (await import('../amenity/amenity.services.js')).default;
@@ -382,51 +395,6 @@ export class AmenityBookingService {
       };
 
       const booking = await amenityBookingRepository.create(newBookingData, sessionOpt);
-
-      // Sync to AmenityReservation (amenity_management_reservations) for dual-collection consistency
-      try {
-        const AmenityReservation = (await import('../amenityManagement/reservations/amenityReservation.model.js')).default;
-        const resvDoc = {
-          _id: booking._id,
-          orgId: booking.orgId,
-          facilityId: booking.amenityId,
-          resourceId: booking.resourceId || null,
-          residentId: booking.userId,
-          unitId: booking.unitId || booking.userId,
-          reservationNumber: booking.bookingId || String(booking._id),
-          requestedStartDateTime: bookingDateTimeStart,
-          requestedEndDateTime: bookingDateTimeEnd,
-          effectiveStartDateTime: bookingDateTimeStart,
-          effectiveEndDateTime: bookingDateTimeEnd,
-          headcount: booking.numberOfPersons || 1,
-          quantity: 1,
-          bookingStatus: (booking.status || 'CONFIRMED').toUpperCase(),
-          paymentStatus: (booking.paymentStatus === 'success' || booking.paymentStatus === 'PAID') ? 'PAID' : (booking.paymentStatus || 'PENDING').toUpperCase(),
-          approvalStatus: 'NOT_REQUIRED',
-          accessStatus: 'PASS_GENERATED',
-          completionStatus: 'PENDING',
-          pricingSnapshot: {
-            baseAmount: pricingDetails?.baseAmount !== undefined ? pricingDetails.baseAmount : (booking.totalPrice || 0),
-            taxAmount: pricingDetails?.taxAmount || 0,
-            depositAmount: pricingDetails?.securityDeposit || deposit || 0,
-            totalAmount: booking.totalPrice || 0,
-            currency: 'INR'
-          },
-          totalAmount: booking.totalPrice || 0,
-          paidAmount: booking.totalPrice || 0,
-          paymentMethod: (booking.paymentMethod || 'NONE').toUpperCase(),
-          createdAt: booking.createdAt || new Date(),
-          updatedAt: booking.updatedAt || new Date()
-        };
-
-        await AmenityReservation.updateOne(
-          { _id: booking._id },
-          { $set: resvDoc },
-          { upsert: true, session: sessionOpt }
-        );
-      } catch (syncErr) {
-        logger.warn('Failed syncing to AmenityReservation in createBooking:', syncErr);
-      }
 
       let updatedWallet = null;
       let walletTxn = null;
@@ -716,6 +684,7 @@ export class AmenityBookingService {
 
     try {
       let { orgId, amenityId, userId, residentId, villaNumber, bookingDate, startTime, endTime, paymentStatus = 'success' } = bookingData;
+      await assertNotManagedFacility(amenityId);
       
       let effectiveUserId = userId || residentId;
       const userService = (await import('../user/user.services.js')).default;

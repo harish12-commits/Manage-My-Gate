@@ -261,39 +261,6 @@ export class AmenityReservationService {
       reservation = await amenityPaymentService.applySettledPayment(reservation._id, settledPayment, session);
     }
 
-    // Sync legacy amenity_bookings document for backwards compatibility
-    try {
-      const moment = (await import('moment-timezone')).default;
-      const TIMEZONE = 'Asia/Kolkata';
-      const startM = hold.requestedStartDateTime ? moment.tz(hold.requestedStartDateTime, TIMEZONE) : null;
-      const endM = hold.requestedEndDateTime ? moment.tz(hold.requestedEndDateTime, TIMEZONE) : null;
-      await mongoose.connection.db.collection('amenity_bookings').updateOne(
-        { _id: reservation._id },
-        {
-          $set: {
-            _id: reservation._id,
-            bookingNumber: reservationNumber,
-            orgId,
-            userId: hold.residentId,
-            amenityId: hold.facilityId,
-            resourceId: hold.resourceId || null,
-            bookingDate: startM ? startM.format('YYYY-MM-DD') : '',
-            startTime: startM ? startM.format('HH:mm') : '',
-            endTime: endM ? endM.format('HH:mm') : '',
-            status: bookingStatus.toLowerCase(),
-            paymentStatus: String(reservation.paymentStatus).toLowerCase(),
-            numberOfPersons: hold.headcount || hold.quantity || 1,
-            totalPrice: totalDue,
-            createdAt: reservation.createdAt || new Date(),
-            updatedAt: new Date(),
-          },
-        },
-        { upsert: true, session: session || undefined }
-      );
-    } catch (syncErr) {
-      // Legacy mirror is best-effort until V1 is retired
-    }
-
     // 10. Consume Household Quota (Promote from reserved to consumed)
     const requestedUnits = Math.ceil(
       (hold.requestedEndDateTime.getTime() - hold.requestedStartDateTime.getTime()) / 60000
@@ -710,15 +677,6 @@ export class AmenityReservationService {
       },
       session
     );
-
-    try {
-      await mongoose.connection.db.collection('amenity_bookings').updateOne(
-        { _id: reservation._id },
-        { $set: { status: 'cancelled', paymentStatus: (newPaymentStatus || 'refunded').toLowerCase(), updatedAt: new Date() } }
-      );
-    } catch (syncErr) {
-      // Gracefully log
-    }
 
     if (isWalletPayment) {
       await amenityPaymentService.refundToWallet(
