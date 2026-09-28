@@ -48,6 +48,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { storage, sessionStore } from '@/src/utils/storage';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from '@/src/utils/i18n';
+import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScrollView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 
@@ -623,10 +624,11 @@ export default function LoginScreen() {
         <View className="absolute inset-0 bg-white/40 dark:bg-[#0B0E14]/55" pointerEvents="none" />
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
-          <ScrollView
+          <KeyboardAwareScrollView
+            extraScrollHeight={56}
             contentContainerStyle={{
               flexGrow: 1,
               paddingTop: Math.max(insets.top, 24) + 16,
@@ -1151,7 +1153,7 @@ export default function LoginScreen() {
 
             </Animated.View>
           </View>
-        </ScrollView>
+          </KeyboardAwareScrollView>
     </KeyboardAvoidingView>
     </View>
     </>

@@ -2,20 +2,19 @@ import React from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   KeyboardAvoidingViewProps,
   ScrollViewProps,
   View,
-  Keyboard,
-  TouchableWithoutFeedback,
 } from 'react-native';
 import { cn } from '../../lib/utils';
+import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 
 export interface KeyboardAvoidingShellProps extends KeyboardAvoidingViewProps {
   children: React.ReactNode;
   scrollable?: boolean;
   scrollViewProps?: ScrollViewProps;
   contentContainerClassName?: string;
+  extraScrollHeight?: number;
 }
 
 export const KeyboardAvoidingShell = ({
@@ -24,26 +23,27 @@ export const KeyboardAvoidingShell = ({
   scrollViewProps,
   className,
   contentContainerClassName,
+  extraScrollHeight = 40,
   ...props
 }: KeyboardAvoidingShellProps) => {
-  const defaultBehavior = Platform.OS === 'ios' ? 'padding' : undefined;
+  const defaultBehavior = Platform.OS === 'ios' ? 'padding' : 'height';
   const activeBehavior = props.behavior ?? defaultBehavior;
 
   const content = scrollable ? (
-    <ScrollView
+    <KeyboardAwareScrollView
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       showsVerticalScrollIndicator={false}
-      automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      extraScrollHeight={extraScrollHeight}
       {...scrollViewProps}
       contentContainerStyle={[
-        { flexGrow: 1, paddingBottom: 60 },
+        { flexGrow: 1 },
         scrollViewProps?.contentContainerStyle,
       ]}
       className={contentContainerClassName}
     >
       {children}
-    </ScrollView>
+    </KeyboardAwareScrollView>
   ) : (
     <View className={cn('flex-1', contentContainerClassName)}>
       {children}
@@ -60,3 +60,5 @@ export const KeyboardAvoidingShell = ({
     </KeyboardAvoidingView>
   );
 };
+
+export default KeyboardAvoidingShell;

@@ -15,6 +15,7 @@ import { X, Mail, CheckCircle2, Copy, Check, Send, AlertTriangle } from 'lucide-
 import { TextInput } from '@/components/forms/TextInput';
 import { DropdownSelect } from '@/components/forms/DropdownSelect';
 import { Button } from '@/components/common/Button';
+import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScrollView';
 import apiClient from '../../../services/apiClient';
 import { InviteUserData } from '../services/userService';
 import { useTranslation } from '@/src/utils/i18n';
@@ -328,7 +329,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         style={{ flex: 1 }}
       >
         <View className="flex-1 justify-end bg-black/60">
@@ -361,10 +362,11 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
             </View>
 
             {/* Scrollable Form Content */}
-            <ScrollView
+            <KeyboardAwareScrollView
+              extraScrollHeight={48}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+              contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
             >
               {/* SUCCESS VIEW */}
               {successData ? (
@@ -543,7 +545,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
                   </View>
                 </View>
               )}
-            </ScrollView>
+            </KeyboardAwareScrollView>
           </View>
         </View>
       </KeyboardAvoidingView>

@@ -134,7 +134,12 @@ export const Button = forwardRef<View, ButtonProps>(
               {LeftIcon && !loading && (
                 <LeftIcon size={16} className={cn('me-1.5', textClasses[variant])} />
               )}
-              <Text className={cn('text-center leading-tight flex-shrink text-sm font-semibold', foregroundClass)}>
+              <Text
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+                numberOfLines={1}
+                className={cn('text-center leading-tight flex-shrink text-sm font-semibold', foregroundClass)}
+              >
                 {loading ? 'Loading...' : children}
               </Text>
               {RightIcon && !loading && (

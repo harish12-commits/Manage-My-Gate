@@ -40,10 +40,17 @@ export const VisitorPassFlowFooter: React.FC<VisitorPassFlowFooterProps> = ({
           variant="outline"
           onPress={onBack}
           disabled={loading}
-          className="h-12 px-4 rounded-xl flex-row items-center gap-1.5"
+          className="h-11 sm:h-12 px-3.5 rounded-xl flex-row items-center gap-1.5"
         >
-          <ArrowLeft size={16} className="text-foreground" />
-          <Text className="font-semibold text-foreground">{t('back', 'Back')}</Text>
+          <ArrowLeft size={16} className="text-foreground shrink-0" />
+          <Text
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            numberOfLines={1}
+            className="font-semibold text-foreground text-sm"
+          >
+            {t('back', 'Back')}
+          </Text>
         </Button>
       ) : null}
 
@@ -52,15 +59,20 @@ export const VisitorPassFlowFooter: React.FC<VisitorPassFlowFooterProps> = ({
         onPress={onNext}
         disabled={disabled || loading}
         loading={loading}
-        className="flex-1 h-12 rounded-xl flex-row items-center justify-center gap-2"
+        className="flex-1 h-11 sm:h-12 rounded-xl flex-row items-center justify-center gap-1.5 px-3"
       >
-        <Text className="font-bold text-primary-foreground text-base">
+        <Text
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
+          numberOfLines={1}
+          className="font-bold text-primary-foreground text-sm sm:text-base flex-1 text-center"
+        >
           {labelText}
         </Text>
         {isLastStep ? (
-          <CheckCircle2 size={18} className="text-primary-foreground" />
+          <CheckCircle2 size={16} className="text-primary-foreground shrink-0" />
         ) : (
-          <ArrowRight size={18} className="text-primary-foreground" />
+          <ArrowRight size={16} className="text-primary-foreground shrink-0" />
         )}
       </Button>
     </View>

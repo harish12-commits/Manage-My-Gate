@@ -23,6 +23,7 @@ import { ChevronLeft, AlertCircle, Compass } from 'lucide-react-native';
 import { Text } from './text';
 import { Icon } from './icon';
 import { Skeleton } from './Skeleton';
+import { KeyboardAwareScrollView } from '../layout/KeyboardAwareScrollView';
 import { cn } from '../../lib/utils';
 import { RoleSwitchModal } from '../navigation/RoleSwitchModal';
 import { VillaSwitchModal } from '../navigation/VillaSwitchModal';
@@ -209,19 +210,23 @@ export function ScreenShell({
               {/* Double Tap Gesture Header Area */}
               <Pressable
                 onPress={handleHeaderPress}
-                className="flex-1 justify-center active:opacity-80 min-w-0"
+                className="flex-1 justify-center active:opacity-80 min-w-0 me-1"
                 accessibilityHint="Double tap header title to switch active Role or Villa Unit"
               >
                 <Text
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
                   numberOfLines={subtitle ? 1 : 2}
-                  className="text-foreground text-[22px] sm:text-[24px] font-extrabold tracking-tight leading-snug shrink mb-0.5"
+                  className="text-foreground text-[20px] sm:text-[24px] font-extrabold tracking-tight leading-snug shrink mb-0.5"
                 >
                   {translateText(title)}
                 </Text>
                 {subtitle ? (
                   <Text
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
                     numberOfLines={1}
-                    className="text-[13.5px] sm:text-[14.5px] text-muted-foreground font-normal leading-normal shrink"
+                    className="text-[13px] sm:text-[14.5px] text-muted-foreground font-normal leading-normal shrink"
                   >
                     {translateText(subtitle)}
                   </Text>
@@ -274,28 +279,28 @@ export function ScreenShell({
 
       {/* Main content area */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
         className="flex-1 bg-transparent"
       >
         {loading && !hasChildren ? (
           <Skeleton variant="listItem" count={5} />
         ) : scrollable ? (
-          <ScrollView 
+          <KeyboardAwareScrollView 
+            extraScrollHeight={48}
             className="flex-1 bg-transparent"
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             alwaysBounceVertical={true}
-            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
             {...scrollHandlerProps}
             contentContainerStyle={{
               flexGrow: 1,
-              paddingBottom: shouldShowBottomNav ? Math.max(insets.bottom + 70, 84) : Math.max(insets.bottom, 20),
+              paddingBottom: shouldShowBottomNav ? Math.max(insets.bottom + 70, 84) : Math.max(insets.bottom, 24),
             }}
           >
             {children}
-          </ScrollView>
+          </KeyboardAwareScrollView>
         ) : (
           <View className="flex-1 bg-transparent">
             {children}

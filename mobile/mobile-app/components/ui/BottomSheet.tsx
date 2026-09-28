@@ -14,6 +14,7 @@ import { X } from 'lucide-react-native';
 import { cva } from 'class-variance-authority';
 
 import { SheetGrabHandle } from './SheetGrabHandle';
+import { KeyboardAwareScrollView } from '../layout/KeyboardAwareScrollView';
 
 export interface AppBottomSheetProps {
   visible: boolean;
@@ -64,7 +65,7 @@ function BottomSheet({
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         style={{ flex: 1 }}
         className="flex-1 justify-end items-center"
       >
@@ -100,7 +101,8 @@ function BottomSheet({
           )}
 
           {/* Scrollable Body Content */}
-          <ScrollView
+          <KeyboardAwareScrollView
+            extraScrollHeight={48}
             contentContainerStyle={[
               { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 48, flexGrow: 1 },
               contentContainerStyle,
@@ -111,10 +113,9 @@ function BottomSheet({
             nestedScrollEnabled={true}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
-            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           >
             {children}
-          </ScrollView>
+          </KeyboardAwareScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>

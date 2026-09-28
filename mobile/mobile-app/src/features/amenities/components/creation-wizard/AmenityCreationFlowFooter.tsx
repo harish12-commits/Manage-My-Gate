@@ -30,19 +30,26 @@ export const AmenityCreationFlowFooter: React.FC<AmenityCreationFlowFooterProps>
   allowSaveDraft,
 }) => {
   return (
-    <View className="bg-card border-t border-border px-4 py-3 pb-6 flex-row items-center gap-2.5">
+    <View className="bg-card border-t border-border px-3 py-2.5 pb-6 flex-row items-center gap-1.5">
       {/* Previous / Back CTA */}
       {!isFirstStep && (
         <Button
           variant="outline"
           onPress={onBack}
           disabled={loading || savingDraft}
-          className="flex-1 h-12 rounded-2xl flex-row items-center justify-center gap-1.5 border-border"
+          className="flex-1 h-11 sm:h-12 rounded-2xl flex-row items-center justify-center gap-1 px-2 border-border"
           accessibilityRole="button"
           accessibilityLabel="Back to previous step"
         >
-          <ArrowLeft size={16} className="text-foreground" />
-          <Text className="font-bold text-foreground text-sm">Previous</Text>
+          <ArrowLeft size={14} className="text-foreground shrink-0" />
+          <Text
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            numberOfLines={1}
+            className="font-bold text-foreground text-xs sm:text-sm"
+          >
+            Previous
+          </Text>
         </Button>
       )}
 
@@ -52,12 +59,17 @@ export const AmenityCreationFlowFooter: React.FC<AmenityCreationFlowFooterProps>
           variant="secondary"
           onPress={onSaveDraft}
           disabled={loading || savingDraft || disabled}
-          className="h-12 px-3.5 rounded-2xl flex-row items-center justify-center gap-1.5 border border-border"
+          className="h-11 sm:h-12 px-2.5 rounded-2xl flex-row items-center justify-center gap-1 border border-border"
           accessibilityRole="button"
           accessibilityLabel="Save Facility as Draft"
         >
-          <Bookmark size={15} className="text-foreground" />
-          <Text className="font-bold text-foreground text-xs">
+          <Bookmark size={14} className="text-foreground shrink-0" />
+          <Text
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            numberOfLines={1}
+            className="font-bold text-foreground text-xs"
+          >
             {savingDraft ? 'Saving...' : 'Save Draft'}
           </Text>
         </Button>
@@ -68,7 +80,7 @@ export const AmenityCreationFlowFooter: React.FC<AmenityCreationFlowFooterProps>
         variant="default"
         onPress={onNext}
         disabled={loading || savingDraft || disabled}
-        className="flex-1 h-12 rounded-2xl flex-row items-center justify-center gap-2 shadow-sm"
+        className="flex-1 h-11 sm:h-12 rounded-2xl flex-row items-center justify-center gap-1 px-2 shadow-sm"
         accessibilityRole="button"
         accessibilityLabel={
           isLastStep
@@ -80,10 +92,15 @@ export const AmenityCreationFlowFooter: React.FC<AmenityCreationFlowFooterProps>
       >
         {isLastStep ? (
           <>
-            <CheckCircle2 size={18} className="text-primary-foreground" />
-            <Text className="font-bold text-primary-foreground text-sm">
+            <CheckCircle2 size={16} className="text-primary-foreground shrink-0" />
+            <Text
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              numberOfLines={1}
+              className="font-bold text-primary-foreground text-xs sm:text-sm"
+            >
               {loading
-                ? 'Saving Facility...'
+                ? 'Saving...'
                 : isEditing
                 ? 'Update Facility'
                 : 'Publish Facility'}
@@ -91,8 +108,15 @@ export const AmenityCreationFlowFooter: React.FC<AmenityCreationFlowFooterProps>
           </>
         ) : (
           <>
-            <Text className="font-bold text-primary-foreground text-sm">Continue</Text>
-            <ArrowRight size={16} className="text-primary-foreground" />
+            <Text
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              numberOfLines={1}
+              className="font-bold text-primary-foreground text-xs sm:text-sm"
+            >
+              Continue
+            </Text>
+            <ArrowRight size={14} className="text-primary-foreground shrink-0" />
           </>
         )}
       </Button>

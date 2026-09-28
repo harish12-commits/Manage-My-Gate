@@ -47,9 +47,14 @@ export const AmenityCreationFlowHeader: React.FC<AmenityCreationFlowHeaderProps>
             </TouchableOpacity>
           ) : null}
 
-          <View className="flex-1">
-            <Text className="text-base font-bold text-foreground" numberOfLines={1}>
-              {isEditing ? 'Edit Amenity Facility' : 'Create Amenity Facility'}
+          <View className="flex-1 min-w-0 me-1">
+            <Text
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              numberOfLines={1}
+              className="text-sm sm:text-base font-bold text-foreground"
+            >
+              {isEditing ? 'Edit Amenity' : 'Create Amenity'}
             </Text>
             <Text variant="muted" className="text-xs">
               Step {stepIndex + 1} of {totalSteps}
@@ -58,9 +63,14 @@ export const AmenityCreationFlowHeader: React.FC<AmenityCreationFlowHeaderProps>
         </View>
 
         {/* Active Archetype Badge (Read-only) */}
-        <View className="flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-primary/20 bg-primary/10">
-          <IconComp size={13} className="text-primary" />
-          <Text className="text-xs font-bold text-primary">
+        <View className="flex-row items-center gap-1 px-2 py-1 rounded-full border border-primary/20 bg-primary/10 shrink-0">
+          <IconComp size={12} className="text-primary" />
+          <Text
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+            numberOfLines={1}
+            className="text-[11px] sm:text-xs font-bold text-primary"
+          >
             {currentMeta.label}
           </Text>
         </View>
