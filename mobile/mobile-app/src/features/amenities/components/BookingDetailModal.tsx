@@ -41,7 +41,7 @@ export function BookingDetailModal({
 
   const userObj = typeof booking.userId === 'object' && booking.userId ? booking.userId : null;
   const residentName = booking.residentName || userObj?.name || userObj?.username || (booking as any).userName || 'Community Resident';
-  const villaNumber = (booking as any).villaNumber || (booking as any).flatNumber || userObj?.villaNumber || userObj?.flatNumber || userObj?.unit || 'Villa 101';
+  const villaNumber = (booking as any).villaNumber || (booking as any).flatNumber || userObj?.villaNumber || userObj?.flatNumber || userObj?.unit || '—';
 
   const isConfirmed = booking.status !== 'CANCELLED' && booking.status !== 'COMPLETED';
   const statusLabel = isConfirmed ? 'CONFIRMED' : booking.status;

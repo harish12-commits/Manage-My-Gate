@@ -4172,6 +4172,9 @@ export const en: Record<string, string> = {
   'amenity_review_pay_full': 'Paid in full when booking',
   'amenity_review_pay_gate': 'Paid at the gate before entry',
   'amenity_review_refund': '{pct}% refunded when cancelled {h}h or more ahead',
+  'amenity_dash_month': 'Collected this month',
+  'amenity_dash_month_sub': 'Wallet, online & cash',
+  'amenity_dash_today': 'Collected today',
 };
 
 export default en;

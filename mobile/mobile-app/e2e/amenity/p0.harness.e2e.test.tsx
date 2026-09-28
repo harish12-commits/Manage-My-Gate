@@ -38,7 +38,10 @@ describe('P0 amenity harness: mobile app ↔ real backend', () => {
     expect(call.requestHeaders.Authorization).toBe(`Bearer ${fixture().sessions.residentA.token}`);
     expect(call.requestHeaders['x-organization-id']).toBe(residentA.orgId);
 
-    expect(await view.findByText('Swimming Pool')).toBeOnTheScreen();
+    // Other suites add facilities to this community, so check one the API actually returned.
+    const payload: any = call.responseBody.data;
+    const first = (payload.items || payload.data || payload)[0];
+    expect((await view.findAllByText(first.name)).length).toBeGreaterThanOrEqual(1);
     expect(await view.findByText('Tennis Court')).toBeOnTheScreen();
     expect(view.queryByText('Draft Lounge')).toBeNull();
     expect(view.queryByText('Other Pool')).toBeNull();

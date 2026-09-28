@@ -29,7 +29,7 @@ export function AmenityLedgerCard({ booking, onPress, className }: AmenityLedger
     userObj?.villaNumber ||
     userObj?.flatNumber ||
     userObj?.unit ||
-    'Villa 101';
+    '—';
 
   const bookingCode = booking.bookingId ? `#${booking.bookingId}` : `#${booking._id.slice(-6).toUpperCase()}`;
   const personsCount = booking.numberOfPersons || (booking as any).guestsCount || 1;

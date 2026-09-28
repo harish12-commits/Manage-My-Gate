@@ -96,11 +96,11 @@ export const normalizeAmenityBooking = (raw: any): AmenityBooking => {
     rawStatus === 'CHECKED_IN' ? 'CHECKED_IN' :
     rawStatus === 'COMPLETED' ? 'COMPLETED' :
     rawStatus === 'CANCELLED' || rawStatus === 'REJECTED' ? 'CANCELLED' :
-    rawStatus === 'PENDING' ? 'PENDING' : 'CONFIRMED';
+    rawStatus === 'PENDING' || rawStatus === 'PENDING_APPROVAL' ? 'PENDING' : 'CONFIRMED';
 
   const userObj = typeof raw.userId === 'object' && raw.userId ? raw.userId : null;
   const residentName = raw.residentName || userObj?.name || userObj?.username || raw.userName || 'Community Resident';
-  const villaNumber = raw.villaNumber || raw.flatNumber || userObj?.villaNumber || userObj?.flatNumber || userObj?.unit || 'Villa 101';
+  const villaNumber = raw.villaNumber || raw.flatNumber || userObj?.villaNumber || userObj?.flatNumber || userObj?.unit || '';
 
   const amenityObj = typeof raw.amenityId === 'object' && raw.amenityId ? raw.amenityId : null;
   const amenityName = amenityObj?.name || raw.amenityName || raw.amenity?.name || 'Amenity Pass';

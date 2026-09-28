@@ -143,7 +143,8 @@ export const getAdminCalendar = async (params: {
   if (params.search) query.append('search', params.search);
   if (params.paymentStatus && params.paymentStatus !== 'All') query.append('paymentStatus', params.paymentStatus);
   const queryString = query.toString();
-  return await apiClient.get(`/amenity-bookings/admin-calendar${queryString ? `?${queryString}` : ''}`);
+  // Amenity Management V2 bookings and maintenance, in the facility time zone.
+  return await apiClient.get(`/amenity-dashboard/calendar-events${queryString ? `?${queryString}` : ''}`);
 };
 
 export const createManualBooking = async (payload: {
@@ -171,7 +172,8 @@ export const getRecentScans = async (params: { page?: number; limit?: number } =
 };
 
 export const getDashboardStats = async () => {
-  return await apiClient.get('/amenity-bookings/stats/dashboard');
+  // Amenity Management V2 headline numbers.
+  return await apiClient.get('/amenity-dashboard/kpi');
 };
 
 export const getRevenueStats = async () => {
@@ -201,7 +203,8 @@ export const getBookingQueue = async (params: {
   if (params.endDate) query.append('endDate', params.endDate);
 
   const queryString = query.toString();
-  return await apiClient.get(`/amenity-bookings/queue${queryString ? `?${queryString}` : ''}`);
+  // Amenity Management V2 booking ledger (one row per booking with its money, plus a summary).
+  return await apiClient.get(`/amenity-dashboard/ledger${queryString ? `?${queryString}` : ''}`);
 };
 
 export default {

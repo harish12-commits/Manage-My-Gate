@@ -48,7 +48,7 @@ export default function AmenityExecutiveDashboardScreen() {
     return <Redirect href="/(resident)/dashboard" />;
   }
 
-  // Dynamic real-time metrics from backend DTO (/amenity-bookings/stats/dashboard)
+  // Amenity Management V2 headline numbers (/amenity-dashboard/kpi)
   const totalRevenue = parseRevenue(
     dashboardStats?.revenue?.monthlyRevenue ?? dashboardStats?.revenue?.dailyRevenue ?? dashboardStats?.kpis?.revenue ?? dashboardStats?.revenue,
     0
@@ -72,20 +72,39 @@ export default function AmenityExecutiveDashboardScreen() {
     dashboardStats?.totalAmenities ??
     0;
 
+  const pendingApprovals = Number(dashboardStats?.bookingKpis?.pendingApprovals ?? 0);
+  const needsDecision = Number(dashboardStats?.bookingKpis?.needsDecision ?? 0);
+
   const kpiCards: KPICardProps[] = [
     {
-      title: t('total_revenue', 'Total Revenue'),
-      value: `₹${totalRevenue.toLocaleString()}`,
-      subtitle: t('total_earned', 'Total Earned'),
+      title: t('amenity_dash_month', 'Collected this month'),
+      value: `₹${totalRevenue.toLocaleString('en-IN')}`,
+      subtitle: t('amenity_dash_month_sub', 'Wallet, online & cash'),
       iconName: 'IndianRupee',
       variant: 'default',
+      onPress: () => router.push('/(resident)/amenities/ledgers' as any),
     },
     {
-      title: t('today_revenue', 'Today Rev.'),
-      value: `₹${todayRevenue.toLocaleString()}`,
-      trend: { direction: 'up', value: `+14% ${t('live', 'Live')}` },
+      title: t('amenity_dash_today', 'Collected today'),
+      value: `₹${todayRevenue.toLocaleString('en-IN')}`,
       iconName: 'TrendingUp',
       variant: 'success',
+    },
+    {
+      title: t('amenity_admin_kpi_approvals', 'Awaiting approval'),
+      value: String(pendingApprovals),
+      subtitle: t('amenity_admin_kpi_approvals_sub', 'Approve or reject'),
+      iconName: 'Hourglass',
+      variant: 'warning',
+      onPress: () => router.push('/(resident)/amenities/admin-bookings' as any),
+    },
+    {
+      title: t('amenity_admin_kpi_review', 'Needs decision'),
+      value: String(needsDecision),
+      subtitle: t('amenity_admin_kpi_review_sub', 'No-shows, unpaid, returns'),
+      iconName: 'ShieldAlert',
+      variant: 'destructive',
+      onPress: () => router.push('/(resident)/amenities/admin-bookings' as any),
     },
     {
       title: t('under_maintenance', 'Maintenance'),
