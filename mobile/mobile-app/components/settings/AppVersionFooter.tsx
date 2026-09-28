@@ -20,7 +20,7 @@ export const AppVersionFooter = ({
   const version = Constants.expoConfig?.version || '1.0.1';
   const buildNumber =
     Platform.OS === 'ios'
-      ? Constants.expoConfig?.ios?.buildNumber || '17'
+      ? Constants.expoConfig?.ios?.buildNumber || '18'
       : Constants.expoConfig?.android?.versionCode?.toString() || '22';
 
   return (
