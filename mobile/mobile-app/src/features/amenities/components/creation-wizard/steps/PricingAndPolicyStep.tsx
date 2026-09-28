@@ -7,6 +7,8 @@ import { ToggleSwitch } from '@/components/forms/ToggleSwitch';
 import { Check, ShieldAlert, CircleDollarSign } from 'lucide-react-native';
 import { AmenityArchetype, AmenityPricingType } from '../../../types/amenityDomain.types';
 import { PRICING_CHIP_OPTIONS } from '../../../constants/amenityCatalogPresets';
+import { useTranslation } from '@/src/utils/i18n';
+import type { PaymentCollectionMode } from '../../../utils/mapAmenityCreationPayloadStrategy';
 
 export interface PricingAndPolicyData {
   pricingType: AmenityPricingType;
@@ -15,6 +17,9 @@ export interface PricingAndPolicyData {
   isCancellationAllowed: boolean;
   refundCutoffHours: number | string;
   refundPercentage: number | string;
+  paymentMode?: PaymentCollectionMode;
+  advanceType?: 'FIXED' | 'PERCENT';
+  advanceValue?: number | string;
 }
 
 export interface PricingAndPolicyStepProps {
@@ -30,7 +35,23 @@ export const PricingAndPolicyStep: React.FC<PricingAndPolicyStepProps> = ({
   onChange,
   errors = {},
 }) => {
+  const { t } = useTranslation();
   const currentPricingType = data.pricingType || 'FREE';
+  const paymentMode: PaymentCollectionMode = data.paymentMode || 'FULL';
+  const advanceType = data.advanceType || 'PERCENT';
+  // How the rate is charged (matches the server's pricing for each facility type).
+  const rateUnit =
+    currentPricingType === 'DAILY'
+      ? archetype === 'ROOM_RESOURCE'
+        ? t('amenity_create_rate_night', 'per night')
+        : t('amenity_create_rate_day', 'per day')
+      : currentPricingType === 'FIXED_EVENT'
+      ? t('amenity_create_rate_booking', 'per booking')
+      : archetype === 'SHARED_CAPACITY'
+      ? t('amenity_create_rate_person_hour', 'per person per hour')
+      : archetype === 'INVENTORY_TOOLS'
+      ? t('amenity_create_rate_item_hour', 'per item per hour')
+      : t('amenity_create_rate_hour', 'per hour');
 
   const applyRefundPreset = (cutoff: number, pct: number) => {
     onChange({
@@ -82,7 +103,8 @@ export const PricingAndPolicyStep: React.FC<PricingAndPolicyStepProps> = ({
                 selected={isSelected}
                 onPress={() => {
                   if (p.value === 'FREE') {
-                    onChange({ ...data, pricingType: p.value, baseRate: 0, securityDeposit: 0 });
+                    // A free facility can still take a refundable deposit (e.g. borrowed tools).
+                    onChange({ ...data, pricingType: p.value, baseRate: 0, paymentMode: 'FULL' });
                   } else {
                     onChange({
                       ...data,
@@ -108,13 +130,7 @@ export const PricingAndPolicyStep: React.FC<PricingAndPolicyStepProps> = ({
             <View className="flex-row gap-3">
               <View className="flex-1">
                 <TextInput
-                  label={`Rate (₹/${
-                    currentPricingType === 'DAILY'
-                      ? 'day'
-                      : currentPricingType === 'FIXED_EVENT'
-                      ? 'event'
-                      : 'slot'
-                  }) *`}
+                  label={`${t('amenity_create_rate', 'Rate (₹)')} ${rateUnit} *`}
                   placeholder="250"
                   keyboardType="numeric"
                   required
@@ -129,24 +145,92 @@ export const PricingAndPolicyStep: React.FC<PricingAndPolicyStepProps> = ({
                   error={errors.baseRate}
                 />
               </View>
-              <View className="flex-1">
-                <TextInput
-                  label="Security Deposit (₹)"
-                  placeholder="0"
-                  keyboardType="numeric"
-                  value={
-                    data.securityDeposit === undefined || data.securityDeposit === null
-                      ? ''
-                      : String(data.securityDeposit)
-                  }
-                  onChangeText={(val) => onChange({ ...data, securityDeposit: val })}
-                  error={errors.securityDeposit}
-                />
-              </View>
             </View>
           </View>
         )}
       </View>
+
+      {/* Refundable deposit (allowed on free facilities too) */}
+      <View className="bg-card p-4 rounded-3xl border border-border gap-2">
+        <TextInput
+          label={t('amenity_create_deposit', 'Refundable deposit (₹)')}
+          helperText={t('amenity_create_deposit_sub', 'Collected when booking and returned after use (minus any damage).')}
+          placeholder="0"
+          keyboardType="numeric"
+          value={data.securityDeposit === undefined || data.securityDeposit === null ? '' : String(data.securityDeposit)}
+          onChangeText={(val) => onChange({ ...data, securityDeposit: val })}
+          error={errors.securityDeposit}
+          testID="create-deposit"
+        />
+      </View>
+
+      {/* When the price is paid */}
+      {currentPricingType !== 'FREE' ? (
+        <View className="bg-card p-4 rounded-3xl border border-border gap-3">
+          <Text className="text-sm font-bold text-foreground">{t('amenity_create_pay_title', 'When is it paid?')}</Text>
+          <View className="flex-row flex-wrap gap-2">
+            <Chip
+              label={t('amenity_create_pay_full', 'In full when booking')}
+              selected={paymentMode === 'FULL'}
+              onPress={() => onChange({ ...data, paymentMode: 'FULL' })}
+              testID="pay-mode-FULL"
+            />
+            <Chip
+              label={t('amenity_create_pay_advance', 'Advance, balance later')}
+              selected={paymentMode === 'ADVANCE'}
+              onPress={() => onChange({ ...data, paymentMode: 'ADVANCE' })}
+              testID="pay-mode-ADVANCE"
+            />
+            <Chip
+              label={t('amenity_create_pay_gate', 'At the gate')}
+              selected={paymentMode === 'PAY_AT_GATE'}
+              onPress={() => onChange({ ...data, paymentMode: 'PAY_AT_GATE' })}
+              testID="pay-mode-PAY_AT_GATE"
+            />
+          </View>
+          {paymentMode === 'ADVANCE' ? (
+            <View className="gap-2">
+              <View className="flex-row flex-wrap gap-2">
+                <Chip
+                  label={t('amenity_create_adv_percent', '% of the price')}
+                  selected={advanceType === 'PERCENT'}
+                  onPress={() => onChange({ ...data, advanceType: 'PERCENT' })}
+                  testID="adv-type-PERCENT"
+                />
+                <Chip
+                  label={t('amenity_create_adv_fixed', 'Fixed ₹')}
+                  selected={advanceType === 'FIXED'}
+                  onPress={() => onChange({ ...data, advanceType: 'FIXED' })}
+                  testID="adv-type-FIXED"
+                />
+              </View>
+              <TextInput
+                label={
+                  advanceType === 'PERCENT'
+                    ? t('amenity_create_adv_value_pct', 'Advance (%)')
+                    : t('amenity_create_adv_value_fixed', 'Advance (₹)')
+                }
+                placeholder={advanceType === 'PERCENT' ? '25' : '1000'}
+                keyboardType="numeric"
+                value={String(data.advanceValue ?? '')}
+                onChangeText={(val) => onChange({ ...data, advanceValue: val })}
+                error={errors.advanceValue}
+                testID="create-advance-value"
+              />
+            </View>
+          ) : null}
+          <Text variant="muted" className="text-xs">
+            {paymentMode === 'FULL'
+              ? t('amenity_create_pay_full_sub', 'Residents pay the full price (and any deposit) to confirm.')
+              : paymentMode === 'ADVANCE'
+              ? t(
+                  'amenity_create_pay_advance_sub',
+                  'Residents pay the advance and deposit to confirm; the balance is paid online later or at the gate before entry.'
+                )
+              : t('amenity_create_pay_gate_sub', 'Residents confirm without paying; the gate collects the price before entry.')}
+          </Text>
+        </View>
+      ) : null}
 
       {/* Cancellation & Refund Policies */}
       <View className="bg-card p-4 rounded-3xl border border-border gap-3.5">
