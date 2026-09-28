@@ -19,7 +19,12 @@ export const reviewReservationRules = [
     .withMessage('action is required')
     .isIn(['APPROVE', 'REJECT'])
     .withMessage("action must be 'APPROVE' or 'REJECT'"),
-  body('rejectionReason').optional().isString().trim(),
+  body('rejectionReason')
+    .if(body('action').equals('REJECT'))
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage('A reason is required to reject a booking'),
 ];
 
 export const reservationIdParamRules = [

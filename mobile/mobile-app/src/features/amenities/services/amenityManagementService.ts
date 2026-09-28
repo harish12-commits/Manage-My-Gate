@@ -373,6 +373,9 @@ export const amenityManagementService = {
     residentId?: string;
     bookingStatus?: string;
     paymentStatus?: string;
+    approvalStatus?: string;
+    adminReviewStatus?: string;
+    search?: string;
     unitId?: string;
     startDate?: string;
     endDate?: string;
@@ -385,6 +388,9 @@ export const amenityManagementService = {
     if (params.residentId) query.append('residentId', params.residentId);
     if (params.bookingStatus) query.append('bookingStatus', params.bookingStatus);
     if (params.paymentStatus) query.append('paymentStatus', params.paymentStatus);
+    if (params.approvalStatus) query.append('approvalStatus', params.approvalStatus);
+    if (params.adminReviewStatus) query.append('adminReviewStatus', params.adminReviewStatus);
+    if (params.search) query.append('search', params.search);
     if (params.unitId) query.append('unitId', params.unitId);
     if (params.startDate) query.append('startDate', params.startDate);
     if (params.endDate) query.append('endDate', params.endDate);
@@ -414,6 +420,16 @@ export const amenityManagementService = {
   ): Promise<ApiResponse<ApiAmenityReservation>> {
     const url = getAmenityV2Url(`/reservations/${id}/cancel`);
     const response = await apiClient.post<ApiResponse<ApiAmenityReservation>>(url, payload || {});
+    return extractEnvelope(response);
+  },
+
+  /** Staff decision on a booking flagged for review (no-show, unpaid balance, overdue return). */
+  async resolveReservationReview(
+    id: string,
+    payload: { action: 'FORFEIT' | 'REFUND_POLICY' | 'REFUND_CUSTOM' | 'EXTEND'; refundPercentage?: number; notes?: string }
+  ): Promise<ApiResponse<ApiAmenityReservation>> {
+    const url = getAmenityV2Url(`/reservations/${id}/resolve-review`);
+    const response = await apiClient.post<ApiResponse<ApiAmenityReservation>>(url, payload);
     return extractEnvelope(response);
   },
 

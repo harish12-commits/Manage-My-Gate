@@ -146,6 +146,7 @@ export class AmenityReservationRepository {
     paymentStatus,
     approvalStatus,
     adminReviewStatus,
+    search,
     page = 1,
     limit = 10,
   }) {
@@ -180,6 +181,15 @@ export class AmenityReservationRepository {
 
     if (adminReviewStatus) {
       matchConditions.push({ 'adminReview.status': adminReviewStatus });
+    }
+
+    // Staff search: booking number, or the resident's name / username.
+    const term = String(search || '').trim();
+    if (term) {
+      const rx = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const User = mongoose.models.User || (await import('../../user/user.model.js')).default;
+      const users = await User.find({ $or: [{ name: rx }, { username: rx }] }).select('_id').limit(200).lean();
+      matchConditions.push({ $or: [{ reservationNumber: rx }, { residentId: { $in: users.map((u) => u._id) } }] });
     }
 
     const match = matchConditions.length === 1 ? matchConditions[0] : { $and: matchConditions };

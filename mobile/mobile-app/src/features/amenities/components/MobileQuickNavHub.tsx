@@ -73,6 +73,15 @@ export function MobileQuickNavHub({ searchQuery = '' }: MobileQuickNavHubProps) 
       permission: 'amenities:amenities',
     },
     {
+      id: 'amenities_admin_bookings',
+      name: 'Booking Queue',
+      route: '/(resident)/amenities/admin-bookings',
+      iconName: 'ClipboardCheck',
+      colorBg: 'bg-amber-500/10 dark:bg-amber-500/20',
+      colorIcon: '#D97706',
+      permission: 'amenities:admin_calander',
+    },
+    {
       id: 'amenities_admin_calendar',
       name: 'Admin Calendar',
       route: '/(resident)/amenities/admin-calendar',

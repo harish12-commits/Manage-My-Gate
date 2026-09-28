@@ -56,12 +56,15 @@ describe('P5b balance due: advance booking paid off from the wallet', () => {
   beforeAll(async () => {
     await signInAs('residentA');
     ({ reservation: { _id: id } } = await bookAs('residentA', hallDay(27), { paymentMethod: 'WALLET' }));
+    // Other suites book for residentA in parallel; keep this booking on the first page.
+    await (await amenityCollection('reservations')).updateOne({ _id: oid(id) }, { $set: { createdAt: new Date(Date.now() + 3600000) } });
   });
 
   it('flags the balance on the My Bookings card', async () => {
     store.dispatch(resetV2BookingState());
     const view = await renderScreen(<MyBookingsScreen />);
-    await expectVisible(view, 'Balance ₹3,750 due');
+    // Another suite may leave a second advance booking with the same balance for this resident.
+    await waitFor(() => expect(view.getAllByText('Balance ₹3,750 due').length).toBeGreaterThanOrEqual(1), { timeout: 15000 });
   });
 
   it('shows what was paid and what is due, then pays the balance from the wallet', async () => {

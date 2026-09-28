@@ -23,6 +23,8 @@ export interface ResidentCancelModalProps {
   onClose: () => void;
   loading?: boolean;
   preview?: AmenityCancellationPreview | null;
+  /** Staff cancelling for a resident: wording addresses staff and the reason is shown to the resident. */
+  forStaff?: boolean;
   previewLoading?: boolean;
   error?: string | null;
   testID?: string;
@@ -38,6 +40,7 @@ export function ResidentCancelModal({
   previewLoading = false,
   error = null,
   testID,
+  forStaff = false,
 }: ResidentCancelModalProps) {
   const { t } = useTranslation();
   const [reason, setReason] = useState<string>('');
@@ -60,6 +63,11 @@ export function ResidentCancelModal({
       return Number(reservation.paidAmount || 0) > 0
         ? t('amenity_cancel_no_refund', 'Under the cancellation policy, nothing will be refunded.')
         : t('amenity_cancel_nothing_paid', 'Nothing was paid for this booking, so there is no refund.');
+    }
+    if (forStaff) {
+      return t('amenity_cancel_refund_to_resident', '{amount} will be refunded to the resident wallet.', {
+        amount: formatAmenityAmount(refund.total),
+      });
     }
     return t('amenity_cancel_refund_to_wallet', '{amount} will be refunded to your wallet.', {
       amount: formatAmenityAmount(refund.total),
@@ -118,7 +126,11 @@ export function ResidentCancelModal({
             label={t('amenity_cancel_reason_label', 'Reason (optional)')}
             value={reason}
             onChangeText={setReason}
-            placeholder={t('amenity_cancel_reason_placeholder', 'Tell the management why you are cancelling')}
+            placeholder={
+              forStaff
+                ? t('amenity_cancel_reason_placeholder_staff', 'Shown to the resident, e.g. Court resurfacing')
+                : t('amenity_cancel_reason_placeholder', 'Tell the management why you are cancelling')
+            }
             multiline
             numberOfLines={3}
           />

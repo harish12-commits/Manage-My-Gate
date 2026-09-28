@@ -195,7 +195,41 @@ export interface AmenityBookingState {
   // Master Ledger Summary Stats
   ledgerSummary: any;
   amenitySummary: any[];
+
+  // Staff booking queue (V2)
+  adminQueue: {
+    items: AmenityReservation[];
+    pagination: PaginationMeta;
+    tab: AdminQueueTab;
+    search: string;
+    counts: { approvals: number; review: number };
+    loading: boolean;
+    error: string | null;
+  };
 }
+
+export type AdminQueueTab = 'APPROVALS' | 'REVIEW' | 'UPCOMING' | 'ALL';
+
+/** Server filters for each staff queue tab. */
+export const ADMIN_QUEUE_FILTERS: Record<AdminQueueTab, Record<string, string>> = {
+  APPROVALS: { bookingStatus: 'PENDING_APPROVAL' },
+  REVIEW: { adminReviewStatus: 'PENDING' },
+  UPCOMING: { bookingStatus: 'CONFIRMED' },
+  ALL: {},
+};
+
+/** The API returns total/page/limit/totalPages at the top level of the list payload. */
+const paginationFromPayload = (payload: any, fallbackCount: number): PaginationMeta => {
+  const p = payload?.pagination || payload || {};
+  const limit = Number(p.limit) || 10;
+  const total = Number(p.total ?? p.totalRecords ?? fallbackCount) || 0;
+  return {
+    currentPage: Number(p.page ?? p.currentPage) || 1,
+    totalPages: Number(p.totalPages ?? p.pages) || Math.max(1, Math.ceil(total / limit)),
+    totalRecords: total,
+    limit,
+  };
+};
 
 const initialState: AmenityBookingState = {
   // Legacy
@@ -240,6 +274,16 @@ const initialState: AmenityBookingState = {
   // Master Ledger Summary Stats
   ledgerSummary: null,
   amenitySummary: [],
+
+  adminQueue: {
+    items: [],
+    pagination: { currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 },
+    tab: 'APPROVALS',
+    search: '',
+    counts: { approvals: 0, review: 0 },
+    loading: false,
+    error: null,
+  },
 };
 
 // ==========================================
@@ -515,10 +559,9 @@ export const fetchReservationsThunk = createAsyncThunk(
       const res = await amenityManagementService.getReservations(params);
       const rawPayload = res?.data || res;
       const rawList = rawPayload?.items || (Array.isArray(rawPayload) ? rawPayload : []);
-      const pagination = rawPayload?.pagination || { page: 1, limit: 10, total: rawList.length, pages: 1 };
       return {
         items: rawList.map(normalizeReservationFromApi),
-        pagination,
+        pagination: paginationFromPayload(rawPayload, rawList.length),
       };
     } catch (err) {
       return rejectWithValue(mapAmenityApiError(err));
@@ -654,6 +697,76 @@ export const checkOutPassThunk = createAsyncThunk(
   }
 );
 
+/** Staff booking queue: one tab's page (tab, search and page come from the slice unless given). */
+export const fetchAdminQueueThunk = createAsyncThunk(
+  'amenityBookings/fetchAdminQueue',
+  async ({ page = 1 }: { page?: number } = {}, { getState, rejectWithValue }) => {
+    try {
+      const { tab, search, pagination } = (getState() as any).amenityBookings.adminQueue;
+      const res = await amenityManagementService.getReservations({
+        page,
+        limit: pagination.limit,
+        ...ADMIN_QUEUE_FILTERS[tab as AdminQueueTab],
+        ...(search?.trim() ? { search: search.trim() } : {}),
+      });
+      const raw: any = res?.data || res;
+      const list = raw?.items || [];
+      return { items: list.map(normalizeReservationFromApi), pagination: paginationFromPayload(raw, list.length) };
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Totals shown on the queue's KPI cards. */
+export const fetchAdminQueueCountsThunk = createAsyncThunk(
+  'amenityBookings/fetchAdminQueueCounts',
+  async (_: void, { rejectWithValue }) => {
+    try {
+      const [approvals, review] = await Promise.all([
+        amenityManagementService.getReservations({ page: 1, limit: 1, ...ADMIN_QUEUE_FILTERS.APPROVALS }),
+        amenityManagementService.getReservations({ page: 1, limit: 1, ...ADMIN_QUEUE_FILTERS.REVIEW }),
+      ]);
+      const totalOf = (r: any) => Number((r?.data || r)?.total || 0);
+      return { approvals: totalOf(approvals), review: totalOf(review) };
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Staff approve or reject a booking that needs approval (a reason is required to reject). */
+export const reviewReservationThunk = createAsyncThunk(
+  'amenityBookings/reviewReservation',
+  async (
+    { id, action, rejectionReason }: { id: string; action: 'APPROVE' | 'REJECT'; rejectionReason?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await amenityManagementService.reviewReservation(id, { action, rejectionReason } as any);
+      return normalizeReservationFromApi((res as any)?.data || res);
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Staff decision on a flagged booking (no-show, unpaid balance, overdue return). */
+export const resolveReservationReviewThunk = createAsyncThunk(
+  'amenityBookings/resolveReservationReview',
+  async (
+    { id, ...payload }: { id: string; action: 'FORFEIT' | 'REFUND_POLICY' | 'REFUND_CUSTOM' | 'EXTEND'; refundPercentage?: number; notes?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await amenityManagementService.resolveReservationReview(id, payload);
+      return normalizeReservationFromApi((res as any)?.data || res);
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
 /** Gate staff collect a booking's outstanding balance in cash before entry. */
 export const collectBalancePaymentThunk = createAsyncThunk(
   'amenityBookings/collectBalancePayment',
@@ -702,6 +815,7 @@ const applyReservationUpdate = (state: AmenityBookingState, incoming: AmenityRes
   });
   if (state.v2CurrentReservation?._id === incoming._id) state.v2CurrentReservation = merge(state.v2CurrentReservation);
   state.v2Reservations = state.v2Reservations.map((r) => (r._id === incoming._id ? merge(r) : r));
+  state.adminQueue.items = state.adminQueue.items.map((r) => (r._id === incoming._id ? merge(r) : r));
 };
 
 const amenityBookingSlice = createSlice({
@@ -753,6 +867,15 @@ const amenityBookingSlice = createSlice({
     },
     clearV2Errors: (state) => {
       state.v2Error = null;
+    },
+    setAdminQueueTab: (state, action: PayloadAction<AdminQueueTab>) => {
+      state.adminQueue.tab = action.payload;
+    },
+    setAdminQueueSearch: (state, action: PayloadAction<string>) => {
+      state.adminQueue.search = action.payload;
+    },
+    clearAdminQueueError: (state) => {
+      state.adminQueue.error = null;
     },
     /** A booking pushed by the server (socket) or returned by an action: refresh every copy. */
     upsertV2Reservation: (state, action: PayloadAction<any>) => {
@@ -1059,13 +1182,13 @@ const amenityBookingSlice = createSlice({
       })
       .addCase(fetchReservationsThunk.fulfilled, (state, action) => {
         state.v2Loading = false;
-        state.v2Reservations = action.payload.items;
-        state.pagination = {
-          currentPage: action.payload.pagination.page,
-          totalPages: action.payload.pagination.pages,
-          totalRecords: action.payload.pagination.total,
-          limit: action.payload.pagination.limit,
-        };
+        const { items, pagination } = action.payload;
+        // Later pages extend the list; page 1 replaces it.
+        state.v2Reservations =
+          pagination.currentPage > 1
+            ? [...state.v2Reservations, ...items.filter((i) => !state.v2Reservations.some((r) => r._id === i._id))]
+            : items;
+        state.pagination = pagination;
       })
       .addCase(fetchReservationsThunk.rejected, (state, action) => {
         state.v2Loading = false;
@@ -1158,6 +1281,34 @@ const amenityBookingSlice = createSlice({
         state.v2PassError = action.payload as AmenityErrorDetails;
       })
 
+      // Staff booking queue
+      .addCase(fetchAdminQueueThunk.pending, (state) => {
+        state.adminQueue.loading = true;
+        state.adminQueue.error = null;
+      })
+      .addCase(fetchAdminQueueThunk.fulfilled, (state, action) => {
+        const { items, pagination } = action.payload;
+        state.adminQueue.loading = false;
+        state.adminQueue.items =
+          pagination.currentPage > 1
+            ? [...state.adminQueue.items, ...items.filter((i: AmenityReservation) => !state.adminQueue.items.some((r) => r._id === i._id))]
+            : items;
+        state.adminQueue.pagination = pagination;
+      })
+      .addCase(fetchAdminQueueThunk.rejected, (state, action) => {
+        state.adminQueue.loading = false;
+        state.adminQueue.error = (action.payload as AmenityErrorDetails)?.message || 'Could not load bookings.';
+      })
+      .addCase(fetchAdminQueueCountsThunk.fulfilled, (state, action) => {
+        state.adminQueue.counts = action.payload;
+      })
+      .addCase(reviewReservationThunk.fulfilled, (state, action) => {
+        applyReservationUpdate(state, action.payload);
+      })
+      .addCase(resolveReservationReviewThunk.fulfilled, (state, action) => {
+        applyReservationUpdate(state, action.payload);
+      })
+
       // Gate cash collection
       .addCase(collectBalancePaymentThunk.pending, (state) => {
         state.v2PassActionLoading = true;
@@ -1197,6 +1348,9 @@ export const {
   clearActiveHold,
   clearV2Errors,
   upsertV2Reservation,
+  setAdminQueueTab,
+  setAdminQueueSearch,
+  clearAdminQueueError,
   clearAmenityBookingErrors,
   resetV2BookingState,
   clearV2PassResults,

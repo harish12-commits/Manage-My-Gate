@@ -280,6 +280,8 @@ export const ar: Record<string, string> = {
   'feature_admin_villas_sub': 'المباني والفلل',
   'feature_admin_workspace_settings_name': 'إعدادات مساحة العمل',
   'feature_admin_workspace_settings_sub': 'قواعد المستأجرين',
+  'feature_amenities_admin_bookings_name': 'قائمة الحجوزات',
+  'feature_amenities_admin_bookings_sub': 'الموافقات والقرارات',
   'feature_amenities_admin_calendar_name': 'تقويم المشرف',
   'feature_amenities_admin_calendar_sub': 'الجدول الرئيسي',
   'feature_amenities_dashboard_name': 'لوحة المرافق',

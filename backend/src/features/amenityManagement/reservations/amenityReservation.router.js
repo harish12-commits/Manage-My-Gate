@@ -32,7 +32,7 @@ router.post(
 // POST /:reservationId/cancel - Cancel reservation
 router.post(
   '/:reservationId/cancel',
-  authorizePermission('amenities', ['amenities', 'my_booking']),
+  authorizePermission('amenities', ['amenities', 'my_booking', 'admin_calander']),
   validate(cancelReservationRules),
   amenityReservationController.cancel
 );

@@ -277,6 +277,8 @@ export const te: Record<string, string> = {
   'feature_admin_villas_sub': 'బ్లాక్‌లు & విల్లాలు',
   'feature_admin_workspace_settings_name': 'వర్క్‌స్పేస్ సెట్టింగ్‌లు',
   'feature_admin_workspace_settings_sub': 'నిబంధనలు',
+  'feature_amenities_admin_bookings_name': 'బుకింగ్ క్యూ',
+  'feature_amenities_admin_bookings_sub': 'ఆమోదాలు & నిర్ణయాలు',
   'feature_amenities_admin_calendar_name': 'అడ్మిన్ క్యాలెండర్',
   'feature_amenities_admin_calendar_sub': 'మాస్టర్ షెడ్యూల్',
   'feature_amenities_dashboard_name': 'సౌకర్యాల డాష్‌బోర్డ్',

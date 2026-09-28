@@ -277,6 +277,8 @@ export const kn: Record<string, string> = {
   'feature_admin_villas_sub': 'ಬ್ಲಾಕ್‌ಗಳು ಮತ್ತು ವಿಲ್ಲಾಗಳು',
   'feature_admin_workspace_settings_name': 'ಕಾರ್ಯಕ್ಷೇತ್ರ ಸೆಟ್ಟಿಂಗ್‌ಗಳು',
   'feature_admin_workspace_settings_sub': 'ನಿಯಮಗಳು',
+  'feature_amenities_admin_bookings_name': 'ಬುಕಿಂಗ್ ಸರದಿ',
+  'feature_amenities_admin_bookings_sub': 'ಅನುಮೋದನೆಗಳು & ನಿರ್ಧಾರಗಳು',
   'feature_amenities_admin_calendar_name': 'ನಿರ್ವಾಹಕ ಕ್ಯಾಲೆಂಡರ್',
   'feature_amenities_admin_calendar_sub': 'ಮಾಸ್ಟರ್ ವೇಳಾಪಟ್ಟಿ',
   'feature_amenities_dashboard_name': 'ಸೌಲಭ್ಯಗಳ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',

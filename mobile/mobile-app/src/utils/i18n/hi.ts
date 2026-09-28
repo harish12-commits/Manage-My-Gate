@@ -277,6 +277,8 @@ export const hi: Record<string, string> = {
   'feature_admin_villas_sub': 'ब्लॉक और विला',
   'feature_admin_workspace_settings_name': 'कार्यक्षेत्र सेटिंग्स',
   'feature_admin_workspace_settings_sub': 'किरायेदार नियम',
+  'feature_amenities_admin_bookings_name': 'बुकिंग कतार',
+  'feature_amenities_admin_bookings_sub': 'अनुमोदन और निर्णय',
   'feature_amenities_admin_calendar_name': 'व्यवस्थापक कैलेंडर',
   'feature_amenities_admin_calendar_sub': 'मास्टर शेड्यूल',
   'feature_amenities_dashboard_name': 'सुविधा नियंत्रण पट्ट',
