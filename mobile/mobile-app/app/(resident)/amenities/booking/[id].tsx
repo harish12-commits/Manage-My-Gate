@@ -4,7 +4,7 @@
  * guards against non-ACTIVE facilities, and delegates orchestration to AmenityBookingWizard.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenShell } from '@/components/ui/ScreenShell';
@@ -19,7 +19,17 @@ import { AlertTriangle, ArrowLeft } from 'lucide-react-native';
 
 export default function AmenityBookingRoute() {
   // `date` (YYYY-MM-DD) pre-selects a day, e.g. when arriving from the calendar.
-  const { id, date } = useLocalSearchParams<{ id: string; date?: string }>();
+  // `residentId`/`residentName` are set when amenity staff book for a resident.
+  const { id, date, residentId, residentName } = useLocalSearchParams<{
+    id: string;
+    date?: string;
+    residentId?: string;
+    residentName?: string;
+  }>();
+  const onBehalfOf = useMemo(
+    () => (residentId ? { residentId, residentName: residentName || '' } : null),
+    [residentId, residentName]
+  );
   const router = useRouter();
 
   const [facility, setFacility] = useState<AmenityFacility | null>(null);
@@ -135,6 +145,7 @@ export default function AmenityBookingRoute() {
   return (
     <AmenityBookingWizard
       facility={facility}
+      onBehalfOf={onBehalfOf}
       initialDate={typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined}
       onClose={() => {
         if (router.canGoBack()) {

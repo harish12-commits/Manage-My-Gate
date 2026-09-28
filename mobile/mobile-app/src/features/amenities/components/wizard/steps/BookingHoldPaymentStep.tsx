@@ -34,6 +34,8 @@ export interface BookingHoldPaymentStepProps {
   onRestartBooking: () => void;
   confirming?: boolean;
   error?: string | null;
+  /** Staff booking for this resident: no charge, no payment options. */
+  staffBookingFor?: string | null;
 }
 
 const money = (n: number, currency: string) => `₹${Number(n || 0).toLocaleString('en-IN')}${currency && currency !== 'INR' ? ` ${currency}` : ''}`;
@@ -53,12 +55,14 @@ export function BookingHoldPaymentStep({
   onRestartBooking,
   confirming = false,
   error,
+  staffBookingFor = null,
 }: BookingHoldPaymentStepProps) {
   const { t } = useTranslation();
   const dueNow = Number(schedule?.dueNowAmount || 0);
-  const balanceLater = Number(schedule?.balanceAmount || 0);
+  const isStaffBooking = Boolean(staffBookingFor);
+  const balanceLater = isStaffBooking ? 0 : Number(schedule?.balanceAmount || 0);
   const deposit = Number(schedule?.depositAmount || 0);
-  const mustPayNow = dueNow > 0;
+  const mustPayNow = !isStaffBooking && dueNow > 0;
   const walletShort = mustPayNow && paymentMethod === 'WALLET' && balance < dueNow;
 
   const minutes = Math.floor(holdRemainingSeconds / 60);
@@ -123,6 +127,17 @@ export function BookingHoldPaymentStep({
         </View>
       ) : null}
 
+      {isStaffBooking ? (
+        <View testID="staff-booking-notice" className="bg-status-info/10 border border-status-info/30 p-4 rounded-2xl gap-1">
+          <Text className="font-semibold text-sm text-foreground">
+            {t('amenity_booking_staff_for', 'Booking for {name}', { name: staffBookingFor })}
+          </Text>
+          <Text variant="muted" className="text-xs">
+            {t('amenity_booking_staff_free', 'Bookings made by amenity staff are free of charge and confirmed straight away.')}
+          </Text>
+        </View>
+      ) : null}
+
       <DetailSection title={t('amenity_booking_amounts', 'Amounts')} className="bg-card border border-border">
         {schedule ? (
           <>
@@ -132,7 +147,18 @@ export function BookingHoldPaymentStep({
             ) : null}
             <DetailRow
               label={t('amenity_booking_due_now', 'Due now')}
-              value={<StatusBadge label={mustPayNow ? money(dueNow, currency) : t('amenity_booking_nothing_now', 'Nothing now')} variant={mustPayNow ? 'info' : 'success'} />}
+              value={
+                <StatusBadge
+                  label={
+                    isStaffBooking
+                      ? t('amenity_booking_no_charge', 'No charge')
+                      : mustPayNow
+                        ? money(dueNow, currency)
+                        : t('amenity_booking_nothing_now', 'Nothing now')
+                  }
+                  variant={mustPayNow ? 'info' : 'success'}
+                />
+              }
             />
             {balanceLater > 0 ? (
               <DetailRow

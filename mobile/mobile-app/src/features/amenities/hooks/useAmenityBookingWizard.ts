@@ -65,12 +65,22 @@ export interface WizardStepDefinition {
 
 export type BookingPaymentMethod = 'WALLET' | 'RAZORPAY';
 
+/** Staff booking for a resident: the hold is taken in their name and nothing is charged. */
+export interface BookingOnBehalfOf {
+  residentId: string;
+  residentName: string;
+}
+
 const todayLocal = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-export function useAmenityBookingWizard(facility: AmenityFacility, options: { initialDate?: string } = {}) {
+export function useAmenityBookingWizard(
+  facility: AmenityFacility,
+  options: { initialDate?: string; onBehalfOf?: BookingOnBehalfOf | null } = {}
+) {
+  const onBehalfOf = options.onBehalfOf || null;
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const { t } = useTranslation();
@@ -358,12 +368,13 @@ export function useAmenityBookingWizard(facility: AmenityFacility, options: { in
         quantity: partyIsQuantity ? quantity : 1,
         holdType: 'STANDARD',
       });
+      if (onBehalfOf) (payload as any).residentId = onBehalfOf.residentId;
       return await dispatch(createHoldThunk({ payload, idempotencyKey: generateUUID() })).unwrap();
     } catch (err: any) {
       setStepError(err?.message || t('amenity_booking_err_hold', 'Could not hold this time. Please pick another.'));
       throw err;
     }
-  }, [dispatch, facility._id, selectedResource?._id, selectedSlot, selectedDate, startUtcIso, endUtcIso, partyIsQuantity, headcount, quantity, t]);
+  }, [dispatch, facility._id, selectedResource?._id, selectedSlot, selectedDate, startUtcIso, endUtcIso, partyIsQuantity, headcount, quantity, t, onBehalfOf]);
 
   const handleNext = useCallback(async () => {
     if (!(await validateCurrentStep())) return;
@@ -417,7 +428,7 @@ export function useAmenityBookingWizard(facility: AmenityFacility, options: { in
   }, [steps]);
 
   const confirmHold = useCallback(
-    async (method?: BookingPaymentMethod) => {
+    async (method?: BookingPaymentMethod | 'WAIVED') => {
       if (!activeHold?._id) return;
       const payload: Record<string, any> = { holdId: activeHold._id, notes: bookingNotes || undefined };
       if (method) payload.paymentMethod = method;
@@ -469,7 +480,9 @@ export function useAmenityBookingWizard(facility: AmenityFacility, options: { in
     setStepError(null);
     setPaying(true);
     try {
-      if (dueNow <= 0) {
+      if (onBehalfOf) {
+        await confirmHold('WAIVED');
+      } else if (dueNow <= 0) {
         await confirmHold();
       } else if (paymentMethod === 'RAZORPAY') {
         await handleLaunchRazorpay();
@@ -489,7 +502,7 @@ export function useAmenityBookingWizard(facility: AmenityFacility, options: { in
     } finally {
       setPaying(false);
     }
-  }, [activeHold?._id, isHoldExpired, dueNow, paymentMethod, balance, confirmHold, handleLaunchRazorpay, t]);
+  }, [activeHold?._id, isHoldExpired, dueNow, paymentMethod, balance, confirmHold, handleLaunchRazorpay, onBehalfOf, t]);
 
   const handleRazorpaySuccess = useCallback(
     async (payload: any) => {
@@ -594,6 +607,7 @@ export function useAmenityBookingWizard(facility: AmenityFacility, options: { in
   );
 
   return {
+    onBehalfOf,
     facility,
     steps,
     currentStepIndex,

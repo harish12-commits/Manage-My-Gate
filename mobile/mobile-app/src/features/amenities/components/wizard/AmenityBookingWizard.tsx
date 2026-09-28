@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { formatBookingWindow } from '../../utils/amenityStateHelpers';
 import { AmenityFacility } from '../../types/amenityDomain.types';
-import { useAmenityBookingWizard } from '../../hooks/useAmenityBookingWizard';
+import { useAmenityBookingWizard, BookingOnBehalfOf } from '../../hooks/useAmenityBookingWizard';
 import { AmenityBookingFlowHeader } from './AmenityBookingFlowHeader';
 import { AmenityBookingStepIndicator } from './AmenityBookingStepIndicator';
 import { AmenityBookingFlowFooter } from './AmenityBookingFlowFooter';
@@ -31,12 +31,14 @@ export interface AmenityBookingWizardProps {
   facility: AmenityFacility;
   /** Day to start on (YYYY-MM-DD); defaults to today. */
   initialDate?: string;
+  /** Staff booking for a resident (no charge). */
+  onBehalfOf?: BookingOnBehalfOf | null;
   onClose?: () => void;
 }
 
-export function AmenityBookingWizard({ facility, initialDate, onClose }: AmenityBookingWizardProps) {
+export function AmenityBookingWizard({ facility, initialDate, onBehalfOf = null, onClose }: AmenityBookingWizardProps) {
   const router = useRouter();
-  const wizard = useAmenityBookingWizard(facility, { initialDate });
+  const wizard = useAmenityBookingWizard(facility, { initialDate, onBehalfOf });
 
   const windowLabel = formatBookingWindow(wizard.startUtcIso, wizard.endUtcIso, facility.timezone || 'Asia/Kolkata');
   // Largest party the facility type allows for this booking.
@@ -172,6 +174,7 @@ export function AmenityBookingWizard({ facility, initialDate, onClose }: Amenity
 
         {wizard.currentStep.key === 'payment' && (
           <BookingHoldPaymentStep
+            staffBookingFor={onBehalfOf?.residentName || null}
             activeHold={wizard.activeHold}
             holdRemainingSeconds={wizard.holdRemainingSeconds}
             isHoldExpired={wizard.isHoldExpired}

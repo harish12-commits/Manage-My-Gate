@@ -11,6 +11,7 @@ import {
   AmenityErrorDetails,
   AmenityCancellationPreview,
   AmenityCheckOutResult,
+  AmenityFacility,
 } from '../types/amenityDomain.types';
 import {
   CreateHoldApiPayload,
@@ -27,6 +28,7 @@ import {
   normalizeAccessPassFromApi,
   normalizePricingSnapshot,
   normalizeAvailabilityFromApi,
+  normalizeFacilityFromApi,
 } from '../utils/amenityPayloadMappers';
 import { mapAmenityApiError } from '../utils/amenityErrorMapper';
 
@@ -206,6 +208,10 @@ export interface AmenityBookingState {
     loading: boolean;
     error: string | null;
   };
+
+  // Published facilities staff can book for a resident
+  bookableFacilities: AmenityFacility[];
+  bookableFacilitiesLoading: boolean;
 }
 
 export type AdminQueueTab = 'APPROVALS' | 'REVIEW' | 'UPCOMING' | 'ALL';
@@ -284,6 +290,9 @@ const initialState: AmenityBookingState = {
     loading: false,
     error: null,
   },
+
+  bookableFacilities: [],
+  bookableFacilitiesLoading: false,
 };
 
 // ==========================================
@@ -712,6 +721,21 @@ export const fetchAdminQueueThunk = createAsyncThunk(
       const raw: any = res?.data || res;
       const list = raw?.items || [];
       return { items: list.map(normalizeReservationFromApi), pagination: paginationFromPayload(raw, list.length) };
+    } catch (err) {
+      return rejectWithValue(mapAmenityApiError(err));
+    }
+  }
+);
+
+/** Published (active) facilities, for staff booking on a resident's behalf. */
+export const fetchBookableFacilitiesThunk = createAsyncThunk(
+  'amenityBookings/fetchBookableFacilities',
+  async (_: void, { rejectWithValue }) => {
+    try {
+      const res = await amenityManagementService.getFacilities({ page: 1, limit: 100, status: 'ACTIVE' });
+      const raw: any = res?.data || res;
+      const list = raw?.items || raw?.data || (Array.isArray(raw) ? raw : []);
+      return list.map(normalizeFacilityFromApi) as AmenityFacility[];
     } catch (err) {
       return rejectWithValue(mapAmenityApiError(err));
     }
@@ -1298,6 +1322,16 @@ const amenityBookingSlice = createSlice({
       .addCase(fetchAdminQueueThunk.rejected, (state, action) => {
         state.adminQueue.loading = false;
         state.adminQueue.error = (action.payload as AmenityErrorDetails)?.message || 'Could not load bookings.';
+      })
+      .addCase(fetchBookableFacilitiesThunk.pending, (state) => {
+        state.bookableFacilitiesLoading = true;
+      })
+      .addCase(fetchBookableFacilitiesThunk.fulfilled, (state, action) => {
+        state.bookableFacilitiesLoading = false;
+        state.bookableFacilities = action.payload;
+      })
+      .addCase(fetchBookableFacilitiesThunk.rejected, (state) => {
+        state.bookableFacilitiesLoading = false;
       })
       .addCase(fetchAdminQueueCountsThunk.fulfilled, (state, action) => {
         state.adminQueue.counts = action.payload;

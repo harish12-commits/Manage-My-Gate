@@ -4082,6 +4082,19 @@ export const en: Record<string, string> = {
   'amenity_review_sheet_title': 'Decide flagged booking',
   'amenity_cancel_reason_placeholder_staff': 'Shown to the resident, e.g. Court resurfacing',
   'amenity_cancel_refund_to_resident': '{amount} will be refunded to the resident wallet.',
+  'amenity_booking_no_charge': 'No charge',
+  'amenity_booking_staff_for': 'Booking for {name}',
+  'amenity_booking_staff_free': 'Bookings made by amenity staff are free of charge and confirmed straight away.',
+  'amenity_staff_new_booking': 'New booking',
+  'amenity_staff_no_facilities': 'No facilities to book',
+  'amenity_staff_no_facilities_sub': 'Publish a facility in the amenity catalog first.',
+  'amenity_staff_pick_facility': 'Choose a facility',
+  'amenity_staff_pick_resident': 'Book for which resident?',
+  'resident_picker_title': 'Choose a resident',
+  'resident_picker_search': 'Search name, villa or phone',
+  'resident_picker_more': 'Showing {shown} of {total}. Search to narrow the list.',
+  'resident_picker_empty': 'No residents found',
+  'resident_picker_empty_sub': 'Try another name or villa number.',
 };
 
 export default en;

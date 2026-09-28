@@ -178,10 +178,13 @@ export class AmenityReservationService {
     }
 
     // 6. Determine the 5 Orthogonal Dimensions
-    const requiresApproval =
+    const facilityNeedsApproval =
       facility.requiresApproval || facility.approvalWorkflow?.requireAdminApproval || false;
+    // A booking amenity staff make for a resident is itself the approval.
+    const staffBooked = hasAdminScope && hold.bookedBy && String(hold.bookedBy) === String(actor);
+    const requiresApproval = facilityNeedsApproval && !staffBooked;
     const bookingStatus = requiresApproval ? 'PENDING_APPROVAL' : 'CONFIRMED';
-    const approvalStatus = requiresApproval ? 'PENDING_REVIEW' : 'NOT_REQUIRED';
+    const approvalStatus = requiresApproval ? 'PENDING_REVIEW' : facilityNeedsApproval ? 'APPROVED' : 'NOT_REQUIRED';
     const settings = await amenitySettingsService.getSettings(orgId, session);
     const approvalDeadline = requiresApproval
       ? new Date(Date.now() + (Number(settings.approvalTimeoutHours) || 24) * 3600000)

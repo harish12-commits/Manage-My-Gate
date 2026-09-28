@@ -13,6 +13,12 @@ import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
+import { Plus } from 'lucide-react-native';
+import { ResidentPickerSheet } from '../../villa/components/ResidentPickerSheet';
+import { BookableFacilityPickerSheet } from '../components/BookableFacilityPickerSheet';
+import { useStaffBookingLauncher } from '../hooks/useStaffBookingLauncher';
 import { useTranslation } from '@/src/utils/i18n';
 import { useAdminBookingQueue } from '../hooks/useAdminBookingQueue';
 import { useCancellationPreview } from '../hooks/useCancellationPreview';
@@ -30,6 +36,7 @@ type SubAction = 'approve' | 'reject' | 'decide' | 'collect' | 'cancel' | null;
 export function AdminBookingQueueScreen() {
   const { t } = useTranslation();
   const queue = useAdminBookingQueue();
+  const launcher = useStaffBookingLauncher();
   const [sub, setSub] = useState<SubAction>(null);
   const cancelPreview = useCancellationPreview(sub === 'cancel' ? queue.selected?._id : null);
 
@@ -75,6 +82,18 @@ export function AdminBookingQueueScreen() {
       iconName="ClipboardCheck"
       loading={queue.loading && queue.items.length === 0 && !queue.error}
       scrollable={false}
+      headerRight={
+        <Button
+          size="sm"
+          onPress={launcher.start}
+          className="flex-row items-center gap-1.5 px-3 rounded-full"
+          accessibilityLabel={t('amenity_staff_new_booking', 'New booking')}
+          testID="admin-new-booking"
+        >
+          <Plus size={15} className="text-primary-foreground" />
+          <Text className="text-xs font-bold text-primary-foreground">{t('amenity_staff_new_booking', 'New booking')}</Text>
+        </Button>
+      }
     >
       <View className="flex-1 bg-background">
         <View className="py-2.5">
@@ -199,6 +218,21 @@ export function AdminBookingQueueScreen() {
         onConfirm={(reason) => selected && finish(() => queue.cancel(selected._id, reason))}
         testID="admin-cancel-sheet"
         forStaff
+      />
+      <ResidentPickerSheet
+        visible={launcher.step === 'resident'}
+        title={t('amenity_staff_pick_resident', 'Book for which resident?')}
+        onClose={launcher.close}
+        onSelect={launcher.chooseResident}
+      />
+
+      <BookableFacilityPickerSheet
+        visible={launcher.step === 'facility'}
+        residentName={launcher.resident ? `${launcher.resident.name} (${launcher.resident.villaName})` : null}
+        facilities={launcher.facilities}
+        loading={launcher.facilitiesLoading}
+        onClose={launcher.back}
+        onSelect={launcher.chooseFacility}
       />
     </ScreenShell>
   );
