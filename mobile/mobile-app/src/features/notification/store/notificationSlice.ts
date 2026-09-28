@@ -85,6 +85,18 @@ export const deleteNotificationThunk = createAsyncThunk<
   }
 });
 
+export const deleteAllNotificationsThunk = createAsyncThunk<
+  { deletedCount: number },
+  void,
+  { rejectValue: string }
+>('notifications/deleteAllNotifications', async (_, { rejectWithValue }) => {
+  try {
+    return await notificationService.deleteAllNotifications();
+  } catch (error: any) {
+    return rejectWithValue(error.response?.data?.message || error.message || 'Failed to delete all notifications');
+  }
+});
+
 export const notificationSlice = createSlice({
   name: 'notification',
   initialState,
@@ -184,6 +196,15 @@ export const notificationSlice = createSlice({
           state.items.splice(idx, 1);
           state.pagination.totalRecords = Math.max(0, state.pagination.totalRecords - 1);
         }
+      })
+      .addCase(deleteAllNotificationsThunk.fulfilled, (state) => {
+        state.items = [];
+        state.unreadCount = 0;
+        state.pagination = {
+          currentPage: 1,
+          totalPages: 1,
+          totalRecords: 0,
+        };
       });
   },
 });

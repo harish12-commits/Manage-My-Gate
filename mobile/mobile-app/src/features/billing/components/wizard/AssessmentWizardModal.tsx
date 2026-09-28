@@ -324,7 +324,7 @@ export const AssessmentWizardModal: React.FC<AssessmentWizardModalProps> = ({
         backgroundColor={colorScheme === 'dark' ? '#09090b' : '#ffffff'}
       />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'android' ? 'height' : undefined}
         className="flex-1"
       >
         {/* Header */}

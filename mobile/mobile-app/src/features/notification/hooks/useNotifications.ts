@@ -8,6 +8,7 @@ import {
   markAsReadThunk,
   markAllAsReadThunk,
   deleteNotificationThunk,
+  deleteAllNotificationsThunk,
   addRealTimeNotification,
   clearLatestNotification,
 } from '../store/notificationSlice';
@@ -47,6 +48,10 @@ export const useNotifications = () => {
     },
     [dispatch]
   );
+
+  const deleteAllNotifications = useCallback(() => {
+    return dispatch(deleteAllNotificationsThunk()).unwrap();
+  }, [dispatch]);
 
   const dismissLatestNotification = useCallback(() => {
     dispatch(clearLatestNotification());
@@ -93,6 +98,7 @@ export const useNotifications = () => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    deleteAllNotifications,
     dismissLatestNotification,
   };
 };

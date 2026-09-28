@@ -158,7 +158,7 @@ export const CreateAssessmentModal: React.FC<CreateAssessmentModalProps> = ({
   return (
     <Modal visible={visible} transparent statusBarTranslucent={true} animationType="slide" onRequestClose={handleModalClose}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'android' ? 'height' : undefined}
         style={{ flex: 1 }}
       >
         <View className="flex-1 bg-black/60 justify-end">

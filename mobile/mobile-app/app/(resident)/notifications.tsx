@@ -63,7 +63,37 @@ export default function NotificationsScreen() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    deleteAllNotifications,
   } = useNotifications();
+
+  const handleDeleteAll = useCallback(() => {
+    if (items.length === 0) return;
+    Alert.alert(
+      t('delete_all_notifications', 'Delete all notifications?'),
+      t('delete_all_notifications_message', 'This will permanently remove all notifications in this community.'),
+      [
+        { text: t('cancel', 'Cancel'), style: 'cancel' },
+        {
+          text: t('delete_all', 'Delete all'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAllNotifications();
+              Alert.alert(
+                t('notifications_cleared', 'Notifications cleared'),
+                t('notifications_cleared_message', 'All notifications in this community have been deleted.')
+              );
+            } catch (error: any) {
+              Alert.alert(
+                t('error', 'Error'),
+                error?.message || t('delete_all_notifications_failed', 'Unable to delete all notifications. Please try again.')
+              );
+            }
+          },
+        },
+      ]
+    );
+  }, [deleteAllNotifications, items.length, t]);
 
   // Helper to determine if a notification represents an invitation
   const isInvitationNotification = useCallback((notification?: NotificationItemData | null): boolean => {
@@ -547,7 +577,7 @@ export default function NotificationsScreen() {
             loading={loading}
             refreshing={refreshing}
             ListHeaderComponent={
-              <View className="flex-row items-center gap-2 pt-3 mb-3 pb-1">
+              <View className="flex-row flex-wrap items-center gap-2 pt-3 mb-3 pb-1">
                 <TouchableOpacity
                   onPress={() => setActiveTab('all')}
                   className={`px-4 py-1.5 rounded-full border ${
@@ -577,6 +607,21 @@ export default function NotificationsScreen() {
                     {t('unread', 'Unread')} ({unreadCount})
                   </Text>
                 </TouchableOpacity>
+
+                {items.length > 0 && (
+                  <TouchableOpacity
+                    onPress={handleDeleteAll}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('delete_all_notifications', 'Delete all notifications')}
+                    className="flex-row items-center gap-1 border border-destructive/25 bg-destructive/10 px-2.5 py-1.5 rounded-full shadow-xs"
+                  >
+                    <Trash2 size={13} color="#DC2626" />
+                    <Text className="text-[11px] font-bold text-destructive font-sans">
+                      {t('delete_all', 'Delete all')}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             }
             contentContainerClassName="px-4 pb-28"

@@ -92,6 +92,18 @@ export class NotificationController {
       next(error);
     }
   }
+
+  /** Delete all notifications that belong to the current user and workspace. */
+  async deleteAllNotifications(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const orgId = req.headers['x-organization-id'] || req.user?.orgId || req.tenant?.orgId || null;
+      const data = await notificationService.deleteAllNotifications(userId, orgId);
+      res.success(data, 'All notifications cleared successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new NotificationController();

@@ -107,7 +107,7 @@ export const GlobalFilterPanel: React.FC<GlobalFilterPanelProps> = ({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'android' ? 'height' : undefined}
         style={{ flex: 1 }}
         className="flex-1 justify-end items-center"
       >

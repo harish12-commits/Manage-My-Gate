@@ -165,7 +165,9 @@ export const CommunityEngagementWizard: React.FC<CommunityEngagementWizardProps>
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      // Each wizard step is a keyboard-inset-aware ScrollView. Keeping this
+      // wrapper neutral on iOS prevents the header and the full form jumping.
+      behavior={Platform.OS === 'android' ? 'height' : undefined}
       keyboardVerticalOffset={0}
       className="flex-1 bg-background"
     >

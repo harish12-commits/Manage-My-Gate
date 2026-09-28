@@ -254,7 +254,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
       {/* Country Selection Modal */}
       <Modal visible={isPickerVisible} transparent statusBarTranslucent={true} animationType="fade">
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'android' ? 'height' : undefined}
           style={{ flex: 1 }}
         >
           <Pressable

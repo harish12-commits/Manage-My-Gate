@@ -293,7 +293,6 @@ export default function RootLayout() {
               <BottomSheetModalProvider>
                 <StatusBar
                   style={colorScheme === 'dark' ? 'light' : 'dark'}
-                  backgroundColor={colorScheme === 'dark' ? '#131316' : '#FFF8EF'}
                 />
                 <Stack screenOptions={{ headerShown: false }} />
                 <AuthRouteGuard />

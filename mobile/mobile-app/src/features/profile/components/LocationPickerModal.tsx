@@ -231,7 +231,7 @@ export function LocationPickerModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'android' ? 'height' : undefined}
         className="flex-1 justify-end bg-black/60"
       >
         <Pressable className="absolute inset-0" onPress={onClose} />

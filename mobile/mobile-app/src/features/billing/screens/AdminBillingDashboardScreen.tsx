@@ -13,7 +13,6 @@ import { SectionHeader } from '@/components/common/SectionHeader';
 import { ListItem } from '@/components/common/ListItem';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { FAB } from '@/components/ui/FAB';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import {
   Clock,
@@ -308,20 +307,6 @@ export function AdminBillingDashboardScreen() {
             )}
           </View>
         </ScrollView>
-      )}
-
-      {/* Primary Action: New Assessment Wizard FAB */}
-      {hasDashboardPermission && (
-        <FAB
-          iconName="Plus"
-          label="New Assessment"
-          onPress={() =>
-            router.push({
-              pathname: '/(resident)/admin/billing/assessments',
-              params: { create: 'true' },
-            } as any)
-          }
-        />
       )}
     </ScreenShell>
   );

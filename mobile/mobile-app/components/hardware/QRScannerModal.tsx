@@ -60,7 +60,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
   return (
     <Modal visible={visible} animationType="fade" transparent={false} statusBarTranslucent={true} onRequestClose={onClose}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'android' ? 'height' : undefined}
         style={{ flex: 1 }}
       >
         <View className="flex-1 bg-black pt-12">

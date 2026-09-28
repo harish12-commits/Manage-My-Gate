@@ -69,7 +69,7 @@ export const AdminBlacklistModal: React.FC<AdminBlacklistModalProps> = ({
   return (
     <Modal visible={visible} animationType="fade" transparent statusBarTranslucent={true} onRequestClose={onClose}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'android' ? 'height' : undefined}
         keyboardVerticalOffset={0}
         style={{ flex: 1 }}
       >

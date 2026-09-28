@@ -119,8 +119,10 @@ export const GlobalNavModal: React.FC<GlobalNavModalProps> = ({ visible, onClose
       titleKey: 'nav_visitors_security',
       defaultTitle: 'VISITORS & SECURITY',
       items: [
-        { id: 'v-main', labelKey: 'feature_visitor_resident_passes_name', defaultLabel: 'Visitor Pass Hub', route: '/(resident)/visitor', icon: ShieldCheck, color: '#8b5cf6', permission: 'visitor:resident' },
-        { id: 'v-gate-console', labelKey: 'feature_visitor_gate_console_name', defaultLabel: 'Gate Console', route: '/(resident)/visitor/gate-console', icon: QrCode, color: '#10b981', permission: 'visitor:resident' },
+        // Use canonical feature IDs so the same RBAC resolver powers the
+        // global menu, dashboard, and View All screens.
+        { id: 'visitor_resident_passes', labelKey: 'feature_visitor_resident_passes_name', defaultLabel: 'Visitor Pass Hub', route: '/(resident)/visitor', icon: ShieldCheck, color: '#8b5cf6', permission: 'visitor:resident' },
+        { id: 'visitor_gate_console', labelKey: 'feature_visitor_gate_console_name', defaultLabel: 'Gate Console', route: '/(resident)/visitor/gate-console', icon: QrCode, color: '#10b981', permission: 'visitor:guard' },
       ],
     },
     {

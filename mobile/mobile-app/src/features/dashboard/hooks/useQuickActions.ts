@@ -178,11 +178,11 @@ export const useQuickActions = () => {
       baseCatalog = baseCatalog.map(category => {
         let requiredCategoryModules: string[] | undefined = categoryToModuleMap[category.categoryKey];
 
-        // digital_wallet passthrough: if none of the billing/amenities/wallet module keys
-        // exist in the workspace module list at all (e.g. workspace API returned unrelated keys),
-        // treat the digital_wallet category as always-enabled — it's a core financial feature.
+        // Core resident categories must remain reachable when a stale workspace
+        // module response omits their key. This prevents a valid Visitor
+        // Management tile from disappearing after a workspace switch.
         if (
-          category.categoryKey === 'digital_wallet' &&
+          ['digital_wallet', 'visitor_management'].includes(category.categoryKey) &&
           requiredCategoryModules &&
           !requiredCategoryModules.some(m => enabledModuleKeys.includes(m))
         ) {

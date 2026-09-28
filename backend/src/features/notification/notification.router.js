@@ -59,6 +59,9 @@ router.get('/', validate(getNotificationsRules), notificationController.getUserN
  */
 router.patch('/read-all', validate(markAllAsReadRules), notificationController.markAllAsRead);
 
+// Keep this route above /:id so "all" is never interpreted as a notification id.
+router.delete('/all', notificationController.deleteAllNotifications);
+
 /**
  * @swagger
  * /notifications/{id}/read:

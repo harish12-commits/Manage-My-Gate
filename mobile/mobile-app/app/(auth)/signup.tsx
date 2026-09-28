@@ -291,7 +291,7 @@ export default function SignupScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <ImageBackground source={require('../../assets/images/auth-bg.jpg')} style={{ flex: 1 }} blurRadius={Platform.OS === 'ios' ? 3 : 2} resizeMode="cover">
         <View className="absolute inset-0 bg-white/40 dark:bg-[#0B0E14]/55" />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'height' : undefined} style={{ flex: 1 }}>
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,

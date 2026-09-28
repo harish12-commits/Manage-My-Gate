@@ -27,7 +27,7 @@ export const DashboardBackground: React.FC<DashboardBackgroundProps> = memo(
     return (
       <View
         testID={testID}
-        style={[StyleSheet.absoluteFillObject, styles.container, style]}
+        style={[StyleSheet.absoluteFill, styles.container, style]}
         pointerEvents="none"
       >
         <Svg

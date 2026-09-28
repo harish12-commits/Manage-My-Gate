@@ -133,6 +133,24 @@ export class NotificationRepository {
   async delete(id, session) {
     return await Notification.findByIdAndDelete(id, { session });
   }
+
+  /**
+   * Delete every notification owned by a user in the active community.  The
+   * recipient condition is deliberately mandatory so this can never clear a
+   * different user's notification history.
+   */
+  async deleteAllForRecipient(userId, session, orgId = null) {
+    const filter = { recipientId: new mongoose.Types.ObjectId(userId) };
+    if (orgId && mongoose.Types.ObjectId.isValid(orgId)) {
+      const orgIdObj = new mongoose.Types.ObjectId(orgId);
+      filter.$or = [
+        { orgId: orgIdObj },
+        { orgId: null },
+        { type: 'INVITATION' },
+      ];
+    }
+    return await Notification.deleteMany(filter, { session });
+  }
 }
 
 export default new NotificationRepository();

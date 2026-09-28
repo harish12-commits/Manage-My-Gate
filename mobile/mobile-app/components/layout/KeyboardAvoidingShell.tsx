@@ -26,9 +26,10 @@ export const KeyboardAvoidingShell = ({
   contentContainerClassName,
   ...props
 }: KeyboardAvoidingShellProps) => {
-  // Android is configured with adjustResize. iOS needs an explicit padding
-  // response so the focused field and submit action remain above the keyboard.
-  const defaultBehavior = Platform.OS === 'ios' ? 'padding' : 'height';
+  // On iOS, ScrollView's automaticallyAdjustKeyboardInsets keeps only the
+  // scrollable content clear of the keyboard. Applying padding here as well
+  // shifts the entire page (including its header) upward.
+  const defaultBehavior = Platform.OS === 'android' ? 'height' : undefined;
   const activeBehavior = props.behavior ?? defaultBehavior;
 
   const content = scrollable ? (

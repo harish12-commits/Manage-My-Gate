@@ -284,7 +284,7 @@ export function WalletScreen() {
           onClose={() => setShowTopUpSheet(false)}
           title="Add Money to Digital Wallet"
         >
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="w-full">
+          <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'height' : undefined} className="w-full">
             <View className="py-2 gap-4">
               {!isGatewayReady ? (
                 <View className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
@@ -385,7 +385,7 @@ export function WalletScreen() {
           onClose={closeRefundSheet}
           title={t('refund_wallet_balance', 'Refund Wallet Balance')}
         >
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="w-full">
+          <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'height' : undefined} className="w-full">
             <View className="py-2 gap-4">
               {refundErrorMessage ? (
                 <ErrorBanner

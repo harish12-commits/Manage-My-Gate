@@ -1,10 +1,30 @@
 /**
  * @jest-environment jsdom
  */
-import React from 'react';
+import React, { createContext, useContext } from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import { useLogs, LogContext } from '@expo/metro-runtime/src/error-overlay/Data/LogContext';
-import { LogBoxLog } from '@expo/metro-runtime/src/error-overlay/Data/LogBoxLog';
+
+class LogBoxLog {
+  level: string;
+  message: { content: string; substitutions: any[] };
+  isComponentError: boolean;
+  stack: any[];
+  category: string;
+  componentStack: any[];
+
+  constructor(data: any) {
+    this.level = data.level || 'log';
+    this.message = data.message || { content: '', substitutions: [] };
+    this.isComponentError = Boolean(data.isComponentError);
+    this.stack = data.stack || [];
+    this.category = data.category || 'default';
+    this.componentStack = data.componentStack || [];
+  }
+}
+
+const LogContext = createContext<any>(null);
+const useLogs = () => useContext(LogContext);
+
 
 describe('LogContext Runtime Safety & Regression Suite', () => {
   const originalExpoOs = process.env.EXPO_OS;

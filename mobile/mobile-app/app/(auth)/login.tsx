@@ -624,10 +624,9 @@ export default function LoginScreen() {
         <View className="absolute inset-0 bg-black/20 dark:bg-black/45" pointerEvents="none" />
 
         <KeyboardAvoidingView
-          // The login form must move with the native keyboard on both iOS and
-          // Android; leaving this undefined allows the password/OTP actions to
-          // sit behind the keyboard.
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          // iOS scroll insets keep the focused input visible without moving
+          // the entire sign-in page beneath the status bar.
+          behavior={Platform.OS === 'android' ? 'height' : undefined}
           keyboardVerticalOffset={0}
           style={{ flex: 1 }}
         >

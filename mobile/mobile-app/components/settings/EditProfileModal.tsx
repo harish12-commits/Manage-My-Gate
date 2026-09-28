@@ -224,7 +224,7 @@ export const EditProfileModal = ({
   return (
     <Modal visible={visible} transparent statusBarTranslucent={true} animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'android' ? 'height' : undefined}
         style={{ flex: 1 }}
         className="flex-1 justify-end bg-black/50"
       >

@@ -185,7 +185,7 @@ export default function ForgotPasswordScreen() {
       >
         <View className="absolute inset-0 bg-white/45 dark:bg-[#0B0E14]/60" />
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'android' ? 'height' : undefined}
           style={{ flex: 1 }}
         >
           <ScrollView

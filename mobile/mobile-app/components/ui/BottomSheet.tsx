@@ -64,7 +64,9 @@ function BottomSheet({
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // The sheet body ScrollView handles iOS keyboard insets. Avoid moving
+        // the complete sheet under the status bar when an input receives focus.
+        behavior={Platform.OS === 'android' ? 'height' : undefined}
         keyboardVerticalOffset={0}
         style={{ flex: 1 }}
         className="flex-1 justify-end items-center"

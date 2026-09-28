@@ -329,6 +329,11 @@ export const isFeatureAllowedForUser = (
   // 3. Resident persona: strictly exclude admin consoles and guard hardware
   if (GUARD_ONLY_FEATURE_IDS.has(item.id)) return false;
 
+  // Every resident can create and manage their own visitor passes.  Do not
+  // hide this core community feature merely because a custom role contains
+  // unrelated explicit permissions (for example, billing only).
+  if (item.id === 'visitor_resident_passes') return true;
+
   if (item.permission && item.permission.startsWith('amenities:')) {
     const isResidentAmenity =
       item.permission === 'amenities:discover' ||

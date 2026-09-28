@@ -233,6 +233,18 @@ export class NotificationService {
       await session.endSession();
     }
   }
+
+  /** Delete the current user's notifications for the active workspace. */
+  async deleteAllNotifications(userId, orgId = null) {
+    try {
+      // A single deleteMany operation is atomic. Avoiding a transaction here
+      // also keeps bulk clearing compatible with standalone MongoDB installs.
+      const result = await notificationRepository.deleteAllForRecipient(userId, null, orgId);
+      return { deletedCount: result.deletedCount || 0 };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default new NotificationService();

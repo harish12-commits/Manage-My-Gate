@@ -291,9 +291,9 @@ export function ScreenShell({
 
       {/* Main content area */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        // This view begins below the app header, so an extra offset leaves the
-        // focused field partially behind the keyboard on iOS.
+        // iOS scroll views manage keyboard insets themselves. Padding at this
+        // level moves the entire page and causes the jump shown while typing.
+        behavior={Platform.OS === 'android' ? 'height' : undefined}
         keyboardVerticalOffset={0}
         className="flex-1 bg-transparent"
       >
