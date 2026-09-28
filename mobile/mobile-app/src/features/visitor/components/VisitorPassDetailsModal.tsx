@@ -389,7 +389,7 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
                   {revoking ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <Text className="text-sm font-bold text-destructive-foreground" numberOfLines={1}>Confirm Revoke</Text>
+                    <Text className="text-sm font-bold text-destructive-foreground" numberOfLines={1}>Revoke Pass</Text>
                   )}
                 </Button>
               </View>

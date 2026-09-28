@@ -89,11 +89,11 @@ export default function AdminBlacklistScreen() {
           size="sm"
           onPress={() => setModalOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel="Add Blacklist"
+          accessibilityLabel="Add Entry"
           className="flex-row items-center gap-1 px-3 rounded-full bg-red-600 active:bg-red-700 border-0"
         >
           <Plus size={14} color="#ffffff" />
-          <Text className="text-xs font-bold text-white">{t('add_blacklist', 'Add Blacklist')}</Text>
+          <Text className="text-xs font-bold text-white">{t('add_entry', 'Add Entry')}</Text>
         </Button>
       }
     >

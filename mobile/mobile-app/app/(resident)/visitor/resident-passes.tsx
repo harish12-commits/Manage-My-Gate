@@ -85,7 +85,6 @@ export default function ResidentPassesScreen() {
         page,
         append,
         statuses: activeStatusFilter === 'ALL' ? 'PENDING,ACTIVE,REVOKED,EXPIRED' : activeStatusFilter,
-        search: search.trim() || undefined,
       });
     }
     fetchActiveVisitors();
@@ -119,7 +118,8 @@ export default function ResidentPassesScreen() {
         search.trim() === '' ||
         (pass.visitorName && pass.visitorName.toLowerCase().includes(search.toLowerCase())) ||
         (pass.phone && pass.phone.includes(search)) ||
-        (pass.code && pass.code.toLowerCase().includes(search.toLowerCase()));
+        (pass.code && pass.code.toLowerCase().includes(search.toLowerCase())) ||
+        (Boolean((pass as any).shortKey) && (pass as any).shortKey.toLowerCase().includes(search.toLowerCase()));
 
       const matchesStatus = activeStatusFilter === 'ALL' || pass.status === activeStatusFilter;
       return matchesSearch && matchesStatus;
