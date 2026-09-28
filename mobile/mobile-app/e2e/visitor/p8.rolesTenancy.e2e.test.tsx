@@ -107,6 +107,8 @@ describe('P8 roles & tenancy', () => {
       ['another community checks a visitor out', 'guardOther', 'PATCH', () => `/visitor-log/${insideLog}/checkout`, {}],
       ['another community lists passes', 'residentOther', 'GET', () => `/visitor-pass/org/${orgA()}`, undefined],
       ['another community lists who is inside', 'guardOther', 'GET', () => `/visitor-log/org/${orgA()}/inside`, undefined],
+      ['resident reads the gate walk-in board', 'residentA', 'GET', () => `/visitor-log/org/${orgA()}/walk-ins`, undefined],
+      ['another community reads the gate walk-in board', 'guardOther', 'GET', () => `/visitor-log/org/${orgA()}/walk-ins`, undefined],
     ];
 
     it.each(cases)('%s → refused', async (_label, who, method, path, body) => {

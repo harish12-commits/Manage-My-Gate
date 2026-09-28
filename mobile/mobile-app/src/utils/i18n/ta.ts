@@ -3175,6 +3175,7 @@ export const ta: Record<string, string> = {
   'no_villas_found': 'வில்லாக்கள் எதுவும் காணப்படவில்லை',
   'no_estate_units_match_your_search_query': 'உங்கள் தேடலுடன் பொருந்தக்கூடிய எஸ்டேட் அலகுகள் எதுவும் இல்லை.',
   'denied_by_host': 'ஹோஸ்டால் மறுக்கப்பட்டது',
+  'approved_by_host': 'ஹோஸ்டால் அங்கீகரிக்கப்பட்டது',
   'pending_approval': 'ஒப்புதல் நிலுவையில் உள்ளது',
   'refresh_queue': 'வரிசையைப் புதுப்பிக்கவும்',
   'no_walk_in_requests_found': 'நேரடி வருகை கோரிக்கைகள் எதுவும் காணப்படவில்லை',

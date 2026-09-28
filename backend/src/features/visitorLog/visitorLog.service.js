@@ -252,6 +252,22 @@ export class VisitorLogService {
    * @param {string|null} residentId - Optional resident ID to filter by.
    * @returns {Promise<Object[]>}
    */
+  /**
+   * Walk-in requests raised since `since`, in every status, for the gate's walk-in board.
+   * @param {string} orgId - The organization ID.
+   * @param {Object} actor - The requesting user.
+   * @param {Date} since - Lower bound on request time.
+   * @returns {Promise<Object[]>}
+   */
+  async getWalkInBoard(orgId, actor, since) {
+    assertVisitorPermission(['gate', 'manager'], actor);
+    return await visitorLogRepository.findPendingApprovals({
+      orgId,
+      entryType: 'WALK_IN',
+      createdAt: { $gte: since },
+    });
+  }
+
   async getPendingApprovals(orgId, actor) {
     assertVisitorPermission(['resident', 'gate', 'manager'], actor);
     const query = {

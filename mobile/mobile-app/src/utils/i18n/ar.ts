@@ -3211,6 +3211,7 @@ export const ar: Record<string, string> = {
   'no_villas_found': 'لم يتم العثور على فلل',
   'no_estate_units_match_your_search_query': 'لا توجد وحدات في المجمع تطابق استعلام البحث.',
   'denied_by_host': 'تم الرفض بواسطة المضيف',
+  'approved_by_host': 'تمت الموافقة بواسطة المضيف',
   'pending_approval': 'في انتظار الموافقة',
   'refresh_queue': 'تحديث قائمة الانتظار',
   'no_walk_in_requests_found': 'لم يتم العثور على طلبات دخول مباشر',

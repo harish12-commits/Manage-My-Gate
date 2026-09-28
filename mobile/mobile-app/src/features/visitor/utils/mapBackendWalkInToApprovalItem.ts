@@ -22,7 +22,7 @@ export const mapBackendWalkInToApprovalItem = (log: any): WalkInApprovalItem => 
   const notes = idProof ? `ID Proof: ${idProof}` : undefined;
 
   // Derived UI fallbacks used ONLY when backend does not provide explicit values
-  const gateName = log.guardId?.name ? `Gate Guard (${log.guardId.name})` : 'Security Main Gate';
+  const gateName = log.gateName || 'Main gate';
   const purpose = log.purpose || 'Gate Walk-In Approval Request';
   const passType: PassTypeKey = (log.passType as PassTypeKey) || 'GUEST';
 
@@ -38,6 +38,11 @@ export const mapBackendWalkInToApprovalItem = (log: any): WalkInApprovalItem => 
     status = 'PENDING';
   }
 
+  const decision = Array.isArray(log.actionHistory)
+    ? [...log.actionHistory].reverse().find((a: any) => a?.action === 'APPROVED' || a?.action === 'REJECTED')
+    : null;
+  const resolvedAt = status === 'PENDING' ? undefined : decision?.occurredAt || log.updatedAt || undefined;
+
   return {
     id,
     visitorName,
@@ -50,6 +55,7 @@ export const mapBackendWalkInToApprovalItem = (log: any): WalkInApprovalItem => 
     vehicleNo,
     notes,
     status,
+    resolvedAt,
     rawLog: log,
   };
 };

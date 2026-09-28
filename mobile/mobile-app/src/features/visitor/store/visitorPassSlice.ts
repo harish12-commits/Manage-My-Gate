@@ -56,6 +56,8 @@ export interface WalkInState {
   pendingList: WalkInApprovalItem[];
   /** Requests resolved while this session watched them, so the gate can see the outcome. */
   resolvedList: WalkInApprovalItem[];
+  /** Today's walk-ins in every status, loaded from the backend for the gate's board. */
+  boardList: WalkInApprovalItem[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   actionStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
@@ -110,6 +112,7 @@ const initialState: VisitorPassState = {
   walkIns: {
     pendingList: [],
     resolvedList: [],
+    boardList: [],
     status: 'idle',
     actionStatus: 'idle',
     error: null,
@@ -262,6 +265,23 @@ export const fetchDashboardSummary = createAsyncThunk(
       };
     } catch (error: any) {
       return rejectWithValue(error?.response?.data?.message || error?.message || 'Failed to fetch dashboard summary');
+    }
+  }
+);
+
+export const fetchWalkInBoard = createAsyncThunk(
+  'visitorPass/fetchWalkInBoard',
+  async (orgId: string, { rejectWithValue }) => {
+    try {
+      // Start of the guard's local day, so the board survives app restarts within the shift.
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const response = await visitorService.getWalkInBoard(orgId, startOfDay.toISOString());
+      const body = response && (response as any).success !== undefined ? response : (response as any)?.data;
+      const logs = Array.isArray(body?.data || body) ? (body?.data || body) : [];
+      return logs.map((log: any) => mapBackendWalkInToApprovalItem(log));
+    } catch (error: any) {
+      return rejectWithValue(error?.response?.data?.message || error?.message || 'Failed to fetch walk-in board');
     }
   }
 );
@@ -469,6 +489,9 @@ export const visitorPassSlice = createSlice({
         state.walkIns.status = 'succeeded';
         state.walkIns.pendingList = action.payload.mapped;
         state.dashboard.pendingWalkIns = action.payload.rawLogs;
+      })
+      .addCase(fetchWalkInBoard.fulfilled, (state, action) => {
+        state.walkIns.boardList = action.payload;
       })
       .addCase(fetchPendingWalkIns.rejected, (state, action) => {
         state.walkIns.status = 'failed';

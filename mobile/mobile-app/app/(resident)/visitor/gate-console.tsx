@@ -351,6 +351,7 @@ export default function GateConsoleScreen() {
         orgId: activeOrgId,
         residentId: targetResidentUser,
         entryType: 'WALK_IN',
+        gateName: t('default_gate_name', 'Main gate'),
         snapshot: {
           visitorName: data.visitorName,
           phone: data.phone?.replace(/\D/g, ''),

@@ -3175,6 +3175,7 @@ export const ml: Record<string, string> = {
   'no_villas_found': 'വില്ലകളൊന്നും കണ്ടെത്തിയില്ല',
   'no_estate_units_match_your_search_query': 'നിങ്ങളുടെ തിരയലുമായി പൊരുത്തപ്പെടുന്ന എസ്റ്റേറ്റ് യൂണിറ്റുകളൊന്നുമില്ല.',
   'denied_by_host': 'ഹോസ്റ്റ് നിരസിച്ചു',
+  'approved_by_host': 'ഹോസ്റ്റ് അംഗീകരിച്ചു',
   'pending_approval': 'അംഗീകാരം തീർപ്പുകൽപ്പിച്ചിട്ടില്ല',
   'refresh_queue': 'ക്യൂ പുതുക്കുക',
   'no_walk_in_requests_found': 'വാക്ക്-ഇൻ അഭ്യർത്ഥനകളൊന്നും കണ്ടെത്തിയില്ല',

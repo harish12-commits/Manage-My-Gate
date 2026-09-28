@@ -2,7 +2,7 @@
 
 **Branch:** `test/visitor-e2e` (from `upstream/UI/Fix/Changes` @ `baf03acd`)
 **Date:** 2026-09-28
-**Result:** 92 end-to-end tests passing; 36 bugs found and fixed (mobile + backend).
+**Result:** 95 end-to-end tests passing; 37 bugs found and fixed (mobile + backend).
 
 ## How the tests work
 
@@ -23,11 +23,11 @@ npm run test:e2e:visitor      # needs local MongoDB (replica set) on 27017; port
 | P1 | `p1.guestPass`, `p1.passTypes`, `p1.adminPass` | 12 | Guest, group, cab, delivery, service and admin passes |
 | P2 | `p2.residentPasses`, `p2.publicPass` | 8 | Pass list, search, share, revoke, public link |
 | P3 | `p3.guardGate` | 11 | Scan/typed code, admit, every refusal, double-scan race |
-| P4 | `p4.walkIn` | 7 | Walk-in request, live approval/denial, blacklist |
+| P4 | `p4.walkIn` | 8 | Walk-in request, live approval/denial, guard walk-in board, blacklist |
 | P5 | `p5.checkout` | 6 | Inside list, checkout, pass expiry |
 | P6 | `p6.admin` | 6 | Community passes, admin revoke, blacklist, analytics |
 | P7 | `p7.history` | 5 | Resident history, admin audit log, CSV |
-| P8 | `p8.rolesTenancy` | 28 | Role gating, 18 hostile API calls, socket snooping |
+| P8 | `p8.rolesTenancy` | 30 | Role gating, 20 hostile API calls, socket snooping |
 | P9 | `p9.journeys` | 3 | Guest, walk-in and recurring-staff journeys end to end |
 | P10 | `p10.notifications` + `e2e/VISITOR_DEVICE_CHECKLIST.md` | 2 | Notification routing; manual device checklist |
 
@@ -72,6 +72,7 @@ major flow wrong; **Medium** = wrong/misleading behaviour with a workaround; **L
 | 15 | High | Guards never received walk-in outcomes live | Backend emits to `org:<id>:guards`, which the app never joined | App joins the guard room for gate/admin users |
 | 16 | Medium | Guard board dropped resolved requests instead of showing APPROVED / DENIED BY HOST | Socket reducer removed the item | Outcomes kept in `resolvedList` for the board |
 | 17 | Medium | Resident's failed approve/deny was silent | Rejected result ignored | Error banner and list refresh |
+| 37 | Medium | Guard's Walk-Ins tab lost approved/denied outcomes after an app restart; labels were inconsistent ("Approved" vs "DENIED BY HOST"); resolved cards kept counting "Waiting N mins"; gate name was invented | Tab only loaded pending requests; outcomes lived in memory; `approved` label hit a generic i18n key; walk-ins were sent without a gate | New `GET /visitor-log/org/:orgId/walk-ins?since=` (gate/manager only) loads today's walk-ins in every status; tab merges it with live updates; "APPROVED BY HOST" label in 7 languages; "Approved/Denied at HH:MM"; console sends its gate name |
 
 ### Inside & checkout (P5)
 

@@ -34,6 +34,8 @@ export interface WalkInApprovalItem {
   photoUrl?: string;
   notes?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  /** When the host approved or denied the request (resolved requests only). */
+  resolvedAt?: string;
   rawLog?: any;
 }
 

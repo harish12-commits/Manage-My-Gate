@@ -3175,6 +3175,7 @@ export const kn: Record<string, string> = {
   'no_villas_found': 'ಯಾವುದೇ ವಿಲ್ಲಾಗಳು ಕಂಡುಬಂದಿಲ್ಲ',
   'no_estate_units_match_your_search_query': 'ನಿಮ್ಮ ಹುಡುಕಾಟಕ್ಕೆ ಹೊಂದಿಕೆಯಾಗುವ ಯಾವುದೇ ಎಸ್ಟೇಟ್ ಘಟಕಗಳಿಲ್ಲ.',
   'denied_by_host': 'ಹೋಸ್ಟ್‌ ನಿರಾಕರಿಸಿದ್ದಾರೆ',
+  'approved_by_host': 'ಹೋಸ್ಟ್‌ ಅನುಮೋದಿಸಿದ್ದಾರೆ',
   'pending_approval': 'ಅನುಮೋದನೆ ಬಾಕಿ ಇದೆ',
   'refresh_queue': 'ಕ್ಯೂ ರಿಫ್ರೆಶ್ ಮಾಡಿ',
   'no_walk_in_requests_found': 'ಯಾವುದೇ ನೇರ ಪ್ರವೇಶ ವಿನಂತಿಗಳು ಕಂಡುಬಂದಿಲ್ಲ',

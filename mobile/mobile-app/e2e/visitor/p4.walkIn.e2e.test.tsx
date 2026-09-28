@@ -123,12 +123,14 @@ describe('P4 walk-in — guard request → resident decision → guard outcome',
     await signInAs('guardA');
     const guardView = await renderScreen(<GuardWalkInStatusView />);
     await guardView.findByText('Deny Dev');
+    // The board also lists today's earlier walk-ins, so count this request's new badge.
+    const deniedBefore = guardView.queryAllByText('DENIED BY HOST').length;
 
     // The resident denies it from their own device.
     const denied = await apiAs('residentA', 'PATCH', `/visitor-log/walk-in/${walkIn._id}/resolve`, { action: 'REJECT' });
     expect(denied.status).toBe(200);
 
-    expect(await guardView.findByText('DENIED BY HOST', {}, { timeout: 5000 })).toBeOnTheScreen();
+    await waitFor(() => expect(guardView.queryAllByText('DENIED BY HOST')).toHaveLength(deniedBefore + 1), { timeout: 5000 });
     expect(guardView.getByText('Deny Dev')).toBeOnTheScreen();
   });
 
@@ -157,6 +159,25 @@ describe('P4 walk-in — guard request → resident decision → guard outcome',
     const hijack = await apiAs('residentB', 'PATCH', `/visitor-log/walk-in/${walkIn._id}/resolve`, { action: 'APPROVE' });
     expect(hijack.status).toBe(403);
     expect((await (await logs()).findOne({ _id: oid(walkIn._id) })).logStatus).toBe('PENDING');
+  });
+
+  it('guard’s walk-in board shows today’s outcomes even when decided while the app was closed', async () => {
+    const approved = await pendingWalkIn('Closed App Anil');
+    const denied = await pendingWalkIn('Closed App Dia');
+    // Decided while no guard screen is open, so no live update can reach the board.
+    expect((await apiAs('residentA', 'PATCH', `/visitor-log/walk-in/${approved._id}/resolve`, { action: 'APPROVE' })).status).toBe(200);
+    expect((await apiAs('residentA', 'PATCH', `/visitor-log/walk-in/${denied._id}/resolve`, { action: 'REJECT' })).status).toBe(200);
+
+    await signInAs('guardA');
+    const board = await renderScreen(<GuardWalkInStatusView />);
+
+    expect(await board.findByText('Closed App Anil')).toBeOnTheScreen();
+    expect(board.getByText('Closed App Dia')).toBeOnTheScreen();
+    expect(lastCall('GET', '/walk-ins')!.status).toBe(200);
+    expect(board.getAllByText('APPROVED BY HOST').length).toBeGreaterThan(0);
+    expect(board.getAllByText('DENIED BY HOST').length).toBeGreaterThan(0);
+    expect(board.getAllByText(/^Approved at /).length).toBeGreaterThan(0);
+    expect(board.getAllByText(/^Denied at /).length).toBeGreaterThan(0);
   });
 
   it('requires the guard to choose a host before sending', async () => {

@@ -46,6 +46,10 @@ export const visitorService = {
     return await apiClient.get(`/visitor-log/org/${orgId}`, { params });
   },
 
+  getWalkInBoard: async (orgId: string, since: string) => {
+    return await apiClient.get(`/visitor-log/org/${orgId}/walk-ins`, { params: { since } });
+  },
+
   getPendingApprovals: async (orgId: string) => {
     return await apiClient.get(`/visitor-log/org/${orgId}/pending`);
   },
