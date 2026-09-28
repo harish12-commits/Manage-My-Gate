@@ -307,6 +307,10 @@ class AmenityDashboardService {
     ];
     const facilityId = query.facilityId || query.amenityId;
     if (facilityId && facilityId !== 'All') conditions.push({ facilityId: oid(facilityId) });
+    // Money still owed on live bookings (advance paid, or to be paid at the gate).
+    if (String(query.balanceDue) === 'true') {
+      conditions.push({ bookingStatus: { $in: ['CONFIRMED', 'PENDING_APPROVAL'] }, balanceAmount: { $gt: 0 } });
+    }
     const match = { $and: conditions.filter((c) => Object.keys(c).length > 0) };
 
     const todayStart = moment.tz(DEFAULT_TZ).startOf('day').toDate();

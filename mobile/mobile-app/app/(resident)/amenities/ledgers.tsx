@@ -1,245 +1,165 @@
-import React, { useMemo, useState } from 'react';
+/**
+ * Amenity ledger: every booking with its money, laid out like the visitor Admin Gate
+ * Audit Logs — search and status pills above a paginated list, export in the header.
+ */
+import React, { useState } from 'react';
 import { View, Alert } from 'react-native';
+import { Redirect } from 'expo-router';
 import { ScreenShell } from '@/components/ui/ScreenShell';
-import { KPIRow } from '@/components/ui/KPIRow';
-import { KPICardProps } from '@/components/ui/KPICard';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
-import { DropdownSelect } from '@/components/forms/DropdownSelect';
-import { Text } from '@/components/ui/text';
+import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ExportReportButton } from '@/components/analytics/ExportReportButton';
+import { Text } from '@/components/ui/text';
 import { downloadCSVFile } from '@/src/utils/downloadHelper';
+import { useAuth } from '@/src/features/auth/hooks/useAuth';
+import { isFeatureAllowedForUser } from '@/src/utils/rbac';
+import { useTranslation } from '@/src/utils/i18n';
 import { useAdminLedgers } from '@/src/features/amenities/hooks/useAdminLedgers';
-import { BookingDetailModal } from '@/src/features/amenities/components/BookingDetailModal';
-import { AmenityLedgerCard } from '@/src/features/amenities/components/AmenityLedgerCard';
-import { AmenityBooking } from '@/src/features/amenities/store/amenityBookingSlice';
+import { AmenityLedgerCard, ledgerState } from '@/src/features/amenities/components/AmenityLedgerCard';
+import { AmenityLedgerDetailSheet } from '@/src/features/amenities/components/AmenityLedgerDetailSheet';
+import type { AmenityBooking, AmenityLedgerView } from '@/src/features/amenities/store/amenityBookingSlice';
+import { formatAmenityAmount } from '@/src/features/amenities/utils/amenityStateHelpers';
 
-export default function AmenityLedgersScreen() {
-  const {
-    adminBookings,
-    filteredBookings,
-    amenities,
-    pagination,
-    currentPage,
-    handlePageChange,
-    searchQuery,
-    setSearchQuery,
-    statusFilter,
-    setStatusFilter,
-    paymentStatusFilter,
-    setPaymentStatusFilter,
-    selectedAmenityId,
-    setSelectedAmenityId,
-    selectedLedgerDetail,
-    setSelectedLedgerDetail,
-    kpis,
-    loading,
-    error,
-    handleRefresh,
-  } = useAdminLedgers();
+const csvCell = (val: unknown) => `"${String(val ?? '').replace(/"/g, '""')}"`;
 
+function AmenityLedgerContent() {
+  const { t } = useTranslation();
+  const ledger = useAdminLedgers();
   const [exporting, setExporting] = useState(false);
 
   const handleExportCSV = async () => {
-    if (!filteredBookings || filteredBookings.length === 0) {
-      Alert.alert('No Data to Export', 'There are no financial ledger entries matching the current filter.');
-      return;
-    }
-
     try {
       setExporting(true);
+      const rows = await ledger.fetchAllForExport();
+      if (!rows.length) {
+        Alert.alert(
+          t('amenity_ledger_export_empty_title', 'Nothing to export'),
+          t('amenity_ledger_export_empty', 'No ledger entries match the current filter.')
+        );
+        return;
+      }
       const headers = [
-        'Booking Ref ID',
-        'Resident Name',
-        'Unit / Villa',
-        'Amenity Name',
-        'Booking Date',
-        'Start Time',
-        'End Time',
-        'Persons',
-        'Total Amount (INR)',
-        'Payment Status',
-        'Booking Status',
-        'Payment Method',
-        'Transaction Ref',
+        'Booking #',
+        'Facility',
+        'Space / item',
+        'Resident',
+        'Unit',
+        'Date',
+        'Start',
+        'End',
+        'Party size',
+        'Status',
+        'Total (INR)',
+        'Deposit (INR)',
+        'Paid (INR)',
+        'Paid by',
+        'Balance due (INR)',
+        'Refunded (INR)',
       ];
-
-      const escapeCSV = (val: any) => {
-        if (val === undefined || val === null) return '""';
-        const str = String(val).replace(/"/g, '""');
-        return `"${str}"`;
-      };
-
-      const rows = filteredBookings.map((b: AmenityBooking) => {
-        const userObj: any = b.userId || {};
-        const amenityObj: any = b.amenityId || {};
-        const residentName = userObj.name || userObj.username || b.userName || 'Community Resident';
-        const villaUnit = b.villaNumber || userObj.villaNumber || userObj.flatNumber || userObj.unit || 'N/A';
-        const amenityName = amenityObj.name || b.amenityName || 'Amenity';
-        const totalAmt = b.pricingDetails?.totalAmount || b.totalPrice || b.bookingAmount || 0;
-
+      const lines = rows.map((b: AmenityBooking) => {
+        const any = b as any;
         return [
-          escapeCSV(b.bookingId || b._id),
-          escapeCSV(residentName),
-          escapeCSV(villaUnit),
-          escapeCSV(amenityName),
-          escapeCSV(b.bookingDate || ''),
-          escapeCSV(b.startTime || ''),
-          escapeCSV(b.endTime || ''),
-          escapeCSV(b.numberOfPersons || 1),
-          escapeCSV(totalAmt),
-          escapeCSV((b.paymentStatus || 'pending').toUpperCase()),
-          escapeCSV((b.status || 'pending').toUpperCase()),
-          escapeCSV(b.paymentMethod || 'Online'),
-          escapeCSV(b.paymentId || b.razorpayTransactionId || 'N/A'),
-        ].join(',');
+          b.reservationNumber || b.bookingId || b._id,
+          b.amenityName,
+          any.resourceName || '',
+          b.residentName,
+          any.villaNumber || any.flatNumber || '',
+          b.date,
+          b.startTime,
+          b.endTime,
+          b.numberOfPersons || 1,
+          ledgerState(b).label,
+          any.bookingAmount ?? b.totalFee ?? 0,
+          any.depositAmount || 0,
+          any.paidAmount || 0,
+          any.paymentMethod || '',
+          any.remainingAmount || 0,
+          any.refundAmount || 0,
+        ]
+          .map(csvCell)
+          .join(',');
       });
-
-      const csvContent = [headers.join(','), ...rows.map((r) => r)].join('\n');
-      const dateStr = new Date().toISOString().split('T')[0];
-      const fileName = `amenity_master_ledger_${dateStr}.csv`;
-      await downloadCSVFile(csvContent, fileName);
-    } catch (err) {
-      console.error('Export CSV error:', err);
+      await downloadCSVFile([headers.join(','), ...lines].join('\n'), `amenity_ledger_${new Date().toISOString().split('T')[0]}.csv`);
+    } catch (err: any) {
+      Alert.alert(t('amenity_ledger_export_failed', 'Export failed'), err?.message || String(err));
     } finally {
       setExporting(false);
     }
   };
 
-  const amenityOptions = useMemo(() => {
-    const opts = amenities.map((a) => ({ label: a.name, value: a._id }));
-    return [{ label: 'All Facilities', value: 'All' }, ...opts];
-  }, [amenities]);
-
-  const statusOptions = [
-    { label: 'All Statuses', value: 'All' },
-    { label: 'Confirmed', value: 'CONFIRMED' },
-    { label: 'Checked In', value: 'CHECKED_IN' },
-    { label: 'Completed', value: 'COMPLETED' },
-    { label: 'Cancelled', value: 'CANCELLED' },
-  ];
-
-  const paymentStatusOptions = [
-    { label: 'All Payment Statuses', value: 'All' },
-    { label: 'Paid', value: 'PAID' },
-    { label: 'Pending', value: 'PENDING' },
-    { label: 'Refunded', value: 'REFUNDED' },
-    { label: 'Failed', value: 'FAILED' },
-  ];
-
-  const kpiCards: KPICardProps[] = useMemo(
-    () => [
-      {
-        title: 'Total Revenue',
-        value: `₹${kpis.totalMasterRevenue.toLocaleString('en-IN')}`,
-        iconName: 'DollarSign',
-        variant: 'success',
-      },
-      {
-        title: 'Today Earnings',
-        value: `₹${kpis.todayEarnings.toLocaleString('en-IN')}`,
-        iconName: 'TrendingUp',
-        variant: 'warning',
-      },
-      {
-        title: 'Total Entries',
-        value: kpis.totalEntries,
-        iconName: 'Receipt',
-        variant: 'info',
-      },
-    ],
-    [kpis.totalMasterRevenue, kpis.todayEarnings, kpis.totalEntries]
-  );
+  const summary = ledger.summary;
 
   const renderHeader = () => (
-    <View className="mb-3 gap-3">
-      {/* Financial Master KPI Summary */}
-      <KPIRow cards={kpiCards} className="px-0" />
-
-      {/* Search & Moveable Slide Status Filter Bar */}
+    <View className="gap-3 mb-3">
       <SearchFilterBar
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder="Search booking ID, resident, villa #..."
-        sortOptions={statusOptions}
-        currentSort={statusFilter}
-        onSortChange={setStatusFilter}
+        searchValue={ledger.search}
+        onSearchChange={ledger.setSearch}
+        searchPlaceholder={t('amenity_ledger_search', 'Search booking # or resident...')}
+        sortOptions={[
+          { label: t('amenity_ledger_all', 'All Entries'), value: 'ALL' },
+          { label: t('amenity_ledger_state_paid', 'Paid'), value: 'PAID' },
+          { label: t('amenity_ledger_state_due', 'Balance due'), value: 'DUE' },
+          { label: t('amenity_ledger_state_refunded', 'Refunded'), value: 'REFUNDED' },
+          { label: t('amenity_ledger_state_cancelled', 'Cancelled'), value: 'CANCELLED' },
+        ]}
+        currentSort={ledger.view}
+        onSortChange={(value) => ledger.setView(value as AmenityLedgerView)}
         variant="default"
         className="px-0 py-0 border-0"
       />
 
-      {/* Facility & Payment Filter Bar */}
-      <View className="flex-row gap-2">
-        <View className="flex-1 bg-card p-2.5 rounded-2xl border border-border shadow-xs">
-          <DropdownSelect
-            label="Facility Filter"
-            options={amenityOptions}
-            value={selectedAmenityId}
-            onValueChange={setSelectedAmenityId}
-          />
-        </View>
-        <View className="flex-1 bg-card p-2.5 rounded-2xl border border-border shadow-xs">
-          <DropdownSelect
-            label="Payment Filter"
-            options={paymentStatusOptions}
-            value={paymentStatusFilter}
-            onValueChange={setPaymentStatusFilter}
-          />
-        </View>
-      </View>
-
-      <View className="flex-row items-center justify-between mt-1">
-        <Text variant="large" className="font-bold text-foreground">
-          Master Financial Ledger Entries ({filteredBookings.length})
+      {summary ? (
+        <Text testID="ledger-summary" variant="muted" className="text-xs px-1">
+          {t('amenity_ledger_summary', '{count} bookings · Net {net} · Due {due} · Refunded {refunded}', {
+            count: summary.totalBookings,
+            net: formatAmenityAmount(summary.totalRevenue),
+            due: formatAmenityAmount(summary.pendingPayments),
+            refunded: formatAmenityAmount(summary.refundedAmount),
+          })}
         </Text>
-        <ExportReportButton onExport={handleExportCSV} loading={exporting} />
-      </View>
+      ) : null}
+
+      {ledger.error ? <ErrorBanner message={ledger.error} onRetry={ledger.retry} className="my-1" /> : null}
     </View>
   );
 
   return (
     <ScreenShell
-      title="Master Ledgers & Accounts"
-      subtitle="Financial accounts, master booking ledger & transaction audit trail"
+      title={t('amenity_ledger_title', 'Amenity Ledger')}
+      subtitle={t('amenity_ledger_sub', 'Every booking with its payments, balances and refunds')}
       iconName="Receipt"
       headerRight={<ExportReportButton onExport={handleExportCSV} loading={exporting} />}
-      loading={loading && adminBookings.length === 0}
-      error={error}
-      onRetry={handleRefresh}
     >
       <View className="flex-1 bg-background">
         <PaginatedList<AmenityBooking>
-          data={filteredBookings}
-          renderItem={(item: AmenityBooking) => (
-            <AmenityLedgerCard
-              key={item._id}
-              booking={item}
-              onPress={() => setSelectedLedgerDetail(item)}
-              className="mb-2"
-            />
-          )}
-          pagination={pagination}
-          onLoadMore={() => {
-            if (currentPage < pagination.totalPages) {
-              handlePageChange(currentPage + 1);
-            }
-          }}
-          onRefresh={handleRefresh}
-          loading={loading}
+          data={ledger.items}
+          keyExtractor={(item) => item._id}
+          renderItem={(item) => <AmenityLedgerCard key={item._id} booking={item} onPress={ledger.select} />}
+          pagination={ledger.pagination}
+          onLoadMore={ledger.loadMore}
+          onRefresh={ledger.refresh}
+          refreshing={ledger.refreshing}
+          loading={ledger.loading && !ledger.refreshing && ledger.items.length === 0}
           ListHeaderComponent={renderHeader()}
           emptyIcon="Receipt"
-          emptyTitle="No Master Ledger Entries"
-          emptySubtitle="No financial ledger entries match your filter."
+          emptyTitle={t('amenity_ledger_empty_title', 'No Ledger Entries Found')}
+          emptySubtitle={t('amenity_ledger_empty', 'No bookings match your filter.')}
           contentContainerClassName="px-4 pt-2 pb-28"
         />
       </View>
 
-      {/* Booking Details Inspection Modal */}
-      <BookingDetailModal
-        visible={!!selectedLedgerDetail}
-        onClose={() => setSelectedLedgerDetail(null)}
-        booking={selectedLedgerDetail}
-      />
+      <AmenityLedgerDetailSheet booking={ledger.selected} visible={!!ledger.selected} onClose={() => ledger.select(null)} />
     </ScreenShell>
   );
+}
+
+/** The ledger is staff-only; deep links must not bypass the role. */
+export default function AmenityLedgersScreen() {
+  const { user } = useAuth();
+  const allowed =
+    isFeatureAllowedForUser({ id: 'amenities_ledgers', permission: 'amenities:ledgers' }, user) ||
+    isFeatureAllowedForUser({ id: 'amenities_dashboard', permission: 'amenities:dashboard' }, user);
+  if (user && !allowed) return <Redirect href="/(resident)/dashboard" />;
+  return <AmenityLedgerContent />;
 }

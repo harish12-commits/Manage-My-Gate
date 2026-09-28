@@ -209,12 +209,45 @@ export interface AmenityBookingState {
     error: string | null;
   };
 
+  // Amenity ledger (V2 bookings with their money)
+  ledger: {
+    items: AmenityBooking[];
+    pagination: PaginationMeta;
+    summary: AmenityLedgerSummary | null;
+    view: AmenityLedgerView;
+    search: string;
+    loading: boolean;
+    error: string | null;
+  };
+
   // Published facilities staff can book for a resident
   bookableFacilities: AmenityFacility[];
   bookableFacilitiesLoading: boolean;
 }
 
 export type AdminQueueTab = 'APPROVALS' | 'REVIEW' | 'UPCOMING' | 'ALL';
+
+/** Ledger pills: which bookings' money to show. */
+export type AmenityLedgerView = 'ALL' | 'PAID' | 'DUE' | 'REFUNDED' | 'CANCELLED';
+
+export interface AmenityLedgerSummary {
+  totalRevenue: number;
+  todayRevenue: number;
+  totalBookings: number;
+  paidBookings: number;
+  pendingPayments: number;
+  refundedAmount: number;
+  cancelledBookings: number;
+}
+
+/** Server filters for each ledger pill. */
+export const LEDGER_VIEW_FILTERS: Record<AmenityLedgerView, Record<string, any>> = {
+  ALL: {},
+  PAID: { paymentStatus: 'PAID' },
+  DUE: { balanceDue: true },
+  REFUNDED: { paymentStatus: 'REFUNDED' },
+  CANCELLED: { status: 'CANCELLED' },
+};
 
 /** Server filters for each staff queue tab. */
 export const ADMIN_QUEUE_FILTERS: Record<AdminQueueTab, Record<string, string>> = {
@@ -293,6 +326,16 @@ const initialState: AmenityBookingState = {
 
   bookableFacilities: [],
   bookableFacilitiesLoading: false,
+
+  ledger: {
+    items: [],
+    pagination: { currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 },
+    summary: null,
+    view: 'ALL',
+    search: '',
+    loading: false,
+    error: null,
+  },
 };
 
 // ==========================================
@@ -727,6 +770,55 @@ export const fetchAdminQueueThunk = createAsyncThunk(
   }
 );
 
+/** Amenity ledger page (view, search and page size come from the slice). */
+export const fetchAmenityLedgerThunk = createAsyncThunk(
+  'amenityBookings/fetchAmenityLedger',
+  async ({ page = 1 }: { page?: number } = {}, { getState, rejectWithValue }) => {
+    try {
+      const { view, search, pagination } = (getState() as any).amenityBookings.ledger;
+      const res: any = await amenityService.getAmenityLedger({
+        page,
+        limit: pagination.limit,
+        ...LEDGER_VIEW_FILTERS[view as AmenityLedgerView],
+        ...(search?.trim() ? { search: search.trim() } : {}),
+      });
+      const payload = res?.data?.data ? res.data : res?.data || res;
+      return {
+        items: (payload?.data || []).map(normalizeAmenityBooking) as AmenityBooking[],
+        pagination: payload?.pagination as PaginationMeta,
+        summary: (payload?.summary || null) as AmenityLedgerSummary | null,
+      };
+    } catch (err: any) {
+      return rejectWithValue(err?.response?.data?.message || err?.message || 'Could not load the ledger.');
+    }
+  }
+);
+
+/** Every ledger row matching the current view and search (for CSV export). */
+export const exportAmenityLedgerThunk = createAsyncThunk(
+  'amenityBookings/exportAmenityLedger',
+  async (_: void, { getState, rejectWithValue }) => {
+    try {
+      const { view, search } = (getState() as any).amenityBookings.ledger;
+      const rows: AmenityBooking[] = [];
+      for (let page = 1; page <= 50; page++) {
+        const res: any = await amenityService.getAmenityLedger({
+          page,
+          limit: 100,
+          ...LEDGER_VIEW_FILTERS[view as AmenityLedgerView],
+          ...(search?.trim() ? { search: search.trim() } : {}),
+        });
+        const payload = res?.data?.data ? res.data : res?.data || res;
+        rows.push(...(payload?.data || []).map(normalizeAmenityBooking));
+        if (page >= Number(payload?.pagination?.totalPages || 1)) break;
+      }
+      return rows;
+    } catch (err: any) {
+      return rejectWithValue(err?.response?.data?.message || err?.message || 'Could not export the ledger.');
+    }
+  }
+);
+
 /** Published (active) facilities, for staff booking on a resident's behalf. */
 export const fetchBookableFacilitiesThunk = createAsyncThunk(
   'amenityBookings/fetchBookableFacilities',
@@ -891,6 +983,15 @@ const amenityBookingSlice = createSlice({
     },
     clearV2Errors: (state) => {
       state.v2Error = null;
+    },
+    setLedgerView: (state, action: PayloadAction<AmenityLedgerView>) => {
+      state.ledger.view = action.payload;
+    },
+    setLedgerSearch: (state, action: PayloadAction<string>) => {
+      state.ledger.search = action.payload;
+    },
+    clearLedgerError: (state) => {
+      state.ledger.error = null;
     },
     setAdminQueueTab: (state, action: PayloadAction<AdminQueueTab>) => {
       state.adminQueue.tab = action.payload;
@@ -1323,6 +1424,25 @@ const amenityBookingSlice = createSlice({
         state.adminQueue.loading = false;
         state.adminQueue.error = (action.payload as AmenityErrorDetails)?.message || 'Could not load bookings.';
       })
+      // Amenity ledger
+      .addCase(fetchAmenityLedgerThunk.pending, (state) => {
+        state.ledger.loading = true;
+        state.ledger.error = null;
+      })
+      .addCase(fetchAmenityLedgerThunk.fulfilled, (state, action) => {
+        const { items, pagination, summary } = action.payload;
+        state.ledger.loading = false;
+        const page = pagination?.currentPage || 1;
+        // Later pages extend the list; page 1 replaces it.
+        state.ledger.items =
+          page > 1 ? [...state.ledger.items, ...items.filter((i) => !state.ledger.items.some((r) => r._id === i._id))] : items;
+        if (pagination) state.ledger.pagination = pagination;
+        state.ledger.summary = summary;
+      })
+      .addCase(fetchAmenityLedgerThunk.rejected, (state, action) => {
+        state.ledger.loading = false;
+        state.ledger.error = (action.payload as string) || 'Could not load the ledger.';
+      })
       .addCase(fetchBookableFacilitiesThunk.pending, (state) => {
         state.bookableFacilitiesLoading = true;
       })
@@ -1385,6 +1505,9 @@ export const {
   setAdminQueueTab,
   setAdminQueueSearch,
   clearAdminQueueError,
+  setLedgerView,
+  setLedgerSearch,
+  clearLedgerError,
   clearAmenityBookingErrors,
   resetV2BookingState,
   clearV2PassResults,
