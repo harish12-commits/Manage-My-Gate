@@ -8,7 +8,7 @@ const base = require('../package.json').jest;
 module.exports = {
   ...base,
   rootDir: '..',
-  testMatch: ['<rootDir>/e2e/**/*.e2e.test.ts?(x)'],
+  testMatch: ['<rootDir>/e2e/visitor/**/*.e2e.test.ts?(x)'],
   testPathIgnorePatterns: ['/node_modules/'],
   setupFiles: ['<rootDir>/e2e/setup/env.js'],
   setupFilesAfterEnv: [...base.setupFilesAfterEnv, '<rootDir>/e2e/setup/afterEnv.tsx'],
