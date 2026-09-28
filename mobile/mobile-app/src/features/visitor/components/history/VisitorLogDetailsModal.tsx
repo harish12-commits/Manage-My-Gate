@@ -42,6 +42,9 @@ export const VisitorLogDetailsModal: React.FC<VisitorLogDetailsModalProps> = ({
   if (!pass) return null;
 
   const rawPass = pass.rawPass || {};
+  const visitorDetails = rawPass.visitorDetails || (pass as any).visitorDetails || {};
+  const visitorName = pass.visitorName || visitorDetails.name || 'Guest';
+  const phone = pass.phone || visitorDetails.phone || '';
   const passType = pass.passType || 'GUEST';
   const shortKey =
     pass.code ||
@@ -74,7 +77,7 @@ export const VisitorLogDetailsModal: React.FC<VisitorLogDetailsModalProps> = ({
     setSharingImage(true);
     try {
       const targetCode = String(shortKey);
-      const barcodePayload = encodeAppBarcode(passType, targetCode, pass._id || rawPass._id, pass.visitorName || 'Guest');
+      const barcodePayload = encodeAppBarcode(passType, targetCode, pass._id || rawPass._id, visitorName);
       const shared = await shareQrImage(
         barcodePayload,
         targetCode,
@@ -93,12 +96,12 @@ export const VisitorLogDetailsModal: React.FC<VisitorLogDetailsModalProps> = ({
 
   const buildPassText = () => {
     const targetCode = String(shortKey);
-    const barcodePayload = encodeAppBarcode(passType, targetCode, pass._id || rawPass._id, pass.visitorName || 'Guest');
+    const barcodePayload = encodeAppBarcode(passType, targetCode, pass._id || rawPass._id, visitorName);
     const destination = (pass as any).unit || (pass as any).villaNumber || (pass as any).destinationUnit;
 
     return buildVisitorPassShareMessage({
       passCode: targetCode,
-      visitorName: pass.visitorName || 'Guest',
+      visitorName,
       passTypeLabel: passType,
       validUntil: pass.validUntil,
       destination,
@@ -109,7 +112,7 @@ export const VisitorLogDetailsModal: React.FC<VisitorLogDetailsModalProps> = ({
   const handleSendWhatsAppMessage = async () => {
     if (!shortKey) return;
     const text = buildPassText();
-    const cleanPhone = pass.phone ? pass.phone.replace(/[^0-9]/g, '') : '';
+    const cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
 
     const nativeWhatsappUrl = cleanPhone
       ? `whatsapp://send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`
@@ -294,7 +297,7 @@ export const VisitorLogDetailsModal: React.FC<VisitorLogDetailsModalProps> = ({
             {showQR && (
               <VisitorQRCode
                 code={shortKey || '849201'}
-                validityText={`Valid for ${pass.visitorName || 'Guest'}`}
+                validityText={`Valid for ${visitorName}`}
               />
             )}
 
@@ -308,12 +311,12 @@ export const VisitorLogDetailsModal: React.FC<VisitorLogDetailsModalProps> = ({
 
             {/* Primary Visitor Info */}
             <DetailSection title={t('visitor_details', 'Visitor Details')} iconName="User">
-              <DetailRow label={t('visitor_event', 'Visitor / Event')} value={pass.visitorName} iconName="User" />
+              <DetailRow label={t('visitor_event', 'Visitor / Event')} value={visitorName} iconName="User" />
               <DetailRow
                 label={t('phone_number', 'Phone Number')}
-                value={pass.phone || 'Not Provided'}
+                value={phone || 'Not Provided'}
                 iconName="Phone"
-                copyable={Boolean(pass.phone)}
+                copyable={Boolean(phone)}
               />
               {pass.purpose ? (
                 <DetailRow label={t('purpose_of_visit', 'Purpose of Visit')} value={pass.purpose} iconName="Tag" />
@@ -472,14 +475,14 @@ export const VisitorLogDetailsModal: React.FC<VisitorLogDetailsModalProps> = ({
                       <Text className="text-sm font-bold text-destructive">Revoke Visitor Pass?</Text>
                     </View>
                     <Text className="text-xs text-muted-foreground">
-                      This will immediately invalidate the entry pass for {pass.visitorName || 'this visitor'}.
+                      This will immediately invalidate the entry pass for {visitorName || 'this visitor'}.
                     </Text>
                     <View className="flex-row gap-2 pt-1">
                       <Button
                         variant="outline"
                         size="sm"
                         onPress={() => setRevokeConfirmOpen(false)}
-                        className="flex-1"
+                        className="flex-1 h-11 rounded-xl"
                         disabled={submittingRevoke}
                       >
                         Cancel
@@ -489,12 +492,12 @@ export const VisitorLogDetailsModal: React.FC<VisitorLogDetailsModalProps> = ({
                         size="sm"
                         onPress={handleConfirmRevoke}
                         disabled={submittingRevoke || actionStatus === 'loading'}
-                        className="flex-1 flex-row items-center justify-center gap-2"
+                        className="flex-1 h-11 rounded-xl flex-row items-center justify-center"
                       >
                         {submittingRevoke ? (
                           <ActivityIndicator size="small" color="#fff" />
                         ) : (
-                          'Revoke Pass'
+                          <Text className="text-sm font-bold text-destructive-foreground" numberOfLines={1}>Confirm Revoke</Text>
                         )}
                       </Button>
                     </View>

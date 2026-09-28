@@ -287,6 +287,7 @@ export default function AmenityMaintenanceScheduleScreen() {
           onLoadMore={handleLoadMore}
           onRefresh={loadData}
           loading={loading}
+          paginationSummary
           emptyIcon="CircleCheck"
           emptyTitle={
             searchQuery || statusFilter !== 'ALL'

@@ -13,8 +13,10 @@ import { useAdminLedgers } from '@/src/features/amenities/hooks/useAdminLedgers'
 import { BookingDetailModal } from '@/src/features/amenities/components/BookingDetailModal';
 import { AmenityLedgerCard } from '@/src/features/amenities/components/AmenityLedgerCard';
 import { AmenityBooking } from '@/src/features/amenities/store/amenityBookingSlice';
+import { useTranslation } from '@/src/utils/i18n';
 
 export default function AmenityLedgersScreen() {
+  const { t } = useTranslation();
   const {
     adminBookings,
     filteredBookings,
@@ -108,47 +110,47 @@ export default function AmenityLedgersScreen() {
 
   const amenityOptions = useMemo(() => {
     const opts = amenities.map((a) => ({ label: a.name, value: a._id }));
-    return [{ label: 'All Facilities', value: 'All' }, ...opts];
-  }, [amenities]);
+    return [{ label: t('all_facilities', 'All Facilities'), value: 'All' }, ...opts];
+  }, [amenities, t]);
 
-  const statusOptions = [
-    { label: 'All Statuses', value: 'All' },
-    { label: 'Confirmed', value: 'CONFIRMED' },
-    { label: 'Checked In', value: 'CHECKED_IN' },
-    { label: 'Completed', value: 'COMPLETED' },
-    { label: 'Cancelled', value: 'CANCELLED' },
-  ];
+  const statusOptions = useMemo(() => [
+    { label: t('all_statuses', 'All Statuses'), value: 'All' },
+    { label: t('status_confirmed', 'Confirmed'), value: 'CONFIRMED' },
+    { label: t('status_checked_in', 'Checked In'), value: 'CHECKED_IN' },
+    { label: t('status_completed', 'Completed'), value: 'COMPLETED' },
+    { label: t('status_cancelled', 'Cancelled'), value: 'CANCELLED' },
+  ], [t]);
 
-  const paymentStatusOptions = [
-    { label: 'All Payment Statuses', value: 'All' },
-    { label: 'Paid', value: 'PAID' },
-    { label: 'Pending', value: 'PENDING' },
-    { label: 'Refunded', value: 'REFUNDED' },
-    { label: 'Failed', value: 'FAILED' },
-  ];
+  const paymentStatusOptions = useMemo(() => [
+    { label: t('all_payment_statuses', 'All Payment Statuses'), value: 'All' },
+    { label: t('status_paid', 'Paid'), value: 'PAID' },
+    { label: t('status_pending', 'Pending'), value: 'PENDING' },
+    { label: t('status_refunded', 'Refunded'), value: 'REFUNDED' },
+    { label: t('status_failed', 'Failed'), value: 'FAILED' },
+  ], [t]);
 
   const kpiCards: KPICardProps[] = useMemo(
     () => [
       {
-        title: 'Total Revenue',
+        title: t('total_revenue', 'Total Revenue'),
         value: `₹${kpis.totalMasterRevenue.toLocaleString('en-IN')}`,
         iconName: 'DollarSign',
         variant: 'success',
       },
       {
-        title: 'Today Earnings',
+        title: t('today_earnings', 'Today Earnings'),
         value: `₹${kpis.todayEarnings.toLocaleString('en-IN')}`,
         iconName: 'TrendingUp',
         variant: 'warning',
       },
       {
-        title: 'Total Entries',
+        title: t('total_entries', 'Total Entries'),
         value: kpis.totalEntries,
         iconName: 'Receipt',
         variant: 'info',
       },
     ],
-    [kpis.totalMasterRevenue, kpis.todayEarnings, kpis.totalEntries]
+    [kpis.totalMasterRevenue, kpis.todayEarnings, kpis.totalEntries, t]
   );
 
   const renderHeader = () => (
@@ -160,10 +162,11 @@ export default function AmenityLedgersScreen() {
       <SearchFilterBar
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
-        searchPlaceholder="Search booking ID, resident, villa #..."
+        searchPlaceholder={t('search_amenity_ledger_placeholder', 'Search booking ID, resident, villa #...')}
         sortOptions={statusOptions}
         currentSort={statusFilter}
         onSortChange={setStatusFilter}
+        filterTitle={t('filter_by_status', 'Filter by Status')}
         variant="default"
         className="px-0 py-0 border-0"
       />
@@ -172,7 +175,7 @@ export default function AmenityLedgersScreen() {
       <View className="flex-row gap-2">
         <View className="flex-1 bg-card p-2.5 rounded-2xl border border-border shadow-xs">
           <DropdownSelect
-            label="Facility Filter"
+            label={t('facility_filter', 'Facility Filter')}
             options={amenityOptions}
             value={selectedAmenityId}
             onValueChange={setSelectedAmenityId}
@@ -180,7 +183,7 @@ export default function AmenityLedgersScreen() {
         </View>
         <View className="flex-1 bg-card p-2.5 rounded-2xl border border-border shadow-xs">
           <DropdownSelect
-            label="Payment Filter"
+            label={t('payment_filter', 'Payment Filter')}
             options={paymentStatusOptions}
             value={paymentStatusFilter}
             onValueChange={setPaymentStatusFilter}
@@ -190,17 +193,16 @@ export default function AmenityLedgersScreen() {
 
       <View className="flex-row items-center justify-between mt-1">
         <Text variant="large" className="font-bold text-foreground">
-          Master Financial Ledger Entries ({filteredBookings.length})
+          {t('master_financial_ledger_entries_title', 'Master Financial Ledger Entries')} ({filteredBookings.length})
         </Text>
-        <ExportReportButton onExport={handleExportCSV} loading={exporting} />
       </View>
     </View>
   );
 
   return (
     <ScreenShell
-      title="Master Ledgers & Accounts"
-      subtitle="Financial accounts, master booking ledger & transaction audit trail"
+      title={t('master_ledgers_accounts', 'Master Ledgers & Accounts')}
+      subtitle={t('master_ledgers_accounts_sub', 'Financial accounts, master booking ledger & transaction audit trail')}
       iconName="Receipt"
       headerRight={<ExportReportButton onExport={handleExportCSV} loading={exporting} />}
       loading={loading && adminBookings.length === 0}
@@ -226,10 +228,11 @@ export default function AmenityLedgersScreen() {
           }}
           onRefresh={handleRefresh}
           loading={loading}
+          paginationSummary
           ListHeaderComponent={renderHeader()}
           emptyIcon="Receipt"
-          emptyTitle="No Master Ledger Entries"
-          emptySubtitle="No financial ledger entries match your filter."
+          emptyTitle={t('no_master_ledger_entries', 'No Master Ledger Entries')}
+          emptySubtitle={t('no_financial_ledger_entries_match_your_filter', 'No financial ledger entries match your filter.')}
           contentContainerClassName="px-4 pt-2 pb-28"
         />
       </View>

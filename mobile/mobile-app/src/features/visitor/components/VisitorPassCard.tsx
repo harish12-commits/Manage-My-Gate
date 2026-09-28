@@ -47,6 +47,9 @@ export const VisitorPassCard: React.FC<VisitorPassCardProps> = ({
   isInside,
 }) => {
   const { t, translateText } = useTranslation();
+  const visitorDetails = (pass as any).visitorDetails || (pass as any).rawPass?.visitorDetails || {};
+  const visitorName = pass.visitorName || visitorDetails.name || t('guest_visitor', 'Guest Visitor');
+  const phone = pass.phone || visitorDetails.phone || '';
   const vObj = (pass as any).villaId;
   const unitNum = vObj?.unitNumber || vObj?.villaNumber || (pass as any).villaNumber || (pass as any).villaName || (pass as any).villaId?.name || (pass as any).villaId?.number;
   const block = vObj?.blockOrBuilding || vObj?.block ? ` (${vObj.blockOrBuilding || vObj.block})` : '';
@@ -55,7 +58,7 @@ export const VisitorPassCard: React.FC<VisitorPassCardProps> = ({
 
   const subtitleParts = [];
   if (displayVilla) subtitleParts.push(displayVilla);
-  if (pass.phone) subtitleParts.push(`Ph: ${pass.phone}`);
+  if (phone) subtitleParts.push(`Ph: ${phone}`);
   else if (pass.purpose) subtitleParts.push(`${t('for_purpose', 'For:')} ${translateText(pass.purpose)}`);
   else subtitleParts.push(`${t('code_label', 'Code:')} ${pass.code || (typeof pass._id === 'string' ? pass._id.slice(-6) : 'PASS')}`);
 
@@ -63,11 +66,11 @@ export const VisitorPassCard: React.FC<VisitorPassCardProps> = ({
 
   const badgeLabel = isInside ? 'INSIDE' : pass.status;
   const badgeVariant = mapPassStatusVariant(pass.status, isInside);
-  const initials = getInitials(pass.visitorName);
+  const initials = getInitials(visitorName);
 
   return (
     <ListCard
-      title={pass.visitorName || t('guest_visitor', 'Guest Visitor')}
+      title={visitorName}
       subtitle={subtitle}
       leftAvatarFallback={initials}
       status={{

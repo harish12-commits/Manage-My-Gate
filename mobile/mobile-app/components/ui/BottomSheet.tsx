@@ -65,7 +65,8 @@ function BottomSheet({
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
         style={{ flex: 1 }}
         className="flex-1 justify-end items-center"
       >
@@ -112,7 +113,8 @@ function BottomSheet({
             alwaysBounceVertical={false}
             nestedScrollEnabled={true}
             keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           >
             {children}
           </KeyboardAwareScrollView>

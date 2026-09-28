@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { View, ScrollView, TouchableOpacity, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 
@@ -55,6 +55,8 @@ export default function ActiveBoardScreen() {
     readNotice,
     toggleBookmark,
     acknowledgeNotice,
+    clearNotices,
+    user,
     canManage,
     isAdmin,
   } = useNoticeBoard();
@@ -76,28 +78,53 @@ export default function ActiveBoardScreen() {
   // Polls dataset
   const [polls, setPolls] = useState([]);
   const [pollsLoading, setPollsLoading] = useState(false);
+  const [pollPagination, setPollPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 });
+  const requestVersionRef = useRef(0);
+  const communityId = String(user?.activeOrgId || user?.orgId || user?.organizationId || user?.activeOrganizationId || '');
 
   // Fetch active polls
-  const fetchActivePolls = useCallback(async () => {
+  const fetchActivePolls = useCallback(async (page = 1) => {
+    const requestVersion = requestVersionRef.current;
     try {
       setPollsLoading(true);
-      const res = await pollApi.getPolls({ status: 'Active', limit: 20 });
+      const res = await pollApi.getPolls({ status: 'Active', page, limit: 20 });
       const raw = res?.data?.data?.polls || res?.data?.data || res?.data?.polls || res?.data || [];
-      setPolls(Array.isArray(raw) ? raw : []);
+      if (requestVersion !== requestVersionRef.current) return;
+      const nextPolls = Array.isArray(raw) ? raw : [];
+      setPolls((current) => page > 1
+        ? [...current, ...nextPolls.filter((poll) => !current.some((existing) => String(existing._id || existing.id) === String(poll._id || poll.id)))]
+        : nextPolls);
+      const paginationMeta = res?.data?.data?.pagination || res?.data?.pagination || {};
+      setPollPagination({
+        currentPage: Number(paginationMeta.currentPage || paginationMeta.page || page),
+        totalPages: Number(paginationMeta.totalPages || paginationMeta.pages || 1),
+        totalRecords: Number(paginationMeta.totalRecords || paginationMeta.total || nextPolls.length),
+        limit: Number(paginationMeta.limit || 20),
+      });
     } catch {
-      setPolls([]);
+      if (requestVersion === requestVersionRef.current && page === 1) setPolls([]);
     } finally {
       setPollsLoading(false);
     }
   }, []);
 
+  useEffect(() => {
+    // Prevent old community data or an in-flight response from rendering while
+    // the tenant context changes.
+    requestVersionRef.current += 1;
+    clearNotices();
+    setPolls([]);
+    setPollPagination({ currentPage: 1, totalPages: 1, totalRecords: 0, limit: 20 });
+  }, [communityId, clearNotices]);
+
   // Initialize board and apply default Published status on mount & focus
   useFocusEffect(
     useCallback(() => {
       setFilters({ status: 'Published' });
-      loadNotices();
-      fetchActivePolls();
-    }, [setFilters, loadNotices, fetchActivePolls])
+      setCurrentPage(1);
+      loadNotices({ page: 1, status: 'Published' });
+      fetchActivePolls(1);
+    }, [communityId, setFilters, setCurrentPage, loadNotices, fetchActivePolls])
   );
 
   // Deep-linking to automatically open notice details
@@ -137,15 +164,22 @@ export default function ActiveBoardScreen() {
 
   const handleRefresh = useCallback(() => {
     setCurrentPage(1);
-    loadNotices();
-    fetchActivePolls();
+    loadNotices({ page: 1, status: 'Published' });
+    fetchActivePolls(1);
   }, [loadNotices, fetchActivePolls, setCurrentPage]);
 
   const handleLoadMore = useCallback(() => {
-    if (pagination.currentPage < pagination.totalPages && !loading) {
-      setCurrentPage(pagination.currentPage + 1);
+    const hasMoreNotices = pagination.currentPage < pagination.totalPages;
+    const hasMorePolls = pollPagination.currentPage < pollPagination.totalPages;
+    if ((!hasMoreNotices && !hasMorePolls) || loading || pollsLoading) return;
+
+    const nextPage = Math.max(pagination.currentPage, pollPagination.currentPage) + 1;
+    if (hasMoreNotices) {
+      setCurrentPage(nextPage);
+      loadNotices({ page: nextPage, status: 'Published' });
     }
-  }, [pagination, loading, setCurrentPage]);
+    if (hasMorePolls) fetchActivePolls(nextPage);
+  }, [pagination, loading, pollsLoading, setCurrentPage, loadNotices, pollPagination, fetchActivePolls]);
 
   const handleCardPress = useCallback(
     (notice) => {
@@ -521,11 +555,12 @@ export default function ActiveBoardScreen() {
               onRefresh={handleRefresh}
               onLoadMore={handleLoadMore}
               pagination={{
-                currentPage: pagination.currentPage,
-                totalPages: pagination.totalPages,
-                totalRecords: filteredFeedItems.length,
+                currentPage: Math.max(pagination.currentPage, pollPagination.currentPage),
+                totalPages: Math.max(pagination.totalPages, pollPagination.totalPages),
+                totalRecords: pagination.totalRecords + pollPagination.totalRecords,
                 limit: pagination.limit || 10,
               }}
+              paginationSummary
               emptyIcon="Megaphone"
               emptyTitle={
                 isFilterActive

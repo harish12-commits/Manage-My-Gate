@@ -23,8 +23,10 @@ import { Invoice } from '../types';
 import { useBilling } from '../hooks/useBilling';
 import { useBillingSocket } from '../hooks/useBillingSocket';
 import { parseAndValidateAppBarcode } from '@/src/utils/appBarcodeProtocol';
+import { useTranslation } from '@/src/utils/i18n';
 
 export function BillingLedgerScreen() {
+  const { t, hasKey } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ status?: string; invoiceId?: string }>();
   const initialStatus =
@@ -70,6 +72,14 @@ export function BillingLedgerScreen() {
       permissions.includes('*')
     );
   });
+
+  // `/billing/ledger` is retained for deep-link compatibility, but the ledger
+  // itself is an admin-only tool. Residents go directly to their own dues.
+  useEffect(() => {
+    if (!hasLedgerPermission) {
+      router.replace('/(resident)/billing/my-dues' as any);
+    }
+  }, [hasLedgerPermission, router]);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(initialStatus);
@@ -170,11 +180,12 @@ export function BillingLedgerScreen() {
   // Calculate active filter count for badge
   const activeFilterCount = useMemo(() => {
     let count = 0;
+    if (statusFilter && statusFilter !== 'ALL') count++;
     if (activeFilters.startDate || activeFilters.endDate) count++;
     if (activeFilters.block && activeFilters.block !== 'ALL') count++;
     if (activeFilters.paymentMethod && activeFilters.paymentMethod !== 'ALL') count++;
     return count;
-  }, [activeFilters]);
+  }, [activeFilters, statusFilter]);
 
   // Combined query params object
   const currentQueryParams = useMemo(() => ({
@@ -189,13 +200,13 @@ export function BillingLedgerScreen() {
 
   // Dynamic status pill options with live count badges
   const statusSortOptions = useMemo(() => [
-    { label: `All (${statusCounts?.ALL ?? 0})`, value: 'ALL' },
-    { label: `⚠️ Pending (${statusCounts?.VERIFICATION_PENDING ?? 0})`, value: 'VERIFICATION_PENDING' },
-    { label: `❌ Overdue (${statusCounts?.OVERDUE ?? 0})`, value: 'OVERDUE' },
-    { label: `Unpaid (${statusCounts?.UNPAID ?? 0})`, value: 'UNPAID' },
-    { label: `Partial (${statusCounts?.PARTIALLY_PAID ?? 0})`, value: 'PARTIALLY_PAID' },
-    { label: `✅ Paid (${statusCounts?.PAID ?? 0})`, value: 'PAID' },
-  ], [statusCounts]);
+    { label: `${t('all_statuses', 'All Statuses')}${statusCounts?.ALL !== undefined ? ` (${statusCounts.ALL})` : ''}`, value: 'ALL' },
+    { label: `${t('status_verification_pending', 'Pending')}${statusCounts?.VERIFICATION_PENDING !== undefined ? ` (${statusCounts.VERIFICATION_PENDING})` : ''}`, value: 'VERIFICATION_PENDING' },
+    { label: `${t('status_overdue', 'Overdue')}${statusCounts?.OVERDUE !== undefined ? ` (${statusCounts.OVERDUE})` : ''}`, value: 'OVERDUE' },
+    { label: `${t('status_unpaid', 'Unpaid')}${statusCounts?.UNPAID !== undefined ? ` (${statusCounts.UNPAID})` : ''}`, value: 'UNPAID' },
+    { label: `${t('status_partially_paid', 'Partially Paid')}${statusCounts?.PARTIALLY_PAID !== undefined ? ` (${statusCounts.PARTIALLY_PAID})` : ''}`, value: 'PARTIALLY_PAID' },
+    { label: `${t('status_paid', 'Paid')}${statusCounts?.PAID !== undefined ? ` (${statusCounts.PAID})` : ''}`, value: 'PAID' },
+  ], [statusCounts, t]);
 
   // Trigger server-side query when status filter, advanced filters, grouping mode, or active organization changes
   useEffect(() => {
@@ -225,10 +236,14 @@ export function BillingLedgerScreen() {
 
   // Differentiated Empty Subtitles (Must be declared before any conditional return)
   const emptySubtitle = useMemo(() => {
-    if (search.trim()) return `No billing records match "${search.trim()}".`;
-    if (statusFilter !== 'ALL') return `No invoices match status filter "${statusFilter.replace(/_/g, ' ')}".`;
-    return 'No community billing records found in the ledger.';
-  }, [search, statusFilter]);
+    if (search.trim()) return t('no_billing_records_matching_search', `No billing records match "${search.trim()}".`, { search: search.trim() });
+    if (statusFilter !== 'ALL') {
+      const statusKey = `status_${statusFilter.toLowerCase()}`;
+      const statusName = hasKey(statusKey) ? t(statusKey) : statusFilter.replace(/_/g, ' ');
+      return `${t('no_invoices_matching_filter', 'No invoice records match status filter')} "${statusName}".`;
+    }
+    return t('no_community_billing_records', 'No community billing records found in the ledger.');
+  }, [search, statusFilter, t, hasKey]);
 
   // Guaranteed unique key extractor for FlatList across all ledger modes
   const ledgerKeyExtractor = useCallback((item: any, index: number): string => {
@@ -295,12 +310,13 @@ export function BillingLedgerScreen() {
           <SearchFilterBar
             searchValue={search}
             onSearchChange={setSearch}
-            searchPlaceholder="Search unit 'Villa 104', Chq #, or resident..."
+            searchPlaceholder={t('search_ledger_placeholder', "Search unit 'Villa 104', Chq #, or resident...")}
             sortOptions={statusSortOptions}
             currentSort={statusFilter}
             onSortChange={(val) => setStatusFilter(val as any)}
             onScanPress={() => setShowScanner(true)}
             onFilterPress={() => setShowFilterDrawer(true)}
+            filterTitle={t('filter_ledger_options', 'Filter Ledger Options')}
             activeFilterCount={activeFilterCount}
           />
 
@@ -355,8 +371,9 @@ export function BillingLedgerScreen() {
             onRefresh={handleRefresh}
             loading={loadingStates.fetchGrid}
             emptyIcon="Receipt"
-            emptyTitle="No Records Found"
+            emptyTitle={t('no_records_found', 'No Records Found')}
             emptySubtitle={emptySubtitle}
+            paginationSummary
             contentContainerClassName="px-4 py-2 pb-28"
             contentContainerStyle={{ paddingBottom: 110 }}
           />
@@ -365,17 +382,24 @@ export function BillingLedgerScreen() {
         <LedgerFilterDrawer
           visible={showFilterDrawer}
           onClose={() => setShowFilterDrawer(false)}
-          filters={activeFilters}
-          onApply={(newFilters) => setActiveFilters(newFilters)}
-          onReset={() =>
+          filters={{ ...activeFilters, status: statusFilter }}
+          onApply={(newFilters) => {
+            if (newFilters.status) {
+              setStatusFilter(newFilters.status);
+            }
+            setActiveFilters(newFilters);
+          }}
+          onReset={() => {
+            setStatusFilter('ALL');
             setActiveFilters({
               startDate: '',
               endDate: '',
               datePreset: 'ALL_TIME',
               block: 'ALL',
               paymentMethod: 'ALL',
-            })
-          }
+              status: 'ALL',
+            });
+          }}
         />
 
         {/* Hardware QR / Barcode Scanner Modal */}

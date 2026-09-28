@@ -7,6 +7,7 @@ import {
   BackHandler,
   Keyboard,
   Platform,
+  Linking,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
 } from 'react-native';
@@ -19,7 +20,7 @@ import Animated, {
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as LucideIcons from 'lucide-react-native';
-import { ChevronLeft, AlertCircle, Compass } from 'lucide-react-native';
+import { ChevronLeft, AlertCircle, Compass, Mail } from 'lucide-react-native';
 import { Text } from './text';
 import { Icon } from './icon';
 import { Skeleton } from './Skeleton';
@@ -217,16 +218,15 @@ export function ScreenShell({
                   adjustsFontSizeToFit
                   minimumFontScale={0.8}
                   numberOfLines={subtitle ? 1 : 2}
-                  className="text-foreground text-[20px] sm:text-[24px] font-extrabold tracking-tight leading-snug shrink mb-0.5"
+                  className="text-foreground text-[23px] sm:text-[25px] font-extrabold font-bold tracking-tight leading-tight shrink"
+                  style={{ fontWeight: 'bold' }}
                 >
                   {translateText(title)}
                 </Text>
                 {subtitle ? (
                   <Text
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.85}
-                    numberOfLines={1}
-                    className="text-[13px] sm:text-[14.5px] text-muted-foreground font-normal leading-normal shrink"
+                    numberOfLines={2}
+                    className="text-[14.5px] sm:text-[15.5px] text-muted-foreground mt-1 font-normal leading-snug shrink"
                   >
                     {translateText(subtitle)}
                   </Text>
@@ -257,30 +257,47 @@ export function ScreenShell({
 
       {/* Error banner */}
       {error ? (
-        <View className="bg-destructive/10 border-b border-destructive/20 px-4 py-3 flex-row items-center justify-between">
+        <View className="bg-destructive/10 border-b border-destructive/20 px-3.5 py-2.5 flex-row items-center justify-between">
           <View className="flex-row items-center flex-1 me-2">
-            <Icon as={AlertCircle} size={18} className="text-destructive me-2.5 shrink-0" />
+            <Icon as={AlertCircle} size={18} className="text-destructive me-2 shrink-0" />
             <Text className="text-destructive text-xs font-medium flex-1" numberOfLines={2}>
               {translateText(error)}
             </Text>
           </View>
-          {onRetry ? (
+          <View className="flex-row items-center gap-1.5 shrink-0">
             <Pressable
-              onPress={onRetry}
-              className="bg-destructive px-3 py-1.5 rounded-lg active:opacity-80"
+              onPress={() => {
+                const subject = encodeURIComponent(`Nahom App Error Report: ${title}`);
+                const body = encodeURIComponent(`Screen: ${title}\nError: ${error}\nPlatform: ${Platform.OS}\nTime: ${new Date().toISOString()}`);
+                Linking.openURL(`mailto:developer@managemygate.com?subject=${subject}&body=${body}`);
+              }}
+              className="p-1.5 rounded-lg bg-destructive/15 border border-destructive/30 flex-row items-center gap-1 active:opacity-75"
               accessibilityRole="button"
-              accessibilityLabel={t('retry', 'Retry')}
+              accessibilityLabel="Email App Developer"
             >
-              <Text className="text-destructive-foreground text-xs font-semibold">{t('retry', 'Retry')}</Text>
+              <Icon as={Mail} size={13} className="text-destructive" />
+              <Text className="text-[11px] font-bold text-destructive">Contact Dev</Text>
             </Pressable>
-          ) : null}
+            {onRetry ? (
+              <Pressable
+                onPress={onRetry}
+                className="bg-destructive px-2.5 py-1.5 rounded-lg active:opacity-80"
+                accessibilityRole="button"
+                accessibilityLabel={t('retry', 'Retry')}
+              >
+                <Text className="text-destructive-foreground text-xs font-semibold">{t('retry', 'Retry')}</Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
       ) : null}
 
       {/* Main content area */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+        // This view begins below the app header, so an extra offset leaves the
+        // focused field partially behind the keyboard on iOS.
+        keyboardVerticalOffset={0}
         className="flex-1 bg-transparent"
       >
         {loading && !hasChildren ? (

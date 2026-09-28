@@ -22,9 +22,12 @@ import storage from '../../../utils/storage';
 // Async Thunks
 export const fetchNotices = createAsyncThunk(
   'noticeBoard/fetchNotices',
-  async (_, { getState, rejectWithValue }) => {
+  async (overrides = {}, { getState, rejectWithValue }) => {
     try {
-      const { noticeBoard } = getState();
+      const state = getState();
+      const { noticeBoard } = state;
+      const user = state.auth?.user || {};
+      const communityId = String(user.activeOrgId || user.orgId || user.organizationId || user.activeOrganizationId || '');
       const params = {
         search: noticeBoard.search,
         page: noticeBoard.pagination.currentPage,
@@ -32,6 +35,7 @@ export const fetchNotices = createAsyncThunk(
         sortBy: noticeBoard.sort.sortBy,
         sortOrder: noticeBoard.sort.sortOrder,
         ...noticeBoard.filters,
+        ...overrides,
       };
       
       // Inject KPI card filter override if active
@@ -53,13 +57,18 @@ export const fetchNotices = createAsyncThunk(
       const response = await getNotices(params);
       try {
         const notices = response.data?.data?.data || response.data?.data || [];
-        if (notices && notices.length > 0) {
-          await storage.setItem('cached_notices', JSON.stringify(notices));
+        // First-page cache is namespaced to the active community. Later pages
+        // are transient list state and must not appear after a community switch.
+        if (params.page === 1 && Array.isArray(notices)) {
+          await storage.setItem(
+            `cached_notices_${communityId || 'default'}`,
+            JSON.stringify({ communityId, notices })
+          );
         }
       } catch (cacheErr) {
         console.warn('Failed to cache notices:', cacheErr);
       }
-      return response.data; // Aligned to API envelope unwrapping
+      return { payload: response.data, page: Number(params.page) || 1, communityId };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch notices');
     }
@@ -183,13 +192,18 @@ export const fetchNoticeStats = createAsyncThunk(
 
 export const loadCachedNotices = createAsyncThunk(
   'noticeBoard/loadCachedNotices',
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
     try {
-      const cached = await storage.getItem('cached_notices');
+      const user = getState().auth?.user || {};
+      const communityId = String(user.activeOrgId || user.orgId || user.organizationId || user.activeOrganizationId || '');
+      const cached = await storage.getItem(`cached_notices_${communityId || 'default'}`);
       if (cached) {
-        return JSON.parse(cached);
+        const parsed = JSON.parse(cached);
+        return parsed?.communityId === communityId && Array.isArray(parsed?.notices)
+          ? parsed
+          : { communityId, notices: [] };
       }
-      return [];
+      return { communityId, notices: [] };
     } catch (error) {
       return rejectWithValue('Failed to load cached notices');
     }
@@ -285,6 +299,7 @@ export const toggleNoticeReactionThunk = createAsyncThunk(
 // Initial Redux State
 const initialState = {
   notices: [],
+  communityId: null,
   selectedNotice: null,
   loading: false,
   error: null,
@@ -391,14 +406,17 @@ export const noticeBoardSlice = createSlice({
     clearNotices: (state) => {
       state.notices = [];
       state.pagination = initialState.pagination;
+      state.communityId = null;
     },
   },
   extraReducers: (builder) => {
     builder
       // Load Cached Notices
       .addCase(loadCachedNotices.fulfilled, (state, action) => {
-        if (state.notices.length === 0 && action.payload && action.payload.length > 0) {
-          state.notices = action.payload;
+        const cached = action.payload;
+        if (state.notices.length === 0 && cached?.communityId && Array.isArray(cached.notices)) {
+          state.communityId = cached.communityId;
+          state.notices = cached.notices;
         }
       })
       // Fetch Notices List
@@ -408,14 +426,18 @@ export const noticeBoardSlice = createSlice({
       })
       .addCase(fetchNotices.fulfilled, (state, action) => {
         state.loading = false;
-        const payload = action.payload || {};
+        const result = action.payload || {};
+        const payload = result.payload || {};
         
         // Handle nested data envelope: payload.data might be { data: [], pagination: {} }
         const dataEnvelope = payload.data || {};
         const noticesData = dataEnvelope.data || (Array.isArray(dataEnvelope) ? dataEnvelope : []);
         const pagination = dataEnvelope.pagination || payload.pagination || null;
         
-        state.notices = noticesData;
+        state.notices = result.page > 1
+          ? [...state.notices, ...noticesData.filter((notice) => !state.notices.some((existing) => String(existing._id) === String(notice._id)))]
+          : noticesData;
+        state.communityId = result.communityId || state.communityId;
         if (pagination) {
           state.pagination = { ...state.pagination, ...pagination };
         }

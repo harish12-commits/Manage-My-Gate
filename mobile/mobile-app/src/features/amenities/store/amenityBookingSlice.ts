@@ -480,7 +480,10 @@ export const confirmReservationThunk = createAsyncThunk(
     try {
       const res: any = await amenityManagementService.confirmReservation(payload, idempotencyKey);
       const rawData = res?.data || res;
-      const reservation = normalizeReservationFromApi(rawData);
+      // The reservation confirmation contract returns `{ reservation, pass }`.
+      // Normalize the actual reservation document, rather than the response
+      // envelope, so the result view and My Bookings receive the same record.
+      const reservation = normalizeReservationFromApi(rawData?.reservation || rawData);
       const passData = rawData?.pass || rawData?.data?.pass;
       const pass = passData ? normalizeAccessPassFromApi(passData) : null;
       return { reservation, pass };

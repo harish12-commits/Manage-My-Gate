@@ -78,7 +78,7 @@ export function PollVotingSection({
   return (
     <View className="bg-card rounded-2xl border border-border p-4 mb-4 shadow-sm">
       <View className="mb-3">
-        <Text className="text-base font-bold text-foreground">Cast Your Vote</Text>
+        <Text className="text-base font-bold text-foreground">{t('cast_your_vote', 'Cast Your Vote')}</Text>
         <Text className="text-xs text-muted-foreground mt-0.5">
           {isMultiple
             ? `Select up to ${maxChoices} options`
@@ -105,7 +105,7 @@ export function PollVotingSection({
               )}
             >
               {/* Radio or Checkbox icon */}
-              <View className="me-3">
+              <View className="me-3 shrink-0">
                 {isMultiple ? (
                   isSelected ? (
                     <CheckSquare size={20} color="#10b981" />
@@ -141,7 +141,7 @@ export function PollVotingSection({
       {isPerUnit && (
         <View className="mb-4">
           <TextInput
-            label="Residential Unit / Villa Number"
+            label={t('residential_unit_villa_number', 'Residential Unit / Villa Number')}
             placeholder="e.g. Villa 104 or Apt 4B"
             value={unitNumber}
             onChangeText={(text) => {
@@ -173,7 +173,7 @@ export function PollVotingSection({
         accessibilityRole="button"
         accessibilityLabel="Submit Ballot"
       >
-        Submit Ballot
+        <Text className="font-bold text-white text-base">{t('submit_ballot', 'Submit Ballot')}</Text>
       </Button>
     </View>
   );

@@ -9,7 +9,7 @@ import { QRCodeView } from '@/components/ui/QRCodeView';
 import { QrCode, ShieldAlert, Copy, Check, Share2, MessageCircle } from 'lucide-react-native';
 import { useTranslation } from '@/src/utils/i18n';
 import { shareQrImage } from '@/src/utils/qrPngGenerator';
-import { buildAmenityPassShareMessage, encodeAppBarcode } from '@/src/utils/appBarcodeProtocol';
+import { buildAmenityPassShareMessage } from '@/src/utils/appBarcodeProtocol';
 import { AmenityReservation, AmenityAccessPass } from '../types/amenityDomain.types';
 import { AmenityBooking } from '../store/amenityBookingSlice';
 import {
@@ -141,18 +141,13 @@ export const AmenityPassDetailsModal: React.FC<AmenityPassDetailsModalProps> = (
     : booking?.numberOfPersons || booking?.guestsCount;
 
   // Token & QR Resolution (Canonical MMG:AMENITY:<token>)
-  const directToken =
-    accessPass?.qrData ||
-    (reservation as any)?.passToken ||
-    (booking as any)?.passToken ||
-    booking?.qrCode ||
-    booking?.passCode;
-
+  const directToken = accessPass?.qrData || accessPass?.passCode;
   const qrString = directToken && String(directToken).startsWith('MMG:AMENITY:')
     ? String(directToken)
     : directToken && !String(directToken).startsWith('data:')
     ? `MMG:AMENITY:${directToken}`
-    : encodeAppBarcode('AMENITY', passCode, String(rawId), facilityName);
+    : null;
+  const hasIssuedPass = Boolean(accessPass?._id && qrString);
 
   const isCancellable =
     rawStatus !== 'CANCELLED' &&
@@ -179,7 +174,7 @@ export const AmenityPassDetailsModal: React.FC<AmenityPassDetailsModalProps> = (
       timeWindow: formattedTime,
       location: location || resourceName || undefined,
       destinationUnit: destinationUnit || undefined,
-      barcodePayload: qrString,
+      barcodePayload: qrString || '',
       validUntil: accessPass?.validUntil ? String(accessPass.validUntil) : undefined,
     });
   };
@@ -223,6 +218,10 @@ export const AmenityPassDetailsModal: React.FC<AmenityPassDetailsModalProps> = (
   };
 
   const handleShareBarcodeToWhatsApp = async () => {
+    if (!qrString) {
+      Alert.alert('Pass Pending', 'Your access pass will appear once this booking is confirmed.');
+      return;
+    }
     if (sharingImage) return;
     setSharingImage(true);
     try {
@@ -300,7 +299,7 @@ export const AmenityPassDetailsModal: React.FC<AmenityPassDetailsModalProps> = (
           {/* Primary Action: Send Barcode & Pass to WhatsApp */}
           <Button
             onPress={handleShareBarcodeToWhatsApp}
-            disabled={sharingImage}
+            disabled={sharingImage || !hasIssuedPass}
             className="w-full h-12 rounded-xl bg-[#25D366] active:bg-[#1EBE5D] flex-row items-center justify-center gap-2.5 shadow-sm"
             accessibilityLabel="Share Amenity Pass Barcode and Code on WhatsApp"
           >
@@ -351,6 +350,7 @@ export const AmenityPassDetailsModal: React.FC<AmenityPassDetailsModalProps> = (
             <Button
               variant="outline"
               onPress={() => setShowQR(!showQR)}
+              disabled={!hasIssuedPass}
               className="h-10 px-3.5 rounded-xl border-border bg-card active:bg-muted flex-row items-center justify-center gap-1.5"
             >
               <QrCode size={15} className="text-foreground" />
@@ -362,13 +362,21 @@ export const AmenityPassDetailsModal: React.FC<AmenityPassDetailsModalProps> = (
         </View>
 
         {/* QR Code Presentation Container */}
-        {showQR && (
+        {showQR && hasIssuedPass && qrString && (
           <View className="items-center justify-center bg-card border border-border rounded-2xl p-4 gap-2">
             <QRCodeView
               value={qrString}
               size={170}
               caption={t('valid_for_amenity', `Valid for ${facilityName}`)}
             />
+          </View>
+        )}
+        {showQR && !hasIssuedPass && (
+          <View className="items-center justify-center bg-muted/40 border border-border rounded-2xl p-4 gap-1">
+            <Text className="text-sm font-bold text-foreground">Access pass not issued yet</Text>
+            <Text className="text-xs text-muted-foreground text-center">
+              The barcode is available after payment and any required approval are complete.
+            </Text>
           </View>
         )}
 

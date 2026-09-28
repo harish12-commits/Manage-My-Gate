@@ -40,14 +40,14 @@ export const VisitorPassFlowHeader: React.FC<VisitorPassFlowHeaderProps> = ({
             <TouchableOpacity
               onPress={onBack}
               activeOpacity={0.7}
-              className="w-9 h-9 rounded-full bg-muted items-center justify-center"
+              className="w-11 h-11 rounded-xl bg-muted items-center justify-center"
               accessibilityRole="button"
               accessibilityLabel={t('go_back', 'Go back')}
             >
               <ArrowLeft size={18} className="text-foreground" />
             </TouchableOpacity>
           ) : (
-            <View className="w-9 h-9 rounded-full bg-primary/10 items-center justify-center">
+            <View className="w-11 h-11 rounded-xl bg-primary/10 items-center justify-center">
               <Shield size={18} className="text-primary" />
             </View>
           )}
@@ -62,7 +62,7 @@ export const VisitorPassFlowHeader: React.FC<VisitorPassFlowHeaderProps> = ({
         <TouchableOpacity
           onPress={onCancel}
           activeOpacity={0.7}
-          className="w-9 h-9 rounded-full bg-muted items-center justify-center"
+          className="w-11 h-11 rounded-xl bg-muted items-center justify-center"
           accessibilityRole="button"
           accessibilityLabel={t('cancel', 'Cancel')}
         >

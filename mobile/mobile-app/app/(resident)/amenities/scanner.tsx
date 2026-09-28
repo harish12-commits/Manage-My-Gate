@@ -332,6 +332,7 @@ export default function AmenitySecurityGateScannerScreen() {
               }}
               onRefresh={loadData}
               loading={logsLoading}
+              paginationSummary
               emptyIcon="ClipboardList"
               emptyTitle="No Security Logs Found"
               emptySubtitle="Security verification logs will stream here as passes are scanned."

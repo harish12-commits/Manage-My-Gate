@@ -6,8 +6,9 @@ import { GlobalFilterPanel, FilterCategoryConfig } from '@/components/ui/GlobalF
 import { DropdownSelect } from '@/components/forms/DropdownSelect';
 import { DatePicker } from '@/components/common/DatePicker';
 import { formatDateString } from '@/components/common/DatePickerModal';
-import { Calendar, Building2, CreditCard } from 'lucide-react-native';
+import { Calendar, Building2, CreditCard, CheckCircle2 } from 'lucide-react-native';
 import { fetchVillaBlocks } from '@/src/features/villa/services/villaService';
+import { useTranslation } from '@/src/utils/i18n';
 
 export interface LedgerFilterValues {
   startDate: string;
@@ -15,6 +16,7 @@ export interface LedgerFilterValues {
   datePreset: string;
   block: string;
   paymentMethod: string;
+  status?: string;
 }
 
 interface LedgerFilterDrawerProps {
@@ -25,26 +27,6 @@ interface LedgerFilterDrawerProps {
   onReset: () => void;
 }
 
-const DATE_PRESETS = [
-  { id: 'ALL_TIME', label: 'All Time' },
-  { id: 'THIS_MONTH', label: 'This Month' },
-  { id: 'LAST_MONTH', label: 'Last Month' },
-  { id: 'THIS_QUARTER', label: 'This Quarter' },
-  { id: 'THIS_FY', label: 'FY 2026-27' },
-  { id: 'CUSTOM', label: 'Custom Range' },
-];
-
-const PAYMENT_METHODS = [
-  { id: 'ALL', label: 'All Methods' },
-  { id: 'CASH', label: 'Cash' },
-  { id: 'BANK_TRANSFER', label: 'Bank Transfer (NEFT/RTGS)' },
-  { id: 'UPI', label: 'UPI / QR' },
-  { id: 'CHEQUE', label: 'Cheque' },
-  { id: 'DEMAND_DRAFT', label: 'Demand Draft' },
-  { id: 'WALLET', label: 'Wallet' },
-  { id: 'RAZORPAY', label: 'Online / Gateway' },
-];
-
 export const LedgerFilterDrawer: React.FC<LedgerFilterDrawerProps> = ({
   visible,
   onClose,
@@ -52,6 +34,29 @@ export const LedgerFilterDrawer: React.FC<LedgerFilterDrawerProps> = ({
   onApply,
   onReset,
 }) => {
+  const { t } = useTranslation();
+
+  const datePresets = useMemo(() => [
+    { id: 'ALL_TIME', label: t('all_time', 'All Time') },
+    { id: 'THIS_MONTH', label: t('this_month', 'This Month') },
+    { id: 'LAST_MONTH', label: t('last_month', 'Last Month') },
+    { id: 'THIS_QUARTER', label: t('this_quarter', 'This Quarter') },
+    { id: 'THIS_FY', label: t('fy_2026_27', 'FY 2026-27') },
+    { id: 'CUSTOM', label: t('custom_range', 'Custom Range') },
+  ], [t]);
+
+  const paymentMethods = useMemo(() => [
+    { id: 'ALL', label: t('all_methods', 'All Methods') },
+    { id: 'CASH', label: t('cash', 'Cash') },
+    { id: 'BANK_TRANSFER', label: t('bank_transfer', 'Bank Transfer (NEFT/RTGS)') },
+    { id: 'UPI', label: t('upi_qr', 'UPI / QR') },
+    { id: 'CHEQUE', label: t('cheque', 'Cheque') },
+    { id: 'DEMAND_DRAFT', label: t('demand_draft', 'Demand Draft') },
+    { id: 'WALLET', label: t('wallet', 'Wallet') },
+    { id: 'RAZORPAY', label: t('online_gateway', 'Online / Gateway') },
+  ], [t]);
+
+  const [selectedStatus, setSelectedStatus] = useState(filters.status || 'ALL');
   const [datePreset, setDatePreset] = useState(filters.datePreset || 'ALL_TIME');
   const [startDate, setStartDate] = useState(filters.startDate || '');
   const [endDate, setEndDate] = useState(filters.endDate || '');
@@ -61,6 +66,7 @@ export const LedgerFilterDrawer: React.FC<LedgerFilterDrawerProps> = ({
 
   useEffect(() => {
     if (visible) {
+      setSelectedStatus(filters.status || 'ALL');
       setDatePreset(filters.datePreset || 'ALL_TIME');
       setStartDate(filters.startDate || '');
       setEndDate(filters.endDate || '');
@@ -123,11 +129,13 @@ export const LedgerFilterDrawer: React.FC<LedgerFilterDrawerProps> = ({
       datePreset,
       block: selectedBlock,
       paymentMethod: selectedPaymentMethod,
+      status: selectedStatus,
     });
     onClose();
   };
 
   const handleResetInternal = () => {
+    setSelectedStatus('ALL');
     setDatePreset('ALL_TIME');
     setStartDate('');
     setEndDate('');
@@ -138,14 +146,15 @@ export const LedgerFilterDrawer: React.FC<LedgerFilterDrawerProps> = ({
   };
 
   const blockOptions = useMemo(() => {
-    const opts = [{ label: 'All Blocks', value: 'ALL' }];
+    const opts = [{ label: t('all_blocks', 'All Blocks'), value: 'ALL' }];
     availableBlocks.forEach((blk) => {
-      opts.push({ label: `Block ${blk}`, value: blk });
+      opts.push({ label: `${t('block', 'Block')} ${blk}`, value: blk });
     });
     return opts;
-  }, [availableBlocks]);
+  }, [availableBlocks, t]);
 
   const totalActiveCount =
+    (selectedStatus !== 'ALL' && selectedStatus !== '' ? 1 : 0) +
     (datePreset !== 'ALL_TIME' || startDate || endDate ? 1 : 0) +
     (selectedBlock !== 'ALL' && selectedBlock !== '' ? 1 : 0) +
     (selectedPaymentMethod !== 'ALL' && selectedPaymentMethod !== '' ? 1 : 0);
@@ -154,7 +163,7 @@ export const LedgerFilterDrawer: React.FC<LedgerFilterDrawerProps> = ({
     <View className="gap-3 pt-1">
       {/* Date Preset Chips */}
       <View className="flex-row flex-wrap gap-2">
-        {DATE_PRESETS.map((preset) => (
+        {datePresets.map((preset) => (
           <Chip
             key={preset.id}
             label={preset.label}
@@ -169,22 +178,22 @@ export const LedgerFilterDrawer: React.FC<LedgerFilterDrawerProps> = ({
       {datePreset === 'CUSTOM' || startDate || endDate ? (
         <View className="gap-2.5 pt-2 border-t border-border/40 mt-1">
           <DatePicker
-            label="Start Date"
+            label={t('start_date_label', 'Start Date')}
             value={startDate ? new Date(`${startDate}T00:00:00`) : null}
             onChange={(d) => {
               setStartDate(formatDateString(d));
               setDatePreset('CUSTOM');
             }}
-            placeholder="Select Start Date"
+            placeholder={t('select_start_date', 'Select Start Date')}
           />
           <DatePicker
-            label="End Date"
+            label={t('end_date_label', 'End Date')}
             value={endDate ? new Date(`${endDate}T00:00:00`) : null}
             onChange={(d) => {
               setEndDate(formatDateString(d));
               setDatePreset('CUSTOM');
             }}
-            placeholder="Select End Date"
+            placeholder={t('select_end_date', 'Select End Date')}
           />
         </View>
       ) : null}
@@ -197,15 +206,32 @@ export const LedgerFilterDrawer: React.FC<LedgerFilterDrawerProps> = ({
         options={blockOptions}
         value={selectedBlock}
         onValueChange={setSelectedBlock}
-        placeholder="Select Community Block"
+        placeholder={t('select_community_block', 'Select Community Block')}
       />
     </View>
   );
 
   const categoryConfigs: FilterCategoryConfig[] = useMemo(() => [
     {
+      id: 'status',
+      label: t('payment_status', 'Payment Status'),
+      icon: CheckCircle2,
+      type: 'radio',
+      options: [
+        { id: 'ALL', label: t('all_statuses', 'All Statuses') },
+        { id: 'VERIFICATION_PENDING', label: t('status_verification_pending', 'Pending Verification') },
+        { id: 'OVERDUE', label: t('status_overdue', 'Overdue') },
+        { id: 'UNPAID', label: t('status_unpaid', 'Unpaid') },
+        { id: 'PARTIALLY_PAID', label: t('status_partially_paid', 'Partially Paid') },
+        { id: 'PAID', label: t('status_paid', 'Paid') },
+      ],
+      selectedValues: selectedStatus,
+      selectedCount: selectedStatus !== 'ALL' && selectedStatus !== '' ? 1 : 0,
+      onOptionSelect: (val) => setSelectedStatus(val),
+    },
+    {
       id: 'date',
-      label: 'Date Range',
+      label: t('date_range', 'Date Range'),
       icon: Calendar,
       type: 'custom',
       selectedCount: datePreset !== 'ALL_TIME' || startDate || endDate ? 1 : 0,
@@ -213,7 +239,7 @@ export const LedgerFilterDrawer: React.FC<LedgerFilterDrawerProps> = ({
     },
     {
       id: 'block',
-      label: 'Block / Building',
+      label: t('block_building', 'Block / Building'),
       icon: Building2,
       type: 'custom',
       selectedCount: selectedBlock !== 'ALL' && selectedBlock !== '' ? 1 : 0,
@@ -221,21 +247,21 @@ export const LedgerFilterDrawer: React.FC<LedgerFilterDrawerProps> = ({
     },
     {
       id: 'paymentMethod',
-      label: 'Payment Method',
+      label: t('payment_method', 'Payment Method'),
       icon: CreditCard,
       type: 'radio',
-      options: PAYMENT_METHODS,
+      options: paymentMethods,
       selectedValues: selectedPaymentMethod,
       selectedCount: selectedPaymentMethod !== 'ALL' && selectedPaymentMethod !== '' ? 1 : 0,
       onOptionSelect: (val) => setSelectedPaymentMethod(val),
     },
-  ], [datePreset, startDate, endDate, selectedBlock, selectedPaymentMethod, blockOptions]);
+  ], [selectedStatus, datePreset, startDate, endDate, selectedBlock, selectedPaymentMethod, blockOptions, paymentMethods, t]);
 
   return (
     <GlobalFilterPanel
       visible={visible}
       onClose={onClose}
-      title="Advanced Ledger Filters"
+      title={t('advanced_ledger_filters', 'Advanced Ledger Filters')}
       categories={categoryConfigs}
       onApply={handleApply}
       onClearAll={handleResetInternal}

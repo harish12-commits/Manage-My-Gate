@@ -18,6 +18,12 @@ const blacklistSchema = new Schema(
       type: String,
       trim: true
     },
+    idProofNumber: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      index: true
+    },
     plate: {
       type: String,
       trim: true,

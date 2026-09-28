@@ -184,21 +184,6 @@ export function AdminBillingDashboardScreen() {
       subtitle={!hasDashboardPermission ? 'Access Restricted' : 'Community Collection & Dues Snapshot'}
       iconName="BarChart3"
       loading={hasDashboardPermission && loadingStates.fetchKPIs && !kpis}
-      headerRight={
-        !hasDashboardPermission ? undefined : (
-          <Button
-            variant="outline"
-            size="sm"
-            onPress={() => router.push('/(resident)/billing/my-dues' as any)}
-            className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
-            accessibilityRole="button"
-            accessibilityLabel="View Personal Dues"
-          >
-            <CreditCard size={14} className="text-foreground" />
-            <Text className="text-xs font-semibold text-foreground">My Dues</Text>
-          </Button>
-        )
-      }
     >
       {!hasDashboardPermission ? (
         <View className="flex-1 bg-background p-6 items-center justify-center">

@@ -126,7 +126,7 @@ export const AddGroupGuestsStep: React.FC<AddGroupGuestsStepProps> = ({
                 <TouchableOpacity
                   onPress={() => onRemoveGuest(item.id)}
                   activeOpacity={0.7}
-                  className="w-8 h-8 rounded-lg bg-destructive/10 items-center justify-center"
+                  className="w-11 h-11 rounded-xl bg-destructive/10 items-center justify-center"
                   accessibilityRole="button"
                   accessibilityLabel={`Remove guest ${item.name}`}
                 >
@@ -140,4 +140,3 @@ export const AddGroupGuestsStep: React.FC<AddGroupGuestsStepProps> = ({
     </ScrollView>
   );
 };
-

@@ -69,15 +69,15 @@ const buttonVariants = cva(
           Platform.OS === 'web' ? 'hover:bg-purple-100' : ''
         ),
         navy: cn(
-          'bg-[#172B70] dark:bg-[#27448F] active:opacity-90 shadow-2xs',
+          'bg-primary active:opacity-90 shadow-2xs',
           Platform.OS === 'web' ? 'hover:opacity-90' : ''
         ),
         outline: cn(
-          'border border-[#172B70]/30 dark:border-border/80 bg-card active:bg-secondary/70 shadow-2xs',
+          'border border-primary/30 dark:border-border/80 bg-card active:bg-secondary/70 shadow-2xs',
           Platform.OS === 'web' ? 'hover:bg-secondary/70' : ''
         ),
         secondary: cn(
-          'bg-[#172B70] dark:bg-[#27448F] active:opacity-90 shadow-2xs',
+          'bg-secondary active:opacity-90 shadow-2xs',
           Platform.OS === 'web' ? 'hover:opacity-90' : ''
         ),
         ghost: cn(
@@ -126,9 +126,9 @@ const buttonTextVariants = cva(
         'info-solid': 'text-white font-bold',
         purple: 'text-purple-700 dark:text-purple-400 font-bold',
         navy: 'text-white font-bold',
-        outline: 'text-[#172B70] dark:text-foreground font-semibold group-active:text-[#172B70]',
-        secondary: 'text-white font-bold',
-        ghost: 'text-[#172B70] dark:text-foreground font-semibold group-active:text-primary',
+        outline: 'text-primary dark:text-foreground font-semibold group-active:text-primary',
+        secondary: 'text-secondary-foreground font-bold',
+        ghost: 'text-primary dark:text-foreground font-semibold group-active:text-primary',
         link: cn(
           'text-primary font-bold group-active:underline',
           Platform.select({ web: 'underline-offset-4 hover:underline group-hover:underline' })
@@ -206,7 +206,7 @@ const Button = React.forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>
   ) => {
     const isDisabled = disabled || loading;
     const iconSize = size === 'sm' ? 16 : size === 'lg' ? 20 : 18;
-    const loadingColor = SOLID_LOADING_VARIANTS.has(variant || 'default') ? '#FFFFFF' : '#172B70';
+    const loadingColor = SOLID_LOADING_VARIANTS.has(variant || 'default') ? '#FFFFFF' : '#F45A0A';
     const minimumTouchTarget = variant === 'link'
       ? ''
       : size === 'icon'

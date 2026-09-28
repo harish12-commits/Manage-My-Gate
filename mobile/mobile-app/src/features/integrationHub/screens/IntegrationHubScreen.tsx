@@ -105,7 +105,7 @@ export const IntegrationHubScreen: React.FC = () => {
 
   // Pagination Footer
   const renderPaginationFooter = () => {
-    if (totalRecords === 0) return null;
+    if (totalRecords === 0 || totalPages <= 1) return null;
     return (
       <View className="mt-4 pt-3 border-t border-border/40">
         <View className="flex-row items-center justify-between bg-card border border-border/60 p-2.5 rounded-xl shadow-xs">
@@ -128,12 +128,9 @@ export const IntegrationHubScreen: React.FC = () => {
 
           <TouchableOpacity
             onPress={() => {
-              if (totalPages > 1) {
-                setTargetPageInput(String(currentPage));
-                setShowPageJumpModal(true);
-              }
+              setTargetPageInput(String(currentPage));
+              setShowPageJumpModal(true);
             }}
-            disabled={totalPages <= 1}
             className="px-3.5 py-2 rounded-lg bg-muted/60 border border-border/60 flex-row items-center"
             accessibilityRole="button"
             accessibilityLabel="Current page"
@@ -167,7 +164,7 @@ export const IntegrationHubScreen: React.FC = () => {
   return (
     <ScreenShell
       title="Integration Hub"
-      subtitle="Third-Party API & Payment Gateways"
+      subtitle="APIs & Payment Gateways"
       iconName="Layers"
       domainName="Administration & Security"
       sharedSlice="integrationHubSlice.ts"
@@ -175,26 +172,15 @@ export const IntegrationHubScreen: React.FC = () => {
       error={error}
       onRetry={handleRefresh}
       headerRight={
-        <View className="flex-row items-center gap-1.5">
-          <TouchableOpacity
-            onPress={openBankModal}
-            className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 flex-row items-center active:bg-blue-500/20"
-            accessibilityRole="button"
-            accessibilityLabel="Banking Vault"
-          >
-            <Icon as={Landmark} size={16} className="text-blue-600" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => openConnectModal()}
-            className="flex-row items-center gap-1 bg-primary px-3 py-1.5 rounded-full active:opacity-80"
-            accessibilityRole="button"
-            accessibilityLabel="Add connection"
-          >
-            <Plus size={14} color="#ffffff" />
-            <Text className="text-xs font-bold text-primary-foreground">Connect</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={openBankModal}
+          className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 active:bg-blue-500/20"
+          accessibilityRole="button"
+          accessibilityLabel="Banking Vault"
+        >
+          <Icon as={Landmark} size={15} className="text-blue-600" />
+          <Text className="text-xs font-semibold text-blue-600">Vault</Text>
+        </TouchableOpacity>
       }
     >
       <View className="flex-1 bg-background">
@@ -239,17 +225,23 @@ export const IntegrationHubScreen: React.FC = () => {
 
         {/* Provider Catalog Horizontal Carousel */}
         {catalog.length > 0 && (
-          <View className="px-3.5 pt-2.5 pb-2.5 border-b border-border/40">
-            <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-[11px] font-bold text-foreground uppercase tracking-wider text-start">
-                Available Provider Catalog
+          <View className="pt-2.5 pb-3 border-b border-border/40">
+            <View className="flex-row items-center justify-between px-3.5 mb-2.5">
+              <Text className="text-xs font-bold text-foreground tracking-tight text-start">
+                Available Providers
               </Text>
-              <Text className="text-[10px] font-bold text-primary">
-                {catalog.length} Available
-              </Text>
+              <View className="bg-primary/10 px-2 py-0.5 rounded-full">
+                <Text className="text-[10px] font-bold text-primary">
+                  {catalog.length} Available
+                </Text>
+              </View>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View className="flex-row items-center gap-3 pe-3">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 14 }}
+            >
+              <View className="flex-row items-center">
                 {catalog.map((item) => {
                   const activeCount = connections.filter((c) => c.provider === item.id).length;
                   return (
@@ -288,6 +280,18 @@ export const IntegrationHubScreen: React.FC = () => {
           <FlatList
             data={filteredConnections}
             keyExtractor={(item) => item.id || String(Math.random())}
+            ListHeaderComponent={
+              <View className="flex-row items-center justify-between pb-2 pt-1 px-1">
+                <Text className="text-xs font-bold text-foreground tracking-tight">
+                  Configured Connections
+                </Text>
+                <View className="bg-muted px-2 py-0.5 rounded-full">
+                  <Text className="text-[10px] font-bold text-muted-foreground">
+                    {filteredConnections.length} Active
+                  </Text>
+                </View>
+              </View>
+            }
             renderItem={({ item }) => (
               <ConnectionCard
                 connection={item}

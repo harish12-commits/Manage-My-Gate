@@ -80,12 +80,13 @@ export function AdminAvailabilitySummary({ items, className }: AdminAvailability
         </View>
       </Pressable>
 
-      {/* Compact Horizontal Scroll Row (Default View) */}
+      {/* Compact horizontal cards keep facility names and availability readable. */}
       {!isExpanded && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          className="flex-row gap-2 mt-1.5"
+          className="mt-2"
+          contentContainerClassName="gap-2 pr-1"
         >
           {items.map((item) => {
             const style = getStatusBadgeStyle(item.state);
@@ -93,15 +94,17 @@ export function AdminAvailabilitySummary({ items, className }: AdminAvailability
               <View
                 key={item.facilityId}
                 className={cn(
-                  'flex-row items-center gap-1.5 px-2 py-0.5 rounded-lg border',
+                  'w-36 min-h-[52px] px-2.5 py-2 rounded-xl border justify-center gap-1',
                   style.bg
                 )}
               >
-                <View className={cn('w-1.5 h-1.5 rounded-full', style.dot)} />
-                <Text className="text-[11px] font-semibold text-foreground">
-                  {item.facilityName}:
-                </Text>
-                <Text className={cn('text-[11px] font-bold', style.text)}>
+                <View className="flex-row items-center gap-1.5 min-w-0">
+                  <View className={cn('w-1.5 h-1.5 rounded-full shrink-0', style.dot)} />
+                  <Text className="flex-1 text-[11px] font-semibold text-foreground" numberOfLines={1}>
+                    {item.facilityName}
+                  </Text>
+                </View>
+                <Text className={cn('text-[11px] font-bold', style.text)} numberOfLines={1}>
                   {item.label}
                 </Text>
               </View>
@@ -120,7 +123,7 @@ export function AdminAvailabilitySummary({ items, className }: AdminAvailability
                 key={item.facilityId}
                 className="flex-row items-center justify-between py-1 px-1"
               >
-                <Text className="text-xs font-medium text-foreground flex-1 pr-2">
+                <Text className="text-xs font-medium text-foreground flex-1 min-w-0 pr-2" numberOfLines={2}>
                   {item.facilityName}
                 </Text>
                 <View

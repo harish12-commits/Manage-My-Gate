@@ -5,6 +5,7 @@ import { Button } from '@/components/common/Button';
 import { Avatar } from '@/components/common/Avatar';
 import { TextInput } from '@/components/forms/TextInput';
 import { Send, Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { useTranslation } from '@/src/utils/i18n';
 
 /**
  * NoticeCommentsSection
@@ -22,6 +23,7 @@ export function NoticeCommentsSection({
   currentUserId,
   isAdmin = false,
 }) {
+  const { t } = useTranslation();
   const [commentText, setCommentText] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -46,26 +48,26 @@ export function NoticeCommentsSection({
         onPress={() => setIsExpanded((prev) => !prev)}
         className="flex-row items-center justify-between py-2.5 px-3 mb-3 bg-muted/20 hover:bg-muted/30 border border-border/60 rounded-xl"
         accessibilityRole="button"
-        accessibilityLabel={`${isExpanded ? 'Hide' : 'Show'} comments`}
+        accessibilityLabel={`${isExpanded ? t('hide', 'Hide') : t('show', 'Show')} ${t('comments', 'comments')}`}
       >
-        <View className="flex-row items-center flex-1">
-          <MessageSquare size={18} color="#737373" className="me-2" />
-          <Text className="text-foreground font-bold text-base">
-            Comments ({comments.length})
+        <View className="flex-row items-center flex-1 min-w-0 me-2">
+          <MessageSquare size={18} color="#737373" className="me-2 shrink-0" />
+          <Text className="text-foreground font-bold text-base flex-1" numberOfLines={1}>
+            {t('comments', 'Comments')} ({comments.length})
           </Text>
           {!allowComments && (
-            <View className="bg-muted px-2 py-0.5 rounded-md ms-2">
+            <View className="bg-muted px-2 py-0.5 rounded-md ms-2 shrink-0">
               <Text className="text-muted-foreground text-[10px] font-bold uppercase">
-                Disabled by Admin
+                {t('disabled_by_admin', 'Disabled by Admin')}
               </Text>
             </View>
           )}
         </View>
 
-        <View className="flex-row items-center gap-1.5">
+        <View className="flex-row items-center gap-1.5 shrink-0">
           {loading && <ActivityIndicator size="small" color="#737373" />}
           <Text className="text-muted-foreground text-xs font-semibold">
-            {isExpanded ? 'Hide' : 'Show'}
+            {isExpanded ? t('hide', 'Hide') : t('show', 'Show')}
           </Text>
           {isExpanded ? (
             <ChevronUp size={18} color="#737373" />
@@ -83,7 +85,7 @@ export function NoticeCommentsSection({
             <View className="flex-row items-center gap-2 mb-4">
               <View className="flex-1">
                 <TextInput
-                  placeholder="Write a comment..."
+                  placeholder={t('write_a_comment', 'Write a comment...')}
                   value={commentText}
                   onChangeText={setCommentText}
                   returnKeyType="send"
@@ -107,7 +109,7 @@ export function NoticeCommentsSection({
           ) : (
             <View className="bg-muted/30 border border-dashed border-border rounded-xl p-3 mb-4 items-center">
               <Text className="text-muted-foreground text-xs text-center font-medium">
-                Comments have been turned off for this announcement.
+                {t('comments_disabled_notice', 'Comments have been turned off for this announcement.')}
               </Text>
             </View>
           )}

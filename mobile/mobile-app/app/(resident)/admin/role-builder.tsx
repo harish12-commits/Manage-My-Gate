@@ -88,7 +88,7 @@ export default function RoleBuilderScreen() {
 
   // Pagination Footer matching User Management exactly
   const renderPaginationFooter = () => {
-    if (totalRecords === 0) return null;
+    if (totalRecords === 0 || totalPages <= 1) return null;
     return (
       <View className="mt-3 pt-2.5 border-t border-border/40">
         <View className="flex-row items-center justify-between bg-card border border-border/60 p-2 rounded-xl shadow-xs">

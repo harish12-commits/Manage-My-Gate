@@ -3,6 +3,7 @@ import { View, ScrollView, Pressable } from 'react-native';
 import { Chip } from '@/components/common/Chip';
 import { Text } from '@/components/ui/text';
 import { CalendarFilterState } from './AdminCalendarFilterDrawer';
+import { useTranslation } from '@/src/utils/i18n';
 
 export interface AdminActiveFilterChipsProps {
   filters: CalendarFilterState;
@@ -21,6 +22,7 @@ export function AdminActiveFilterChips({
   amenities,
   availableResources = [],
 }: AdminActiveFilterChipsProps) {
+  const { t, hasKey } = useTranslation();
   const chips: Array<{ id: string; label: string; onRemove: () => void }> = [];
 
   // Search
@@ -121,9 +123,9 @@ export function AdminActiveFilterChips({
         <Pressable
           onPress={onClearAll}
           className="justify-center px-2 py-1 rounded-full bg-muted/70 active:bg-muted"
-          accessibilityLabel="Clear all filters"
+          accessibilityLabel={t('clear_all_filters', 'Clear all filters')}
         >
-          <Text className="text-[11px] font-bold text-destructive">Clear All</Text>
+          <Text className="text-[11px] font-bold text-destructive">{t('clear_all', 'Clear All')}</Text>
         </Pressable>
       </ScrollView>
     </View>

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColorScheme } from 'nativewind';
 import { Button } from './button';
 import { Text } from './text';
 import { cn } from '../../lib/utils';
@@ -33,9 +32,6 @@ export const ActionBar = React.forwardRef<View, ActionBarProps>(
     ref
   ) => {
     const insets = useSafeAreaInsets();
-    const { colorScheme } = useColorScheme();
-    const isDark = colorScheme === 'dark';
-
     const bottomPadding = Math.max(insets.bottom, 12);
 
     return (
@@ -86,7 +82,7 @@ export const ActionBar = React.forwardRef<View, ActionBarProps>(
             {primaryAction.loading ? (
               <ActivityIndicator
                 size="small"
-                color={isDark ? '#09090b' : '#ffffff'}
+                color="#ffffff"
                 className="mr-1"
               />
             ) : null}

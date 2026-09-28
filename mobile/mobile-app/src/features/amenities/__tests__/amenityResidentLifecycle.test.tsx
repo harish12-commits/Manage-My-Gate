@@ -644,7 +644,7 @@ describe('Phase 6C.4 — Final Resident Amenity Lifecycle Integration & Hardenin
       await render(
         <ResidentReservationDetailView reservation={refundPendingRes} accessPasses={[]} />
       );
-      expect(screen.getAllByText('REFUND_PENDING').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/REFUND_PENDING|Refund Pending/i).length).toBeGreaterThanOrEqual(1);
     });
   });
 

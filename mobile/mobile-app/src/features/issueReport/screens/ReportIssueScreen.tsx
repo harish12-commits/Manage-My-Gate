@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, ScrollView, Platform } from 'react-native';
+import { View, ScrollView, Platform, TouchableOpacity, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import { HelpCircle, Send } from 'lucide-react-native';
+import { HelpCircle, Send, Mail } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -182,12 +182,13 @@ export const ReportIssueScreen: React.FC = () => {
         {/* 8. Submit CTA Button */}
         <View className="pt-2">
           <Button
-            variant="primary"
+            variant="default"
             size="lg"
             loading={isSubmitting}
             disabled={isSubmitting}
             onPress={handleSubmit}
             leftIcon={Send}
+            className="w-full bg-emerald-600 active:bg-emerald-700 border-0"
             accessibilityLabel={t('submit_report', 'Submit Report')}
           >
             {isSubmitting
@@ -195,6 +196,42 @@ export const ReportIssueScreen: React.FC = () => {
               : t('submit_report', 'Submit Report')}
           </Button>
         </View>
+
+        {/* 9. Direct Developer Email Support Card */}
+        <Card className="bg-card border border-border/80 rounded-2xl p-4 shadow-xs mt-1">
+          <View className="flex-row items-center gap-3 mb-3">
+            <View className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 items-center justify-center shrink-0">
+              <Icon as={Mail} size={20} className="text-blue-600" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm font-bold text-foreground font-sans">
+                {t('contact_developer_title', 'Contact App Developer Directly')}
+              </Text>
+              <Text className="text-xs text-muted-foreground font-sans mt-0.5 leading-relaxed">
+                {t(
+                  'contact_developer_desc',
+                  'Experiencing a critical crash or issue? Email our engineering team directly.'
+                )}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              const subject = encodeURIComponent(`Nahom App Support & Issue Report [${feature || 'General'}]`);
+              const body = encodeURIComponent(`Hi Nahom Developer Team,\n\nI need assistance with an issue:\n\nFeature: ${feature || 'General'}\nType: ${reportType || 'Bug'}\nIssue Summary: ${title || ''}\nDescription: ${description || ''}\n\nDevice: ${Platform.OS}\nDate: ${new Date().toISOString()}`);
+              Linking.openURL(`mailto:developer@managemygate.com?subject=${subject}&body=${body}`);
+            }}
+            activeOpacity={0.8}
+            className="w-full py-2.5 px-4 rounded-xl bg-blue-500/10 border border-blue-500/30 flex-row items-center justify-center gap-2 active:bg-blue-500/20"
+            accessibilityRole="button"
+            accessibilityLabel="Email App Developer"
+          >
+            <Icon as={Mail} size={15} className="text-blue-600" />
+            <Text className="text-xs font-bold text-blue-600 font-sans">
+              Email Developer (developer@managemygate.com)
+            </Text>
+          </TouchableOpacity>
+        </Card>
       </View>
     </ScreenShell>
   );

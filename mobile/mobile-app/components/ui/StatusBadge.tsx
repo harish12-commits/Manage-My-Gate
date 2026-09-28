@@ -73,14 +73,34 @@ export const STATUS_VARIANT_MAP: Record<string, StatusVariant> = {
   UNPAID: 'danger',
   OVERDUE: 'critical',
   VERIFICATION_PENDING: 'warning',
+  PENDING_VERIFICATION: 'warning',
   CASH_PENDING: 'warning',
+  CASH_PAYMENT_PENDING: 'warning',
   PAY_AT_GATE: 'warning',
   CHECKING: 'info',
+  CHECKING_STATUS: 'info',
   PAYMENT_CHECKING: 'info',
+  PAYMENT_CONFIRMED: 'success',
   PARTIALLY_PAID: 'warning',
   FAILED: 'danger',
+  PAYMENT_FAILED: 'danger',
   CANCELLED: 'neutral',
+  PAYMENT_CANCELLED: 'neutral',
   REFUNDED: 'info',
+  REFUND_PENDING: 'warning',
+  REFUND_IN_PROGRESS: 'info',
+  SETTLED: 'success',
+  COMPLETED: 'success',
+  CONFIRMED: 'success',
+  CHECKED_IN: 'info',
+  NOT_REQUIRED: 'neutral',
+  FREE: 'success',
+  SUBMITTED: 'warning',
+  SUBMISSION_REJECTED: 'danger',
+  UNDER_REVIEW: 'warning',
+  REVERSED: 'neutral',
+  PROCESSING: 'info',
+  PAYMENT_DUE: 'warning',
   // Complaints status
   Open: 'info',
   Assigned: 'warning',
@@ -100,7 +120,9 @@ export const STATUS_VARIANT_MAP: Record<string, StatusVariant> = {
 };
 
 export function getStatusVariant(status: string): StatusVariant {
-  return STATUS_VARIANT_MAP[status] || 'neutral';
+  if (!status) return 'neutral';
+  const clean = String(status).toUpperCase().trim().replace(/[\s\/-]+/g, '_');
+  return STATUS_VARIANT_MAP[clean] || STATUS_VARIANT_MAP[status] || 'neutral';
 }
 
 const statusBadgeVariants = cva(

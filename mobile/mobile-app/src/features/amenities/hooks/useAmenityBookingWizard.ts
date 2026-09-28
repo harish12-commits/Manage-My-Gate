@@ -47,95 +47,15 @@ import {
   normalizeResourceFromApi,
 } from '../utils/amenityPayloadMappers';
 import amenityManagementService, { generateUUID } from '../services/amenityManagementService';
-import { createAmenityBooking } from '../services/amenityService';
 import paymentService from '../../payment/services/paymentService';
 import { RazorpayCheckoutOptions } from '../../billing/components/RazorpayCheckoutModal';
-import { isAmbiguousPaymentError } from '../../billing/hooks/useMobilePayment';
 import {
   createOperationId,
   buildAmenityBookingKey,
-  buildAmenityOrderKey,
-  buildAmenityVerifyKey,
   buildWalletOrderKey,
   buildWalletVerifyKey,
   buildAmenityConfirmKey,
-  buildAmenityPayAtGateKey,
 } from '../../../utils/idempotency';
-
-/**
- * Adapt canonical Phase 6 AmenityBooking document into UI-consumable AmenityReservation shape
- */
-const adaptBookingToReservation = (booking: any, facility: AmenityFacility): AmenityReservation => {
-  const pricing = booking?.pricingSnapshot || booking?.pricingDetails || {};
-  const totalAmount = Number(pricing.totalAmount ?? booking?.totalAmount ?? booking?.totalPrice ?? 0);
-  const resident = booking?.residentId || booking?.userId;
-  const unit = booking?.unitId || resident?.villaId;
-  const bStatus = String(booking?.status || 'CONFIRMED').toUpperCase();
-  const pStatus = (
-    booking?.paymentStatus === 'success' || booking?.paymentStatus === 'paid'
-      ? 'PAID'
-      : booking?.paymentStatus === 'free'
-      ? 'NOT_REQUIRED'
-      : booking?.paymentStatus || 'PENDING'
-  ).toUpperCase();
-
-  return {
-    _id: String(booking?._id || ''),
-    reservationNumber: booking?.bookingNumber || booking?.bookingId || String(booking?._id || ''),
-    bookingStatus: bStatus as any,
-    paymentStatus: pStatus as any,
-    approvalStatus: 'NOT_REQUIRED',
-    accessStatus: 'ACTIVE',
-    completionStatus: 'SCHEDULED',
-    facilityId: booking?.amenityId?._id || booking?.amenityId || facility._id,
-    resourceId: booking?.resourceId,
-    reservedBy: resident?._id || resident,
-    userName: resident?.fullName || resident?.name || [resident?.firstName, resident?.lastName].filter(Boolean).join(' ') || booking?.userName,
-    unitId: unit?.villaNumber || unit?.unitNumber || resident?.villaNumber || unit?._id || unit,
-    slotSelection: {
-      slotId: booking?.slotId || 'custom-slot',
-      date: booking?.bookingDate || booking?.date || '',
-      startTime: booking?.startTime || '',
-      endTime: booking?.endTime || '',
-      utcStartDateTime: booking?.bookingDate || booking?.date || '',
-      utcEndDateTime: booking?.bookingDate || booking?.date || '',
-    },
-    headcount: booking?.numberOfPersons || booking?.guestsCount || 1,
-    quantity: booking?.numberOfPersons || 1,
-    pricingSnapshot: {
-      baseRate: Number(pricing.baseAmount ?? pricing.baseRate ?? totalAmount),
-      totalAmount,
-      taxAmount: Number(pricing.taxAmount || 0),
-      discountAmount: 0,
-      depositAmount: Number(pricing.depositAmount || 0),
-      currency: pricing.currency || booking?.currency || 'INR',
-    },
-    paymentReference: booking?.paymentId,
-    notes: booking?.notes,
-    createdAt: booking?.createdAt || new Date().toISOString(),
-    updatedAt: booking?.updatedAt || new Date().toISOString(),
-  } as any;
-};
-
-/**
- * Adapt canonical Phase 6 AmenityBooking passes / tokens into UI-consumable AmenityAccessPass list
- */
-const adaptBookingToPasses = (booking: any): AmenityAccessPass[] => {
-  if (!booking?.passToken && !booking?.qrCode && !booking?._id) return [];
-  return [
-    {
-      _id: `pass-${booking._id}`,
-      reservationId: booking._id,
-      passCode: booking.passToken || booking.bookingNumber || booking._id,
-      qrData: booking.qrCode || `MMG:AMENITY:${booking.passToken || booking._id}`,
-      status: 'ACTIVE',
-      issuedAt: new Date().toISOString(),
-      validUntil: booking.bookingDate
-        ? new Date(`${booking.bookingDate}T${booking.endTime || '23:59'}:00`).toISOString()
-        : undefined,
-    } as any,
-  ];
-};
 
 export type WizardStepKey = 'resource' | 'datetime' | 'quantity' | 'review' | 'payment' | 'result';
 
@@ -230,7 +150,7 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
   const [bookingNotes, setBookingNotes] = useState<string>('');
 
   // Payment Selection
-  const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'RAZORPAY' | 'PAY_AT_GATE'>('WALLET');
+  const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'RAZORPAY'>('WALLET');
   const [paymentReference, setPaymentReference] = useState<string>('');
   const [isRazorpayConfigured, setIsRazorpayConfigured] = useState<boolean>(false);
 
@@ -267,7 +187,6 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
   const [canonicalReservation, setCanonicalReservation] = useState<AmenityReservation | null>(null);
   const [canonicalPasses, setCanonicalPasses] = useState<AmenityAccessPass[]>([]);
   const operationIdRef = useRef<string>(createOperationId());
-  const createdBookingRef = useRef<any>(null);
 
   // Live Hold Countdown derived from activeHold.expiresAt
   const [holdRemainingSeconds, setHoldRemainingSeconds] = useState<number>(0);
@@ -722,7 +641,8 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
       return;
     }
 
-    // 2. Paid Facility - Digital Wallet Flow (Phase 6 Canonical POST /amenity-bookings)
+    // 2. Paid Facility - Digital Wallet Flow. Confirm the existing V2 hold so
+    // the reservation, My Bookings list, and access-pass service share one record.
     if (paymentMethod === 'WALLET') {
       if (balance < totalAmount) {
         const currency = pricingSnapshot?.currency || 'INR';
@@ -733,32 +653,18 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
 
       setStepError(null);
       try {
-        const bookingDate = selectedDate;
-        const res: any = await createAmenityBooking({
-          amenityId: facility._id,
-          bookingDate,
-          startTime,
-          endTime,
-          numberOfPersons: headcount || quantity || 1,
+        const payload = mapConfirmFormToApiPayload({
+          holdId: activeHold._id,
           paymentMethod: 'WALLET',
+          notes: bookingNotes,
         });
+        const result = await dispatch(
+          confirmReservationThunk({ payload, idempotencyKey: buildAmenityConfirmKey(activeHold._id) })
+        ).unwrap();
 
-        const responseData = res?.data || res;
-        const booking = responseData?.booking || responseData;
-
-        // Clean up temporary hold to return hold inventory
-        if (activeHold?._id) {
-          dispatch(releaseHoldThunk(activeHold._id)).catch(() => {});
-        }
-
-        // Re-synchronize resident wallet balance with committed ledger state
         dispatch(fetchWalletBalance());
-
-        // Adapt canonical booking into reservation and passes for Result step
-        const adaptedRes = adaptBookingToReservation(booking, facility);
-        const adaptedPasses = adaptBookingToPasses(booking);
-        setCanonicalReservation(adaptedRes);
-        setCanonicalPasses(adaptedPasses);
+        setCanonicalReservation(result.reservation);
+        setCanonicalPasses(result.pass ? [result.pass] : []);
 
         const resultIdx = steps.findIndex((s) => s.key === 'result');
         if (resultIdx >= 0) {
@@ -776,146 +682,30 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
     if (paymentMethod === 'RAZORPAY') {
       setStepError(null);
       try {
-        const bookingDate = selectedDate;
-        const res: any = await createAmenityBooking({
-          amenityId: facility._id,
-          bookingDate,
-          startTime,
-          endTime,
-          numberOfPersons: headcount || quantity || 1,
-          paymentMethod: 'ONLINE',
-        });
-
-        const responseData = res?.data || res;
-        const booking = responseData?.booking || responseData;
-        const paymentIntent = responseData?.paymentIntent;
-
-        createdBookingRef.current = booking;
-
-        let keyId = paymentIntent?.razorpayKeyId;
-        let orderId = paymentIntent?.orderId;
-        let paymentId = paymentIntent?.paymentId;
-
-        // If backend did not auto-populate paymentIntent, create order via Unified Payment Core
-        if (!orderId && booking?._id) {
-          const orderRes = await paymentService.createPaymentOrder(
-            {
-              referenceId: booking._id,
-              referenceType: 'AmenityBooking',
-              amount: totalAmount,
-              currency: pricingSnapshot?.currency || 'INR',
-            },
-            buildAmenityOrderKey(booking._id, totalAmount, operationIdRef.current)
-          );
-          keyId = orderRes.razorpayKeyId;
-          orderId = orderRes.orderId;
-          paymentId = orderRes.paymentId;
+        if (!params?.paymentId) {
+          throw new Error('Secure payment verification is required before confirming this reservation.');
         }
-
-        if (!keyId) {
-          try {
-            const gwStatus = await paymentService.getGatewayStatus();
-            keyId = gwStatus.keyId;
-          } catch {}
-          keyId = keyId || process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '';
-        }
-
-        setRazorpayOptions({
-          razorpayKeyId: keyId,
-          orderId,
-          paymentId,
-          amount: totalAmount,
-          currency: pricingSnapshot?.currency || 'INR',
-          description: `Amenity Booking: ${facility.name}`,
-          customerName: 'Resident',
-          isWalletTopUp: false,
+        const payload = mapConfirmFormToApiPayload({
+          holdId: activeHold._id,
+          paymentMethod: 'RAZORPAY',
+          paymentId: params.paymentId,
+          notes: bookingNotes,
         });
-        setIsRazorpayOpen(true);
+        const result = await dispatch(
+          confirmReservationThunk({ payload, idempotencyKey: buildAmenityConfirmKey(activeHold._id) })
+        ).unwrap();
+        setCanonicalReservation(result.reservation);
+        setCanonicalPasses(result.pass ? [result.pass] : []);
+        const resultIdx = steps.findIndex((s) => s.key === 'result');
+        if (resultIdx >= 0) setCurrentStepIndex(resultIdx);
       } catch (err: any) {
         setStepError(
-          err?.response?.data?.message || err?.message || 'Failed to initiate online payment order.'
+          err?.response?.data?.message || err?.message || 'Failed to confirm online payment reservation.'
         );
       }
       return;
     }
 
-    // 4. Paid Facility - Pay-at-Gate / Cash Flow
-    if (paymentMethod === 'PAY_AT_GATE') {
-      setStepError(null);
-      const idempotencyKey = buildAmenityPayAtGateKey(operationIdRef.current);
-
-      // Persist active session before initiating mutation
-      await paymentService.saveActivePaymentSession({
-        operationId: operationIdRef.current,
-        referenceType: 'AmenityBooking',
-        referenceId: facility._id,
-        amount: totalAmount,
-        currency: pricingSnapshot?.currency || 'INR',
-        paymentMethod: 'PAY_AT_GATE',
-        status: 'SUBMITTING',
-        createdAt: new Date().toISOString(),
-      });
-
-      try {
-        const bookingDate = selectedDate;
-        const res: any = await createAmenityBooking(
-          {
-            amenityId: facility._id,
-            bookingDate,
-            startTime,
-            endTime,
-            numberOfPersons: headcount || quantity || 1,
-            paymentMethod: 'PAY_AT_GATE',
-          },
-          idempotencyKey
-        );
-
-        const responseData = res?.data || res;
-        const booking = responseData?.booking || responseData;
-
-        // CRITICAL HOLD RULE: Release temporary inventory hold ONLY after definitive successful booking creation
-        if (activeHold?._id) {
-          dispatch(releaseHoldThunk(activeHold._id)).catch(() => {});
-        }
-
-        // Clear active session upon definitive success
-        await paymentService.clearActivePaymentSession('AmenityBooking', facility._id);
-
-        // Adapt authoritative backend booking fields into reservation and passes
-        const adaptedRes = adaptBookingToReservation(booking, facility);
-        const adaptedPasses = adaptBookingToPasses(booking);
-        setCanonicalReservation(adaptedRes);
-        setCanonicalPasses(adaptedPasses);
-
-        const resultIdx = steps.findIndex((s) => s.key === 'result');
-        if (resultIdx >= 0) {
-          setCurrentStepIndex(resultIdx);
-        }
-      } catch (err: any) {
-        const isAmbiguous = isAmbiguousPaymentError(err);
-        if (isAmbiguous) {
-          // Ambiguous network interruption -> retain session in CHECKING, do NOT release hold on lost response
-          await paymentService.saveActivePaymentSession({
-            operationId: operationIdRef.current,
-            referenceType: 'AmenityBooking',
-            referenceId: facility._id,
-            amount: totalAmount,
-            currency: pricingSnapshot?.currency || 'INR',
-            paymentMethod: 'PAY_AT_GATE',
-            status: 'CHECKING',
-            createdAt: new Date().toISOString(),
-          });
-          setStepError('Booking creation response delayed. Please check your bookings in My Bookings.');
-        } else {
-          // Definitive failure
-          await paymentService.clearActivePaymentSession('AmenityBooking', facility._id);
-          setStepError(
-            err?.response?.data?.message || err?.message || 'Pay at Gate booking creation failed.'
-          );
-        }
-      }
-      return;
-    }
   }, [
     activeHold?._id,
     isHoldExpired,
@@ -1039,41 +829,26 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
       // Handle Amenity Booking Online Payment Verification
       setStepError(null);
       try {
-        const idempotencyKey = paymentId && orderId ? buildAmenityVerifyKey(paymentId, orderId) : undefined;
-        const verifyResult = await paymentService.verifyPaymentSignature(
+        const verifyResult = await amenityManagementService.verifyReservationPayment(
           {
             paymentId,
             orderId,
             razorpayPaymentId,
             razorpaySignature,
-          },
-          idempotencyKey
+          }
         );
 
-        const booking = verifyResult?.booking || verifyResult?.data?.booking || createdBookingRef.current;
-
-        // Clean up temporary hold
-        if (activeHold?._id) {
-          dispatch(releaseHoldThunk(activeHold._id)).catch(() => {});
-        }
-
-        // Adapt canonical verified booking to result view
-        const adaptedRes = adaptBookingToReservation(booking, facility);
-        const adaptedPasses = adaptBookingToPasses(booking);
-        setCanonicalReservation(adaptedRes);
-        setCanonicalPasses(adaptedPasses);
-
-        const resultIdx = steps.findIndex((s) => s.key === 'result');
-        if (resultIdx >= 0) {
-          setCurrentStepIndex(resultIdx);
-        }
+        const verifiedPaymentId =
+          verifyResult?.data?.paymentId ||
+          paymentId;
+        await completeReservation({ paymentMethod: 'RAZORPAY', paymentId: verifiedPaymentId });
       } catch (err: any) {
         setStepError(
           err?.response?.data?.message || err?.message || 'Payment signature could not be verified by backend.'
         );
       }
     },
-    [activeHold?._id, dispatch, facility, razorpayOptions, steps]
+    [completeReservation, razorpayOptions]
   );
 
   const handleRazorpayDismiss = useCallback(() => {
@@ -1122,7 +897,6 @@ export function useAmenityBookingWizard(facility: AmenityFacility) {
     setCanonicalReservation(null);
     setCanonicalPasses([]);
     setRazorpayOptions(null);
-    createdBookingRef.current = null;
     dispatch(resetV2BookingState());
     setCurrentStepIndex(0);
     setStepError(null);

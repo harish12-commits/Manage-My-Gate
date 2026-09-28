@@ -100,9 +100,9 @@ export function useNoticeBoard() {
   const canManage = checkPermission('notices:manage_notices') || isAdmin;
 
   // Thunk Dispatchers
-  const loadNotices = useCallback(() => {
+  const loadNotices = useCallback((params = {}) => {
     dispatch(loadCachedNotices());
-    dispatch(fetchNotices());
+    return dispatch(fetchNotices(params));
   }, [dispatch]);
 
   const loadNoticeById = useCallback((id) => {

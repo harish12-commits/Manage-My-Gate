@@ -21,7 +21,7 @@ export default function CabPassScreen() {
   };
 
   return (
-    <ScreenShell title="Cab & Taxi Pass" subtitle="Vehicle pre-clearance & gate pass">
+    <ScreenShell title="Cab & Taxi Pass" subtitle="Vehicle pre-clearance & gate pass" hideHeader hideBottomNav>
       <VisitorPassWizard
         initialType="CAB"
         roleContext={roleContext}

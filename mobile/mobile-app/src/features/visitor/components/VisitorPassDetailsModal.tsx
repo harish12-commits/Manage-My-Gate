@@ -60,10 +60,13 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
   const passCode = String(rawCode).replace(/^PASS-?/i, '').toUpperCase() || '849201';
   const rawType = ((pass as any).passType || (pass as any).type || 'GUEST').toUpperCase();
   const passTypeMeta = PASS_TYPE_META[rawType] || PASS_TYPE_META.GUEST;
+  const visitorDetails = (pass as any).visitorDetails || (pass as any).rawPass?.visitorDetails || {};
+  const visitorName = pass.visitorName || visitorDetails.name || 'Guest';
+  const phone = pass.phone || visitorDetails.phone || '';
 
   // Generate official Manage-My-Gate Barcode image URL
   const passIdVal = pass._id || (pass as any).id || '';
-  const barcodePayload = encodeAppBarcode(rawType, passCode, passIdVal, pass.visitorName || 'Guest');
+  const barcodePayload = encodeAppBarcode(rawType, passCode, passIdVal, visitorName);
   const barcodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=12&data=${encodeURIComponent(barcodePayload)}`;
 
   const destination =
@@ -111,7 +114,7 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
   const buildShareText = () => {
     return buildVisitorPassShareMessage({
       passCode,
-      visitorName: pass.visitorName || 'Guest',
+      visitorName,
       passTypeLabel: passTypeMeta.label,
       validUntil: pass.validUntil,
       destination,
@@ -142,7 +145,7 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
   const handleSendWhatsAppMessage = async () => {
     if (!passCode) return;
     const text = buildShareText();
-    const cleanPhone = pass.phone ? pass.phone.replace(/[^0-9]/g, '') : '';
+    const cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
 
     const nativeWhatsappUrl = cleanPhone
       ? `whatsapp://send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`
@@ -309,9 +312,9 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
           <VisitorQRCode
             code={passCode}
             passId={pass._id || (pass as any).id}
-            visitorName={pass.visitorName || 'Guest'}
+            visitorName={visitorName}
             type={rawType}
-            validityText={`Valid for ${pass.visitorName || 'Guest'}`}
+            validityText={`Valid for ${visitorName}`}
           />
         )}
 
@@ -326,8 +329,8 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
         {/* Detailed Attribute Rows */}
         <View className="bg-card border border-border rounded-xl p-3 gap-2">
           <DetailRow label="Invitation Type" value={passTypeMeta.label} />
-          <DetailRow label="Visitor Name" value={pass.visitorName || 'Guest'} />
-          <DetailRow label="Phone Number" value={pass.phone || 'Not provided'} />
+          <DetailRow label="Visitor Name" value={visitorName} />
+          <DetailRow label="Phone Number" value={phone || 'Not provided'} />
           {destination ? <DetailRow label="Destination Unit" value={destination} /> : null}
           {vehicleNo ? <DetailRow label="Vehicle Plate No" value={vehicleNo} /> : null}
           {provider ? <DetailRow label="Service / Provider" value={provider} /> : null}
@@ -356,7 +359,7 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
                 <Text className="text-sm font-bold text-destructive">Revoke Visitor Pass?</Text>
               </View>
               <Text className="text-xs text-muted-foreground">
-                {`This will immediately invalidate the entry pass for ${pass.visitorName || 'this visitor'}.`}
+                This will immediately invalidate the entry pass for {visitorName || 'this visitor'}.
               </Text>
               {revokeError ? (
                 <Text className="text-xs font-semibold text-destructive" accessibilityRole="alert">
@@ -371,7 +374,7 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
                     setRevokeConfirm(false);
                     setRevokeError(null);
                   }}
-                  className="flex-1"
+                  className="flex-1 h-11 rounded-xl"
                   disabled={revoking}
                 >
                   Cancel
@@ -381,12 +384,12 @@ export const VisitorPassDetailsModal: React.FC<VisitorPassDetailsModalProps> = (
                   size="sm"
                   onPress={handleConfirmRevoke}
                   disabled={revoking}
-                  className="flex-1 flex-row items-center justify-center gap-2"
+                  className="flex-1 h-11 rounded-xl flex-row items-center justify-center"
                 >
                   {revoking ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    'Revoke Pass'
+                    <Text className="text-sm font-bold text-destructive-foreground" numberOfLines={1}>Confirm Revoke</Text>
                   )}
                 </Button>
               </View>

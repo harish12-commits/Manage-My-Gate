@@ -10,7 +10,6 @@ import { PassTypeKey } from '../../mocks/visitorMocks';
 import { mapFormToApiPayloadStrategy, PassPayloadContext } from '../../utils/mapFormToApiPayloadStrategy';
 import { AdminPassSetupStep, AdminPassSetupData } from '../admin/AdminPassSetupStep';
 import { AlertCircle } from 'lucide-react-native';
-import { useBottomNavScroll } from '@/components/navigation/BottomNavScrollContext';
 
 // Step components
 import { GuestDetailsStep, GuestDetailsData } from '../guest/GuestDetailsStep';
@@ -106,8 +105,6 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [generatedPass, setGeneratedPass] = useState<GeneratedPassData | null>(null);
-  const { scrollHandlerProps } = useBottomNavScroll();
-
   const isAdmin = roleContext.role === 'ADMIN';
 
   const steps = useMemo(() => {
@@ -363,18 +360,23 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
         </View>
       )}
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="p-4 gap-4 pb-8"
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        {...scrollHandlerProps}
-      >
+      {/* Each step owns the only vertical scroller for its form. Avoiding an
+          outer ScrollView prevents nested-scroll traps and lets the shell move
+          the focused field above the keyboard. */}
+      <View className="flex-1">
         {isAdmin && currentStepIndex === 0 && (
-          <AdminPassSetupStep
-            data={adminScope}
-            onChange={setAdminScope}
-          />
+          <ScrollView
+            className="flex-1"
+            contentContainerClassName="p-4 pb-24"
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+          >
+            <AdminPassSetupStep
+              data={adminScope}
+              onChange={setAdminScope}
+            />
+          </ScrollView>
         )}
 
         {selectedPassType === 'GUEST' && (
@@ -485,7 +487,7 @@ export const VisitorPassWizard: React.FC<VisitorPassWizardProps> = ({
             )}
           </>
         )}
-      </ScrollView>
+      </View>
 
       <VisitorPassFlowFooter
         onBack={handleBack}

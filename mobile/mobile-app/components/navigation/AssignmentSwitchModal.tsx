@@ -66,7 +66,7 @@ export const AssignmentSwitchModal: React.FC<AssignmentSwitchModalProps> = ({
   }, [user]);
 
   const getAssignmentIcon = (type: string, isSelected: boolean) => {
-    const color = isSelected ? '#172B70' : '#a1a1aa';
+    const color = isSelected ? '#EA580C' : '#a1a1aa';
     const size = 18;
     switch (type?.toLowerCase()) {
       case 'gate':

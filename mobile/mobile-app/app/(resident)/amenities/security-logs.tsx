@@ -164,6 +164,7 @@ export default function AmenitySecurityLogsScreen() {
           }}
           onRefresh={loadData}
           loading={loading}
+          paginationSummary
           ListHeaderComponent={renderHeader()}
           emptyIcon="ClipboardList"
           emptyTitle="No Audit Logs Found"

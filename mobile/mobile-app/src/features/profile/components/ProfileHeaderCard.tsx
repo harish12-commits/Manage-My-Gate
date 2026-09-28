@@ -91,7 +91,11 @@ export const ProfileHeaderCard = ({
 
       <View className="pt-14 px-1 gap-3">
         <View className="flex-row items-center justify-between gap-3">
-          <Text className="flex-1 text-[25px] font-extrabold text-foreground tracking-tight" numberOfLines={1}>
+          <Text
+            className="flex-1 text-[26px] font-extrabold font-bold text-foreground tracking-tight"
+            style={{ fontWeight: 'bold' }}
+            numberOfLines={1}
+          >
             {name}
           </Text>
           <View className="flex-row items-center gap-2">

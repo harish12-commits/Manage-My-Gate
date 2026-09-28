@@ -44,7 +44,18 @@ export interface PhoneInputProps {
   onChangeText?: (fullPhoneNumber: string) => void;
   error?: string;
   placeholder?: string;
+  placeholderTextColor?: string;
   containerClassName?: string;
+  className?: string;
+  labelClassName?: string;
+  inputClassName?: string;
+  codeClassName?: string;
+  dividerClassName?: string;
+  chevronColor?: string;
+  showCount?: boolean;
+  helperContainerClassName?: string;
+  helperClassName?: string;
+  style?: any;
   helperText?: string;
 }
 
@@ -55,7 +66,18 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   onChangeText,
   error,
   placeholder = '99887 76655',
+  placeholderTextColor,
   containerClassName,
+  className,
+  labelClassName,
+  inputClassName,
+  codeClassName,
+  dividerClassName,
+  chevronColor,
+  showCount = false,
+  helperContainerClassName,
+  helperClassName,
+  style,
   helperText,
 }) => {
   const [selectedCountry, setSelectedCountry] = useState<CountryOption>(COUNTRIES[0]); // Default India +91
@@ -112,13 +134,13 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
     <View className={cn('w-full', containerClassName)}>
       {Boolean(label) && (
         <View className="flex-row items-center justify-between mb-1.5">
-          <Text className="text-sm font-medium text-foreground">
+          <Text className={cn('text-sm font-medium text-foreground', labelClassName)}>
             {label}
             {required && !label?.includes('*') && (
               <Text className="text-destructive font-bold"> *</Text>
             )}
           </Text>
-          {currentLength > 0 && (
+          {showCount && currentLength > 0 && (
             <View className="flex-row items-center gap-1">
               {isComplete ? (
                 <View className="flex-row items-center gap-1">
@@ -143,38 +165,67 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           isFocused && !error && 'border-primary ring-2 ring-primary/20',
           isIncomplete && !error && 'border-amber-500/80 bg-amber-500/5',
           isComplete && !error && 'border-emerald-500/80 bg-emerald-500/5',
-          Boolean(error) && 'border-destructive bg-destructive/5 ring-1 ring-destructive/20'
+          Boolean(error) && 'border-destructive bg-destructive/5 ring-1 ring-destructive/20',
+          className
         )}
       >
         {/* Country Picker Trigger */}
         <TouchableOpacity
           onPress={() => setIsPickerVisible(true)}
-          className="flex-row items-center me-2.5 pe-2.5 border-e border-border/80"
+          className={cn("flex-row items-center me-2.5 pe-2.5 border-e border-border/80", dividerClassName)}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={`Selected country ${selectedCountry.name}, dial code ${selectedCountry.dialCode}. Tap to change.`}
         >
           <Text className="text-base me-1">{selectedCountry.flag}</Text>
-          <Text className="text-xs font-bold text-foreground me-1">
+          <Text className={cn('text-xs font-bold text-foreground me-1', codeClassName)}>
             {selectedCountry.dialCode}
           </Text>
-          <ChevronDown size={14} className="text-muted-foreground" />
+          <ChevronDown
+            size={14}
+            color={chevronColor || undefined}
+            className={chevronColor ? undefined : 'text-muted-foreground'}
+          />
         </TouchableOpacity>
 
         {/* National Number Input */}
-        <RNTextInput
-          className="flex-1 text-sm font-sans text-foreground self-stretch min-h-[44px] py-3"
-          style={{ outlineStyle: 'none' } as any}
-          keyboardType="phone-pad"
-          placeholder={placeholder}
-          placeholderTextColor="#737c88"
-          value={nationalNumber}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onChangeText={handleNumberChange}
-          maxLength={selectedCountry.digitsLength}
-          accessibilityLabel={label}
-        />
+        {(() => {
+          const hasFontFamily = Boolean(
+            inputClassName &&
+              (inputClassName.includes('font-sans') ||
+                inputClassName.includes('font-medium') ||
+                inputClassName.includes('font-semibold') ||
+                inputClassName.includes('font-bold') ||
+                inputClassName.includes('font-mono'))
+          );
+          return (
+            <RNTextInput
+              className={cn(
+                'flex-1 text-sm text-foreground self-stretch min-h-[44px] py-3 outline-none focus:outline-none focus-visible:outline-none',
+                !hasFontFamily && 'font-sans',
+                inputClassName
+              )}
+              style={[
+                {
+                  outline: 'none',
+                  outlineStyle: 'none',
+                  outlineWidth: 0,
+                  outlineColor: 'transparent',
+                } as any,
+                style,
+              ]}
+              keyboardType="phone-pad"
+              placeholder={placeholder}
+              placeholderTextColor={placeholderTextColor || '#737c88'}
+              value={nationalNumber}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              onChangeText={handleNumberChange}
+              maxLength={selectedCountry.digitsLength}
+              accessibilityLabel={label}
+            />
+          );
+        })()}
 
         {isComplete && !error && (
           <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 ms-2" />
@@ -189,9 +240,11 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
       )}
 
       {!error && isIncomplete && (
-        <Text className="mt-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium ms-1">
-          Enter {selectedCountry.digitsLength - currentLength} more digit{selectedCountry.digitsLength - currentLength > 1 ? 's' : ''} to complete.
-        </Text>
+        <View className={cn('flex-row items-center mt-1.5 ms-1 gap-1', helperContainerClassName)}>
+          <Text className={cn('text-[11px] text-amber-600 dark:text-amber-400 font-medium', helperClassName)}>
+            Enter {selectedCountry.digitsLength - currentLength} more digit{selectedCountry.digitsLength - currentLength > 1 ? 's' : ''} to complete.
+          </Text>
+        </View>
       )}
 
       {!error && !isIncomplete && Boolean(helperText) && (

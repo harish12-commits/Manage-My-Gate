@@ -129,7 +129,7 @@ export default function UserManagementScreen() {
 
   // Pagination Footer Component
   const renderPaginationFooter = () => {
-    if (totalRecords === 0) return null;
+    if (totalRecords === 0 || totalPages <= 1) return null;
 
     return (
       <View className="mt-3 pt-2.5 border-t border-border/40">
@@ -219,19 +219,6 @@ export default function UserManagementScreen() {
             accessibilityLabel="View Invitations"
           >
             <Mail size={16} className="text-foreground" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowFilterSheet(true)}
-            className="p-2 rounded-xl bg-secondary border border-border flex-row items-center active:opacity-75"
-            accessibilityRole="button"
-            accessibilityLabel="Filter users"
-          >
-            <Filter size={16} className="text-foreground" />
-            {activeFilterCount > 0 ? (
-              <View className="bg-primary px-1.5 py-0.5 rounded-full ms-1">
-                <Text className="text-[10px] font-bold text-primary-foreground">{activeFilterCount}</Text>
-              </View>
-            ) : null}
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setShowInviteModal(true)}

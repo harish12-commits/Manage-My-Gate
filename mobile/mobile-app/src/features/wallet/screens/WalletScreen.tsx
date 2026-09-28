@@ -20,9 +20,11 @@ import { useBillingSocket } from '@/src/features/billing/hooks/useBillingSocket'
 import { RazorpayCheckoutModal } from '@/src/features/billing/components/RazorpayCheckoutModal';
 import { WalletHeroCard } from '../components/WalletHeroCard';
 import { FinancialTransactionCard } from '@/src/features/billing/components/FinancialTransactionCard';
+import { useTranslation } from '@/src/utils/i18n';
 
 export function WalletScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
 
   const walletState = useSelector((state: RootState) => state.wallet);
@@ -341,14 +343,14 @@ export function WalletScreen() {
 
               {/* Expected Balance Preview */}
               <View className="bg-muted/40 border border-border/60 rounded-xl p-3.5 flex-row items-center justify-between">
-                <View>
-                  <Text className="text-xs text-muted-foreground">Top-Up Amount</Text>
+                <View className="flex-1 min-w-0 me-2">
+                  <Text className="text-xs text-muted-foreground" numberOfLines={1}>{t('top_up_amount', 'Top-Up Amount')}</Text>
                   <Text className="text-base font-extrabold text-status-success">
                     + ₹{topUpAmount.toLocaleString('en-IN')}
                   </Text>
                 </View>
-                <View className="items-end">
-                  <Text className="text-xs text-muted-foreground">Balance After Top-Up</Text>
+                <View className="items-end shrink-0">
+                  <Text className="text-xs text-muted-foreground" numberOfLines={1}>{t('balance_after_top_up', 'Balance After Top-Up')}</Text>
                   <Text className="text-base font-bold text-foreground">
                     ₹{expectedBalance.toLocaleString('en-IN')}
                   </Text>
@@ -366,12 +368,12 @@ export function WalletScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Proceed to Top-Up ₹${topUpAmount.toLocaleString('en-IN')} via Razorpay`}
               >
-                <Text className="font-bold text-base text-primary-foreground me-1">
+                <Text className="font-bold text-base text-primary-foreground me-1" numberOfLines={1}>
                   {isGatewayReady
-                    ? `Proceed to Top-Up • ₹${topUpAmount.toLocaleString('en-IN')}`
-                    : 'Gateway Not Configured'}
+                    ? `${t('proceed_to_top_up', 'Proceed to Top-Up')} • ₹${topUpAmount.toLocaleString('en-IN')}`
+                    : t('gateway_not_configured', 'Gateway Not Configured')}
                 </Text>
-                {isGatewayReady ? <Icon as={ChevronRight} size={18} className="text-primary-foreground" /> : null}
+                {isGatewayReady ? <Icon as={ChevronRight} size={18} className="text-primary-foreground shrink-0" /> : null}
               </Button>
             </View>
           </KeyboardAvoidingView>
@@ -381,13 +383,13 @@ export function WalletScreen() {
         <BottomSheet
           visible={showRefundSheet}
           onClose={closeRefundSheet}
-          title="Refund Wallet Balance"
+          title={t('refund_wallet_balance', 'Refund Wallet Balance')}
         >
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="w-full">
             <View className="py-2 gap-4">
               {refundErrorMessage ? (
                 <ErrorBanner
-                  title="Refund Unavailable"
+                  title={t('refund_unavailable', 'Refund Unavailable')}
                   message={refundErrorMessage}
                   onDismiss={() => setRefundErrorMessage(null)}
                 />
@@ -396,25 +398,25 @@ export function WalletScreen() {
               <View className="bg-primary/10 border border-primary/20 rounded-2xl p-3.5 flex-row items-start">
                 <Icon as={RotateCcw} size={18} className="text-primary mt-0.5 me-2.5 shrink-0" />
                 <View className="flex-1">
-                  <Text className="font-bold text-sm text-foreground mb-1">Refund to your paid account</Text>
+                  <Text className="font-bold text-sm text-foreground mb-1">{t('refund_to_paid_account', 'Refund to your paid account')}</Text>
                   <Text className="text-xs leading-5 text-muted-foreground">
-                    Refunds go only to the original UPI or card account used for the selected wallet top-up. Minimum refund: ₹{minimumRefundAmount}.
+                    {t('refund_policy_notice', `Refunds go only to the original UPI or card account used for the selected wallet top-up. Minimum refund: ₹${minimumRefundAmount}.`)}
                   </Text>
                 </View>
               </View>
 
               <View className="bg-muted/40 border border-border/60 rounded-xl p-3 flex-row items-center justify-between">
-                <Text className="text-xs text-muted-foreground">Available to refund now</Text>
-                <Text className="text-base font-extrabold text-foreground">₹{refundEligibleBalance.toLocaleString('en-IN')}</Text>
+                <Text className="text-xs text-muted-foreground flex-1 min-w-0 me-2" numberOfLines={1}>{t('available_to_refund_now', 'Available to refund now')}</Text>
+                <Text className="text-base font-extrabold text-foreground shrink-0">₹{refundEligibleBalance.toLocaleString('en-IN')}</Text>
               </View>
 
               <View className="gap-2">
-                <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Choose original top-up</Text>
+                <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('choose_original_top_up', 'Choose original top-up')}</Text>
                 {refundableSources.map((source) => {
                   const isSelected = selectedRefundPaymentId === source.paymentId;
                   const paidDate = source.paidAt
                     ? new Date(source.paidAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : 'Verified top-up';
+                    : t('verified_top_up', 'Verified top-up');
                   return (
                     <Button
                       key={source.paymentId}
@@ -425,11 +427,11 @@ export function WalletScreen() {
                       accessibilityLabel={`Select wallet top-up of ₹${source.availableAmount.toLocaleString('en-IN')}`}
                     >
                       <View className="flex-1 items-start">
-                        <Text className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-foreground'}`}>
-                          Wallet top-up • ₹{source.availableAmount.toLocaleString('en-IN')}
+                        <Text className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-foreground'}`} numberOfLines={1}>
+                          {t('wallet_top_up', 'Wallet top-up')} • ₹{source.availableAmount.toLocaleString('en-IN')}
                         </Text>
-                        <Text className={`text-xs mt-0.5 ${isSelected ? 'text-white/75' : 'text-muted-foreground'}`}>
-                          {paidDate} • Original payment account
+                        <Text className={`text-xs mt-0.5 ${isSelected ? 'text-white/75' : 'text-muted-foreground'}`} numberOfLines={1}>
+                          {paidDate} • {t('original_payment_account', 'Original payment account')}
                         </Text>
                       </View>
                     </Button>
@@ -438,7 +440,7 @@ export function WalletScreen() {
               </View>
 
               <TextInput
-                label="Refund amount (₹)"
+                label={t('refund_amount_inr', 'Refund amount (₹)')}
                 value={refundAmountStr}
                 onChangeText={setRefundAmountStr}
                 placeholder={`Enter ₹${minimumRefundAmount} to ₹${selectedRefundMaximum.toLocaleString('en-IN')}`}
@@ -458,7 +460,7 @@ export function WalletScreen() {
                 accessibilityLabel={`Refund ₹${refundAmount || 0} to original payment account`}
               >
                 <Text className="font-bold text-base text-white">
-                  {isProcessingRefund ? 'Starting Refund…' : 'Refund to Paid Account'}
+                  {isProcessingRefund ? t('starting_refund', 'Starting Refund…') : t('refund_to_paid_account', 'Refund to Paid Account')}
                 </Text>
               </Button>
             </View>
@@ -472,20 +474,20 @@ export function WalletScreen() {
           onSuccess={handleWalletRazorpaySuccess}
           onDismiss={(reason) => {
             setRazorpayOptions(null);
-            Alert.alert('Top-Up Cancelled', reason || 'Wallet top-up was cancelled by user.');
+            Alert.alert(t('top_up_cancelled', 'Top-Up Cancelled'), reason || 'Wallet top-up was cancelled by user.');
           }}
           onError={(err) => {
             setRazorpayOptions(null);
-            Alert.alert('Top-Up Error', err.description || 'Razorpay checkout encountered an error.');
+            Alert.alert(t('top_up_error', 'Top-Up Error'), err.description || 'Razorpay checkout encountered an error.');
           }}
         />
 
         <ConfirmationModal
           visible={showRefundConfirmation && !showRefundSheet}
-          title="Confirm Wallet Refund"
+          title={t('confirm_wallet_refund', 'Confirm Wallet Refund')}
           message={`Refund ₹${refundAmount.toLocaleString('en-IN')} to the original UPI or card account used for this wallet top-up? This cannot be undone after Razorpay accepts it.`}
-          confirmLabel={`Refund ₹${refundAmount.toLocaleString('en-IN')}`}
-          cancelLabel="Keep Balance"
+          confirmLabel={`${t('refund', 'Refund')} ₹${refundAmount.toLocaleString('en-IN')}`}
+          cancelLabel={t('keep_balance', 'Keep Balance')}
           variant="warning"
           loading={isProcessingRefund}
           onConfirm={executeWalletRefund}
@@ -497,10 +499,10 @@ export function WalletScreen() {
 
         <ConfirmationModal
           visible={Boolean(refundSuccessMessage)}
-          title="Refund Initiated"
+          title={t('refund_initiated', 'Refund Initiated')}
           message={refundSuccessMessage || ''}
-          confirmLabel="Done"
-          cancelLabel="Close"
+          confirmLabel={t('done', 'Done')}
+          cancelLabel={t('close', 'Close')}
           variant="success"
           onConfirm={() => setRefundSuccessMessage(null)}
           onCancel={() => setRefundSuccessMessage(null)}

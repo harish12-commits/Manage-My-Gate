@@ -6,6 +6,7 @@ import { TextInput } from '@/components/forms/TextInput';
 import { DropdownSelect } from '@/components/forms/DropdownSelect';
 import { Button } from '@/components/common/Button';
 import { Text } from '@/components/ui/text';
+import { useTranslation } from '@/src/utils/i18n';
 
 /**
  * CreatePollModal Component (Pure JSX)
@@ -24,6 +25,7 @@ export function CreatePollModal({
   onSubmit,
   loading = false,
 }) {
+  const { t } = useTranslation();
   const [question, setQuestion] = useState('');
   const [description, setDescription] = useState('');
   const [options, setOptions] = useState(['', '']);
@@ -115,27 +117,27 @@ export function CreatePollModal({
   };
 
   const choiceTypeOptions = [
-    { label: 'Single Choice (1 Option)', value: 'SINGLE_CHOICE' },
-    { label: 'Multiple Choice (Select Multiple)', value: 'MULTIPLE_CHOICE' },
+    { label: `${t('single_choice', 'Single Choice')} (1 Option)`, value: 'SINGLE_CHOICE' },
+    { label: `${t('multiple_choice', 'Multiple Choice')} (Select Multiple)`, value: 'MULTIPLE_CHOICE' },
   ];
 
   const votingModeOptions = [
-    { label: 'One Vote per Registered User', value: 'ONE_PER_USER' },
-    { label: 'One Vote per Unit / Villa', value: 'ONE_PER_UNIT' },
+    { label: t('one_vote_per_person', 'One Vote per Registered User'), value: 'ONE_PER_USER' },
+    { label: t('one_vote_per_unit', 'One Vote per Unit / Villa'), value: 'ONE_PER_UNIT' },
   ];
 
   const resultsVisibilityOptions = [
-    { label: 'Always Visible (Live)', value: 'ALWAYS' },
-    { label: 'Visible After Voting', value: 'AFTER_VOTE' },
-    { label: 'Visible After Expiry / Close', value: 'AFTER_EXPIRY' },
-    { label: 'Admin Only', value: 'ADMIN_ONLY' },
+    { label: t('live_always', 'Always Visible (Live)'), value: 'ALWAYS' },
+    { label: t('after_voting', 'Visible After Voting'), value: 'AFTER_VOTE' },
+    { label: t('after_poll_closes', 'Visible After Expiry / Close'), value: 'AFTER_EXPIRY' },
+    { label: t('admin_only', 'Admin Only'), value: 'ADMIN_ONLY' },
   ];
 
   return (
     <BottomSheet
       visible={visible}
       onClose={onClose}
-      title="Create Community Poll"
+      title={t('create_community_poll', 'Create Community Poll')}
     >
       <View className="py-2">
         {/* Validation error */}
@@ -148,7 +150,7 @@ export function CreatePollModal({
         {/* Question Input */}
         <View className="mb-3">
           <TextInput
-            label="Question *"
+            label={`${t('question', 'Question')} *`}
             placeholder="e.g. Should we renovate the clubhouse pool?"
             value={question}
             onChangeText={(t) => {
@@ -161,7 +163,7 @@ export function CreatePollModal({
         {/* Description Input */}
         <View className="mb-3">
           <TextInput
-            label="Description (Optional)"
+            label={`${t('description', 'Description')} (${t('optional', 'Optional')})`}
             placeholder="Provide context or budget constraints..."
             value={description}
             onChangeText={setDescription}
@@ -174,7 +176,7 @@ export function CreatePollModal({
         <View className="mb-4">
           <View className="flex-row items-center justify-between mb-1.5">
             <Text className="text-sm font-medium text-foreground">
-              Poll Options (2 to 10) *
+              {t('poll_options', 'Poll Options')} (2 to 10) *
             </Text>
             {options.length < 10 && (
               <TouchableOpacity
@@ -184,7 +186,7 @@ export function CreatePollModal({
                 accessibilityLabel="Add Option"
               >
                 <Plus size={14} color="#2563eb" />
-                <Text className="text-xs font-semibold text-primary">Add Option</Text>
+                <Text className="text-xs font-semibold text-primary">{t('add_option', 'Add Option')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -194,7 +196,7 @@ export function CreatePollModal({
               <View key={index} className="flex-row items-center gap-2">
                 <View className="flex-1">
                   <TextInput
-                    placeholder={`Option ${index + 1}`}
+                    placeholder={`${t('option', 'Option')} ${index + 1}`}
                     value={opt}
                     onChangeText={(t) => handleOptionChange(t, index)}
                   />
@@ -217,7 +219,7 @@ export function CreatePollModal({
         {/* Choice Type Dropdown */}
         <View className="mb-3">
           <DropdownSelect
-            label="Ballot Selection Type"
+            label={t('ballot_selection_type', 'Ballot Selection Type')}
             options={choiceTypeOptions}
             value={choiceType}
             onValueChange={setChoiceType}
@@ -228,7 +230,7 @@ export function CreatePollModal({
         {choiceType === 'MULTIPLE_CHOICE' && (
           <View className="mb-3">
             <TextInput
-              label="Maximum Selectable Choices"
+              label={t('maximum_selectable_choices', 'Maximum Selectable Choices')}
               placeholder="e.g. 2"
               keyboardType="number-pad"
               value={maxChoices}
@@ -240,7 +242,7 @@ export function CreatePollModal({
         {/* Voting Mode */}
         <View className="mb-3">
           <DropdownSelect
-            label="Voting Governance Mode"
+            label={t('voting_governance_mode', 'Voting Governance Mode')}
             options={votingModeOptions}
             value={votingMode}
             onValueChange={setVotingMode}
@@ -250,7 +252,7 @@ export function CreatePollModal({
         {/* Results Visibility */}
         <View className="mb-3">
           <DropdownSelect
-            label="Results Visibility Policy"
+            label={t('results_visibility_policy', 'Results Visibility Policy')}
             options={resultsVisibilityOptions}
             value={resultsVisibility}
             onValueChange={setResultsVisibility}
@@ -260,7 +262,7 @@ export function CreatePollModal({
         {/* Quorum Percentage Input */}
         <View className="mb-3">
           <TextInput
-            label="Quorum Percentage Requirement (0-100%)"
+            label={t('quorum_percentage_requirement', 'Quorum Percentage Requirement (0-100%)')}
             placeholder="0 for no quorum"
             keyboardType="number-pad"
             value={quorumPercentage}
@@ -275,9 +277,9 @@ export function CreatePollModal({
           className="flex-row items-center justify-between p-3.5 rounded-xl border border-border bg-card mb-5"
         >
           <View className="flex-1 me-3">
-            <Text className="text-sm font-bold text-foreground">Anonymous Ballot</Text>
+            <Text className="text-sm font-bold text-foreground">{t('anonymous_ballot', 'Anonymous Ballot')}</Text>
             <Text className="text-xs text-muted-foreground">
-              Voter identities and choice selections remain encrypted & concealed
+              {t('anonymous_voting_desc', 'Voter identities and choice selections remain encrypted & concealed')}
             </Text>
           </View>
           <View
@@ -297,15 +299,15 @@ export function CreatePollModal({
             onPress={onClose}
             disabled={loading}
           >
-            Cancel
+            <Text className="font-bold text-foreground text-xs">{t('cancel', 'Cancel')}</Text>
           </Button>
           <Button
-            variant="default"
+            variant="success"
             className="flex-1"
             onPress={handleSubmit}
             loading={loading}
           >
-            Create Poll
+            <Text className="font-bold text-white text-xs">{t('create_poll', 'Create Poll')}</Text>
           </Button>
         </View>
       </View>

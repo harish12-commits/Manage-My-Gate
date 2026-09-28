@@ -116,11 +116,11 @@ export const AmenityMasterCard: React.FC<AmenityMasterCardProps> = ({
           )}
 
           {/* Top Badges Row */}
-          <View className="absolute top-3 inset-x-3 flex-row justify-between items-center z-10">
+          <View className="absolute top-3 inset-x-3 flex-row justify-between items-center gap-2 z-10">
             {/* Canonical Archetype Pill */}
-            <View className="bg-black/75 px-3 py-1 rounded-full flex-row items-center gap-1.5 border border-white/20 shadow-xs">
+            <View className="flex-1 min-w-0 bg-black/75 px-3 py-1 rounded-full flex-row items-center gap-1.5 border border-white/20 shadow-xs">
               {renderArchetypeIcon()}
-              <Text className="text-xs font-bold text-white uppercase tracking-wider">
+              <Text className="flex-1 min-w-0 text-xs font-bold text-white uppercase tracking-wider" numberOfLines={1}>
                 {translateText(archetypeMeta.label)}
               </Text>
             </View>
@@ -130,6 +130,7 @@ export const AmenityMasterCard: React.FC<AmenityMasterCardProps> = ({
               label={translateText(statusMeta.label)}
               variant={statusMeta.variant}
               dot={statusMeta.pulseDot}
+              className="shrink-0"
             />
           </View>
 

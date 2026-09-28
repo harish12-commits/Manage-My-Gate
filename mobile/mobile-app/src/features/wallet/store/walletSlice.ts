@@ -167,7 +167,20 @@ export const walletSlice = createSlice({
           const isAppend = (action.payload.requestedParams?.page || 1) > 1;
 
           if (isAppend) {
-            state.transactionHistory = [...(state.transactionHistory || []), ...newHistory];
+            const seen = new Set(
+              (state.transactionHistory || []).map((transaction: any) =>
+                String(transaction._id || transaction.id || transaction.transactionId || '')
+              )
+            );
+            state.transactionHistory = [
+              ...(state.transactionHistory || []),
+              ...newHistory.filter((transaction: any) => {
+                const id = String(transaction._id || transaction.id || transaction.transactionId || '');
+                if (!id || seen.has(id)) return false;
+                seen.add(id);
+                return true;
+              }),
+            ];
           } else {
             state.transactionHistory = newHistory.length > 0 ? newHistory : history;
           }

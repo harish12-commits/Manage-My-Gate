@@ -28,7 +28,9 @@ export function PollResultsView({ poll, results }) {
     <View className="bg-card rounded-2xl border border-border p-4 mb-4 shadow-sm">
       {/* Header */}
       <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-base font-bold text-foreground">Results Breakdown</Text>
+        <Text className="text-base font-bold text-foreground flex-1 min-w-0 me-2" numberOfLines={1}>
+          {t('results_breakdown', 'Results Breakdown')}
+        </Text>
         <StatusBadge
           label={`${totalVotes} total ${totalVotes === 1 ? 'vote' : 'votes'}`}
           variant="info"
@@ -100,17 +102,17 @@ export function PollResultsView({ poll, results }) {
             return (
               <View key={opt._id || index} className="gap-1">
                 <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-1.5 flex-1 me-2">
-                    {isWinner && <Trophy size={14} color="#eab308" />}
+                  <View className="flex-row items-center gap-1.5 flex-1 me-2 min-w-0">
+                    {isWinner && <Trophy size={14} color="#eab308" className="shrink-0" />}
                     {isVoted && (
-                      <View className="bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                      <View className="bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-500/30 shrink-0">
                         <Text className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                          Your Vote
+                          {t('your_vote', 'Your Vote')}
                         </Text>
                       </View>
                     )}
                     <Text
-                      className={`text-sm ${
+                      className={`text-sm flex-1 ${
                         isVoted
                           ? 'font-bold text-emerald-600 dark:text-emerald-400'
                           : isWinner
@@ -122,7 +124,7 @@ export function PollResultsView({ poll, results }) {
                     </Text>
                   </View>
                   <Text
-                    className={`text-xs font-bold ${
+                    className={`text-xs font-bold shrink-0 ${
                       isVoted ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
                     }`}
                   >

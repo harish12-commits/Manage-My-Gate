@@ -249,6 +249,7 @@ function AdminGateLogsContent() {
             limit: pagination.limit,
           }}
           onLoadMore={handleLoadMore}
+          paginationSummary
           onRefresh={handleRefresh}
           refreshing={refreshing}
           loading={status === 'loading' && !refreshing && !loadingMore && gateLogs.length === 0}

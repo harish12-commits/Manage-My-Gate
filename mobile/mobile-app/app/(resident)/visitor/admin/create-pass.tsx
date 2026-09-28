@@ -41,6 +41,7 @@ export default function AdminCreatePassScreen() {
     <ScreenShell
       title="Admin Pass Creation"
       subtitle="Issue visitor pass on behalf of villa or community event"
+      hideHeader
       hideBottomNav={true}
     >
       <View className="flex-1 bg-background">
@@ -54,16 +55,19 @@ export default function AdminCreatePassScreen() {
           adminScope={adminScope}
           onAdminScopeChange={setAdminScope}
           renderExtraStepHeader={() => (
-            <View className="px-4 py-2.5 bg-muted/40 border-b border-border flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2">
-                <Building2 size={16} className="text-primary" />
-                <Text className="text-xs font-semibold text-muted-foreground">Target Destination:</Text>
-                <Text className="text-xs font-bold text-foreground">{targetVillaName}</Text>
+            <View className="px-4 py-2 bg-muted/40 border-b border-border flex-row items-center gap-2">
+              <View className="flex-1 min-w-0 flex-row items-center gap-1.5">
+                <Building2 size={16} className="text-primary shrink-0" />
+                <Text className="text-xs font-semibold text-muted-foreground shrink-0">Target:</Text>
+                <Text className="flex-1 min-w-0 text-xs font-bold text-foreground" numberOfLines={1} ellipsizeMode="tail">
+                  {targetVillaName}
+                </Text>
               </View>
               <TouchableOpacity
                 onPress={() => setVillaSheetOpen(true)}
                 activeOpacity={0.7}
-                className="flex-row items-center gap-1 bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20"
+                hitSlop={6}
+                className="shrink-0 h-10 flex-row items-center justify-center gap-1 bg-primary/10 px-3 rounded-xl border border-primary/20"
                 accessibilityRole="button"
                 accessibilityLabel="Change target destination"
               >

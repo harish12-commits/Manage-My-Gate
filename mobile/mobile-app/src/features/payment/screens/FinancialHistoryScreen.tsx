@@ -7,8 +7,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, FlatList, RefreshControl } from 'react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
-import { TabBar } from '@/components/ui/TabBar';
-import { TextInput } from '@/components/forms/TextInput';
+import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { useFinancialHistory } from '../hooks/useFinancialHistory';
@@ -19,9 +18,11 @@ import { FinancialHistoryDetailModal } from '../components/FinancialHistoryDetai
 import { FinancialRecoveryBanner } from '../components/FinancialRecoveryBanner';
 import { FinancialSupportModal } from '../components/FinancialSupportModal';
 import { PaymentReceiptModal } from '../../billing/components/PaymentReceiptModal';
-import { Search, AlertCircle, Receipt } from 'lucide-react-native';
+import { useTranslation } from '@/src/utils/i18n';
+import { Layers, CreditCard, Receipt, Calendar, Wallet, RotateCcw, AlertCircle, Search } from 'lucide-react-native';
 
 export function FinancialHistoryScreen() {
+  const { t } = useTranslation();
   const {
     filteredItems,
     isLoading,
@@ -50,17 +51,16 @@ export function FinancialHistoryScreen() {
 
   const [activeReceiptInvoice, setActiveReceiptInvoice] = useState<any | null>(null);
 
-  // Filter tab configuration
-  const filterTabs = useMemo(
+  const sortOptions = useMemo(
     () => [
-      { key: 'ALL', label: 'All' },
-      { key: 'PAYMENTS', label: 'Payments' },
-      { key: 'INVOICES', label: 'Invoices' },
-      { key: 'AMENITIES', label: 'Amenities' },
-      { key: 'WALLET', label: 'Wallet' },
-      { key: 'REFUNDS', label: 'Refunds' },
+      { label: t('all', 'All'), value: 'ALL', icon: Layers },
+      { label: t('payments', 'Payments'), value: 'PAYMENTS', icon: CreditCard },
+      { label: t('invoices', 'Invoices'), value: 'INVOICES', icon: Receipt },
+      { label: t('amenities', 'Amenities'), value: 'AMENITIES', icon: Calendar },
+      { label: t('wallet', 'Wallet'), value: 'WALLET', icon: Wallet },
+      { label: t('refunds', 'Refunds'), value: 'REFUNDS', icon: RotateCcw },
     ],
-    []
+    [t]
   );
 
   const handleOpenReceipt = (invoice: any) => {
@@ -68,24 +68,26 @@ export function FinancialHistoryScreen() {
   };
 
   const renderHeader = () => (
-    <View className="gap-3 mb-3">
-      {/* Search Input Bar */}
-      <View className="bg-card border border-border rounded-2xl px-3 py-1 shadow-xs">
-        <TextInput
-          placeholder="Search by invoice #, booking ID, or keyword..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          leftIcon={<Search size={16} className="text-muted-foreground" />}
-          clearButtonMode="while-editing"
-          className="border-0 bg-transparent px-0 py-1"
-        />
-      </View>
+    <View className="gap-2.5 mb-3">
+      {/* Canonical Search & Filter Bar */}
+      <SearchFilterBar
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder={t('search_financial_history_placeholder', 'Search by invoice #, booking ID, or keyword...')}
+        sortOptions={sortOptions}
+        currentSort={selectedTab}
+        onSortChange={(tab) => setSelectedTab(tab as FinancialHistoryFilterTab)}
+        filterTitle={t('filter_financial_history', 'Filter Financial Records')}
+        variant="bordered"
+        className="px-0 py-0 border-0"
+      />
 
       {/* Partial Domain Failure Banner (Section 30) */}
       {partialError && (
         <ErrorBanner
           message={partialError}
           onRetry={refresh}
+          className="my-0.5"
         />
       )}
 
@@ -97,16 +99,6 @@ export function FinancialHistoryScreen() {
         onReconcileAll={reconcileAll}
         isReconciling={isReconciling}
       />
-
-      {/* Filter Category Tabs (Section 18) */}
-      <View className="bg-card border border-border rounded-2xl p-1 shadow-xs">
-        <TabBar
-          tabs={filterTabs}
-          activeTab={selectedTab}
-          onTabChange={(tab) => setSelectedTab(tab as FinancialHistoryFilterTab)}
-          variant="pill"
-        />
-      </View>
     </View>
   );
 
@@ -117,9 +109,9 @@ export function FinancialHistoryScreen() {
       return (
         <EmptyState
           icon={AlertCircle}
-          title="Records Unavailable"
-          description="Failed to retrieve financial history records from the server."
-          actionLabel="Retry"
+          title={t('records_unavailable', 'Records Unavailable')}
+          description={t('failed_to_retrieve_financial_records', 'Failed to retrieve financial history records from the server.')}
+          actionLabel={t('retry', 'Retry')}
           onAction={refresh}
           className="py-12"
         />
@@ -130,8 +122,8 @@ export function FinancialHistoryScreen() {
       return (
         <EmptyState
           icon={Search}
-          title="No Matching Records"
-          description={`No financial transactions match "${searchQuery}".`}
+          title={t('no_matching_records', 'No Matching Records')}
+          description={`${t('no_financial_transactions_match', 'No financial transactions match')} "${searchQuery}".`}
           className="py-12"
         />
       );
@@ -141,8 +133,8 @@ export function FinancialHistoryScreen() {
       return (
         <EmptyState
           icon={Receipt}
-          title="No Invoices"
-          description="No outstanding invoices."
+          title={t('no_invoices', 'No Invoices')}
+          description={t('no_outstanding_invoices', 'No outstanding invoices.')}
           className="py-12"
         />
       );
@@ -152,8 +144,8 @@ export function FinancialHistoryScreen() {
       return (
         <EmptyState
           icon={Receipt}
-          title="No Wallet Transactions"
-          description="No wallet transactions yet."
+          title={t('no_wallet_transactions', 'No Wallet Transactions')}
+          description={t('no_wallet_transactions_yet', 'No wallet transactions yet.')}
           className="py-12"
         />
       );
@@ -163,8 +155,8 @@ export function FinancialHistoryScreen() {
       return (
         <EmptyState
           icon={Receipt}
-          title="No Amenity Bookings"
-          description="No amenity payment history yet."
+          title={t('no_amenity_bookings', 'No Amenity Bookings')}
+          description={t('no_amenity_bookings', 'No amenity payment history yet.')}
           className="py-12"
         />
       );
@@ -184,8 +176,8 @@ export function FinancialHistoryScreen() {
     return (
       <EmptyState
         icon={Receipt}
-        title="No Financial Transactions Yet"
-        description="No financial transactions yet."
+        title={t('no_financial_transactions_yet', 'No Financial Transactions Yet')}
+        description={t('no_financial_transactions_yet', 'No financial transactions yet.')}
         className="py-12"
       />
     );
@@ -193,8 +185,8 @@ export function FinancialHistoryScreen() {
 
   return (
     <ScreenShell
-      title="Financial History"
-      subtitle="Unified chronological statement of payments, dues & transactions"
+      title={t('financial_history', 'Financial History')}
+      subtitle={t('financial_history_subtitle', 'Unified chronological statement of payments, dues & transactions')}
       iconName="Receipt"
       loading={isLoading}
     >

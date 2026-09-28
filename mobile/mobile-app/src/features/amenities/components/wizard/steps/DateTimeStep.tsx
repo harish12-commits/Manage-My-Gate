@@ -9,6 +9,7 @@ import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { DatePicker } from '@/components/common/DatePicker';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Button } from '@/components/ui/button';
 import { Clock, Calendar, AlertTriangle, CheckCircle2 } from 'lucide-react-native';
 import { formatTo12Hour, formatTimeRange12Hour } from '../../../utils/amenityStateHelpers';
 import { AmenityFacility, AmenityAvailabilityResult } from '../../../types/amenityDomain.types';
@@ -231,18 +232,20 @@ export function DateTimeStep({
           )}
 
           {/* Current Selection Indicator */}
-          <View className="p-3 rounded-xl bg-muted/30 border border-border/60 flex-row items-center justify-between mt-1">
-            <View className="flex-row items-center gap-2">
+          <View className="p-3 rounded-xl bg-muted/30 border border-border/60 gap-2.5 mt-1">
+            <View className="flex-row items-center gap-2 min-w-0">
               <Clock size={16} className="text-primary" />
-              <Text className="text-xs font-medium text-foreground">
+              <Text className="flex-1 min-w-0 text-xs font-medium text-foreground" numberOfLines={1}>
                 Selected: {formatTo12Hour(startTime)} to {formatTo12Hour(endTime)}
               </Text>
             </View>
 
-            <TouchableOpacity
+            <Button
+              variant="outline"
               onPress={onCheckAvailability}
               disabled={checkingAvailability}
-              className="px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 flex-row items-center gap-1.5"
+              className="w-full h-11 rounded-xl bg-primary/10 border-primary/25 flex-row items-center justify-center gap-2"
+              accessibilityLabel="Verify selected slot availability"
             >
               {checkingAvailability ? (
                 <ActivityIndicator size="small" className="text-primary" />
@@ -250,7 +253,7 @@ export function DateTimeStep({
                 <CheckCircle2 size={14} className="text-primary" />
               )}
               <Text className="text-xs font-semibold text-primary">Verify Availability</Text>
-            </TouchableOpacity>
+            </Button>
           </View>
         </View>
       )}

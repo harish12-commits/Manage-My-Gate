@@ -9,7 +9,6 @@ import { ActionGrid, type ActionGridItem } from '@/components/ui/ActionGrid';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { Button } from '@/components/ui/button';
-import { FAB } from '@/components/ui/FAB';
 import { SearchBar } from '@/components/forms/SearchBar';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { TextInput } from '@/components/forms/TextInput';
@@ -329,13 +328,13 @@ export function ComplaintDashboardScreen() {
           variant="default"
           size="sm"
           onPress={() => setTypeSheetOpen(true)}
-          className="flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full shadow-2xs"
+          className="flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 active:bg-emerald-700 border-0 shadow-2xs"
           accessibilityRole="button"
-          accessibilityLabel="Raise New Ticket"
+          accessibilityLabel="Raise Complaint"
         >
           <Plus size={14} color="#ffffff" strokeWidth={2.4} />
-          <Text className="text-xs font-bold text-primary-foreground">
-            {t('raise_ticket', 'Raise Ticket')}
+          <Text className="text-xs font-bold text-white">
+            {t('raise_complaint', 'Raise Complaint')}
           </Text>
         </Button>
       }
@@ -458,13 +457,6 @@ export function ComplaintDashboardScreen() {
           </View>
         )}
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <FAB
-        iconName="Plus"
-        label={t('raise_ticket', 'Raise Ticket')}
-        onPress={() => setTypeSheetOpen(true)}
-      />
 
       {/* Type-Selection-First Category Sheet */}
       <ComplaintTypeSheet

@@ -39,10 +39,10 @@ export function FacilityHeaderBanner({
         className
       )}
     >
-      <View className="flex-1 me-3">
+      <View className="flex-1 min-w-0 me-3">
         {/* Facility Title & Category */}
         <View className="flex-row items-center gap-1.5 flex-wrap">
-          <Text variant="large" className="font-bold text-foreground">
+          <Text variant="large" className="flex-shrink font-bold text-foreground" numberOfLines={2}>
             {facilityName}
           </Text>
           {Boolean(category) && (
@@ -70,7 +70,7 @@ export function FacilityHeaderBanner({
             {Boolean(location) && (
               <View className="flex-row items-center gap-1">
                 <MapPin size={11} className="text-muted-foreground" />
-                <Text variant="muted" className="text-[11px] text-muted-foreground">
+                <Text variant="muted" className="flex-shrink text-[11px] text-muted-foreground" numberOfLines={1}>
                   {location}
                 </Text>
               </View>
@@ -90,7 +90,7 @@ export function FacilityHeaderBanner({
           variant="default"
           size="sm"
           onPress={onBookPress}
-          className="rounded-full px-3.5"
+          className="shrink-0 rounded-full px-3.5"
           accessibilityLabel={`${bookButtonLabel} for ${facilityName}`}
         >
           <Text className="text-primary-foreground font-bold text-xs">

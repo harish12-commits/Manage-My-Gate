@@ -165,7 +165,8 @@ export const CommunityEngagementWizard: React.FC<CommunityEngagementWizardProps>
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
       className="flex-1 bg-background"
     >
       <View className="flex-1">
@@ -177,8 +178,7 @@ export const CommunityEngagementWizard: React.FC<CommunityEngagementWizardProps>
           stepIndex={currentStepIndex}
           totalSteps={steps.length}
           isEditMode={isEditMode}
-          onBack={goBack}
-          onCancel={handleClose}
+          onBack={isFirstStep ? handleClose : goBack}
         />
 
         {/* Step Indicator Progress Bar */}

@@ -280,6 +280,7 @@ export default function AdminAmenityCalendarScreen() {
           onLoadMore={handleLoadMore}
           onRefresh={loadData}
           loading={loading}
+          paginationSummary
           ListHeaderComponent={renderHeader()}
           ListEmptyComponent={renderEmptyComponent()}
           contentContainerClassName="p-3 pt-2.5 pb-28 gap-2.5"

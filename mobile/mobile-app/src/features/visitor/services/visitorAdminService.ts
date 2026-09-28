@@ -51,6 +51,7 @@ export const visitorAdminService = {
       orgId: payload.orgId,
       name: payload.name || payload.visitorName || '',
       phone: payload.phone || undefined,
+      idProofNumber: payload.idProofNumber || undefined,
       plate: payload.plate || payload.vehicleNumber || undefined,
       reason: payload.reason,
     };

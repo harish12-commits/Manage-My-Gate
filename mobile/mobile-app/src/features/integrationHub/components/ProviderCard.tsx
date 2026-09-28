@@ -1,8 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Button } from '@/components/ui';
-import { Icon } from '@/components/ui/icon';
-import { Plug } from 'lucide-react-native';
+import { Plug, Check } from 'lucide-react-native';
 import { ProviderCatalogItem } from '../services/integrationHubApi';
 
 interface ProviderCardProps {
@@ -39,75 +37,78 @@ export const ProviderCard: React.FC<ProviderCardProps> = ({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.85}
+      activeOpacity={0.75}
       onPress={() => onConnect(provider)}
-      className="bg-card border border-border/80 rounded-2xl p-3.5 shadow-xs w-60 justify-between me-3"
+      accessibilityRole="button"
+      accessibilityLabel={`${isMapped ? 'Manage' : 'Connect'} ${provider.name}`}
+      className="bg-card border border-border/80 rounded-2xl p-3 shadow-xs w-44 justify-between me-2.5"
     >
-      {/* Top Header Row */}
+      {/* Top Header Row: Icon + Status */}
       <View className="flex-row items-center justify-between mb-2">
-        <View className="flex-row items-center flex-1 me-2 gap-2.5">
-          <View
-            className={`w-10 h-10 rounded-2xl items-center justify-center border shrink-0 ${getProviderColorClass(
-              provider.id
-            )}`}
-          >
-            <Text className="text-lg">{provider.icon || '🔌'}</Text>
-          </View>
-          <View className="flex-1 min-w-0">
-            <Text className="text-sm font-bold text-foreground" numberOfLines={1}>
-              {provider.name}
-            </Text>
-            <Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={1}>
-              {provider.category || 'Integration'}
-            </Text>
-          </View>
+        <View
+          className={`w-9 h-9 rounded-xl items-center justify-center border shrink-0 ${getProviderColorClass(
+            provider.id
+          )}`}
+        >
+          <Text className="text-base">{provider.icon || '🔌'}</Text>
         </View>
 
-        {/* Status Badge */}
         <View
-          className={`flex-row items-center gap-1 px-2.5 py-0.5 rounded-full border ${
+          className={`flex-row items-center gap-1 px-2 py-0.5 rounded-full border ${
             isMapped
               ? 'bg-emerald-500/10 border-emerald-500/30'
-              : 'bg-primary/10 border-primary/20'
+              : 'bg-muted/80 border-border/60'
           }`}
         >
           <View
             className={`w-1.5 h-1.5 rounded-full ${
-              isMapped ? 'bg-emerald-500' : 'bg-primary'
+              isMapped ? 'bg-emerald-500' : 'bg-muted-foreground/60'
             }`}
           />
           <Text
-            className={`text-[10px] font-bold uppercase tracking-wide ${
-              isMapped ? 'text-emerald-600' : 'text-primary'
+            className={`text-[9px] font-bold uppercase tracking-wide ${
+              isMapped ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
             }`}
           >
-            {isMapped ? `${activeCount} ACTIVE` : 'READY'}
+            {isMapped ? `${activeCount} Active` : 'Available'}
           </Text>
         </View>
       </View>
 
-      {/* Description Text */}
-      {Boolean(provider.description) && (
-        <Text className="text-xs text-muted-foreground leading-4 mb-3" numberOfLines={2}>
-          {provider.description}
+      {/* Provider Info */}
+      <View className="mb-2.5">
+        <Text className="text-sm font-bold text-foreground" numberOfLines={1}>
+          {provider.name}
         </Text>
-      )}
+        <Text className="text-[11px] text-muted-foreground mt-0.5" numberOfLines={1}>
+          {provider.category || 'Integration'}
+        </Text>
+      </View>
 
-      {/* Action Button */}
-      <Button
-        size="sm"
-        onPress={() => onConnect(provider)}
-        className={`w-full rounded-xl h-8 px-3 ${
+      {/* Action Indicator */}
+      <View
+        className={`w-full rounded-xl py-1.5 px-2 flex-row items-center justify-center gap-1.5 border ${
           isMapped
-            ? 'bg-blue-600 active:bg-blue-700'
-            : 'bg-emerald-600 active:bg-emerald-700'
+            ? 'bg-blue-500/10 border-blue-500/20'
+            : 'bg-primary border-primary'
         }`}
       >
-        <Icon as={Plug} size={14} className="text-white me-1" />
-        <Text className="text-xs font-bold text-white">
-          {isMapped ? 'Manage Connection' : 'Configure Connection'}
-        </Text>
-      </Button>
+        {isMapped ? (
+          <>
+            <Check size={12} className="text-blue-600 dark:text-blue-400" />
+            <Text className="text-xs font-bold text-blue-600 dark:text-blue-400">
+              Configured
+            </Text>
+          </>
+        ) : (
+          <>
+            <Plug size={12} color="#ffffff" />
+            <Text className="text-xs font-bold text-primary-foreground">
+              Connect
+            </Text>
+          </>
+        )}
+      </View>
     </TouchableOpacity>
   );
 };

@@ -16,9 +16,11 @@ import paymentService from '../../payment/services/paymentService';
 import { PaymentResultHeroCard } from '../components/PaymentResultHeroCard';
 import { InvoiceStatus, Invoice } from '../types';
 import { generateInvoiceHtml, exportInvoiceHtmlDocument } from '../utils/invoicePdfUtility';
+import { useTranslation } from '@/src/utils/i18n';
 
 export function PaymentResultScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{
     invoiceId?: string;
     status?: string;
@@ -255,11 +257,11 @@ export function PaymentResultScreen() {
               disabled={isRechecking}
               loading={isRechecking}
               accessibilityRole="button"
-              accessibilityLabel="Check Payment Status"
+              accessibilityLabel={t('check_payment_status', 'Check Payment Status')}
             >
               <Icon as={RefreshCw} size={18} className="text-primary-foreground me-2" />
               <Text className="font-bold text-base text-primary-foreground">
-                {isRechecking ? 'Verifying with Server…' : 'Check Payment Status'}
+                {isRechecking ? t('verifying_with_server', 'Verifying with Server…') : t('check_payment_status', 'Check Payment Status')}
               </Text>
             </Button>
           ) : (isPaid || isPartial) ? (

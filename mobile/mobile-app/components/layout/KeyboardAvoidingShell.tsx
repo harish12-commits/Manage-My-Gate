@@ -26,18 +26,20 @@ export const KeyboardAvoidingShell = ({
   extraScrollHeight = 40,
   ...props
 }: KeyboardAvoidingShellProps) => {
+  // Android is configured with adjustResize. iOS needs an explicit padding
+  // response so the focused field and submit action remain above the keyboard.
   const defaultBehavior = Platform.OS === 'ios' ? 'padding' : 'height';
   const activeBehavior = props.behavior ?? defaultBehavior;
 
   const content = scrollable ? (
     <KeyboardAwareScrollView
       keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
+      keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
       showsVerticalScrollIndicator={false}
       extraScrollHeight={extraScrollHeight}
       {...scrollViewProps}
       contentContainerStyle={[
-        { flexGrow: 1 },
+        { flexGrow: 1, paddingBottom: 96 },
         scrollViewProps?.contentContainerStyle,
       ]}
       className={contentContainerClassName}
@@ -53,6 +55,7 @@ export const KeyboardAvoidingShell = ({
   return (
     <KeyboardAvoidingView
       behavior={activeBehavior}
+      keyboardVerticalOffset={props.keyboardVerticalOffset ?? 0}
       className={cn('flex-1 bg-background', className)}
       {...props}
     >

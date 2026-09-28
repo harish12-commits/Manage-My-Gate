@@ -19,20 +19,39 @@ export const GuardVillaDirectoryView: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    fetchVillas({ limit: 100 });
-  }, [fetchVillas]);
+    const debounce = setTimeout(() => {
+      fetchVillas({
+        page: 1,
+        limit: 50,
+        search: search.trim() || undefined,
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+      });
+    }, search.trim() ? 300 : 0);
+
+    return () => clearTimeout(debounce);
+  }, [fetchVillas, search, statusFilter]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchVillas({ limit: 100 });
+    await fetchVillas({
+      page: 1,
+      limit: 50,
+      search: search.trim() || undefined,
+      status: statusFilter === 'ALL' ? undefined : statusFilter,
+    });
     setRefreshing(false);
-  }, [fetchVillas]);
+  }, [fetchVillas, search, statusFilter]);
 
   const handleLoadMore = useCallback(async () => {
     if (pagination && pagination.currentPage < pagination.totalPages) {
-      await fetchVillas({ page: pagination.currentPage + 1, limit: pagination.rowsPerPage || 50 });
+      await fetchVillas({
+        page: pagination.currentPage + 1,
+        limit: pagination.rowsPerPage || 50,
+        search: search.trim() || undefined,
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+      });
     }
-  }, [pagination, fetchVillas]);
+  }, [pagination, fetchVillas, search, statusFilter]);
 
   const filteredVillas = useMemo(() => {
     if (!Array.isArray(villas)) return [];
@@ -86,7 +105,7 @@ export const GuardVillaDirectoryView: React.FC = () => {
             key={st}
             onPress={() => setStatusFilter(st)}
             activeOpacity={0.7}
-            className={`px-3.5 py-1.5 rounded-full border ${
+            className={`min-h-11 px-3.5 py-2 rounded-full border items-center justify-center ${
               statusFilter === st
                 ? 'bg-primary border-primary'
                 : 'bg-card border-border'
@@ -117,6 +136,7 @@ export const GuardVillaDirectoryView: React.FC = () => {
         }}
         onLoadMore={handleLoadMore}
         onRefresh={handleRefresh}
+        paginationSummary
         refreshing={refreshing}
         loading={loading && !refreshing && filteredVillas.length === 0}
         ListHeaderComponent={renderHeader()}

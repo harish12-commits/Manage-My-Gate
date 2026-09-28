@@ -2,6 +2,7 @@ import * as React from 'react';
 import { View, Pressable, Platform, ScrollView } from 'react-native';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Text } from './text';
+import { Icon } from './icon';
 import { cn } from '../../lib/utils';
 import { getStatusSemanticType, getStatusTabStyle } from './statusTabColors';
 
@@ -83,6 +84,7 @@ export interface TabItem {
   key: string;
   label: string;
   badge?: number;
+  icon?: any;
 }
 
 export interface TabBarProps extends VariantProps<typeof tabBarVariants> {
@@ -107,61 +109,74 @@ export const TabBar = React.forwardRef<View, TabBarProps>(
     },
     ref
   ) => {
-    const isScrollable = scrollable ?? tabs.length > 4;
+    // Preserve familiar pill treatment, but let dense filters scroll horizontally.
+    const isScrollable = tabs.length > 3;
 
-    const renderTabs = () =>
-      tabs.map((tab) => {
-        const isActive = activeTab === tab.key;
-        const hasBadge = typeof tab.badge === 'number' && tab.badge > 0;
-        const semantic = getStatusSemanticType(tab.key || tab.label);
-        const isStatusTab = semantic !== 'default';
-        const statusStyle = isStatusTab ? getStatusTabStyle(tab.key || tab.label, isActive) : null;
+    // Check if the tabs are lifecycle status tabs (ACTIVE, PENDING, EXPIRED, etc.)
+    const hasStatusTabs = tabs.some((t) => {
+      const s = getStatusSemanticType(t.key || t.label);
+      return s !== 'default' && s !== 'all';
+    });
 
-        return (
-          <Pressable
-            key={tab.key}
-            onPress={() => onTabChange(tab.key)}
-            className={cn(
-              tabItemVariants({ variant, isActive }),
-              isScrollable && 'flex-none px-3.5 min-w-[64px]',
-              isStatusTab && variant === 'pill' && isActive && `${statusStyle?.containerClass} shadow-xs`
-            )}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: isActive }}
-            accessibilityLabel={tab.label}
-          >
-            <Text
+    const renderTabs = () => tabs.map((tab) => {
+          const isActive = activeTab === tab.key;
+          const hasBadge = typeof tab.badge === 'number' && tab.badge > 0;
+          const semantic = getStatusSemanticType(tab.key || tab.label);
+          const isStatusTab = hasStatusTabs && semantic !== 'default';
+          const statusStyle = isStatusTab ? getStatusTabStyle(tab.key || tab.label, isActive) : null;
+          const TabIcon = tab.icon;
+
+          return (
+            <Pressable
+              key={tab.key}
+              onPress={() => onTabChange(tab.key)}
               className={cn(
-                tabTextVariants({ variant, isActive }),
-                isStatusTab && isActive && statusStyle?.textClass
+                tabItemVariants({ variant, isActive }),
+                isScrollable && variant === 'pill' && 'flex-none px-4 py-2 shrink-0 min-w-[56px]',
+                Platform.select({ web: isScrollable ? 'whitespace-nowrap shrink-0' : undefined }),
+                isStatusTab && variant === 'pill' && isActive && `${statusStyle?.containerClass} shadow-xs`
               )}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              accessibilityLabel={tab.label}
             >
-              {tab.label}
-            </Text>
+              {TabIcon && (
+                <Icon
+                  as={TabIcon}
+                  size={14}
+                  className={cn(
+                    'me-1.5 shrink-0',
+                    isActive
+                      ? isStatusTab
+                        ? statusStyle?.textClass
+                        : 'text-primary'
+                      : 'text-muted-foreground'
+                  )}
+                />
+              )}
 
-            {hasBadge && (
-              <View className="absolute top-1 right-2 min-w-[18px] h-[18px] rounded-full bg-destructive items-center justify-center px-1">
-                <Text className="text-white text-[10px] font-bold leading-none text-center">
-                  {tab.badge! > 99 ? '99+' : tab.badge}
-                </Text>
-              </View>
-            )}
-          </Pressable>
-        );
-      });
+              <Text
+                numberOfLines={1}
+                className={cn(
+                  tabTextVariants({ variant, isActive }),
+                  isScrollable && 'text-xs',
+                  Platform.select({ web: 'whitespace-nowrap' }),
+                  isStatusTab && isActive && statusStyle?.textClass
+                )}
+              >
+                {tab.label}
+              </Text>
 
-    if (isScrollable) {
-      return (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="flex-row items-center gap-1 px-0.5"
-          className={cn(tabBarVariants({ variant }), className)}
-        >
-          {renderTabs()}
-        </ScrollView>
-      );
-    }
+              {hasBadge && (
+                <View className="ms-1.5 min-w-[18px] h-[18px] rounded-full bg-destructive items-center justify-center px-1">
+                  <Text className="text-white text-[10px] font-bold leading-none text-center">
+                    {tab.badge! > 99 ? '99+' : tab.badge}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          );
+        });
 
     return (
       <View
@@ -169,7 +184,16 @@ export const TabBar = React.forwardRef<View, TabBarProps>(
         className={cn(tabBarVariants({ variant }), className)}
         {...props}
       >
-        {renderTabs()}
+        {isScrollable ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="flex-1"
+            contentContainerClassName="gap-1.5 px-0.5 items-center"
+          >
+            {renderTabs()}
+          </ScrollView>
+        ) : renderTabs()}
       </View>
     );
   }

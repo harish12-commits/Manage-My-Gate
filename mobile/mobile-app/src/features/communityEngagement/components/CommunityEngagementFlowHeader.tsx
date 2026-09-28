@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
-import { ArrowLeft, X, Bell, BarChart3 } from 'lucide-react-native';
+import { ArrowLeft, Bell, BarChart3 } from 'lucide-react-native';
 import { EngagementContentType } from '../types/communityEngagement.types';
 
 export interface CommunityEngagementFlowHeaderProps {
@@ -12,7 +12,6 @@ export interface CommunityEngagementFlowHeaderProps {
   totalSteps: number;
   isEditMode?: boolean;
   onBack?: () => void;
-  onCancel: () => void;
 }
 
 export const CommunityEngagementFlowHeader: React.FC<CommunityEngagementFlowHeaderProps> = ({
@@ -23,7 +22,6 @@ export const CommunityEngagementFlowHeader: React.FC<CommunityEngagementFlowHead
   totalSteps,
   isEditMode = false,
   onBack,
-  onCancel,
 }) => {
   const isNotice = contentType === 'NOTICE';
   const IconComp = isNotice ? Bell : BarChart3;
@@ -34,13 +32,13 @@ export const CommunityEngagementFlowHeader: React.FC<CommunityEngagementFlowHead
       {/* Top action row */}
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2 flex-1">
-          {onBack && stepIndex > 0 ? (
+          {onBack ? (
             <TouchableOpacity
               onPress={onBack}
               activeOpacity={0.7}
-              className="w-9 h-9 rounded-full bg-muted/60 items-center justify-center -ms-1"
+              className="w-11 h-11 rounded-xl bg-muted items-center justify-center -ms-1"
               accessibilityRole="button"
-              accessibilityLabel="Go back to previous step"
+              accessibilityLabel={stepIndex > 0 ? 'Go back to previous step' : 'Go back'}
             >
               <ArrowLeft size={18} className="text-foreground" />
             </TouchableOpacity>
@@ -68,16 +66,6 @@ export const CommunityEngagementFlowHeader: React.FC<CommunityEngagementFlowHead
           <Text className="text-xs font-bold text-primary">{typeLabel}</Text>
         </View>
 
-        {/* Close / Cancel Button */}
-        <TouchableOpacity
-          onPress={onCancel}
-          activeOpacity={0.7}
-          className="w-9 h-9 rounded-full bg-muted/60 items-center justify-center ms-2"
-          accessibilityRole="button"
-          accessibilityLabel="Close creation wizard"
-        >
-          <X size={18} className="text-muted-foreground" />
-        </TouchableOpacity>
       </View>
 
       {/* Step title & subtitle */}

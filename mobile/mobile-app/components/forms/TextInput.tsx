@@ -26,6 +26,7 @@ export interface TextInputProps extends RNTextInputProps {
   onClear?: () => void;
   leftIcon?: LucideIcon | React.ReactNode;
   rightIcon?: LucideIcon | React.ReactNode;
+  rightIconColor?: string;
   onRightIconPress?: () => void;
   containerClassName?: string;
   labelClassName?: string;
@@ -49,6 +50,7 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
       onClear,
       leftIcon,
       rightIcon,
+      rightIconColor,
       onRightIconPress,
       containerClassName,
       labelClassName,
@@ -105,7 +107,8 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
         >
           <IconComponent
             size={18}
-            className="text-muted-foreground"
+            className={rightIconColor ? undefined : 'text-muted-foreground'}
+            color={rightIconColor}
             onPress={!isLeft ? onRightIconPress : undefined}
           />
         </View>
@@ -135,12 +138,23 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
 
     const translatedPlaceholder = props.placeholder ? translateText(props.placeholder) : undefined;
     const translatedLabel = label ? translateText(label) : undefined;
+    const hasFontFamily = Boolean(
+      inputClassName &&
+        (inputClassName.includes('font-sans') ||
+          inputClassName.includes('font-medium') ||
+          inputClassName.includes('font-semibold') ||
+          inputClassName.includes('font-bold') ||
+          inputClassName.includes('font-mono'))
+    );
 
     return (
       <View className={cn('w-full', containerClassName)}>
         {Boolean(translatedLabel) && (
           <View className="flex-row items-center justify-between mb-1.5">
-            <Text className={cn('text-[13.5px] font-bold font-sans text-foreground', labelClassName)}>
+            <Text
+              className={cn('text-[13.5px] font-bold font-sans text-foreground', labelClassName)}
+              style={{ fontWeight: 'bold' }}
+            >
               {translatedLabel}
               {required && !label?.includes('*') && (
                 <Text className="text-destructive font-bold"> *</Text>
@@ -184,13 +198,17 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
             onFocus={handleFocus}
             onBlur={handleBlur}
             className={cn(
-              'flex-1 text-[13.5px] font-sans text-foreground self-stretch',
+              'flex-1 text-[13.5px] text-foreground self-stretch outline-none focus:outline-none focus-visible:outline-none',
+              !hasFontFamily && 'font-sans',
               props.multiline ? 'py-0 min-h-[50px]' : 'py-1.5 min-h-[38px]',
               inputClassName
             )}
             style={[
               {
+                outline: 'none',
                 outlineStyle: 'none',
+                outlineWidth: 0,
+                outlineColor: 'transparent',
                 paddingHorizontal: 4,
                 paddingVertical: Platform.OS === 'ios' ? 4 : 2,
                 textAlign: (props.style as any)?.textAlign || 'left',

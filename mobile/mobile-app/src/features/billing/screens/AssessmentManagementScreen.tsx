@@ -13,7 +13,6 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
-import { FAB } from '@/components/ui/FAB';
 import { SlidersHorizontal, Play, Send, ShieldAlert, Landmark, Calendar, Layers, CheckCircle2, Clock, Plus, Trash2, Pencil, Filter, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useBilling } from '../hooks/useBilling';
 import { useBillingSocket } from '../hooks/useBillingSocket';
@@ -395,25 +394,10 @@ export function AssessmentManagementScreen() {
             className="px-0 py-0 border-0"
           />
 
-          <View className="flex-row items-center justify-between pt-2 pb-1">
+          <View className="flex-row items-center pt-2 pb-1">
             <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Assessment Rules ({filteredAssessments.length} of {assessments.length})
             </Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => {
-                setAssessmentToEdit(null);
-                setShowCreateModal(true);
-              }}
-              className="flex-row items-center gap-1 bg-emerald-600/10 border border-emerald-600/25 px-2.5 py-1 rounded-lg"
-              accessibilityRole="button"
-              accessibilityLabel="New Rule"
-            >
-              <Plus size={13} className="text-emerald-600 dark:text-emerald-400" />
-              <Text className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                + New Rule
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -711,17 +695,6 @@ export function AssessmentManagementScreen() {
         }}
       />
 
-      {/* Floating Action Button for Easy Mobile Rule Creation */}
-      {hasAssessmentPermission && !showCreateModal && (
-        <FAB
-          iconName="Plus"
-          label="Create Rule"
-          onPress={() => {
-            setAssessmentToEdit(null);
-            setShowCreateModal(true);
-          }}
-        />
-      )}
     </View>
   );
 }

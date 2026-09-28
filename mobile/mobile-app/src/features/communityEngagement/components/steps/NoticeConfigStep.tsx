@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, ScrollView, Switch } from 'react-native';
+import { View, ScrollView, Switch, Platform } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { DatePicker } from '@/components/common/DatePicker';
 import { AttachmentPicker } from '@/components/ui/AttachmentPicker';
@@ -61,8 +61,15 @@ export const NoticeConfigStep: React.FC<NoticeConfigStepProps> = ({
   );
 
   return (
-    <ScrollView className="flex-1 px-4 py-3" showsVerticalScrollIndicator={false}>
-      <View className="gap-4 pb-12">
+    <ScrollView
+      className="flex-1 px-4 py-3"
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      contentContainerStyle={{ paddingBottom: 132 }}
+    >
+      <View className="gap-4">
         {/* Error banner */}
         {error ? (
           <View className="flex-row items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-xl">

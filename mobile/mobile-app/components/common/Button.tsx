@@ -64,9 +64,9 @@ export const Button = forwardRef<View, ButtonProps>(
       info: 'border border-blue-500/40 bg-blue-50 dark:bg-blue-950/40 shadow-xs',
       'info-solid': 'bg-blue-600 active:bg-blue-700 shadow-xs',
       purple: 'border border-purple-500/40 bg-purple-50 dark:bg-purple-950/40 shadow-xs',
-      navy: 'bg-[#172B70] dark:bg-[#1E3A8A] active:opacity-90 shadow-xs',
-      outline: 'border border-[#172B70]/30 dark:border-border/80 bg-card shadow-xs',
-      secondary: 'bg-[#172B70] dark:bg-[#1E3A8A] active:opacity-90 shadow-xs',
+      navy: 'bg-primary active:opacity-90 shadow-xs',
+      outline: 'border border-primary/30 dark:border-border/80 bg-card shadow-xs',
+      secondary: 'bg-secondary active:bg-secondary/80 shadow-xs',
       ghost: 'bg-transparent active:bg-primary/10',
       link: 'bg-transparent underline-offset-4',
     };
@@ -86,9 +86,9 @@ export const Button = forwardRef<View, ButtonProps>(
       'info-solid': 'text-white font-bold',
       purple: 'text-purple-700 dark:text-purple-400 font-bold',
       navy: 'text-white font-bold',
-      outline: 'text-[#172B70] dark:text-foreground font-semibold',
-      secondary: 'text-white font-bold',
-      ghost: 'text-[#172B70] dark:text-foreground font-semibold',
+      outline: 'text-primary dark:text-foreground font-semibold',
+      secondary: 'text-secondary-foreground font-bold',
+      ghost: 'text-primary dark:text-foreground font-semibold',
       link: 'text-primary underline',
     };
 

@@ -4,6 +4,7 @@ import {
   Mail,
   Lock,
   Smartphone,
+  User,
   Eye,
   EyeOff,
   Check,
@@ -621,18 +622,22 @@ export default function LoginScreen() {
             resizeMode="cover"
           />
         </Animated.View>
-        <View className="absolute inset-0 bg-white/40 dark:bg-[#0B0E14]/55" pointerEvents="none" />
+        <View className="absolute inset-0 bg-black/20 dark:bg-black/45" pointerEvents="none" />
 
         <KeyboardAvoidingView
+          // The login form must move with the native keyboard on both iOS and
+          // Android; leaving this undefined allows the password/OTP actions to
+          // sit behind the keyboard.
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={0}
           style={{ flex: 1 }}
         >
           <KeyboardAwareScrollView
             extraScrollHeight={56}
             contentContainerStyle={{
               flexGrow: 1,
-              paddingTop: Math.max(insets.top, 24) + 16,
-              paddingBottom: Math.max(insets.bottom, 20) + 40,
+              paddingTop: Math.max(insets.top, 24) + 12,
+              paddingBottom: Math.max(insets.bottom, 20) + 24,
             }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -687,35 +692,33 @@ export default function LoginScreen() {
               className="gap-3.5 w-full"
             >
               {/* Step 4: Login Method Selection (Frosted Glass Segmented Pill Buttons) */}
-              <View className="bg-white/40 dark:bg-black/30 backdrop-blur-md p-1.5 rounded-2xl flex-row border border-white/60 dark:border-white/15 shadow-2xs">
+              <View className="bg-white/20 dark:bg-black/25 backdrop-blur-md p-1 rounded-full flex-row border border-white/35 shadow-xs">
                 <TouchableOpacity
                   onPress={() => setAuthMode('basic')}
                   activeOpacity={0.85}
                   style={
                     authMode === 'basic'
                       ? {
-                          backgroundColor: 'rgba(255, 255, 255, 0.88)',
-                          borderColor: 'rgba(255, 255, 255, 0.7)',
-                          borderWidth: 1,
+                          backgroundColor: '#FFFFFF',
                           shadowColor: '#000000',
                           shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.08,
-                          shadowRadius: 8,
+                          shadowOpacity: 0.1,
+                          shadowRadius: 6,
                           elevation: 2,
                         }
                       : {
                           backgroundColor: 'transparent',
                         }
                   }
-                  className="flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-2"
+                  className="flex-1 py-2.5 rounded-full flex-row items-center justify-center gap-2"
                 >
-                  <Lock
-                    size={15}
-                    color={authMode === 'basic' ? '#EA580C' : '#57534E'}
-                    strokeWidth={authMode === 'basic' ? 2.4 : 2}
+                  <User
+                    size={16}
+                    color={authMode === 'basic' ? '#EA580C' : 'rgba(255, 255, 255, 0.85)'}
+                    strokeWidth={2.4}
                   />
                   <Text
-                    style={{ color: authMode === 'basic' ? '#EA580C' : '#57534E' }}
+                    style={{ color: authMode === 'basic' ? '#EA580C' : 'rgba(255, 255, 255, 0.85)' }}
                     className={`text-xs ${authMode === 'basic' ? 'font-bold' : 'font-medium'}`}
                   >
                     {t('email_password', 'Email / Password')}
@@ -728,28 +731,26 @@ export default function LoginScreen() {
                   style={
                     authMode === 'phone'
                       ? {
-                          backgroundColor: 'rgba(255, 255, 255, 0.88)',
-                          borderColor: 'rgba(255, 255, 255, 0.7)',
-                          borderWidth: 1,
+                          backgroundColor: '#FFFFFF',
                           shadowColor: '#000000',
                           shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.08,
-                          shadowRadius: 8,
+                          shadowOpacity: 0.1,
+                          shadowRadius: 6,
                           elevation: 2,
                         }
                       : {
                           backgroundColor: 'transparent',
                         }
                   }
-                  className="flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-2"
+                  className="flex-1 py-2.5 rounded-full flex-row items-center justify-center gap-2"
                 >
                   <Smartphone
-                    size={15}
-                    color={authMode === 'phone' ? '#EA580C' : '#57534E'}
-                    strokeWidth={authMode === 'phone' ? 2.4 : 2}
+                    size={16}
+                    color={authMode === 'phone' ? '#EA580C' : 'rgba(255, 255, 255, 0.85)'}
+                    strokeWidth={2.4}
                   />
                   <Text
-                    style={{ color: authMode === 'phone' ? '#EA580C' : '#57534E' }}
+                    style={{ color: authMode === 'phone' ? '#EA580C' : 'rgba(255, 255, 255, 0.85)' }}
                     className={`text-xs ${authMode === 'phone' ? 'font-bold' : 'font-medium'}`}
                   >
                     {t('sign_in_with_otp', 'Sign in with OTP')}
@@ -757,35 +758,23 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Form Card Container (Frosted Glass Card with Welcome Back Header) */}
-              <BlurView
-                intensity={Platform.OS === 'ios' ? 42 : 16}
-                tint="default"
-                style={{
-                  borderRadius: 24,
-                  overflow: 'hidden',
-                  shadowColor: '#1C1917',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 16,
-                  elevation: 4,
-                }}
-              >
-              <View className="bg-white/55 dark:bg-[#1C1917]/60 border border-white/70 dark:border-white/15 rounded-3xl p-5 gap-3.5">
+              {/* Form Container (Translucent Glass layout with Welcome Back Header) */}
+              <View className="w-full gap-3.5 mt-1">
                 {/* Welcome Back Header Section */}
-                <Text className="text-base font-bold text-[#1C1917] dark:text-white text-center pb-0.5 font-sans">
+                <Text className="text-xl sm:text-2xl font-bold text-white text-center pb-0.5 font-sans">
                   {t('welcome_back', 'Welcome Back')}
                 </Text>
+
                 {/* Context Switch Auth Requirement Banner */}
                 {params.switchType && params.targetName && !switchDismissed && (
-                  <View className="bg-[#FFF7ED] dark:bg-[#7C2D12]/20 border border-[#FED7AA] dark:border-[#EA580C]/30 rounded-2xl p-3.5 gap-2.5 shadow-2xs">
+                  <View className="bg-white/20 dark:bg-black/35 border border-white/35 rounded-2xl p-3.5 gap-2.5 shadow-2xs backdrop-blur-md">
                     {/* Header Row: Lock Icon, Title & Close Button */}
                     <View className="flex-row items-center justify-between">
                       <View className="flex-row items-center gap-2">
-                        <View className="w-7 h-7 rounded-lg bg-[#EA580C]/15 items-center justify-center">
-                          <Lock size={14} color="#EA580C" strokeWidth={2.4} />
+                        <View className="w-7 h-7 rounded-lg bg-[#EA580C]/25 items-center justify-center">
+                          <Lock size={14} color="#FF7A00" strokeWidth={2.4} />
                         </View>
-                        <Text className="text-[13px] font-bold text-[#C2410C] dark:text-[#FDBA74] tracking-tight">
+                        <Text className="text-[13px] font-bold text-white tracking-tight">
                           {t('authentication_required', 'Authentication Required')}
                         </Text>
                       </View>
@@ -794,25 +783,25 @@ export default function LoginScreen() {
                         onPress={() => setSwitchDismissed(true)}
                         activeOpacity={0.7}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        className="w-6 h-6 rounded-full bg-[#EA580C]/10 items-center justify-center"
+                        className="w-6 h-6 rounded-full bg-white/20 items-center justify-center"
                         accessibilityRole="button"
                         accessibilityLabel={t('dismiss_notice', 'Dismiss notice')}
                       >
-                        <X size={12} color="#C2410C" />
+                        <X size={12} color="#FFFFFF" />
                       </TouchableOpacity>
                     </View>
 
                     {/* Target Context Capsule Pill */}
-                    <View className="flex-row items-center bg-white dark:bg-[#1C1917] border border-[#FED7AA]/60 rounded-xl px-3 py-2 gap-2 shadow-2xs">
-                      <View className="bg-[#EA580C]/15 px-2 py-0.5 rounded-md shrink-0">
-                        <Text className="text-[9.5px] font-bold text-[#EA580C] uppercase">
+                    <View className="flex-row items-center bg-black/25 border border-white/20 rounded-xl px-3 py-2 gap-2 shadow-2xs">
+                      <View className="bg-[#EA580C]/30 px-2 py-0.5 rounded-md shrink-0">
+                        <Text className="text-[9.5px] font-bold text-[#FF7A00] uppercase">
                           {params.switchType === 'villa' ? t('unit', 'Unit') : params.switchType === 'community' ? t('community', 'Community') : t('role', 'Role')}
                         </Text>
                       </View>
                       <Text
                         numberOfLines={1}
                         ellipsizeMode="tail"
-                        className="text-xs font-bold text-[#1C1917] dark:text-white flex-1"
+                        className="text-xs font-bold text-white flex-1"
                       >
                         {params.targetName}
                       </Text>
@@ -824,42 +813,49 @@ export default function LoginScreen() {
                   /* Email / Password Form */
                   <View className="gap-3.5">
                     {/* Step 5: Email or Username Input */}
-                    <Controller
-                      control={basicForm.control}
-                      name="login"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <TextInput
-                          label={t('email_or_username', 'Email or Username')}
-                          labelClassName="text-sm font-bold text-[#1C1917] dark:text-white"
-                          required
-                          value={value}
-                          onChangeText={onChange}
-                          onFocus={handleLoginFieldFocus}
-                          onBlur={() => {
-                            setIsLoginFocused(false);
-                            onBlur();
-                          }}
-                          placeholder={t('enter_email_or_username', 'Enter your email or username')}
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          keyboardType="email-address"
-                          leftIcon={
-                            <Animated.View style={{ transform: [{ scale: loginIconScale }] }}>
-                              <Mail size={18} color={isLoginFocused ? '#EA580C' : '#78716C'} />
-                            </Animated.View>
-                          }
-                          error={basicForm.formState.errors.login?.message}
-                          returnKeyType="next"
-                          onSubmitEditing={() => passwordInputRef.current?.focus()}
-                          blurOnSubmit={false}
-                        />
-                      )}
-                    />
+                    <View>
+                      <Text className="text-xs font-semibold text-white mb-1.5 font-sans">
+                        {t('email_or_username', 'Email or Username')} <Text className="text-[#EA580C] font-bold">*</Text>
+                      </Text>
+                      <Controller
+                        control={basicForm.control}
+                        name="login"
+                        render={({ field: { onChange, onBlur, value } }) => (
+                          <TextInput
+                            required
+                            value={value}
+                            onChangeText={onChange}
+                            onFocus={handleLoginFieldFocus}
+                            onBlur={() => {
+                              setIsLoginFocused(false);
+                              onBlur();
+                            }}
+                            placeholder={t('enter_email_or_username', 'Enter your email or username')}
+                            placeholderTextColor="rgba(255, 255, 255, 0.65)"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            keyboardType="email-address"
+                            className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] py-0 shadow-none backdrop-blur-md"
+                            inputClassName="text-white text-[16px] font-bold"
+                            style={{ fontSize: 16, fontWeight: '700', fontFamily: 'HankenGrotesk_700Bold', color: '#FFFFFF' }}
+                            leftIcon={
+                              <Animated.View style={{ transform: [{ scale: loginIconScale }] }}>
+                                <Mail size={18} color="rgba(255, 255, 255, 0.85)" />
+                              </Animated.View>
+                            }
+                            error={basicForm.formState.errors.login?.message}
+                            returnKeyType="next"
+                            onSubmitEditing={() => passwordInputRef.current?.focus()}
+                            blurOnSubmit={false}
+                          />
+                        )}
+                      />
+                    </View>
 
                     {/* Step 6: Password Input */}
                     <View>
                       <View className="flex-row items-center justify-between mb-1.5">
-                        <Text className="text-sm font-bold text-[#1C1917] dark:text-white">
+                        <Text className="text-xs font-semibold text-white font-sans">
                           {t('password', 'Password')} <Text className="text-[#EA580C] font-bold">*</Text>
                         </Text>
                         <TouchableOpacity
@@ -867,7 +863,7 @@ export default function LoginScreen() {
                           activeOpacity={0.8}
                           hitSlop={8}
                         >
-                          <Text className="text-xs font-bold text-[#EA580C]">
+                          <Text className="text-xs font-bold text-[#FF6A00]">
                             {t('forgot_password', 'Forgot?')}
                           </Text>
                         </TouchableOpacity>
@@ -886,11 +882,16 @@ export default function LoginScreen() {
                               onBlur();
                             }}
                             placeholder={t('enter_password', 'Enter your password')}
+                            placeholderTextColor="rgba(255, 255, 255, 0.65)"
+                            className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] py-0 shadow-none backdrop-blur-md"
+                            inputClassName="text-white text-[16px] font-bold"
+                            style={{ fontSize: 16, fontWeight: '700', fontFamily: 'HankenGrotesk_700Bold', color: '#FFFFFF' }}
                             leftIcon={
                               <Animated.View style={{ transform: [{ scale: passwordIconScale }] }}>
-                                <Lock size={18} color={isPasswordFocused ? '#EA580C' : '#78716C'} />
+                                <Lock size={18} color="rgba(255, 255, 255, 0.85)" />
                               </Animated.View>
                             }
+                            rightIconColor="rgba(255, 255, 255, 0.85)"
                             error={basicForm.formState.errors.password?.message}
                             returnKeyType="go"
                             onSubmitEditing={handleBasicSignIn}
@@ -905,15 +906,15 @@ export default function LoginScreen() {
                         checked={keepSignedIn}
                         onCheckedChange={setKeepSignedIn}
                         label={t('stay_signed_in', 'Stay signed in')}
-                        labelClassName="text-xs text-[#78716C] dark:text-[#A8A29E] font-medium"
+                        labelClassName="text-xs text-white font-medium"
                         className="items-center"
                       />
                     </View>
 
                     {/* Global Error Banner */}
                     {error ? (
-                      <View className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-2.5 gap-2">
-                        <Text className="text-rose-500 text-xs text-center font-medium">
+                      <View className="bg-rose-500/20 border border-rose-500/40 rounded-xl p-2.5 gap-2 backdrop-blur-md">
+                        <Text className="text-rose-200 text-xs text-center font-medium">
                           {error}
                         </Text>
                         {(error.toLowerCase().includes('pending verification') ||
@@ -928,10 +929,10 @@ export default function LoginScreen() {
                                 params: currentLogin ? { email: currentLogin } : {},
                               });
                             }}
-                            className="bg-primary/15 border border-primary/30 rounded-lg py-1.5 px-3 self-center flex-row items-center gap-1.5"
+                            className="bg-primary/25 border border-primary/40 rounded-lg py-1.5 px-3 self-center flex-row items-center gap-1.5"
                           >
-                            <Sparkles size={13} color="#EA580C" />
-                            <Text className="text-xs font-bold text-primary">
+                            <Sparkles size={13} color="#FF7A00" />
+                            <Text className="text-xs font-bold text-white">
                               {t('accept_invitation_cta', 'Accept Workspace Invitation')}
                             </Text>
                           </TouchableOpacity>
@@ -939,7 +940,7 @@ export default function LoginScreen() {
                       </View>
                     ) : null}
 
-                    {/* Step 7: Sign In CTA Button (Luxury Sweep & Tactile Micro-Interaction) */}
+                    {/* Step 7: Sign In CTA Button */}
                     <Animated.View style={{ transform: [{ scale: buttonPressScale }] }}>
                       <TouchableOpacity
                         onPress={handleBasicSignIn}
@@ -948,23 +949,23 @@ export default function LoginScreen() {
                         style={{
                           shadowColor: '#EA580C',
                           shadowOffset: { width: 0, height: 4 },
-                          shadowOpacity: 0.28,
+                          shadowOpacity: 0.35,
                           shadowRadius: 14,
                           elevation: 4,
                         }}
-                        className="mt-1 h-12 rounded-xl flex-row items-center justify-center gap-2 overflow-hidden relative"
+                        className="mt-1 h-[50px] rounded-2xl flex-row items-center justify-center gap-2 overflow-hidden relative"
                       >
                         <View className="absolute inset-0">
                           <Svg width="100%" height="100%" preserveAspectRatio="none">
                             <Defs>
                               <LinearGradient id="signInGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                                 <Stop offset="0%" stopColor="#1E232E" />
-                                <Stop offset="42%" stopColor="#2A3342" />
-                                <Stop offset="80%" stopColor="#EA580C" />
+                                <Stop offset="42%" stopColor="#252D3D" />
+                                <Stop offset="75%" stopColor="#EA580C" />
                                 <Stop offset="100%" stopColor="#FF7A00" />
                               </LinearGradient>
                             </Defs>
-                            <Rect width="100%" height="100%" rx="12" fill="url(#signInGrad)" />
+                            <Rect width="100%" height="100%" rx="16" fill="url(#signInGrad)" />
                           </Svg>
                         </View>
 
@@ -1012,6 +1013,17 @@ export default function LoginScreen() {
                         <PhoneInput
                           label={t('phone_number', 'Mobile Number')}
                           placeholder="98765 43210"
+                          placeholderTextColor="rgba(255, 255, 255, 0.65)"
+                          labelClassName="text-xs font-semibold text-white mb-1.5"
+                          className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] py-0 shadow-none backdrop-blur-md"
+                          inputClassName="text-white text-[16px] font-bold"
+                          codeClassName="text-white font-bold"
+                          dividerClassName="border-white/30"
+                          chevronColor="rgba(255, 255, 255, 0.85)"
+                          showCount={false}
+                          helperContainerClassName="bg-black/40 border border-white/25 px-2.5 py-1 rounded-lg self-start mt-1.5 backdrop-blur-md"
+                          helperClassName="text-xs font-bold text-white"
+                          style={{ fontSize: 16, fontWeight: '700', fontFamily: 'HankenGrotesk_700Bold', color: '#FFFFFF' }}
                           value={value}
                           onChangeText={onChange}
                           error={phoneForm.formState.errors.phone?.message}
@@ -1025,21 +1037,21 @@ export default function LoginScreen() {
                         checked={keepSignedIn}
                         onCheckedChange={setKeepSignedIn}
                         label={t('stay_signed_in', 'Stay signed in')}
-                        labelClassName="text-xs text-[#78716C] dark:text-[#A8A29E] font-medium"
+                        labelClassName="text-xs text-white font-medium"
                         className="items-center"
                       />
                     </View>
 
                     {/* Global Error Banner */}
                     {error ? (
-                      <View className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-2.5">
-                        <Text className="text-rose-500 text-xs text-center font-medium">
+                      <View className="bg-rose-500/20 border border-rose-500/40 rounded-xl p-2.5 backdrop-blur-md">
+                        <Text className="text-rose-200 text-xs text-center font-medium">
                           {error}
                         </Text>
                       </View>
                     ) : null}
 
-                    {/* Sign in with OTP Button (Luxury Sweep & Tactile Micro-Interaction) */}
+                    {/* Sign in with OTP Button */}
                     <Animated.View style={{ transform: [{ scale: buttonPressScale }] }}>
                       <TouchableOpacity
                         onPress={handlePhoneSignIn}
@@ -1048,23 +1060,23 @@ export default function LoginScreen() {
                         style={{
                           shadowColor: '#EA580C',
                           shadowOffset: { width: 0, height: 4 },
-                          shadowOpacity: 0.28,
+                          shadowOpacity: 0.35,
                           shadowRadius: 14,
                           elevation: 4,
                         }}
-                        className="mt-1 h-12 rounded-xl flex-row items-center justify-center gap-2 overflow-hidden relative"
+                        className="mt-1 h-[50px] rounded-2xl flex-row items-center justify-center gap-2 overflow-hidden relative"
                       >
                         <View className="absolute inset-0">
                           <Svg width="100%" height="100%" preserveAspectRatio="none">
                             <Defs>
                               <LinearGradient id="otpGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                                 <Stop offset="0%" stopColor="#1E232E" />
-                                <Stop offset="42%" stopColor="#2A3342" />
-                                <Stop offset="80%" stopColor="#EA580C" />
+                                <Stop offset="42%" stopColor="#252D3D" />
+                                <Stop offset="75%" stopColor="#EA580C" />
                                 <Stop offset="100%" stopColor="#FF7A00" />
                               </LinearGradient>
                             </Defs>
-                            <Rect width="100%" height="100%" rx="12" fill="url(#otpGrad)" />
+                            <Rect width="100%" height="100%" rx="16" fill="url(#otpGrad)" />
                           </Svg>
                         </View>
 
@@ -1104,35 +1116,36 @@ export default function LoginScreen() {
                   </View>
                 )}
               </View>
-              </BlurView>
 
-              {/* OR CONTINUE WITH Divider (Frosted Glass Pill) */}
-              <View className="flex-row items-center my-2 gap-2.5">
-                <View className="flex-1 h-[1.5px] bg-white/50 dark:bg-white/20" />
-                <View className="bg-white/75 dark:bg-[#1C1917]/75 px-3.5 py-1 rounded-full border border-white/70 dark:border-white/15 shadow-2xs backdrop-blur-md">
-                  <Text className="text-[10px] font-bold text-[#1C1917] dark:text-white tracking-widest uppercase font-sans">
-                    {t('or_continue_with', 'Or Continue With')}
-                  </Text>
-                </View>
-                <View className="flex-1 h-[1.5px] bg-white/50 dark:bg-white/20" />
+              {/* OR CONTINUE WITH Divider */}
+              <View className="flex-row items-center my-3 gap-3">
+                <View className="flex-1 h-[1px] bg-white/30" />
+                <Text className="text-[10.5px] font-bold text-white/80 tracking-widest uppercase font-sans">
+                  {t('or_continue_with', 'Or Continue With')}
+                </Text>
+                <View className="flex-1 h-[1px] bg-white/30" />
               </View>
 
               {/* Social Authentication: Google ID & Apple ID */}
-              <View className="flex-row items-center gap-3 w-full">
+              <View className="flex-row items-center gap-3.5 w-full">
                 <SocialAuthButton
                   provider="google"
+                  variant="glass"
                   onPress={handleGoogleSignIn}
                   loading={googleLoading}
                   disabled={isSubmittingBasic || isSubmittingPhone}
                 />
-                <AppleSignInButton disabled={isSubmittingBasic || isSubmittingPhone || googleLoading} />
+                <AppleSignInButton
+                  variant="glass"
+                  disabled={isSubmittingBasic || isSubmittingPhone || googleLoading}
+                />
               </View>
 
               {/* Create Organisation Prompt */}
               <View className="items-center justify-center pt-2.5 pb-2">
                 <Animated.View style={{ transform: [{ scale: createAccountPressScale }] }}>
                   <View className="bg-transparent flex-row items-center justify-center">
-                    <Text className="text-xs text-[#1C1917] dark:text-white font-medium">
+                    <Text className="text-xs text-white font-medium">
                       {t('dont_have_organisation', "Don't have an Organisation?")}{' '}
                     </Text>
                     <TouchableOpacity
@@ -1143,7 +1156,7 @@ export default function LoginScreen() {
                       accessibilityRole="button"
                       accessibilityLabel="Create Organisation"
                     >
-                      <Text className="text-xs font-bold text-[#EA580C]">
+                      <Text className="text-xs font-bold text-[#FF6A00]">
                         {t('create_organisation', 'Create Organisation')}
                       </Text>
                     </TouchableOpacity>
