@@ -235,11 +235,14 @@ export class AmenityAccessPassService {
       }
 
       // Step 7: Operational & Maintenance validation
+      // (facility/resource are populated on this read; queries need their ids)
+      const reservedFacilityId = reservation.facilityId?._id || reservation.facilityId;
+      const reservedResourceId = reservation.resourceId?._id || reservation.resourceId || null;
       const activeBlocks = await amenityMaintenanceBlockRepository.findOverlappingBlocks(
         {
           orgId,
-          facilityId: reservation.facilityId,
-          resourceId: reservation.resourceId || null,
+          facilityId: reservedFacilityId,
+          resourceId: reservedResourceId,
           startDateTime: now,
           endDateTime: now,
         },
@@ -249,7 +252,7 @@ export class AmenityAccessPassService {
       const activeClosure = activeBlocks.find(
         (b) =>
           (b.status === 'IN_PROGRESS' || b.status === 'SCHEDULED') &&
-          (b.isCompleteClosure || (reservation.resourceId && b.resourceId?.toString() === reservation.resourceId.toString()))
+          (b.isCompleteClosure || (reservedResourceId && b.resourceId?.toString() === reservedResourceId.toString()))
       );
 
       if (activeClosure) {
@@ -261,13 +264,23 @@ export class AmenityAccessPassService {
 
       // All checks passed -> Record turnstile check-in atomically
       const updatedPass = await amenityAccessPassRepository.recordCheckIn(
-        { orgId, passTokenHash: pass.passTokenHash, gateId, guardId },
+        { orgId, passTokenHash: pass.passTokenHash, gateId, guardId, earlyMinutes },
         session
       );
 
       if (!updatedPass) {
         throw new HttpError(409, 'Anti-replay violation: pass was checked in concurrently');
       }
+
+      // The booking itself records the entry (and a late arrival clears a no-show flag).
+      const ReservationModel = mongoose.models.AmenityReservation;
+      await ReservationModel.updateOne(
+        { _id: reservation._id, accessStatus: 'PASS_GENERATED' },
+        { $set: { accessStatus: 'CHECKED_IN', checkedInAt: updatedPass.checkInTimestamp, checkedInBy: guardId || null } },
+        { session: session || undefined }
+      );
+      const { default: lifecycle } = await import('../reservations/amenityReservationLifecycle.service.js');
+      await lifecycle.clearReviewOnArrival(reservation._id, 'ARRIVED', session);
 
       // Populate resident, unit, organization, guard details
       const User = mongoose.models.User || (await import('../../user/user.model.js')).default;
@@ -527,44 +540,109 @@ export class AmenityAccessPassService {
    * @param {import('mongoose').ClientSession} [session]
    * @returns {Promise<any>}
    */
-  async recordCheckOut({ orgId, rawToken, inspectionDetails }, session) {
-    const passTokenHash = this.hashToken(rawToken);
+  /**
+   * Resolves a scanned QR or a typed reservation number to this community's pass.
+   * @private
+   */
+  async _findPassForGate(orgId, rawToken, session) {
+    const mongoose = (await import('mongoose')).default;
+    const token = this.normalizeScanToken(rawToken);
+    if (!token) throw new HttpError(400, 'Invalid token: QR scan or token string is required');
+    const byHash = await amenityAccessPassRepository.findByTokenHash(orgId, this.hashToken(token), session);
+    if (byHash) return byHash;
+    if (token.length > 30) return null;
+    const ReservationModel = mongoose.models.AmenityReservation;
+    const candidates = [token, token.toUpperCase().startsWith('RES-') ? token.toUpperCase() : `RES-${token.toUpperCase()}`];
+    const reservation = await ReservationModel.findOne({
+      orgId: new mongoose.Types.ObjectId(String(orgId)),
+      $or: [
+        { reservationNumber: { $in: candidates } },
+        ...(mongoose.Types.ObjectId.isValid(token) ? [{ _id: new mongoose.Types.ObjectId(token) }] : []),
+      ],
+    }).session(session || null);
+    if (!reservation) return null;
+    const passes = await amenityAccessPassRepository.findByReservationId(reservation._id, session);
+    return (passes || []).find((p) => !p.isRevoked) || (passes || [])[0] || null;
+  }
 
-    const updatedPass = await amenityAccessPassRepository.recordCheckOut(
-      { orgId, passTokenHash, inspectionDetails },
-      session
-    );
+  /**
+   * Check-out at the gate. Borrowed items need a return inspection; any damage charge
+   * is kept from the refundable deposit and the rest is returned to the wallet. The
+   * booking is marked checked out and completed.
+   *
+   * @param {Object} params
+   * @param {Object} [params.inspectionDetails] - { isDamaged, damageNotes, damageCharge | assessedPenaltyAmount }
+   */
+  async recordCheckOut({ orgId, rawToken, inspectionDetails, guardId = null }, session) {
+    const { withTransactionRetry } = await import('../domain/concurrency/transaction.utils.js');
+    const run = async (trx) => {
+      const pass = await this._findPassForGate(orgId, rawToken, trx);
+      if (!pass) throw new HttpError(404, 'Invalid pass: token not found for this organization');
+      if (pass.isRevoked) throw new HttpError(403, 'Access denied: pass is revoked');
+      if (!pass.checkInTimestamp) throw new HttpError(400, 'Check-out rejected: pass has not been checked in yet');
+      if (pass.checkOutTimestamp) throw new HttpError(409, 'Pass has already been checked out');
 
-    if (updatedPass) {
-      return updatedPass;
-    }
+      const reservation = await amenityReservationRepository.findById(pass.reservationId, null, trx);
+      if (!reservation) throw new HttpError(404, 'Associated reservation not found');
+      const facility = await amenityFacilityRepository.findById(reservation.facilityId?._id || reservation.facilityId, orgId, trx);
+      const { default: lifecycle, requiresReturnInspection, depositPaidOf } = await import(
+        '../reservations/amenityReservationLifecycle.service.js'
+      );
 
-    const existingPass = await amenityAccessPassRepository.findByTokenHash(
-      orgId,
-      passTokenHash,
-      session
-    );
-
-    if (!existingPass) {
-      throw new HttpError(404, 'Invalid pass: token not found for this organization');
-    }
-
-    if (!existingPass.checkInTimestamp) {
-      if (existingPass.isRevoked) {
-        throw new HttpError(403, 'Access denied: pass is revoked');
+      const inspected = inspectionDetails && typeof inspectionDetails === 'object';
+      if (requiresReturnInspection(facility) && !inspected) {
+        throw new HttpError(400, 'A return inspection is required to check this item back in');
       }
-      throw new HttpError(400, 'Check-out rejected: pass has not been checked in yet');
-    }
+      const isDamaged = Boolean(inspectionDetails?.isDamaged);
+      const damageCharge = isDamaged
+        ? Math.max(0, Number(inspectionDetails?.damageCharge ?? inspectionDetails?.assessedPenaltyAmount ?? 0))
+        : 0;
+      if (isDamaged && !String(inspectionDetails?.damageNotes || '').trim()) {
+        throw new HttpError(400, 'Describe the damage when marking an item as damaged');
+      }
 
-    if (existingPass.checkOutTimestamp) {
-      throw new HttpError(409, 'Pass has already been checked out');
-    }
+      const updatedPass = await amenityAccessPassRepository.recordCheckOut(
+        {
+          orgId,
+          passTokenHash: pass.passTokenHash,
+          inspectionDetails: inspected
+            ? {
+                checkedOutByStaff: pass.inspectionDetails?.checkedOutByStaff || null,
+                returnInspectedByStaff: guardId,
+                damageNotes: inspectionDetails.damageNotes || null,
+                damageCharges: damageCharge,
+              }
+            : undefined,
+        },
+        trx
+      );
+      if (!updatedPass) throw new HttpError(409, 'Pass has already been checked out');
 
-    if (existingPass.isRevoked) {
-      throw new HttpError(403, 'Access denied: pass is revoked');
-    }
+      const retained = Math.min(damageCharge, depositPaidOf(reservation));
+      const completed = await lifecycle.completeWithDeposit(
+        reservation,
+        {
+          retained,
+          notes: isDamaged ? String(inspectionDetails.damageNotes).trim() : null,
+          actorId: guardId,
+          checkedOut: true,
+        },
+        trx
+      );
+      await lifecycle.clearReviewOnArrival(reservation._id, 'RETURNED', trx);
 
-    throw new HttpError(400, 'Check-out validation failed');
+      return {
+        pass: updatedPass,
+        reservation: completed,
+        deposit: {
+          paid: depositPaidOf(reservation),
+          retained,
+          refunded: completed.depositSettlement?.refunded || 0,
+          uncoveredDamage: Math.max(0, damageCharge - retained),
+        },
+      };
+    };
+    return session ? run(session) : withTransactionRetry(run);
   }
 
   /**

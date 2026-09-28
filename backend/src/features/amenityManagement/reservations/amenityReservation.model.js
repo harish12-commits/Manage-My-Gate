@@ -38,7 +38,7 @@ const approvalActionSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: {
-        values: ['REQUESTED', 'APPROVED', 'REJECTED'],
+        values: ['REQUESTED', 'APPROVED', 'REJECTED', 'EXPIRED', 'RESCHEDULED'],
         message: '{VALUE} is not a valid approval action',
       },
     },
@@ -163,7 +163,7 @@ const amenityReservationSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Approval status is required'],
       enum: {
-        values: ['NOT_REQUIRED', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'],
+        values: ['NOT_REQUIRED', 'PENDING_REVIEW', 'APPROVED', 'REJECTED', 'EXPIRED'],
         message: '{VALUE} is not a valid approvalStatus',
       },
       default: 'NOT_REQUIRED',
@@ -242,6 +242,36 @@ const amenityReservationSchema = new mongoose.Schema(
         paidAt: { type: Date, default: Date.now },
       },
     ],
+    // Lifecycle stamps written by the gate (check-in/out) and the lifecycle worker.
+    checkedInAt: { type: Date, default: null },
+    checkedInBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    checkedOutAt: { type: Date, default: null },
+    checkedOutBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    completedAt: { type: Date, default: null },
+    // Refundable deposit outcome (returned at check-out / completion, minus damage).
+    depositSettlement: {
+      refunded: { type: Number, default: null },
+      retained: { type: Number, default: null },
+      notes: { type: String, default: null },
+      settledAt: { type: Date, default: null },
+    },
+    // Bookings the lifecycle worker hands to amenity staff to decide (no-show, unpaid
+    // balance at the slot, item not returned). Staff forfeit, refund or extend.
+    adminReview: {
+      status: { type: String, enum: ['NONE', 'PENDING', 'RESOLVED'], default: 'NONE', index: true },
+      reason: { type: String, enum: ['NO_SHOW', 'UNPAID_BALANCE', 'OVERDUE_RETURN', null], default: null },
+      flaggedAt: { type: Date, default: null },
+      resolution: {
+        type: String,
+        enum: ['FORFEIT', 'REFUND_POLICY', 'REFUND_CUSTOM', 'EXTEND', 'ARRIVED', 'RETURNED', null],
+        default: null,
+      },
+      refundPercentage: { type: Number, default: null },
+      refundAmount: { type: Number, default: null },
+      notes: { type: String, default: null },
+      resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      resolvedAt: { type: Date, default: null },
+    },
     bookedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

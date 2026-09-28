@@ -43,8 +43,9 @@ export const listReservationsRules = [
     .withMessage('Invalid bookingStatus filter'),
   query('paymentStatus')
     .optional()
-    .isIn(['NOT_REQUIRED', 'NOT_APPLICABLE', 'PENDING', 'HELD_AUTHORIZED', 'PAID', 'REFUND_PENDING', 'REFUNDED', 'FAILED'])
+    .isIn(['NOT_REQUIRED', 'NOT_APPLICABLE', 'PENDING', 'HELD_AUTHORIZED', 'ADVANCE_PAID', 'PAID', 'REFUND_PENDING', 'REFUNDED', 'PARTIALLY_REFUNDED', 'FAILED'])
     .withMessage('Invalid paymentStatus filter'),
+  query('adminReviewStatus').optional().isIn(['PENDING', 'RESOLVED']).withMessage('Invalid adminReviewStatus filter'),
   query('approvalStatus')
     .optional()
     .isIn(['NOT_REQUIRED', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'])
@@ -62,4 +63,11 @@ export const payBalanceRules = [
 export const collectPaymentRules = [
   param('reservationId').isMongoId().withMessage('Invalid reservationId'),
   body('amount').isFloat({ gt: 0 }).withMessage('amount must be greater than 0'),
+];
+
+export const resolveReviewRules = [
+  param('reservationId').isMongoId().withMessage('Invalid reservationId'),
+  body('action').isIn(['FORFEIT', 'REFUND_POLICY', 'REFUND_CUSTOM', 'EXTEND']).withMessage('Invalid review action'),
+  body('refundPercentage').optional().isFloat({ min: 0, max: 100 }).withMessage('refundPercentage must be 0-100'),
+  body('notes').optional().isString().trim().isLength({ max: 500 }),
 ];

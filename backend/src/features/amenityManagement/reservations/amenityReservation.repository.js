@@ -145,6 +145,7 @@ export class AmenityReservationRepository {
     bookingStatus,
     paymentStatus,
     approvalStatus,
+    adminReviewStatus,
     page = 1,
     limit = 10,
   }) {
@@ -175,6 +176,10 @@ export class AmenityReservationRepository {
     }
     if (approvalStatus && approvalStatus !== 'All' && approvalStatus !== 'ALL') {
       matchConditions.push({ approvalStatus: approvalStatus.toUpperCase() });
+    }
+
+    if (adminReviewStatus) {
+      matchConditions.push({ 'adminReview.status': adminReviewStatus });
     }
 
     const match = matchConditions.length === 1 ? matchConditions[0] : { $and: matchConditions };

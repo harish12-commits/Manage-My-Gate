@@ -9,6 +9,7 @@ import {
   listReservationsRules,
   payBalanceRules,
   collectPaymentRules,
+  resolveReviewRules,
 } from './amenityReservation.validateRules.js';
 import validate from '../../../middlewares/validator.middleware.js';
 import isAuthenticated from '../../../middlewares/auth.middleware.js';
@@ -50,6 +51,14 @@ router.post(
   authorizePermission('amenities', ['scanner', 'admin_calander', 'amenities']),
   validate(collectPaymentRules),
   amenityReservationController.collectPayment
+);
+
+// POST /:reservationId/resolve-review - Staff decision on a flagged booking
+router.post(
+  '/:reservationId/resolve-review',
+  authorizePermission('amenities', ['amenities', 'admin_calander']),
+  validate(resolveReviewRules),
+  amenityReservationController.resolveReview
 );
 
 // POST /:reservationId/review - Maker-checker review (Approve/Reject)

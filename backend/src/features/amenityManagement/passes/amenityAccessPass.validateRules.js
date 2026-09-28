@@ -10,6 +10,7 @@ export const passCheckOutRules = [
   body('inspectionDetails.isDamaged').optional().isBoolean().withMessage('isDamaged must be a boolean'),
   body('inspectionDetails.damageNotes').optional().isString().trim(),
   body('inspectionDetails.assessedPenaltyAmount').optional().isFloat({ min: 0 }).withMessage('assessedPenaltyAmount must be >= 0'),
+  body('inspectionDetails.damageCharge').optional().isFloat({ min: 0 }).withMessage('damageCharge must be >= 0'),
 ];
 
 export const passIdParamRules = [

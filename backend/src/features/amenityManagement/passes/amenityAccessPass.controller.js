@@ -40,6 +40,7 @@ export class AmenityAccessPassController {
         orgId,
         rawToken,
         inspectionDetails,
+        guardId: req.user?.id || req.user?._id,
       });
 
       return res.success(result, 'Check-out recorded successfully');

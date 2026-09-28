@@ -93,6 +93,26 @@ export class AmenityReservationController {
   }
 
   /**
+   * Amenity staff decide a flagged booking (no-show, unpaid balance, overdue return).
+   */
+  async resolveReview(req, res, next) {
+    try {
+      const { default: lifecycle } = await import('./amenityReservationLifecycle.service.js');
+      const result = await lifecycle.resolveReview({
+        reservationId: req.params.reservationId,
+        orgId: req.tenant.orgId,
+        action: req.body.action,
+        refundPercentage: req.body.refundPercentage,
+        notes: req.body.notes,
+        adminId: req.user.id || req.user._id,
+      });
+      return res.success(result, 'Review decision recorded');
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
    * Cancels an existing reservation.
    */
   async cancel(req, res, next) {
@@ -187,6 +207,8 @@ export class AmenityReservationController {
         bookingStatus: req.query.bookingStatus,
         paymentStatus: req.query.paymentStatus,
         approvalStatus: req.query.approvalStatus,
+        // The staff review queue is staff-only.
+        adminReviewStatus: hasAdminScope ? req.query.adminReviewStatus : undefined,
         startDate: req.query.startDate ? new Date(req.query.startDate) : undefined,
         endDate: req.query.endDate ? new Date(req.query.endDate) : undefined,
         search: req.query.search,
