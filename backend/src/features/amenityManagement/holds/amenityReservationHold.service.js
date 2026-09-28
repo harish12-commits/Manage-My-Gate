@@ -12,15 +12,7 @@ import availabilityService from '../domain/availability/availability.service.js'
 import pricingService from '../domain/pricing/pricing.service.js';
 import { withTransactionRetry } from '../domain/concurrency/transaction.utils.js';
 import { getProfile, bookingRuleError } from '../domain/profiles/facilityProfiles.js';
-
-/**
- * Monthly household quota in minutes until community settings own it (P2b).
- * Long-duration archetypes (stays, loans, events) get a month-sized allowance.
- */
-const defaultQuotaMinutes = (facility, requestedUnits) => {
-  const longDuration = ['ROOM_RESOURCE', 'INVENTORY_TOOLS', 'EVENT_SPACE'].includes(facility.archetype);
-  return Math.max(longDuration ? 43200 : 2400, requestedUnits);
-};
+import amenitySettingsService from '../settings/amenitySettings.service.js';
 import amenityManagementEvents, { AMENITY_EVENTS } from '../amenityManagement.events.js';
 
 export class AmenityReservationHoldService {
@@ -130,14 +122,15 @@ export class AmenityReservationHoldService {
       throw new HttpError(409, avail.reason || 'Requested time slot or resource is not available');
     }
 
-    // 4. Reserve household quota (minutes of the requested window)
+    // 4. Reserve household quota (minutes of the requested window, community allowance)
     const requestedUnits = Math.ceil((end.getTime() - start.getTime()) / 60000);
+    const settings = await amenitySettingsService.getSettings(orgId, session);
     await amenityQuotaAllocationService.reserveQuota(
       {
         orgId,
         unitId,
         facilityId,
-        quotaLimit: defaultQuotaMinutes(facility, requestedUnits),
+        quotaLimit: amenitySettingsService.quotaLimitFor(settings, facility, requestedUnits),
         requestedUnits,
         date: start,
       },

@@ -8,6 +8,7 @@ import reservationRouter from './reservations/amenityReservation.router.js';
 import passRouter from './passes/amenityAccessPass.router.js';
 import maintenanceRouter from './maintenance/amenityMaintenanceBlock.router.js';
 import paymentRouter from './payments/amenityPayment.router.js';
+import settingsRouter from './settings/amenitySettings.router.js';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/reservations', reservationRouter);
 router.use('/passes', passRouter);
 router.use('/maintenance', maintenanceRouter);
 router.use('/payments', paymentRouter);
+router.use('/settings', settingsRouter);
 
 export default router;

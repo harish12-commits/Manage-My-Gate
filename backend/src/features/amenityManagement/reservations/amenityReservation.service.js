@@ -16,6 +16,13 @@ import amenityManagementEvents, { AMENITY_EVENTS } from '../amenityManagement.ev
 import walletService from '../../wallet/wallet.service.js';
 import Payment from '../../payment/payment.model.js';
 
+import {
+  snapshotCancellationPolicy,
+  cancellationBlockReason,
+  computeCancellationRefund,
+} from '../domain/policy/cancellationPolicy.js';
+import amenitySettingsService from '../settings/amenitySettings.service.js';
+
 /** Id of a possibly-populated reference. */
 const idOf = (ref) => (ref && typeof ref === 'object' && ref._id ? ref._id : ref);
 
@@ -166,8 +173,9 @@ export class AmenityReservationService {
       facility.requiresApproval || facility.approvalWorkflow?.requireAdminApproval || false;
     const bookingStatus = requiresApproval ? 'PENDING_APPROVAL' : 'CONFIRMED';
     const approvalStatus = requiresApproval ? 'PENDING_REVIEW' : 'NOT_REQUIRED';
+    const settings = await amenitySettingsService.getSettings(orgId, session);
     const approvalDeadline = requiresApproval
-      ? new Date(Date.now() + (facility.approvalWorkflow?.approvalTimeoutHours || 24) * 3600000)
+      ? new Date(Date.now() + (Number(settings.approvalTimeoutHours) || 24) * 3600000)
       : null;
 
     const shouldIssuePass =
@@ -226,6 +234,11 @@ export class AmenityReservationService {
         paymentReference: persistedPaymentReference,
         paymentId: persistedPaymentId,
         depositAmount: pricingSnapshot.depositAmount,
+        policySnapshot: {
+          cancellation: snapshotCancellationPolicy(facility),
+          archetype: facility.archetype,
+          timezone: facility.timezone || null,
+        },
         approvalDeadline,
         approvalHistory: requiresApproval
           ? [
@@ -599,15 +612,26 @@ export class AmenityReservationService {
       throw new HttpError(400, 'Cannot cancel a rejected reservation');
     }
 
-    // 2. Determine updated payment status
-    const isWalletPayment =
-      (reservation.paymentStatus === 'PAID' || reservation.paymentStatus === 'REFUND_PENDING') &&
-      reservation.paymentMethod === 'WALLET';
-    // Refunds are based on what was actually paid, never on the facility's current price.
-    const refundAmount = Number(reservation.paidAmount || 0);
+    // 2. Cancellation gate (already used / started / facility forbids resident cancels)
+    const blockReason = cancellationBlockReason(reservation, { isManagement: isManagementCancellation });
+    if (blockReason) {
+      throw new HttpError(/does not allow/.test(blockReason) ? 403 : 400, blockReason);
+    }
+
+    // 3. Refund per the policy frozen on the reservation, based on what was actually paid
+    const wasPaid =
+      ['PAID', 'REFUND_PENDING'].includes(reservation.paymentStatus) && Number(reservation.paidAmount) > 0;
+    const refund = wasPaid
+      ? computeCancellationRefund(reservation, { isManagement: isManagementCancellation })
+      : { percentage: 0, bookingRefund: 0, depositRefund: 0, total: 0, reason: 'Nothing was paid' };
+    const refundAmount = refund.total;
+    const isWalletPayment = wasPaid && reservation.paymentMethod === 'WALLET' && refundAmount > 0;
     let newPaymentStatus = reservation.paymentStatus;
-    if (reservation.paymentStatus === 'PAID' || reservation.paymentStatus === 'REFUND_PENDING') {
-      newPaymentStatus = isWalletPayment ? 'REFUNDED' : 'REFUND_PENDING';
+    if (wasPaid) {
+      if (refundAmount <= 0) newPaymentStatus = 'PAID';
+      else if (reservation.paymentMethod === 'WALLET') {
+        newPaymentStatus = refundAmount >= Number(reservation.paidAmount) ? 'REFUNDED' : 'PARTIALLY_REFUNDED';
+      } else newPaymentStatus = 'REFUND_PENDING';
     } else if (reservation.paymentStatus === 'NOT_APPLICABLE') {
       newPaymentStatus = 'NOT_REQUIRED';
     }
@@ -622,8 +646,10 @@ export class AmenityReservationService {
         cancelledAt: new Date(),
         cancellationReason: cancellationReason || (isManagementCancellation ? 'Cancelled by administration' : 'Cancelled by user'),
         cancelledBy: cancelledBy || residentId,
-        refundAmount: isWalletPayment ? refundAmount : 0,
-        refundMethod: isWalletPayment ? 'WALLET' : (newPaymentStatus === 'REFUND_PENDING' ? 'RAZORPAY' : null),
+        refundAmount,
+        refundMethod: refundAmount > 0 ? (reservation.paymentMethod === 'WALLET' ? 'WALLET' : 'RAZORPAY') : null,
+        refundPercentage: wasPaid ? refund.percentage : null,
+        refundBreakdown: { bookingRefund: refund.bookingRefund, depositRefund: refund.depositRefund, reason: refund.reason },
       },
       session
     );
@@ -720,8 +746,9 @@ export class AmenityReservationService {
           reservationNumber: reservation.reservationNumber,
           residentId: reservation.residentId,
           cancellationReason,
-          refundMethod: isWalletPayment ? 'WALLET' : null,
-          refundAmount: isWalletPayment ? refundAmount : null,
+          refundMethod: refundAmount > 0 ? (isWalletPayment ? 'WALLET' : 'RAZORPAY') : null,
+          refundAmount,
+          refundPercentage: wasPaid ? refund.percentage : null,
         },
       },
       session
@@ -737,7 +764,8 @@ export class AmenityReservationService {
           payload: {
             reservationId: reservation._id,
             reservationNumber: reservation.reservationNumber,
-            amount: reservation.totalAmount,
+            residentId: idOf(reservation.residentId),
+            amount: refundAmount,
             reason: cancellationReason || 'Reservation cancelled',
           },
         },

@@ -69,12 +69,18 @@ export class AmenityReservationController {
         throw new HttpError(403, 'Forbidden. You do not have permission to cancel this reservation.');
       }
 
+      // Staff cancelling another resident's booking is a management cancellation (full
+      // refund, not subject to the resident cancellation policy).
+      const bookedBy = reservation.residentId?._id || reservation.residentId;
+      const isManagementCancellation = hasAdminScope && String(bookedBy) !== String(userId);
+
       const result = await amenityReservationService.cancelReservation({
         reservationId,
         orgId,
-        residentId: reservation.residentId,
+        residentId: bookedBy,
         cancelledBy: userId,
         cancellationReason: reason,
+        isManagementCancellation,
       });
 
       return res.success(result, 'Reservation cancelled successfully');

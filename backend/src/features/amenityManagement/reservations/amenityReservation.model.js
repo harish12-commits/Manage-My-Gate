@@ -150,6 +150,7 @@ const amenityReservationSchema = new mongoose.Schema(
           'PAID',
           'REFUND_PENDING',
           'REFUNDED',
+          'PARTIALLY_REFUNDED',
           'FAILED',
         ],
         message: '{VALUE} is not a valid paymentStatus',
@@ -235,6 +236,27 @@ const amenityReservationSchema = new mongoose.Schema(
       type: String,
       enum: ['WALLET', 'RAZORPAY', null],
       default: null,
+    },
+    refundPercentage: {
+      type: Number,
+      default: null,
+      min: [0, 'Refund percentage cannot be negative'],
+      max: [100, 'Refund percentage cannot exceed 100'],
+    },
+    refundBreakdown: {
+      bookingRefund: { type: Number, default: 0 },
+      depositRefund: { type: Number, default: 0 },
+      reason: { type: String, default: null },
+    },
+    // Facility terms frozen at confirmation; later facility edits never change them.
+    policySnapshot: {
+      cancellation: {
+        isAllowed: { type: Boolean, default: true },
+        refundCutoffHours: { type: Number, default: 24 },
+        refundPercentage: { type: Number, default: 100 },
+      },
+      archetype: { type: String, default: null },
+      timezone: { type: String, default: null },
     },
     depositAmount: {
       type: Number,

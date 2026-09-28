@@ -60,9 +60,9 @@ const COMMUNITIES = [
       { actor: 'adminA', role: 'Community Admin', name: 'Asha Admin' },
       { actor: 'managerA', role: 'Amenity Manager', name: 'Manoj Manager' },
       { actor: 'guardA', role: 'Security Guard', name: 'Gopal Guard' },
-      { actor: 'residentA', role: 'Resident Owner', name: 'Ravi Resident', villa: 'A-101', residency: 'Owner', wallet: 5000 },
+      { actor: 'residentA', role: 'Resident Owner', name: 'Ravi Resident', villa: 'A-101', residency: 'Owner', wallet: 50000 },
       { actor: 'familyA', role: 'Family Member', name: 'Fathima Family', villa: 'A-101', residency: 'Family', wallet: 0 },
-      { actor: 'residentB', role: 'Resident Owner', name: 'Bhavna Resident', villa: 'A-102', residency: 'Owner', wallet: 1000 },
+      { actor: 'residentB', role: 'Resident Owner', name: 'Bhavna Resident', villa: 'A-102', residency: 'Owner', wallet: 20000 },
       // Resident here, Community Admin in B: probes cross-community permission leaks.
       { actor: 'crossAdmin', role: 'Resident Owner', name: 'Kiran Cross', villa: 'A-103', residency: 'Owner', wallet: 500, alsoAdminIn: 'B' },
     ],
@@ -76,7 +76,7 @@ const COMMUNITIES = [
     users: [
       { actor: 'adminOther', role: 'Community Admin', name: 'Omkar Admin' },
       { actor: 'guardOther', role: 'Security Guard', name: 'Omar Guard' },
-      { actor: 'residentOther', role: 'Resident Owner', name: 'Olga Resident', villa: 'B-101', residency: 'Owner', wallet: 5000 },
+      { actor: 'residentOther', role: 'Resident Owner', name: 'Olga Resident', villa: 'B-101', residency: 'Owner', wallet: 50000 },
     ],
   },
 ];
