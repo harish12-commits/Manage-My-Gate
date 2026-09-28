@@ -75,7 +75,7 @@ describe('Notification Deep-Linking & Route Resolution', () => {
         entityId: 'bkg-55',
         title: 'Booking Confirmed',
       };
-      expect(resolveNotificationRoute(payload)).toBe('/(resident)/amenities/booking/bkg-55');
+      expect(resolveNotificationRoute(payload)).toBe('/(resident)/amenities/reservations/bkg-55');
     });
 
     it('routes NOTICE with entityId to notice detail', () => {

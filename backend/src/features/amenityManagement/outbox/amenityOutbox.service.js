@@ -129,7 +129,10 @@ export class AmenityOutboxService {
             title: 'Amenity Access Pass Issued',
             body: 'Your digital QR access pass is now active for facility entry.',
             type: 'INFO',
-            actionUrl: `/resident/amenities/passes/${payload.passId || aggregateId}`,
+            // The pass belongs to a booking; open the booking (it shows the pass).
+            actionUrl: payload.reservationId
+              ? `/resident/amenities/reservations/${payload.reservationId}`
+              : '/resident/amenities/my-bookings',
             metadata: { passId: payload.passId || aggregateId, reservationId: payload.reservationId, eventType },
           });
         }
@@ -148,7 +151,7 @@ export class AmenityOutboxService {
             title: 'Amenity Hold Expired',
             body: 'Your temporary reservation hold has expired and reserved capacity has been released.',
             type: 'INFO',
-            actionUrl: '/resident/amenities',
+            actionUrl: '/resident/amenities/discover',
             metadata: { holdId: payload.holdId || aggregateId, eventType },
           });
         }
@@ -166,7 +169,7 @@ export class AmenityOutboxService {
             title: 'Amenity Booking Awaiting Approval',
             body: `Booking #${payload?.reservationNumber || ''} is waiting for your review.`,
             type: 'INFO',
-            actionUrl: `/resident/amenities/reservations/${payload?.reservationId || aggregateId}`,
+            actionUrl: '/resident/amenities/admin-bookings',
             metadata: { reservationId: payload?.reservationId || aggregateId, eventType, audience: 'STAFF' },
           });
         }
@@ -263,7 +266,7 @@ export class AmenityOutboxService {
             title: 'Amenity Booking Needs Review',
             body: copy.staff(n),
             type: 'WARNING',
-            actionUrl: `/resident/amenities/reservations/${payload?.reservationId || aggregateId}`,
+            actionUrl: '/resident/amenities/admin-bookings',
             metadata: { reservationId: payload?.reservationId || aggregateId, eventType, reason: payload?.reason, audience: 'STAFF' },
           });
         }
