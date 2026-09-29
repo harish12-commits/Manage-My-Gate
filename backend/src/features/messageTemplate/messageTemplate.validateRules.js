@@ -29,8 +29,8 @@ export const createTemplateRules = [
     .isString()
     .withMessage('Template purpose must be a string')
     .trim()
-    .isIn(['user_invitation', 'default'])
-    .withMessage('Invalid purpose. Supported: user_invitation, default'),
+    .isIn(['user_invitation', 'invoice_generated', 'invoice_reminder', 'invoice_overdue', 'invoice_receipt', 'default'])
+    .withMessage('Invalid purpose. Supported: user_invitation, invoice_generated, invoice_reminder, invoice_overdue, invoice_receipt, default'),
 
   body('subject')
     .optional()

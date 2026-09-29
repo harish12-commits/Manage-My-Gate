@@ -141,3 +141,109 @@ describe('ensureFreshPaymentLink', () => {
     assert.equal(await payLink.retireActivePaymentLink(id), false, 'second call is a no-op');
   });
 });
+
+// ── P1: billing emails ──
+const emailMod = await import('../src/features/invoice/invoice.email.js');
+const { default: messageTemplateService } = await import('../src/features/messageTemplate/messageTemplate.service.js');
+const { default: Organization } = await import('../src/features/organization/organization.model.js');
+
+describe('billing emails', () => {
+  const outbox = [];
+  let smtpUp = true;
+  let customTemplate = null;
+
+  before(async () => {
+    emailMod.setEmailSender(async (org, to, subject, html, opts) => {
+      if (!smtpUp) return false;
+      outbox.push({ org: String(org), to, subject, html, fromName: opts?.fromName });
+      return true;
+    });
+    messageTemplateService.getTemplateByPurpose = async () => customTemplate;
+    if (dbReady) await Organization.collection.insertOne({ _id: orgId, name: 'Green Valley', timezone: 'Asia/Kolkata' });
+  });
+  after(() => emailMod.setEmailSender());
+  beforeEach(() => {
+    outbox.length = 0;
+    smtpUp = true;
+    customTemplate = null;
+  });
+
+  test('invoice email: community sender, both links, amount and due date', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const id = await makeInvoice({ invoiceNumber: 'INV-1001', billingPeriodString: 'Oct 2026' });
+    assert.equal(await emailMod.sendInvoiceEmail('generated', id), 'sent');
+    const [mail] = outbox;
+    assert.equal(mail.to, 'asha@example.com');
+    assert.equal(mail.fromName, 'Green Valley');
+    assert.equal(mail.org, String(orgId));
+    assert.match(mail.subject, /INV-1001/);
+    assert.match(mail.subject, /₹1,500\.00/);
+    assert.match(mail.html, /https:\/\/app\.example\.com\/billing\/invoice\//);
+    assert.match(mail.html, /\/api\/billing-links\/[^"]+\/pay/);
+    assert.match(mail.html, /Oct 2026/);
+  });
+
+  test('each automatic email is sent at most once', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const id = await makeInvoice();
+    const results = await Promise.all([1, 2, 3].map(() => emailMod.sendInvoiceEmail('generated', id)));
+    assert.deepEqual(results.filter((r) => r === 'sent').length, 1);
+    assert.equal(outbox.length, 1);
+  });
+
+  test('SMTP failure releases the claim so a retry can send', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const id = await makeInvoice();
+    smtpUp = false;
+    assert.equal(await emailMod.sendInvoiceEmail('reminder', id), 'failed');
+    smtpUp = true;
+    assert.equal(await emailMod.sendInvoiceEmail('reminder', id), 'sent');
+  });
+
+  test('no reminder for paid invoices; receipts are per payment', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const id = await makeInvoice({ status: 'PAID', outstandingAmount: 0 });
+    assert.equal(await emailMod.sendInvoiceEmail('overdue', id), 'skipped:nothing-due');
+
+    const p1 = { _id: new mongoose.Types.ObjectId(), amount: 1500, gatewayTransactionId: 'pay_A' };
+    assert.equal(await emailMod.sendInvoiceEmail('receipt', id, { payment: p1 }), 'sent');
+    assert.equal(await emailMod.sendInvoiceEmail('receipt', id, { payment: p1 }), 'skipped:already-sent');
+    const p2 = { _id: new mongoose.Types.ObjectId(), amount: 200, gatewayTransactionId: 'pay_B' };
+    assert.equal(await emailMod.sendInvoiceEmail('receipt', id, { payment: p2 }), 'sent');
+    assert.match(outbox[0].html, /pay_A/);
+  });
+
+  test('admin manual reminder (force) can repeat', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const id = await makeInvoice();
+    assert.equal(await emailMod.sendInvoiceEmail('reminder', id, { force: true }), 'sent');
+    assert.equal(await emailMod.sendInvoiceEmail('reminder', id, { force: true }), 'sent');
+  });
+
+  test('skips residents without an email address', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const original = userService.getUserById;
+    userService.getUserById = async (uid) => ({ _id: uid, name: 'No Mail' });
+    try {
+      const id = await makeInvoice();
+      assert.equal(await emailMod.sendInvoiceEmail('generated', id), 'skipped:no-email');
+    } finally {
+      userService.getUserById = original;
+    }
+  });
+
+  test('community custom template overrides the default; values are escaped', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    customTemplate = { subject: 'Bill {{invoice_number}}', body: '<p>Dear {{resident_name}}, pay at {{pay_link}}</p>' };
+    const original = userService.getUserById;
+    userService.getUserById = async (uid) => ({ _id: uid, name: '<b>Eve</b>', email: 'eve@example.com' });
+    try {
+      const id = await makeInvoice({ invoiceNumber: 'INV-7' });
+      await emailMod.sendInvoiceEmail('generated', id);
+      assert.equal(outbox[0].subject, 'Bill INV-7');
+      assert.match(outbox[0].html, /Dear &lt;b&gt;Eve&lt;\/b&gt;/);
+    } finally {
+      userService.getUserById = original;
+    }
+  });
+});

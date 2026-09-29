@@ -1393,11 +1393,18 @@ export class InvoiceService {
     invoice.lastReminderSentAt = new Date();
     await invoice.save();
 
+    // Admin asked explicitly: always email (force bypasses the once-per-invoice automatic claim).
+    const { sendInvoiceEmail } = await import('./invoice.email.js');
+    const emailResult = await sendInvoiceEmail(invoice.status === 'OVERDUE' ? 'overdue' : 'reminder', invoice._id, { force: true })
+      .catch(() => 'failed');
+
     return {
       success: true,
       message: `Reminder notification sent to ${createdNotificationIds.length} configured resident(s)`,
       recipientsCount: createdNotificationIds.length,
       notificationIds: createdNotificationIds,
+      emailSent: emailResult === 'sent',
+      emailStatus: emailResult,
     };
   }
 
