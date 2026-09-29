@@ -2,6 +2,7 @@ services:
   mongodb:
     image: mongo:latest
     container_name: mmg-mongodb
+    restart: unless-stopped
     environment:
       - GLIBC_TUNABLES=glibc.pthread.rseq=0
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
@@ -53,6 +54,7 @@ services:
   redis:
     image: redis:alpine
     container_name: mmg-redis
+    restart: unless-stopped
     ports:
       - "${REDIS_PORT_EXTERNAL:-6379}:6379"
     healthcheck:
@@ -69,6 +71,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: mmg-backend
+    restart: unless-stopped
     ports:
       - "${SERVER_PORT:-5006}:5000"
     environment:
@@ -113,6 +116,7 @@ services:
         - VITE_MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID:-00000000-0000-0000-0000-000000000000}
         - VITE_MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID:-common}
     container_name: mmg-frontend
+    restart: unless-stopped
     ports:
       - "${CLIENT_PORT:-3004}:80"
     environment:
@@ -125,7 +129,7 @@ services:
   mongo-express:
     image: mongo-express:latest
     container_name: mmg-mongo-express
-    restart: always
+    restart: unless-stopped
     ports:
       - "${MONGO_EXPRESS_PORT:-8081}:8081"
     environment:
