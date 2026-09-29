@@ -1,4 +1,5 @@
 import { body } from 'express-validator';
+import { isNormalizablePhone, toE164OrSelf } from '../../utils/phone.utils.js';
 
 export const createPassRules = [
   body('orgId')
@@ -54,8 +55,9 @@ export const createPassRules = [
     .isString()
     .withMessage('Guest phone must be a string')
     .trim()
-    .isLength({ min: 10, max: 10 })
-    .withMessage('Guest phone must be exactly 10 digits'),
+    .custom(isNormalizablePhone)
+    .withMessage('Guest phone must be a valid phone number')
+    .customSanitizer(toE164OrSelf),
 
   body('visitorDetails.name')
     .optional()
@@ -68,8 +70,9 @@ export const createPassRules = [
     .isString()
     .withMessage('Visitor phone must be a string')
     .trim()
-    .isLength({ min: 10, max: 10 })
-    .withMessage('Visitor phone must be exactly 10 digits'),
+    .custom(isNormalizablePhone)
+    .withMessage('Visitor phone must be a valid phone number')
+    .customSanitizer(toE164OrSelf),
 
   body('visitorDetails.idProofType')
     .optional()

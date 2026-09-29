@@ -3,6 +3,8 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
 import { User, Phone, Tag, ShieldCheck, Check, CreditCard } from 'lucide-react-native';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { ContactPickerButton } from '@/components/forms/ContactPickerButton';
 
 export interface StaffDetailsData {
   staffName: string;
@@ -90,14 +92,16 @@ export const StaffDetailsStep: React.FC<StaffDetailsStepProps> = ({
           error={error}
         />
 
-        <Input
+        <PhoneInput
           label="Staff Contact Phone Number"
-          placeholder="9876543210"
-          keyboardType="phone-pad"
-          maxLength={10}
-          leftIcon={<Phone size={18} className="text-muted-foreground" />}
           value={data.phone}
           onChangeText={(val) => onChange({ ...data, phone: val })}
+          testID="staff-phone"
+          rightElement={
+            <ContactPickerButton
+              onPick={(c) => onChange({ ...data, staffName: c.name || data.staffName, phone: c.phone || data.phone })}
+            />
+          }
         />
 
         <Input

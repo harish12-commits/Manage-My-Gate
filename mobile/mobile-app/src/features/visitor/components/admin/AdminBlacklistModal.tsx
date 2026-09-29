@@ -5,6 +5,9 @@ import { TextInput } from '@/components/forms/TextInput';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, X } from 'lucide-react-native';
 import { useTranslation } from '@/src/utils/i18n';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { ContactPickerButton } from '@/components/forms/ContactPickerButton';
+import { validatePhone } from '@/src/utils/validation';
 
 interface AdminBlacklistModalProps {
   visible: boolean;
@@ -45,12 +48,9 @@ export const AdminBlacklistModal: React.FC<AdminBlacklistModalProps> = ({
       return;
     }
     
-    if (phone && phone.trim()) {
-      const digits = phone.replace(/\D/g, '');
-      if (digits.length !== 10) {
-        setError(t('contact_number_must_be_exactly_10_digits', 'Contact number must be exactly 10 digits'));
-        return;
-      }
+    if (phone && phone.trim() && !validatePhone(phone).isValid) {
+      setError(t('enter_valid_phone_number', 'Enter a valid phone number for the selected country.'));
+      return;
     }
 
     setError(null);
@@ -116,14 +116,20 @@ export const AdminBlacklistModal: React.FC<AdminBlacklistModalProps> = ({
                   placeholder={t('eg_alexander_wright', 'e.g. John Doe')}
                 />
 
-                <TextInput
+                <PhoneInput
                   label={t('phone_number', 'Phone Number')}
                   value={phone}
                   onChangeText={setPhone}
                   onFocus={revealFocusedField}
-                  placeholder="e.g. 9876543210"
-                  keyboardType="phone-pad"
-                  maxLength={10}
+                  testID="blacklist-phone"
+                  rightElement={
+                    <ContactPickerButton
+                      onPick={(c) => {
+                        if (c.name) setVisitorName(c.name);
+                        if (c.phone) setPhone(c.phone);
+                      }}
+                    />
+                  }
                 />
 
                 <TextInput

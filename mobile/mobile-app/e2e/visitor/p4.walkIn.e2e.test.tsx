@@ -10,7 +10,7 @@ import { GuardWalkInStatusView } from '@/src/features/visitor/components/guard/G
 import { renderScreen } from '../helpers/render';
 import { signInAs, actor } from '../helpers/session';
 import { findCalls, lastCall } from '../helpers/api';
-import { tap, typeInto } from '../helpers/ui';
+import { tap, typeInto, typePhone } from '../helpers/ui';
 import { apiAs } from '../helpers/backend';
 import { connectAs, ActorSocket } from '../helpers/socket';
 import { collection, oid, closeDb } from '../helpers/db';
@@ -35,7 +35,7 @@ const guardRegistersWalkIn = async (view: View, name: string, phone: string, uni
   const rows = await view.findAllByText(new RegExp(`^Villa ${unit}\\b`));
   await fireEvent.press(rows[rows.length - 1]);
   await typeInto(view, 'e.g. Rahul Sharma', name);
-  await typeInto(view, 'e.g. 9876543210', phone);
+  await typePhone(view, 'guard-walkin-phone', phone);
   await tap(view, 'Send Resident Request');
   await waitFor(() => expect(findCalls('POST', '/visitor-log/walk-in').length).toBe(1));
   return lastCall('POST', '/visitor-log/walk-in')!;
@@ -74,7 +74,7 @@ describe('P4 walk-in — guard request → resident decision → guard outcome',
       residentId: oid(actor('residentA').id),
       guardId: oid(actor('guardA').id),
     });
-    expect(log.snapshot.phone).toBe('9861111111');
+    expect(log.snapshot.phone).toBe('+919861111111');
     const note = await (await collection('notifications')).findOne({ recipientId: oid(actor('residentA').id), title: 'Gate Approval Required' });
     expect(note).toBeTruthy();
   });
@@ -186,7 +186,7 @@ describe('P4 walk-in — guard request → resident decision → guard outcome',
 
     await fireEvent.press(await view.findByLabelText('Initiate Walk-In'));
     await typeInto(view, 'e.g. Rahul Sharma', 'No Host Nina');
-    await typeInto(view, 'e.g. 9876543210', '9863333333');
+    await typePhone(view, 'guard-walkin-phone', '9863333333');
     await tap(view, 'Send Resident Request');
 
     expect(await view.findByText('Please select target villa and resident host')).toBeOnTheScreen();

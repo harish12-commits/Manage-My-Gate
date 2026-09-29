@@ -11,6 +11,14 @@ import { useWorkspace } from '../hooks/useWorkspace';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
 import { Mail, Phone, Clock, Globe, Building2 } from 'lucide-react-native';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { getPhoneCountries, setDefaultPhoneCountry } from '@/src/utils/phone';
+import { validatePhone } from '@/src/utils/validation';
+
+const COUNTRY_OPTIONS = getPhoneCountries().map((c) => ({
+  label: `${c.flag} ${c.name} (${c.dialCode})`,
+  value: c.code,
+}));
 
 import { TIMEZONE_OPTIONS, LANGUAGE_OPTIONS } from '@/src/utils/dropdownConstants';
 
@@ -18,9 +26,10 @@ const workspaceSchema = yup.object({
   workspaceName: yup.string().required('Workspace name is required').min(2, 'Workspace name must be at least 2 characters'),
   contactEmail: yup.string().email('Invalid email address').optional().default(''),
   contactPhone: yup.string()
-    .matches(/^(?:\d{10})?$/, 'Contact number must be exactly 10 digits')
+    .test('valid-phone', 'Enter a valid phone number', (v) => !v || validatePhone(v).isValid)
     .optional()
     .default(''),
+  countryCode: yup.string().optional().default(''),
   timeZone: yup.string().optional().default(''),
   language: yup.string().optional().default(''),
 });
@@ -41,6 +50,7 @@ export const WorkspaceSettingsForm = () => {
       workspaceName: '',
       contactEmail: '',
       contactPhone: '',
+      countryCode: '',
       timeZone: '',
       language: '',
     },
@@ -56,6 +66,7 @@ export const WorkspaceSettingsForm = () => {
         workspaceName: settings.workspaceName || settings.name || '',
         contactEmail: settings.contactEmail || '',
         contactPhone: settings.contactPhone || '',
+        countryCode: settings.countryCode || '',
         timeZone: settings.timeZone || '',
         language: settings.language || '',
       });
@@ -65,6 +76,7 @@ export const WorkspaceSettingsForm = () => {
   const onSubmit = async (data: WorkspaceFormValues) => {
     try {
       await saveWorkspaceDetails('current', data).unwrap();
+      if (data.countryCode) setDefaultPhoneCountry(data.countryCode);
       Alert.alert('Success', 'Workspace settings updated successfully');
     } catch (err: any) {
       Alert.alert('Error', err || 'Failed to save settings');
@@ -125,19 +137,32 @@ export const WorkspaceSettingsForm = () => {
         control={control}
         name="contactPhone"
         render={({ field: { onChange, onBlur, value } }) => (
-          <TextInput
+          <PhoneInput
             label="Contact Phone"
-            placeholder="+1 234 567 8900"
-            onBlur={onBlur}
             onChangeText={onChange}
             value={value}
             error={errors.contactPhone?.message}
-            leftIcon={Phone}
-            keyboardType="phone-pad"
-            maxLength={10}
           />
         )}
       />
+
+      <Controller
+        control={control}
+        name="countryCode"
+        render={({ field: { onChange, value } }) => (
+          <DropdownSelect
+            label="Country"
+            placeholder="Select the community country"
+            options={COUNTRY_OPTIONS}
+            value={value || ''}
+            onValueChange={onChange}
+            error={errors.countryCode?.message}
+          />
+        )}
+      />
+      <Text className="text-xs text-muted-foreground -mt-3 ms-1">
+        Phone numbers entered without a country code are treated as this country.
+      </Text>
 
       <Controller
         control={control}

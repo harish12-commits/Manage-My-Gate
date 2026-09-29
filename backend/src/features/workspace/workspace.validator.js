@@ -42,6 +42,12 @@ export const createWorkspaceRules = [
     .withMessage('Language must be a string')
     .trim(),
 
+  body('countryCode')
+    .optional({ checkFalsy: true })
+    .isISO31661Alpha2()
+    .withMessage('Country must be a valid ISO country code')
+    .toUpperCase(),
+
   body('contactEmail')
     .optional({ checkFalsy: true })
     .isEmail()

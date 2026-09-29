@@ -39,6 +39,7 @@ import { ServiceWeekdayStep } from '../service/ServiceWeekdayStep';
 import { ServiceTimeWindowStep, ServiceTimeWindowData } from '../service/ServiceTimeWindowStep';
 import { ServicePassReviewStep } from '../service/ServicePassReviewStep';
 import { toLocalDateKey } from '../../utils/localDate';
+import { validatePhone } from '@/src/utils/validation';
 
 const STEP_DEFINITIONS: Record<PassTypeKey, { key: string; title: string }[]> = {
   GUEST: [
@@ -75,9 +76,9 @@ const STEP_DEFINITIONS: Record<PassTypeKey, { key: string; title: string }[]> = 
   ],
 };
 
-// Mirrors the backend rule for visitorDetails.phone: optional, but exactly 10 digits when given.
-const INVALID_PHONE_MESSAGE = 'Please enter a valid 10-digit phone number.';
-const isValidOptionalPhone = (phone?: string) => !phone?.trim() || /^\d{10}$/.test(phone.trim());
+// Mirrors the backend rule for visitorDetails.phone: optional, but a valid number (any country) when given.
+const INVALID_PHONE_MESSAGE = 'Please enter a valid phone number.';
+const isValidOptionalPhone = (phone?: string) => !phone?.trim() || validatePhone(phone.trim()).isValid;
 
 interface VisitorPassWizardProps {
   initialType?: PassTypeKey;

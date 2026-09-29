@@ -12,6 +12,11 @@ export const typeInto = async (view: View, placeholder: string | RegExp, value: 
   await fireEvent.changeText(await view.findByPlaceholderText(placeholder), value);
 };
 
+/** Types into a PhoneInput identified by its testID (placeholders follow the selected country). */
+export const typePhone = async (view: View, testID: string, value: string) => {
+  await fireEvent.changeText(await view.findByTestId(testID), value);
+};
+
 /** Picks a status option from a SearchFilterBar (its options live in a filter modal). */
 export const chooseFilter = async (view: View, label: string | RegExp) => {
   await fireEvent.press(await view.findByLabelText('Open filter options'));

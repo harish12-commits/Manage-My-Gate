@@ -30,7 +30,7 @@ describe('P2 resident passes — list, details, share, revoke', () => {
     const view = await renderScreen(<ResidentPassesScreen />);
 
     expect(await view.findByText('Meera Visitor')).toBeOnTheScreen();
-    expect(view.getByText(new RegExp(`Ph: 9811111111`))).toBeOnTheScreen();
+    expect(view.getByText(new RegExp(`Ph: \\+919811111111`))).toBeOnTheScreen();
     expect(view.queryByText('Neighbour Guest')).toBeNull();
 
     const listCall = lastCall('GET', '/visitor-pass/org/')!;

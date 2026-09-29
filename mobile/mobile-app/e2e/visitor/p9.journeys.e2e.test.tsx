@@ -14,7 +14,7 @@ import { InsideVisitorsView } from '@/src/features/visitor/components/guard/Insi
 import { renderScreen } from '../helpers/render';
 import { signInAs, actor } from '../helpers/session';
 import { lastCall, resetApiLog } from '../helpers/api';
-import { tap, typeInto, visibleTexts } from '../helpers/ui';
+import { tap, typeInto, visibleTexts, typePhone } from '../helpers/ui';
 import { collection, oid, closeDb } from '../helpers/db';
 
 type View = Awaited<ReturnType<typeof renderScreen>>;
@@ -59,7 +59,7 @@ describe('P9 full journeys', () => {
     await signInAs('residentA');
     const invite = await renderScreen(<InviteVisitorScreen />);
     await typeInto(invite, 'e.g. Ramesh Chandra', 'Journey Jaya');
-    await typeInto(invite, '9876543210', '9812345678');
+    await typePhone(invite, 'guest-phone', '9812345678');
     await tap(invite, 'Continue');
     await tap(invite, 'Continue');
     await tap(invite, 'Continue');
@@ -97,7 +97,7 @@ describe('P9 full journeys', () => {
     const rows = await console1.findAllByText(/^Villa A-101\b/);
     await fireEvent.press(rows[rows.length - 1]);
     await typeInto(console1, 'e.g. Rahul Sharma', 'Journey Walker');
-    await typeInto(console1, 'e.g. 9876543210', '9813333333');
+    await typePhone(console1, 'guard-walkin-phone', '9813333333');
     await tap(console1, 'Send Resident Request');
     expect(await console1.findByText('PENDING APPROVAL')).toBeOnTheScreen();
     await console1.unmount();
@@ -119,7 +119,7 @@ describe('P9 full journeys', () => {
     await signInAs('residentA');
     const wizard = await renderScreen(<StaffPassScreen />);
     await typeInto(wizard, 'e.g. Sunita Devi, Ramesh Plumber', 'Journey Maid');
-    await typeInto(wizard, '9876543210', '9814444444');
+    await typePhone(wizard, 'staff-phone', '9814444444');
     await tap(wizard, 'Continue'); // → category
     await tap(wizard, 'Continue'); // → date range
     await tap(wizard, 'Continue'); // → weekdays

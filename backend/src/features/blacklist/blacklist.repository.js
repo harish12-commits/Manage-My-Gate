@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { phoneVariants } from '../../utils/phone.utils.js';
 import Blacklist from './blacklist.model.js';
 
 const normalizePhone = (value) => String(value || '').replace(/\D/g, '');
@@ -40,12 +41,11 @@ export class BlacklistRepository {
     const matches = [];
 
     const normalizedName = normalizeName(name);
-    const normalizedPhone = normalizePhone(phone);
     const normalizedIdProof = normalizeIdProof(idProofNumber);
 
-    if (normalizedName && normalizedName !== '—') matches.push({ name: new RegExp(`^${escapeRegex(normalizedName)}$`, 'i') });
-    if (normalizedPhone && normalizedPhone !== '—') matches.push({ phone: normalizedPhone });
-    if (normalizedIdProof && normalizedIdProof !== '—') matches.push({ idProofNumber: normalizedIdProof });
+    if (normalizedName && normalizedName !== '""') matches.push({ name: new RegExp(`^${escapeRegex(normalizedName)}$`, 'i') });
+    if (phone && phone.trim() && phone.trim() !== '""') matches.push({ phone: { '$in': phoneVariants(phone) } });
+    if (normalizedIdProof && normalizedIdProof !== '""') matches.push({ idProofNumber: normalizedIdProof });
     if (plate && plate.trim() && plate.trim() !== '—') matches.push({ plate: plate.trim().toUpperCase() });
 
     if (matches.length === 0) return null;

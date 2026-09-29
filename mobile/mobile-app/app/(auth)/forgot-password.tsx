@@ -342,6 +342,7 @@ export default function ForgotPasswordScreen() {
                       name="phone"
                       render={({ field: { onChange, value } }) => (
                         <PhoneInput
+                          variant="glass"
                           label={t('phone_number', 'Phone Number')}
                           placeholder="98765 43210"
                           value={value}

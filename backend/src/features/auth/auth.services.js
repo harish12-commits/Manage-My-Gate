@@ -650,6 +650,7 @@ export class AuthService {
     }
 
     const activeOrgName = selectedMembership?.orgId?.name || null;
+    const activeOrgCountryCode = selectedMembership?.orgId?.countryCode || 'IN';
 
     return {
       tokenPayload: {
@@ -663,6 +664,7 @@ export class AuthService {
         orgName: activeOrgName,
         organizationName: activeOrgName,
         activeOrganizationName: activeOrgName,
+        orgCountryCode: activeOrgCountryCode,
         isPlatform,
         visitorContext,
         activeAssignment: activeAssignment ? {
@@ -712,6 +714,7 @@ export class AuthService {
       orgName: tokenPayload.orgName,
       organizationName: tokenPayload.organizationName,
       activeOrganizationName: tokenPayload.activeOrganizationName,
+      orgCountryCode: tokenPayload.orgCountryCode || 'IN',
       isPlatform: tokenPayload.isPlatform,
       visitorContext: tokenPayload.visitorContext,
       activeAssignment: tokenPayload.activeAssignment || null,

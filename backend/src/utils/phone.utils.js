@@ -30,6 +30,32 @@ export function normalizePhone(rawPhone, defaultCountry = 'IN') {
 }
 
 /**
+ * All stored spellings a phone may have: E.164 plus the legacy bare national
+ * digits (visitor records before E.164). Used for exact-match lookups such as blacklist.
+ * @param {string} rawPhone
+ * @param {string} [defaultCountry='IN']
+ * @returns {string[]}
+ */
+export function phoneVariants(rawPhone, defaultCountry = 'IN') {
+  if (!rawPhone || typeof rawPhone !== 'string' || !rawPhone.trim()) return [];
+  const variants = new Set([rawPhone.trim()]);
+  const e164 = normalizePhone(rawPhone, defaultCountry);
+  if (e164) {
+    variants.add(e164);
+    const parsed = parsePhoneNumberFromString(e164);
+    if (parsed?.nationalNumber) variants.add(String(parsed.nationalNumber));
+  }
+  return [...variants];
+}
+
+/**
+ * express-validator helpers for optional visitor-style phone fields:
+ * accept any valid number (bare numbers read as `defaultCountry`) and store E.164.
+ */
+export const isNormalizablePhone = (value) => Boolean(normalizePhone(value));
+export const toE164OrSelf = (value) => (value ? normalizePhone(value) || value : value);
+
+/**
  * Safely masks a phone number for logging output.
  * E.g., "+919876543210" -> "+91*****3210"
  * @param {string} phone
@@ -66,6 +92,7 @@ export function maskEmail(email) {
 }
 
 export default {
+  phoneVariants,
   normalizePhone,
   maskPhone,
   maskEmail,

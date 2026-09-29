@@ -10,6 +10,8 @@ export interface WorkspaceSettings {
   language?: string;
   contactEmail?: string;
   contactPhone?: string;
+  /** ISO country; default for phone numbers typed without a country code. */
+  countryCode?: string;
   settings?: any;
 }
 

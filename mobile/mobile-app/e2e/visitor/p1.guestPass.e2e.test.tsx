@@ -8,7 +8,7 @@ import InviteVisitorScreen from '@/app/(resident)/visitor/invite';
 import { renderScreen } from '../helpers/render';
 import { signInAs } from '../helpers/session';
 import { findCalls, lastCall } from '../helpers/api';
-import { tap, typeInto } from '../helpers/ui';
+import { tap, typeInto, typePhone } from '../helpers/ui';
 import { collection, oid, closeDb } from '../helpers/db';
 
 afterAll(closeDb);
@@ -21,7 +21,7 @@ describe('P1 guest pass — resident invite wizard → backend', () => {
     const view = await renderScreen(<InviteVisitorScreen />);
 
     await typeInto(view, 'e.g. Ramesh Chandra', 'Kiran Guest');
-    await typeInto(view, '9876543210', '9876543210');
+    await typePhone(view, 'guest-phone', '9876543210');
     await typeInto(view, 'e.g. Family dinner, Personal meeting', 'Dinner');
     await tap(view, 'Continue'); // → schedule (default: arriving now)
     await tap(view, 'Continue'); // → options (default: single entry)
@@ -48,7 +48,7 @@ describe('P1 guest pass — resident invite wizard → backend', () => {
       villaId: oid(residentA.villaId!),
       passType: 'GUEST',
       status: 'PENDING',
-      visitorDetails: expect.objectContaining({ name: 'Kiran Guest', phone: '9876543210' }),
+      visitorDetails: expect.objectContaining({ name: 'Kiran Guest', phone: '+919876543210' }),
       usageLimit: expect.objectContaining({ maxUses: 1, currentUses: 0 }),
     });
 
@@ -76,10 +76,10 @@ describe('P1 guest pass — resident invite wizard → backend', () => {
     const view = await renderScreen(<InviteVisitorScreen />);
 
     await typeInto(view, 'e.g. Ramesh Chandra', 'Short Phone');
-    await typeInto(view, '9876543210', '12345');
+    await typePhone(view, 'guest-phone', '12345');
     await tap(view, 'Continue');
 
-    expect(await view.findByText('Please enter a valid 10-digit phone number.')).toBeOnTheScreen();
+    expect(await view.findByText('Please enter a valid phone number.')).toBeOnTheScreen();
     expect(view.getByText('Step 1 of 4: Guest Details')).toBeOnTheScreen();
     expect(findCalls('POST', '/visitor-pass')).toHaveLength(0);
     expect(await passCount({ createdById: oid(residentA.id) })).toBe(before);

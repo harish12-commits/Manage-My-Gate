@@ -3,6 +3,8 @@ import { View, ScrollView } from 'react-native';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { User, Phone, Tag } from 'lucide-react-native';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { ContactPickerButton } from '@/components/forms/ContactPickerButton';
 
 export interface GuestDetailsData {
   visitorName: string;
@@ -56,15 +58,17 @@ export const GuestDetailsStep: React.FC<GuestDetailsStepProps> = ({
         />
 
         {/* Phone Number */}
-        <Input
+        <PhoneInput
           label="Phone Number (Optional)"
-          placeholder="9876543210"
-          keyboardType="phone-pad"
-          maxLength={10}
-          leftIcon={<Phone size={18} className="text-muted-foreground" />}
           value={data.phone}
           onChangeText={(val) => updateField('phone', val)}
           error={errors.phone}
+          testID="guest-phone"
+          rightElement={
+            <ContactPickerButton
+              onPick={(c) => onChange({ ...data, visitorName: c.name || data.visitorName, phone: c.phone || data.phone })}
+            />
+          }
         />
 
         {/* Purpose / Note */}

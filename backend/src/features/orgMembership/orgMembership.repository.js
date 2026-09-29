@@ -17,7 +17,7 @@ export class OrgMembershipRepository {
 
   async findByUserIdWithPopulate(userId, session = null) {
     return await OrgMembership.find({ userId })
-      .populate({ path: 'orgId', select: 'name allowedFeatures status isPlatform' })
+      .populate({ path: 'orgId', select: 'name allowedFeatures status isPlatform countryCode' })
       .populate({ path: 'roleId', select: 'name' })
       .populate({ path: 'roleIds', select: 'name' })
       .populate({ path: 'villaId' })

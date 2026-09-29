@@ -11,7 +11,7 @@ import StaffPassScreen from '@/app/(resident)/visitor/staff-pass';
 import { renderScreen, nav } from '../helpers/render';
 import { signInAs, ActorInfo } from '../helpers/session';
 import { findCalls, lastCall } from '../helpers/api';
-import { tap, typeInto } from '../helpers/ui';
+import { tap, typeInto, typePhone } from '../helpers/ui';
 import { collection, oid, closeDb } from '../helpers/db';
 
 afterAll(closeDb);
@@ -51,7 +51,7 @@ describe('P1 other pass types — resident wizards → backend', () => {
     await tap(view, 'Continue'); // → schedule (full day)
     await tap(view, 'Continue'); // → guests
     await typeInto(view, 'e.g. Ananya Roy', 'Ananya Roy');
-    await typeInto(view, '9876543210', '9876500001');
+    await typePhone(view, 'group-guest-phone', '9876500001');
     await tap(view, 'Add Guest to List');
     await tap(view, 'Continue'); // → review
 
@@ -59,7 +59,7 @@ describe('P1 other pass types — resident wizards → backend', () => {
     expect(pass).toMatchObject({
       passType: 'GUEST',
       isGroupPass: true,
-      groupGuests: [expect.objectContaining({ name: 'Ananya Roy', phone: '9876500001' })],
+      groupGuests: [expect.objectContaining({ name: 'Ananya Roy', phone: '+919876500001' })],
       usageLimit: expect.objectContaining({ maxUses: 5 }),
     });
   });
@@ -121,7 +121,7 @@ describe('P1 other pass types — resident wizards → backend', () => {
     const view = await renderScreen(<StaffPassScreen />);
 
     await typeInto(view, 'e.g. Sunita Devi, Ramesh Plumber', 'Sunita Devi');
-    await typeInto(view, '9876543210', '9876500002');
+    await typePhone(view, 'staff-phone', '9876500002');
     await tap(view, 'Continue'); // → category
     await tap(view, 'Continue'); // → date range (30 days)
     await tap(view, 'Continue'); // → weekdays (Mon–Sat)
@@ -131,7 +131,7 @@ describe('P1 other pass types — resident wizards → backend', () => {
     const { pass } = await generateAndLoadPass(view, residentA);
     expect(pass).toMatchObject({
       passType: 'SERVICE',
-      visitorDetails: expect.objectContaining({ name: 'Sunita Devi', phone: '9876500002' }),
+      visitorDetails: expect.objectContaining({ name: 'Sunita Devi', phone: '+919876500002' }),
       validity: expect.objectContaining({ timeWindowStart: '07:00', timeWindowEnd: '20:00' }),
     });
     expect([...pass.validity.allowedDays].sort()).toEqual([1, 2, 3, 4, 5, 6]);
