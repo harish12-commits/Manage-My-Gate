@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,43 +10,43 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { ChevronDown, Check, Phone, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { ChevronDown, Check, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
 import { cn } from '../../lib/utils';
-import { validatePhone } from '../../src/utils/validation';
-
-export interface CountryOption {
-  code: string;
-  name: string;
-  dialCode: string;
-  flag: string;
-  digitsLength: number;
-}
-
-export const COUNTRIES: CountryOption[] = [
-  { code: 'IN', name: 'India', dialCode: '+91', flag: '🇮🇳', digitsLength: 10 },
-  { code: 'SA', name: 'Saudi Arabia', dialCode: '+966', flag: '🇸🇦', digitsLength: 9 },
-  { code: 'AE', name: 'United Arab Emirates', dialCode: '+971', flag: '🇦🇪', digitsLength: 9 },
-  { code: 'US', name: 'United States', dialCode: '+1', flag: '🇺🇸', digitsLength: 10 },
-  { code: 'GB', name: 'United Kingdom', dialCode: '+44', flag: '🇬🇧', digitsLength: 10 },
-  { code: 'QA', name: 'Qatar', dialCode: '+974', flag: '🇶🇦', digitsLength: 8 },
-  { code: 'KW', name: 'Kuwait', dialCode: '+965', flag: '🇰🇼', digitsLength: 8 },
-  { code: 'OM', name: 'Oman', dialCode: '+968', flag: '🇴🇲', digitsLength: 8 },
-  { code: 'BH', name: 'Bahrain', dialCode: '+973', flag: '🇧🇭', digitsLength: 8 },
-  { code: 'SG', name: 'Singapore', dialCode: '+65', flag: '🇸🇬', digitsLength: 8 },
-  { code: 'MY', name: 'Malaysia', dialCode: '+60', flag: '🇲🇾', digitsLength: 9 },
-  { code: 'AU', name: 'Australia', dialCode: '+61', flag: '🇦🇺', digitsLength: 9 },
-];
+import {
+  examplePhone,
+  getDefaultPhoneCountry,
+  getPhoneCountries,
+  getPhoneCountry,
+  maxNationalDigits,
+  parsePhone,
+  phoneLengthStatus,
+  type PhoneCountry,
+} from '../../src/utils/phone';
 
 export interface PhoneInputProps {
   label?: string;
   required?: boolean;
+  /** E.164 (+971501234567) or a bare national number. */
   value?: string;
+  /** Emits E.164 when parseable, `+<dial><digits>` while typing, '' when empty. */
   onChangeText?: (fullPhoneNumber: string) => void;
   error?: string;
   placeholder?: string;
   containerClassName?: string;
   helperText?: string;
+  /** ISO country used for bare numbers; defaults to community → device → IN. */
+  defaultCountry?: string;
+  /** Rendered at the end of the field, e.g. a contact-picker button. */
+  rightElement?: React.ReactNode;
+  testID?: string;
 }
+
+const buildFullNumber = (digits: string, country: PhoneCountry): string => {
+  if (!digits) return '';
+  const parsed = parsePhoneNumberFromString(digits, country.code as CountryCode);
+  return parsed && parsed.isPossible() ? parsed.number : `${country.dialCode}${digits}`;
+};
 
 export const PhoneInput: React.FC<PhoneInputProps> = ({
   label = 'Mobile Number',
@@ -54,59 +54,83 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   value = '',
   onChangeText,
   error,
-  placeholder = '99887 76655',
+  placeholder,
   containerClassName,
   helperText,
+  defaultCountry,
+  rightElement,
+  testID,
 }) => {
-  const [selectedCountry, setSelectedCountry] = useState<CountryOption>(COUNTRIES[0]); // Default India +91
+  const [selectedCountry, setSelectedCountry] = useState<PhoneCountry>(() =>
+    getPhoneCountry(defaultCountry || getDefaultPhoneCountry())
+  );
   const [nationalNumber, setNationalNumber] = useState('');
   const [isPickerVisible, setIsPickerVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  // Last value we emitted; lets us ignore our own round-trips so typing never flips the country.
+  const lastEmitted = useRef<string | null>(null);
 
-  // Parse initial value if passed e.g. +919988776655
   useEffect(() => {
-    if (value) {
-      const matched = COUNTRIES.find((c) => value.startsWith(c.dialCode));
-      if (matched) {
-        setSelectedCountry(matched);
-        setNationalNumber(value.slice(matched.dialCode.length).trim());
-      } else {
-        const digits = value.replace(/[^0-9]/g, '');
-        setNationalNumber(digits);
-      }
+    if (value === lastEmitted.current) return;
+    if (!value) {
+      setNationalNumber('');
+      return;
     }
+    const parsed = parsePhone(value, selectedCountry.code);
+    setSelectedCountry(getPhoneCountry(parsed.country));
+    setNationalNumber(parsed.nationalNumber || value.replace(/\D/g, ''));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  const filteredCountries = COUNTRIES.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.dialCode.includes(searchQuery) ||
-      c.code.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const emit = (digits: string, country: PhoneCountry) => {
+    const full = buildFullNumber(digits, country);
+    lastEmitted.current = full;
+    onChangeText?.(full);
+  };
 
-  const handleCountrySelect = (country: CountryOption) => {
+  const filteredCountries = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const all = getPhoneCountries();
+    if (!q) return all;
+    return all.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.dialCode.includes(q) ||
+        c.code.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  const maxDigits = maxNationalDigits(selectedCountry.code);
+
+  const handleCountrySelect = (country: PhoneCountry) => {
     setSelectedCountry(country);
     setIsPickerVisible(false);
     setSearchQuery('');
-    const trimmedNumber = nationalNumber.slice(0, country.digitsLength);
-    setNationalNumber(trimmedNumber);
-    if (onChangeText) {
-      onChangeText(`${country.dialCode}${trimmedNumber}`);
-    }
+    emit(nationalNumber, country);
   };
 
   const handleNumberChange = (text: string) => {
-    const cleaned = text.replace(/[^0-9]/g, '').slice(0, selectedCountry.digitsLength);
-    setNationalNumber(cleaned);
-    if (onChangeText) {
-      onChangeText(`${selectedCountry.dialCode}${cleaned}`);
+    // A pasted international number (+44…/0044…) switches the country automatically.
+    if (/^\s*(\+|00)/.test(text)) {
+      const parsed = parsePhone(text, selectedCountry.code);
+      const country = getPhoneCountry(parsed.country);
+      setSelectedCountry(country);
+      setNationalNumber(parsed.nationalNumber);
+      emit(parsed.nationalNumber, country);
+      return;
     }
+    // +1 allows a trunk "0" some users type before the national number.
+    const cleaned = text.replace(/[^0-9]/g, '').slice(0, maxDigits + 1);
+    setNationalNumber(cleaned);
+    emit(cleaned, selectedCountry);
   };
 
-  const currentLength = nationalNumber.length;
-  const isComplete = currentLength === selectedCountry.digitsLength;
-  const isIncomplete = currentLength > 0 && currentLength < selectedCountry.digitsLength;
+  const status = phoneLengthStatus(nationalNumber, selectedCountry.code);
+  const currentLength = nationalNumber.replace(/^0/, '').length;
+  const isComplete = status === 'ok';
+  const isIncomplete = status === 'short';
+  const isInvalid = status === 'long' || status === 'invalid';
 
   return (
     <View className={cn('w-full', containerClassName)}>
@@ -124,12 +148,12 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
                 <View className="flex-row items-center gap-1">
                   <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400" />
                   <Text className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    {currentLength}/{selectedCountry.digitsLength}
+                    {currentLength} digits
                   </Text>
                 </View>
               ) : (
                 <Text className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                  {currentLength}/{selectedCountry.digitsLength} digits
+                  {currentLength}/{maxDigits} digits
                 </Text>
               )}
             </View>
@@ -141,7 +165,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         className={cn(
           'flex-row items-center rounded-2xl border bg-white/75 dark:bg-[#292524]/75 border-white/80 dark:border-white/20 px-3.5 min-h-[48px] py-2.5 shadow-2xs transition-colors backdrop-blur-sm',
           isFocused && !error && 'border-primary ring-2 ring-primary/20',
-          isIncomplete && !error && 'border-amber-500/80 bg-amber-500/5',
+          (isIncomplete || isInvalid) && !error && 'border-amber-500/80 bg-amber-500/5',
           isComplete && !error && 'border-emerald-500/80 bg-emerald-500/5',
           Boolean(error) && 'border-destructive bg-destructive/5 ring-1 ring-destructive/20'
         )}
@@ -153,6 +177,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={`Selected country ${selectedCountry.name}, dial code ${selectedCountry.dialCode}. Tap to change.`}
+          testID={testID ? `${testID}-country` : undefined}
         >
           <Text className="text-base me-1">{selectedCountry.flag}</Text>
           <Text className="text-xs font-bold text-foreground me-1">
@@ -166,19 +191,20 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           className="flex-1 text-sm font-sans text-foreground self-stretch min-h-[44px] py-3"
           style={{ outlineStyle: 'none' } as any}
           keyboardType="phone-pad"
-          placeholder={placeholder}
+          placeholder={placeholder || examplePhone(selectedCountry.code) || '99887 76655'}
           placeholderTextColor="#737c88"
           value={nationalNumber}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           onChangeText={handleNumberChange}
-          maxLength={selectedCountry.digitsLength}
           accessibilityLabel={label}
+          testID={testID}
         />
 
-        {isComplete && !error && (
+        {isComplete && !error && !rightElement && (
           <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 ms-2" />
         )}
+        {rightElement ? <View className="ms-2">{rightElement}</View> : null}
       </View>
 
       {Boolean(error) && (
@@ -190,11 +216,17 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
 
       {!error && isIncomplete && (
         <Text className="mt-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium ms-1">
-          Enter {selectedCountry.digitsLength - currentLength} more digit{selectedCountry.digitsLength - currentLength > 1 ? 's' : ''} to complete.
+          Number looks short for {selectedCountry.name}.
         </Text>
       )}
 
-      {!error && !isIncomplete && Boolean(helperText) && (
+      {!error && isInvalid && (
+        <Text className="mt-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium ms-1">
+          Check this number for {selectedCountry.name}.
+        </Text>
+      )}
+
+      {!error && !isIncomplete && !isInvalid && Boolean(helperText) && (
         <Text className="mt-1 text-[11px] text-muted-foreground ms-1">{helperText}</Text>
       )}
 
@@ -212,7 +244,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
             }}
           >
             <Pressable
-              className="w-full max-w-sm bg-card border border-border rounded-2xl p-4 shadow-xl max-h-[440px]"
+              className="w-full max-w-sm bg-card border border-border rounded-2xl p-4 shadow-xl max-h-[480px]"
               onPress={(e) => e.stopPropagation()}
             >
               <Text className="text-base font-bold text-foreground mb-2 px-1">Select Country</Text>
@@ -231,6 +263,8 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
                 data={filteredCountries}
                 keyExtractor={(item) => item.code}
                 keyboardShouldPersistTaps="handled"
+                initialNumToRender={20}
+                windowSize={7}
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     onPress={() => handleCountrySelect(item)}
@@ -239,9 +273,9 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
                       selectedCountry.code === item.code ? 'bg-primary/10' : 'active:bg-muted'
                     )}
                   >
-                    <View className="flex-row items-center">
+                    <View className="flex-row items-center flex-1">
                       <Text className="text-2xl me-3">{item.flag}</Text>
-                      <View>
+                      <View className="flex-1">
                         <Text className="text-sm font-semibold text-foreground">{item.name}</Text>
                         <Text className="text-xs text-muted-foreground">{item.dialCode}</Text>
                       </View>

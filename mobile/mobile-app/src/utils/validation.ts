@@ -3,6 +3,8 @@
  * Provides unified validation rules, formatting, and backend error sanitation.
  */
 
+import { getDefaultPhoneCountry, getPhoneCountries, maxNationalDigits, parsePhone, phoneLengthStatus } from './phone';
+
 export type ValidationStatus = 'idle' | 'incomplete' | 'validating' | 'valid' | 'invalid';
 
 export interface ValidationResult {
@@ -135,91 +137,39 @@ export const validateEmail = (rawEmail: string): ValidationResult => {
 };
 
 /**
- * Validates phone numbers with country code awareness
+ * Validates phone numbers for any country (libphonenumber-js).
+ * `country` accepts an ISO code ('IN', 'AE') or a dial code ('+91'); a value that
+ * starts with '+' is parsed as international regardless of `country`.
  */
 export const validatePhone = (
   rawPhone: string,
-  countryCode: string = '+91',
-  expectedDigits: number = 10
+  country: string = getDefaultPhoneCountry()
 ): ValidationResult & { currentDigits: number; requiredDigits: number } => {
+  const iso = country.startsWith('+')
+    ? getPhoneCountries().find((c) => c.dialCode === country)?.code || getDefaultPhoneCountry()
+    : country;
   if (!rawPhone || !rawPhone.trim()) {
-    return {
-      isValid: false,
-      status: 'idle',
-      message: 'Phone number is required.',
-      currentDigits: 0,
-      requiredDigits: expectedDigits,
-    };
+    return { isValid: false, status: 'idle', message: 'Phone number is required.', currentDigits: 0, requiredDigits: maxNationalDigits(iso) };
   }
 
-  const digits = rawPhone.replace(/\D/g, '');
-  // Exclude dialCode digits if included
-  const cleanCodeDigits = countryCode.replace(/\D/g, '');
-  let nationalDigits = digits;
-  if (digits.startsWith(cleanCodeDigits)) {
-    nationalDigits = digits.slice(cleanCodeDigits.length);
-  }
-
-  const currentDigits = nationalDigits.length;
+  const parsed = parsePhone(rawPhone, iso);
+  const currentDigits = parsed.nationalNumber.length;
+  const requiredDigits = maxNationalDigits(parsed.country);
+  const lengthStatus = phoneLengthStatus(parsed.nationalNumber, parsed.country);
 
   if (currentDigits === 0) {
-    return {
-      isValid: false,
-      status: 'incomplete',
-      message: 'Enter your mobile number.',
-      currentDigits,
-      requiredDigits: expectedDigits,
-    };
+    return { isValid: false, status: 'incomplete', message: 'Enter your mobile number.', currentDigits, requiredDigits };
   }
-
-  if (currentDigits < expectedDigits) {
-    return {
-      isValid: false,
-      status: 'incomplete',
-      message: `Enter a valid ${expectedDigits}-digit mobile number (${currentDigits}/${expectedDigits}).`,
-      currentDigits,
-      requiredDigits: expectedDigits,
-    };
+  if (lengthStatus === 'short') {
+    return { isValid: false, status: 'incomplete', message: 'Number is too short for the selected country.', currentDigits, requiredDigits };
   }
-
-  if (currentDigits > expectedDigits) {
-    return {
-      isValid: false,
-      status: 'invalid',
-      message: `Mobile number cannot exceed ${expectedDigits} digits.`,
-      currentDigits,
-      requiredDigits: expectedDigits,
-    };
+  if (lengthStatus === 'long') {
+    return { isValid: false, status: 'invalid', message: 'Number is too long for the selected country.', currentDigits, requiredDigits };
   }
-
-  // Specific country starting digit checks
-  if (countryCode === '+91' && !/^[6-9]/.test(nationalDigits)) {
-    return {
-      isValid: false,
-      status: 'invalid',
-      message: 'Indian mobile numbers must start with 6, 7, 8, or 9.',
-      currentDigits,
-      requiredDigits: expectedDigits,
-    };
+  if (!parsed.isValid) {
+    return { isValid: false, status: 'invalid', message: 'Enter a valid phone number for the selected country.', currentDigits, requiredDigits };
   }
-
-  if ((countryCode === '+966' || countryCode === '+971') && !/^5/.test(nationalDigits)) {
-    return {
-      isValid: false,
-      status: 'invalid',
-      message: 'Mobile numbers in this region typically start with 5.',
-      currentDigits,
-      requiredDigits: expectedDigits,
-    };
-  }
-
-  return {
-    isValid: true,
-    status: 'valid',
-    message: 'Mobile number is valid.',
-    currentDigits,
-    requiredDigits: expectedDigits,
-  };
+  return { isValid: true, status: 'valid', message: 'Mobile number is valid.', currentDigits, requiredDigits };
 };
 
 /**
