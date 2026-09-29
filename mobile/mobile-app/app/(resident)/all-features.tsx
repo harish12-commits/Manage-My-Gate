@@ -21,6 +21,7 @@ import { isFeatureAllowedForUser, checkIsAdmin } from '@/src/utils/rbac';
 import { useTranslation } from '@/src/utils/i18n';
 import { useBottomNavScroll } from '@/components/navigation/BottomNavScrollContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { useColorScheme } from 'nativewind';
 
 import { InteractionManager } from 'react-native';
@@ -144,22 +145,13 @@ export default function AllFeaturesScreen() {
       >
         <View className="gap-4 pb-8 max-w-md mx-auto w-full">
           {/* Search All Features Bar */}
-          <View className="flex-row items-center bg-card border border-border rounded-2xl px-3.5 min-h-[46px] py-0 shadow-xs">
-            <View pointerEvents="none">
-              <Search size={18} className="me-2.5 shrink-0 text-primary" />
-            </View>
-            <TextInput
-              placeholder={t('search_all_features', 'Search all features...')}
-              placeholderTextColor="#64748B"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              className="flex-1 text-[13px] font-sans text-foreground self-stretch min-h-[42px] py-2"
+          <View className="bg-card rounded-2xl shadow-sm border border-border/40 overflow-hidden">
+            <SearchFilterBar
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder={t('search_all_features', 'Search all features...')}
+              className="px-0 py-0 h-12"
             />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')} className="p-0.5">
-                <X size={15} className="text-muted-foreground" />
-              </TouchableOpacity>
-            ) : null}
           </View>
 
           {/* Filter Pills */}

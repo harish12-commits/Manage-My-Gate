@@ -27,30 +27,31 @@ export const KeyboardAvoidingShell = ({
   ...props
 }: KeyboardAvoidingShellProps) => {
   // Android is configured with adjustResize. iOS needs an explicit padding
-  // response so the focused field and submit action remain above the keyboard.
+  // response so the focused field and submit action remain above the keyboard
+  // ONLY if not using KeyboardAwareScrollView, because KeyboardAwareScrollView handles it natively.
   const defaultBehavior = Platform.OS === 'ios' ? 'padding' : undefined;
   const activeBehavior = props.behavior ?? defaultBehavior;
 
-  const content = scrollable ? (
-    <KeyboardAwareScrollView
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-      showsVerticalScrollIndicator={false}
-      extraScrollHeight={extraScrollHeight}
-      {...scrollViewProps}
-      contentContainerStyle={[
-        { flexGrow: 1, paddingBottom: 96 },
-        scrollViewProps?.contentContainerStyle,
-      ]}
-      className={contentContainerClassName}
-    >
-      {children}
-    </KeyboardAwareScrollView>
-  ) : (
-    <View className={cn('flex-1', contentContainerClassName)}>
-      {children}
-    </View>
-  );
+  if (scrollable) {
+    return (
+      <View className={cn('flex-1 bg-background', className)}>
+        <KeyboardAwareScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          showsVerticalScrollIndicator={false}
+          extraScrollHeight={extraScrollHeight}
+          {...scrollViewProps}
+          contentContainerStyle={[
+            { flexGrow: 1, paddingBottom: 96 },
+            scrollViewProps?.contentContainerStyle,
+          ]}
+          className={contentContainerClassName}
+        >
+          {children}
+        </KeyboardAwareScrollView>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -59,7 +60,9 @@ export const KeyboardAvoidingShell = ({
       className={cn('flex-1 bg-background', className)}
       {...props}
     >
-      {content}
+      <View className={cn('flex-1', contentContainerClassName)}>
+        {children}
+      </View>
     </KeyboardAvoidingView>
   );
 };

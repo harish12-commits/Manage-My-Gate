@@ -28,6 +28,7 @@ import { useForm, Controller } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useAuth } from '../../src/features/auth/hooks/useAuth';
+import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScrollView';
 import { useGoogleAuthSession } from '../../src/features/auth/hooks/useGoogleAuthSession';
 import { AppleSignInButton } from '../../src/features/auth/components/AppleSignInButton';
 import {
@@ -291,8 +292,8 @@ export default function SignupScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <ImageBackground source={require('../../assets/images/auth-bg.jpg')} style={{ flex: 1 }} blurRadius={Platform.OS === 'ios' ? 3 : 2} resizeMode="cover">
         <View className="absolute inset-0 bg-white/40 dark:bg-[#0B0E14]/55" />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-          <ScrollView
+        <KeyboardAwareScrollView
+            extraScrollHeight={56}
             contentContainerStyle={{
               flexGrow: 1,
               paddingTop: Math.max(insets.top, 24) + 16,
@@ -796,8 +797,7 @@ export default function SignupScreen() {
                 </View>
               </Animated.View>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
       </ImageBackground>
     </>
   );

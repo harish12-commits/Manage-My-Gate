@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as Location from 'expo-location';
 import { View, ScrollView, Modal, Pressable, Alert, Platform, TextInput as RNTextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useDispatch } from 'react-redux';
@@ -185,38 +186,30 @@ export default function ProfileScreen() {
   };
 
   // Quick 1-tap GPS Geolocation direct from profile
-  const handleQuickGpsDetect = () => {
+  const handleQuickGpsDetect = async () => {
     setIsDetectingGps(true);
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const formatted = await reverseGeocodeCoords(
-              position.coords.latitude,
-              position.coords.longitude
-            );
-            if (formatted) {
-              setHometown(formatted);
-            } else {
-              setShowLocationModal(true);
-            }
-          } catch (err) {
-            console.warn('[Profile] GPS reverse geocoding failed:', err);
-            setShowLocationModal(true);
-          } finally {
-            setIsDetectingGps(false);
-          }
-        },
-        (error) => {
-          console.warn('[Profile] Geolocation error:', error);
-          setIsDetectingGps(false);
-          setShowLocationModal(true);
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-      );
-    } else {
-      setIsDetectingGps(false);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setIsDetectingGps(false);
+        setShowLocationModal(true);
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const { latitude, longitude } = location.coords;
+
+      const formatted = await reverseGeocodeCoords(latitude, longitude);
+      if (formatted) {
+        setHometown(formatted);
+      } else {
+        setShowLocationModal(true);
+      }
+    } catch (err) {
+      console.warn('[Profile] GPS error:', err);
       setShowLocationModal(true);
+    } finally {
+      setIsDetectingGps(false);
     }
   };
 
@@ -1078,11 +1071,11 @@ export default function ProfileScreen() {
               />
 
               {/* Location Shortcuts Row */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-1.5 pb-0.5">
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-0.5" contentContainerClassName="gap-2 pe-4">
                 {/* 1. All Locations Picker trigger */}
                 <Pressable
                   onPress={() => setShowLocationModal(true)}
-                  className="px-3 py-1.5 rounded-xl border border-primary/40 bg-primary/10 flex-row items-center gap-1.5 me-1.5 active:opacity-75"
+                  className="px-3 py-1.5 rounded-xl border border-primary/40 bg-primary/10 flex-row items-center gap-1.5 active:opacity-75"
                 >
                   <MapPin size={13} className="text-primary" />
                   <Text className="text-xs font-bold text-primary">
@@ -1094,7 +1087,7 @@ export default function ProfileScreen() {
                 <Pressable
                   onPress={handleQuickGpsDetect}
                   disabled={isDetectingGps}
-                  className="px-3 py-1.5 rounded-xl border border-blue-500/40 bg-blue-500/10 flex-row items-center gap-1.5 me-1.5 active:opacity-75"
+                  className="px-3 py-1.5 rounded-xl border border-blue-500/40 bg-blue-500/10 flex-row items-center gap-1.5 active:opacity-75"
                 >
                   {isDetectingGps ? (
                     <ActivityIndicator size="small" color="#0284c7" />
@@ -1285,6 +1278,7 @@ export default function ProfileScreen() {
               variant="default"
               size="default"
               loading={profileSaving}
+              disabled={profileSaving}
               leftIcon={Save}
               onPress={handleSaveProfile}
               className="mt-2 h-12 rounded-2xl shadow-2xs"

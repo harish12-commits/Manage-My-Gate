@@ -305,37 +305,37 @@ export function ScreenShell({
       ) : null}
 
       {/* Main content area */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        // This view begins below the app header, so an extra offset leaves the
-        // focused field partially behind the keyboard on iOS.
-        keyboardVerticalOffset={0}
-        className="flex-1 bg-transparent"
-      >
-        {loading && !hasChildren ? (
+      {loading && !hasChildren ? (
+        <View className="flex-1 bg-transparent px-4 py-2">
           <Skeleton variant="listItem" count={5} />
-        ) : scrollable ? (
-          <KeyboardAwareScrollView 
-            extraScrollHeight={48}
-            className="flex-1 bg-transparent"
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            alwaysBounceVertical={true}
-            {...scrollHandlerProps}
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingBottom: shouldShowBottomNav ? Math.max(insets.bottom + 70, 84) : Math.max(insets.bottom, 24),
-            }}
-          >
-            {children}
-          </KeyboardAwareScrollView>
-        ) : (
+        </View>
+      ) : scrollable ? (
+        <KeyboardAwareScrollView 
+          extraScrollHeight={48}
+          className="flex-1 bg-transparent"
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          alwaysBounceVertical={true}
+          {...scrollHandlerProps}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: shouldShowBottomNav ? Math.max(insets.bottom + 70, 84) : Math.max(insets.bottom, 24),
+          }}
+        >
+          {children}
+        </KeyboardAwareScrollView>
+      ) : (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={0}
+          className="flex-1 bg-transparent"
+        >
           <View className="flex-1 bg-transparent">
             {children}
           </View>
-        )}
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      )}
 
       {/* Global Easy Navigation Modal (Triggered from Compass Icon Button) */}
       {showGlobalNavModal && (

@@ -196,8 +196,6 @@ export function CommunityEngagementDashboardScreen() {
               icon={Megaphone}
               title={t('no_recent_activity')}
               description={t('no_recent_engagement_desc')}
-              actionLabel={`+ ${t('create_engagement')}`}
-              onAction={() => setTypeSheetVisible(true)}
               className="py-6"
             />
           ) : (

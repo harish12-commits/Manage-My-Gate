@@ -9,6 +9,7 @@ import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useAuth } from '../../src/features/auth/hooks/useAuth';
 import { OtpInputField } from '@/components/auth/OtpInputField';
+import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScrollView';
 import { useTranslation } from '@/src/utils/i18n';
 
 const otpSchema = yup.object().shape({
@@ -76,7 +77,7 @@ export default function RegisterOtpScreen() {
         resizeMode="cover"
       >
         <View className="absolute inset-0 bg-white/40 dark:bg-[#0B0E14]/55" />
-        <ScrollView
+        <KeyboardAwareScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -149,7 +150,7 @@ export default function RegisterOtpScreen() {
               </Button>
             </View>
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </ImageBackground>
     </>
   );

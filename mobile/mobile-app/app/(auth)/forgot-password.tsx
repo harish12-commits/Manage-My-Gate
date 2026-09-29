@@ -27,6 +27,7 @@ import { useForm, Controller } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useAuth } from '../../src/features/auth/hooks/useAuth';
+import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScrollView';
 import { NahomEmblem, NahomWordmark } from '@/components/auth/NahomBrandLogo';
 import { PhoneInput } from '@/components/forms/PhoneInput';
 import { OtpInputField } from '@/components/auth/OtpInputField';
@@ -184,11 +185,8 @@ export default function ForgotPasswordScreen() {
         resizeMode="cover"
       >
         <View className="absolute inset-0 bg-white/45 dark:bg-[#0B0E14]/60" />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}
-        >
-          <ScrollView
+        <KeyboardAwareScrollView
+            extraScrollHeight={56}
             contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -510,8 +508,7 @@ export default function ForgotPasswordScreen() {
               )}
             </View>
           </View>
-        </ScrollView>
-        </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
       </ImageBackground>
     </>
   );

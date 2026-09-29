@@ -302,7 +302,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
 
   useEffect(() => {
     containerBreadth.value = withTiming(isCompact ? COMPACT_BREADTH : FULL_BREADTH, {
-      duration: 200,
+      duration: 80,
       easing: Easing.out(Easing.cubic),
     });
   }, [isCompact, FULL_BREADTH, COMPACT_BREADTH, containerBreadth]);
@@ -314,7 +314,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
 
   useEffect(() => {
     androidBreadth.value = withTiming(isCompact ? ANDROID_COMPACT_BREADTH : ANDROID_FULL_BREADTH, {
-      duration: 200,
+      duration: 80,
       easing: Easing.out(Easing.cubic),
     });
   }, [isCompact, ANDROID_FULL_BREADTH, ANDROID_COMPACT_BREADTH, androidBreadth]);
@@ -353,7 +353,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
     const shouldHide = isKeyboardVisible || isCompact;
     
     navTranslateY.value = withTiming(shouldHide ? (isIOS ? 140 : 120) : 0, {
-      duration: 200,
+      duration: 80,
       easing: Easing.out(Easing.exp),
     });
   }, [isKeyboardVisible, isCompact, isIOS, navTranslateY]);

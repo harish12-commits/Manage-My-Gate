@@ -26,11 +26,11 @@ export const getApiBaseUrl = () => {
     return url;
   }
 
-  // 1. Web browser development: align with the browser's hostname (e.g. localhost:5002 or 192.168.x.x:5002)
+  // 1. Web browser development: align with the browser's hostname and local backend port.
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {
     const isLocalHostName = /^(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)$/i.test(window.location.hostname);
     if (isLocalHostName) {
-      return `${window.location.protocol}//${window.location.hostname}:5002/api/v1`;
+      return `${window.location.protocol}//${window.location.hostname}:5000/api/v1`;
     }
   }
 
@@ -39,19 +39,19 @@ export const getApiBaseUrl = () => {
   if (hostUri) {
     const ip = hostUri.split(':')[0];
     if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
-      return `http://${ip}:5002/api/v1`;
+      return `http://${ip}:5000/api/v1`;
     }
   }
 
   // 3. Android Emulator fallback
   if (Platform.OS === 'android') {
     if (!url || url.includes('localhost') || url.includes('127.0.0.1')) {
-      return 'http://10.0.2.2:5002/api/v1';
+      return 'http://10.0.2.2:5000/api/v1';
     }
   }
 
   // 4. Default fallback
-  return url || 'http://localhost:5002/api/v1';
+  return url || 'http://localhost:5000/api/v1';
 };
 
 export const getDefaultBaseUrl = getApiBaseUrl;
@@ -71,7 +71,7 @@ export const getSocketBaseUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {
     const isLocalHostName = /^(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)$/i.test(window.location.hostname);
     if (isLocalHostName) {
-      return `${window.location.protocol}//${window.location.hostname}:5002`;
+      return `${window.location.protocol}//${window.location.hostname}:5000`;
     }
   }
 
@@ -80,19 +80,19 @@ export const getSocketBaseUrl = () => {
   if (hostUri) {
     const ip = hostUri.split(':')[0];
     if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
-      return `http://${ip}:5002`;
+      return `http://${ip}:5000`;
     }
   }
 
   // 3. Android Emulator fallback
   if (Platform.OS === 'android') {
     if (!socketUrl || socketUrl.includes('localhost') || socketUrl.includes('127.0.0.1')) {
-      return 'http://10.0.2.2:5002';
+      return 'http://10.0.2.2:5000';
     }
   }
 
   // 4. Default fallback
-  return socketUrl || 'http://localhost:5002';
+  return socketUrl || 'http://localhost:5000';
 };
 
 const apiClient = axios.create({

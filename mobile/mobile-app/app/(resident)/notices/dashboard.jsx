@@ -184,8 +184,6 @@ export default function NoticeDashboardScreen() {
               icon={Bell}
               title="No Recent Activity"
               description="No recent notices or broadcast updates to display."
-              actionLabel="New Notice"
-              onAction={() => router.push('/(resident)/notices/create')}
             />
           )}
         </View>

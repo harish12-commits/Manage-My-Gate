@@ -33,6 +33,7 @@ export interface TextInputProps extends RNTextInputProps {
   inputClassName?: string;
   errorClassName?: string;
   helperClassName?: string;
+  feedbackContainerClassName?: string;
 }
 
 export const TextInput = forwardRef<RNTextInput, TextInputProps>(
@@ -57,6 +58,7 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
       inputClassName,
       errorClassName,
       helperClassName,
+      feedbackContainerClassName,
       className,
       value,
       onFocus,
@@ -264,7 +266,7 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
 
         {/* Feedback / Error / Helper Text */}
         {Boolean(feedbackText) && (
-          <View className="flex-row items-center mt-1 ms-1 gap-1">
+          <View className={cn("flex-row items-center gap-1", feedbackContainerClassName || "mt-1 ms-1")}>
             {feedbackType === 'error' && (
               <AlertCircle size={12} className="text-destructive shrink-0" />
             )}

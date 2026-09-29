@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import * as Location from 'expo-location';
 import {
   View,
   Modal,
@@ -75,47 +76,33 @@ export function LocationPickerModal({
   }, [visible]);
 
   // Handle GPS / Current Location Detection
-  const handleDetectCurrentLocation = () => {
+  const handleDetectCurrentLocation = async () => {
     setIsDetectingLocation(true);
     setLocationError(null);
 
-    const handleSuccess = async (latitude: number, longitude: number) => {
-      try {
-        const formatted = await reverseGeocodeCoords(latitude, longitude);
-        if (formatted) {
-          onSelectLocation(formatted);
-          onClose();
-        } else {
-          setLocationError(t('location_not_resolved', 'Could not resolve address details. Please choose manually.'));
-        }
-      } catch (err: any) {
-        setLocationError(t('reverse_geo_failed', 'Unable to detect location. Please choose from the list.'));
-      } finally {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
         setIsDetectingLocation(false);
+        setLocationError(t('location_permission_denied', 'Location permission denied. Please choose manually.'));
+        return;
       }
-    };
 
-    const handleError = (error: any) => {
-      console.warn('[LocationPicker] Geolocation error:', error);
-      setIsDetectingLocation(false);
-      let msg = t('location_permission_denied', 'Location permission denied or unavailable. Please choose from the list.');
-      if (error?.message) {
-        msg = `${msg} (${error.message})`;
+      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const { latitude, longitude } = location.coords;
+
+      const formatted = await reverseGeocodeCoords(latitude, longitude);
+      if (formatted) {
+        onSelectLocation(formatted);
+        onClose();
+      } else {
+        setLocationError(t('location_not_resolved', 'Could not resolve address details. Please choose manually.'));
       }
-      setLocationError(msg);
-    };
-
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          handleSuccess(position.coords.latitude, position.coords.longitude);
-        },
-        handleError,
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-      );
-    } else {
+    } catch (err: any) {
+      console.warn('[LocationPicker] Geolocation error:', err);
+      setLocationError(t('reverse_geo_failed', 'Unable to detect location. Please choose from the list.'));
+    } finally {
       setIsDetectingLocation(false);
-      setLocationError(t('location_not_supported', 'Geolocation not supported on this device. Please select manually.'));
     }
   };
 
@@ -236,7 +223,7 @@ export function LocationPickerModal({
       >
         <Pressable className="absolute inset-0" onPress={onClose} />
 
-        <View className="bg-card rounded-t-3xl border-t border-border overflow-hidden max-h-[90%] shadow-2xl">
+        <View className="bg-card rounded-t-3xl border-t border-border overflow-hidden max-h-[90%] shrink shadow-2xl">
           <SheetGrabHandle onClose={onClose} />
 
           {/* Modal Header */}
@@ -400,7 +387,8 @@ export function LocationPickerModal({
 
           {/* Main List Content */}
           <ScrollView
-            className="flex-1 px-5 py-2 max-h-[360px]"
+            className="px-5 py-2"
+            style={{ maxHeight: 400 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={true}
           >
@@ -577,7 +565,7 @@ export function LocationPickerModal({
           </ScrollView>
 
           {/* Footer action row if a selection is in progress */}
-          <View className="p-4 border-t border-border/60 bg-card flex-row items-center justify-between gap-2">
+          <View className="px-4 pt-4 pb-10 border-t border-border/60 bg-card flex-row items-center justify-between gap-2">
             <Button
               variant="outline"
               size="default"
