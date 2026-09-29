@@ -4,7 +4,7 @@ services:
     container_name: mmg-mongodb
     restart: unless-stopped
     environment:
-      - GLIBC_TUNABLES=glibc.pthread.rseq=0
+      - GLIBC_TUNABLES=glibc.pthread.rseq=1
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
       - TZ=${TZ:-Asia/Kolkata}
@@ -16,6 +16,7 @@ services:
       - /bin/sh
       - -c
       - |
+        export GLIBC_TUNABLES=glibc.pthread.rseq=1
         if [ ! -f /data/db/replica.key ]; then
           openssl rand -base64 756 > /data/db/replica.key
           chmod 400 /data/db/replica.key
@@ -37,7 +38,7 @@ services:
     image: mongo:latest
     container_name: mmg-mongodb-rs-init
     environment:
-      - GLIBC_TUNABLES=glibc.pthread.rseq=0
+      - GLIBC_TUNABLES=glibc.pthread.rseq=1
       - TZ=${TZ:-Asia/Kolkata}
     depends_on:
       mongodb:
@@ -46,6 +47,7 @@ services:
       - /bin/sh
       - -c
       - |
+        export GLIBC_TUNABLES=glibc.pthread.rseq=1
         until mongosh --host mongodb:27017 -u "${MONGO_ROOT_USER}" -p "${MONGO_ROOT_PASSWORD}" --authenticationDatabase admin --eval 'print("ready")' > /dev/null 2>&1 || mongosh --host mongodb:27017 --eval 'print("ready")' > /dev/null 2>&1; do sleep 1; done
         mongosh --host mongodb:27017 -u "${MONGO_ROOT_USER}" -p "${MONGO_ROOT_PASSWORD}" --authenticationDatabase admin --eval "try { rs.initiate({ _id: 'rs0', members: [ { _id: 0, host: 'mongodb:27017' } ] }) } catch (e) { print(e.message) }" || mongosh --host mongodb:27017 --eval "try { rs.initiate({ _id: 'rs0', members: [ { _id: 0, host: 'mongodb:27017' } ] }) } catch (e) { print(e.message) }"
     networks:
