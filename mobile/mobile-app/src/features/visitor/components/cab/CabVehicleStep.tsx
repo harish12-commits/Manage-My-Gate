@@ -3,6 +3,8 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
 import { Car, Bike } from 'lucide-react-native';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { ContactPickerButton } from '@/components/forms/ContactPickerButton';
 
 export interface CabVehicleData {
   vehicleNo: string;
@@ -83,13 +85,14 @@ export const CabVehicleStep: React.FC<CabVehicleStepProps> = ({
         />
 
         {/* Driver Phone Number */}
-        <Input
+        <PhoneInput
           label="Driver Contact Phone (Optional)"
-          placeholder="9876543210"
-          keyboardType="phone-pad"
-          maxLength={10}
           value={data.driverPhone || ''}
           onChangeText={(val) => onChange({ ...data, driverPhone: val })}
+          testID="cab-driver-phone"
+          rightElement={
+            <ContactPickerButton onPick={(c) => c.phone && onChange({ ...data, driverPhone: c.phone })} />
+          }
         />
       </View>
     </ScrollView>

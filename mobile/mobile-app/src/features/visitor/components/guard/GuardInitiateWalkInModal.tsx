@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { AdminVillaFilterSheet } from '../admin/AdminVillaFilterSheet';
 import { ShieldAlert, Building2 } from 'lucide-react-native';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { validatePhone } from '@/src/utils/validation';
 
 export interface GuardInitiateWalkInModalProps {
   visible: boolean;
@@ -49,9 +51,8 @@ export const GuardInitiateWalkInModal: React.FC<GuardInitiateWalkInModalProps> =
       setError('Please enter visitor phone number');
       return;
     }
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length !== 10) {
-      setError('Contact number must be exactly 10 digits');
+    if (!validatePhone(phone).isValid) {
+      setError('Enter a valid phone number for the selected country.');
       return;
     }
     if (!villaId && !residentId) {
@@ -134,14 +135,12 @@ export const GuardInitiateWalkInModal: React.FC<GuardInitiateWalkInModalProps> =
           />
 
           {/* Visitor Phone */}
-          <TextInput
+          <PhoneInput
             label="Phone Number"
             required
             value={phone}
             onChangeText={setPhone}
-            placeholder="e.g. 9876543210"
-            keyboardType="phone-pad"
-            maxLength={10}
+            testID="guard-walkin-phone"
           />
 
           {/* Vehicle Number */}

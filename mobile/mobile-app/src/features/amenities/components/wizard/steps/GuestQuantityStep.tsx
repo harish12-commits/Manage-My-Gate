@@ -11,6 +11,8 @@ import { QuantitySelector } from '@/components/common/QuantitySelector';
 import { Button } from '@/components/ui/button';
 import { AmenityFacility, AmenityGuest } from '../../../types/amenityDomain.types';
 import { Users, Wrench, Plus, Trash2, UserCheck } from 'lucide-react-native';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { ContactPickerButton } from '@/components/forms/ContactPickerButton';
 
 export interface GuestQuantityStepProps {
   facility: AmenityFacility;
@@ -166,11 +168,20 @@ export function GuestQuantityStep({
 
             <View className="flex-row gap-2">
               <View className="flex-1">
-                <TextInput
+                <PhoneInput
+                  label=""
                   placeholder="Mobile number (optional)"
                   value={newGuestPhone}
                   onChangeText={setNewGuestPhone}
-                  keyboardType="phone-pad"
+                  testID="amenity-guest-phone"
+                  rightElement={
+                    <ContactPickerButton
+                      onPick={(c) => {
+                        if (c.name) setNewGuestName(c.name);
+                        if (c.phone) setNewGuestPhone(c.phone);
+                      }}
+                    />
+                  }
                 />
               </View>
 

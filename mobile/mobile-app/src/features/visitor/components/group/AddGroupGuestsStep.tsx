@@ -4,6 +4,9 @@ import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { User, Phone, UserPlus, Trash2 } from 'lucide-react-native';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { ContactPickerButton } from '@/components/forms/ContactPickerButton';
+import { validatePhone } from '@/src/utils/validation';
 
 export interface GroupGuestItem {
   id: string;
@@ -32,12 +35,9 @@ export const AddGroupGuestsStep: React.FC<AddGroupGuestsStepProps> = ({
       return;
     }
     
-    if (phone && phone.trim()) {
-      const digits = phone.replace(/\D/g, '');
-      if (digits.length !== 10) {
-        setError('Contact number must be exactly 10 digits');
-        return;
-      }
+    if (phone && phone.trim() && !validatePhone(phone).isValid) {
+      setError('Enter a valid phone number for the selected country.');
+      return;
     }
     
     setError('');
@@ -76,14 +76,19 @@ export const AddGroupGuestsStep: React.FC<AddGroupGuestsStepProps> = ({
           error={error}
         />
 
-        <Input
+        <PhoneInput
           label="Phone Number (Optional)"
-          placeholder="9876543210"
-          keyboardType="phone-pad"
-          maxLength={10}
-          leftIcon={<Phone size={18} className="text-muted-foreground" />}
           value={phone}
           onChangeText={setPhone}
+          testID="group-guest-phone"
+          rightElement={
+            <ContactPickerButton
+              onPick={(c) => {
+                if (c.name) setName(c.name);
+                if (c.phone) setPhone(c.phone);
+              }}
+            />
+          }
         />
 
         <Button

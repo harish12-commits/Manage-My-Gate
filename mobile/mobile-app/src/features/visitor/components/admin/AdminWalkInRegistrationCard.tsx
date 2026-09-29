@@ -4,6 +4,8 @@ import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { TextInput } from '@/components/forms/TextInput';
 import { UserPlus, Building, CircleCheck, ShieldAlert } from 'lucide-react-native';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { validatePhone } from '@/src/utils/validation';
 
 export interface AdminWalkInRegistrationCardProps {
   onSubmit: (data: {
@@ -52,6 +54,10 @@ export const AdminWalkInRegistrationCard: React.FC<AdminWalkInRegistrationCardPr
     }
     if (!phone.trim()) {
       setLocalError('Please enter visitor phone number');
+      return;
+    }
+    if (!validatePhone(phone).isValid) {
+      setLocalError('Enter a valid phone number for the selected country.');
       return;
     }
     if (!selectedVillaId && !selectedResidentId) {
@@ -148,13 +154,12 @@ export const AdminWalkInRegistrationCard: React.FC<AdminWalkInRegistrationCardPr
       />
 
       {/* Visitor Phone */}
-      <TextInput
+      <PhoneInput
         label="Phone Number"
         required
         value={phone}
         onChangeText={setPhone}
-        placeholder="e.g. +1 555 234 5678"
-        keyboardType="phone-pad"
+        testID="admin-walkin-phone"
       />
 
       {/* Vehicle Number */}

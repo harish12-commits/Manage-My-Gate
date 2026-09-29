@@ -8,6 +8,9 @@ import { DropdownSelect } from '@/components/forms/DropdownSelect';
 import { Button } from '@/components/ui/button';
 import { UserPlus, UserCheck, Phone, Mail, Building2, Send } from 'lucide-react-native';
 import { TechnicianData } from '../services/technicianService';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { ContactPickerButton } from '@/components/forms/ContactPickerButton';
+import { validatePhone } from '@/src/utils/validation';
 
 interface InviteStaffVendorSheetProps {
   visible: boolean;
@@ -55,8 +58,8 @@ export const InviteStaffVendorSheet: React.FC<InviteStaffVendorSheetProps> = ({
       Alert.alert('Required Field', 'Please enter staff/vendor name.');
       return;
     }
-    if (!phone.trim() || phone.replace(/\D/g, '').length !== 10) {
-      Alert.alert('Validation Error', 'Please enter a valid 10-digit contact phone number.');
+    if (!phone.trim() || !validatePhone(phone).isValid) {
+      Alert.alert('Validation Error', 'Please enter a valid contact phone number.');
       return;
     }
     if (!email.trim()) {
@@ -107,13 +110,20 @@ export const InviteStaffVendorSheet: React.FC<InviteStaffVendorSheetProps> = ({
           onChangeText={setName}
         />
 
-        <TextInput
+        <PhoneInput
           label="Phone Number *"
-          placeholder="e.g. 9876543210"
-          keyboardType="phone-pad"
-          maxLength={10}
           value={phone}
           onChangeText={setPhone}
+          testID="invite-staff-phone"
+          rightElement={
+            <ContactPickerButton
+              onPick={(c) => {
+                if (c.name) setName(c.name);
+                if (c.phone) setPhone(c.phone);
+                if (c.email) setEmail(c.email);
+              }}
+            />
+          }
         />
 
         <TextInput

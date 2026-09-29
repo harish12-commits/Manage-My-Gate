@@ -11,6 +11,9 @@ import { DatePicker } from '@/components/common/DatePicker';
 import { UserCheck, Users, ShieldAlert, Check, Phone, Wrench, Building2, Clock, Send, Star } from 'lucide-react-native';
 import apiClient from '../../../services/apiClient';
 import { Complaint, AssignTechnicianPayload } from '../types';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { ContactPickerButton } from '@/components/forms/ContactPickerButton';
+import { validatePhone } from '@/src/utils/validation';
 
 interface StaffMember {
   _id: string;
@@ -134,8 +137,8 @@ export const AssignTechnicianSheet: React.FC<AssignTechnicianSheetProps> = ({
           setError('Please enter the External Vendor Name.');
           return;
         }
-        if (!vendorPhone.trim() || vendorPhone.replace(/\D/g, '').length !== 10) {
-          setError('Please enter a valid 10-digit Vendor Phone Number.');
+        if (!vendorPhone.trim() || !validatePhone(vendorPhone).isValid) {
+          setError('Please enter a valid Vendor Phone Number.');
           return;
         }
         techName = vendorName.trim();
@@ -326,13 +329,19 @@ export const AssignTechnicianSheet: React.FC<AssignTechnicianSheetProps> = ({
               onChangeText={setVendorName}
             />
 
-            <TextInput
+            <PhoneInput
               label="Vendor Contact Phone *"
-              placeholder="e.g. 9876543210"
-              keyboardType="phone-pad"
-              maxLength={10}
               value={vendorPhone}
               onChangeText={setVendorPhone}
+              testID="vendor-phone"
+              rightElement={
+                <ContactPickerButton
+                  onPick={(c) => {
+                    if (c.name) setVendorName(c.name);
+                    if (c.phone) setVendorPhone(c.phone);
+                  }}
+                />
+              }
             />
 
             <TextInput

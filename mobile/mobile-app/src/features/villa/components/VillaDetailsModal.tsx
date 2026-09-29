@@ -12,6 +12,9 @@ import { UserCheck, Mail, UserPlus, Shield, Check, Edit2, Trash2 } from 'lucide-
 import { Villa } from '../store/villaSlice';
 import useVilla from '../hooks/useVilla';
 import { fetchUsers, inviteUser, UserData } from '@/src/features/userManagement/services/userService';
+import { PhoneInput } from '@/components/forms/PhoneInput';
+import { ContactPickerButton } from '@/components/forms/ContactPickerButton';
+import { validatePhone } from '@/src/utils/validation';
 
 interface VillaDetailsModalProps {
   visible: boolean;
@@ -111,7 +114,7 @@ export const VillaDetailsModal: React.FC<VillaDetailsModalProps> = ({
       setInviteError('Please enter a valid email address.');
       return;
     }
-    if (!invitePhone.trim()) {
+    if (!invitePhone.trim() || !validatePhone(invitePhone).isValid) {
       setInviteError('Please enter a valid phone number.');
       return;
     }
@@ -504,12 +507,19 @@ export const VillaDetailsModal: React.FC<VillaDetailsModalProps> = ({
                     onChangeText={setInviteEmail}
                   />
 
-                  <TextInput
+                  <PhoneInput
                     label="Phone Number *"
-                    placeholder="+1234567890"
-                    keyboardType="phone-pad"
                     value={invitePhone}
                     onChangeText={setInvitePhone}
+                    testID="villa-invite-phone"
+                    rightElement={
+                      <ContactPickerButton
+                        onPick={(c) => {
+                          if (c.phone) setInvitePhone(c.phone);
+                          if (c.email) setInviteEmail(c.email);
+                        }}
+                      />
+                    }
                   />
 
                   <DropdownSelect

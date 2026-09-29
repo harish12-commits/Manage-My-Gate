@@ -53,7 +53,8 @@
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.READ_CONTACTS"
       ],
       "intentFilters": [
         {
@@ -134,7 +135,13 @@
           "defaultChannel": "general"
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Nahom uses your contacts only when you choose one, to fill in a visitor's or staff member's name and phone number. Contacts are never uploaded."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
