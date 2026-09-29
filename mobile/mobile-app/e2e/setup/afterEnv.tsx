@@ -125,6 +125,10 @@ jest.mock('@/components/navigation/VillaSwitchModal', () => ({ VillaSwitchModal:
 // responses, so interceptors registered here would never see the raw exchange.
 import axios from 'axios';
 import apiClient from '@/src/services/apiClient';
+import { setDefaultPhoneCountry } from '@/src/utils/phone';
+
+// Seeded communities are Indian; pin the phone default so bare numbers read as +91 regardless of host locale.
+setDefaultPhoneCountry('IN');
 import { resetApiLog, recordApiExchange } from '../helpers/api';
 
 // Under jest-expo axios resolves its browser build, so requests go through Node's global

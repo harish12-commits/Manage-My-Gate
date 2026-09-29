@@ -11,7 +11,7 @@ import WalkInApprovalsScreen from '@/app/(resident)/visitor/walk-ins';
 import { renderScreen } from '../helpers/render';
 import { signInAs, actor, store } from '../helpers/session';
 import { findCalls, lastCall } from '../helpers/api';
-import { tap, typeInto } from '../helpers/ui';
+import { tap, typeInto, typePhone } from '../helpers/ui';
 import { apiAs, createGuestPassAs } from '../helpers/backend';
 import { collection, oid, closeDb } from '../helpers/db';
 
@@ -72,11 +72,11 @@ describe('P6 admin console', () => {
 
       await tap(view, 'Add Entry');
       await typeInto(view, 'e.g. Alexander Wright', 'Barred Barry');
-      await typeInto(view, 'e.g. 9876543210', '9877777777');
+      await typePhone(view, 'blacklist-phone', '9877777777');
       await typeInto(view, 'Describe reason for restricting entry...', 'Harassed staff');
       await tap(view, 'Add to Blacklist');
       await waitFor(() => expect(lastCall('POST', '/blacklist')?.status).toBe(201));
-      expect(await (await collection('blacklists')).findOne({ orgId: orgA(), phone: '9877777777' })).toMatchObject({
+      expect(await (await collection('blacklists')).findOne({ orgId: orgA(), phone: '+919877777777' })).toMatchObject({
         name: 'Barred Barry',
         reason: 'Harassed staff',
         createdById: oid(actor('adminA').id),
@@ -94,7 +94,7 @@ describe('P6 admin console', () => {
       const confirm = await view.findAllByText(/^Remove/);
       await fireEvent.press(confirm[confirm.length - 1]);
       await waitFor(() => expect(lastCall('DELETE', '/blacklist/')?.status).toBe(200));
-      expect(await (await collection('blacklists')).countDocuments({ orgId: orgA(), phone: '9877777777' })).toBe(0);
+      expect(await (await collection('blacklists')).countDocuments({ orgId: orgA(), phone: '+919877777777' })).toBe(0);
     });
   });
 
