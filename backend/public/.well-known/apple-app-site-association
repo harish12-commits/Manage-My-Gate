@@ -5,9 +5,14 @@
       {
         "appID": "<APPLE_TEAM_ID>.com.atominosconsulting.nahom",
         "paths": [
-          "/invite/handoff/*"
+          "/invite/handoff/*",
+          "/billing/*"
         ],
         "components": [
+          {
+            "/": "/billing/*",
+            "comment": "Invoice links from billing emails open the app"
+          },
           {
             "/": "/invite/handoff/*",
             "comment": "Mobile invitation handoff redirect"
