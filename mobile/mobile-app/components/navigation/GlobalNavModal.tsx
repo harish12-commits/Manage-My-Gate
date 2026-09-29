@@ -138,7 +138,11 @@ export const GlobalNavModal: React.FC<GlobalNavModalProps> = ({ visible, onClose
 
   const handleNavigate = (route: string) => {
     onClose();
-    router.push(route as any);
+    try {
+      router.navigate(route as any);
+    } catch {
+      router.replace(route as any);
+    }
   };
 
   const { user } = useAuth();

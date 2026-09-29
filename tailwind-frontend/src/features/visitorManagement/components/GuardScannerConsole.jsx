@@ -18,7 +18,7 @@ import {
   Car,
   AlertTriangle
 } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { fetchPassByCode, getPassDetails } from '../store/visitorPassSlice.js';
@@ -59,9 +59,10 @@ export const GuardScannerConsole = ({ passes, liveEntries, onCheckInSuccess, onC
             {
               fps: 10,
               qrbox: (width, height) => {
-                const size = Math.min(width, height) * 0.7;
-                return { width: Math.max(150, size), height: Math.max(150, size) };
-              }
+                const size = Math.min(width, height) * 0.85;
+                return { width: Math.max(300, size), height: Math.max(300, size) };
+              },
+              formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
             },
             (decodedText) => {
               const now = Date.now();

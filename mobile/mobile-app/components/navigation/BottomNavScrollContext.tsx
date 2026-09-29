@@ -57,12 +57,6 @@ export const BottomNavScrollProvider: React.FC<{ children: React.ReactNode }> = 
 
   const handleScroll = useCallback(
     (event: any) => {
-      const now = Date.now();
-      if (now - lastScrollTime.current < 64) {
-        return;
-      }
-      lastScrollTime.current = now;
-
       const currentY = extractScrollY(event);
 
       // Protect against iOS overscroll bounce at top
@@ -90,7 +84,7 @@ export const BottomNavScrollProvider: React.FC<{ children: React.ReactNode }> = 
 
   const scrollHandlerProps = {
     onScroll: handleScroll,
-    scrollEventThrottle: 32,
+    scrollEventThrottle: 16,
   };
 
   return (
@@ -155,7 +149,7 @@ export const useBottomNavScroll = () => {
     handleScroll: handleLocalScroll,
     scrollHandlerProps: {
       onScroll: handleLocalScroll,
-      scrollEventThrottle: 32,
+      scrollEventThrottle: 16,
     },
   };
 };

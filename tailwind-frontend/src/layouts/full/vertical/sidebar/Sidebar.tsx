@@ -84,6 +84,7 @@ const renderSidebarItems = (
           icon={iconElement}
           isSelected={isSelected}
           link={item.url || undefined}
+          to={item.url || undefined}
           target={linkTarget}
           badge={!!item.isPro}
           badgeColor="bg-lightsecondary"

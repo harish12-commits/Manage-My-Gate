@@ -37,6 +37,10 @@ export class PaymentSettlementService {
 
     let session = outerSession;
     let isLocalSession = false;
+    let activeSession = null;
+    let previousStatus = 'pending';
+    let payment = null;
+    let domain = null;
 
     if (!session) {
       session = await mongoose.startSession();
@@ -49,12 +53,12 @@ export class PaymentSettlementService {
     }
 
     try {
-      const activeSession = session && typeof session.inTransaction === 'function' && session.inTransaction() ? session : null;
+      activeSession = session && typeof session.inTransaction === 'function' && session.inTransaction() ? session : null;
 
       // 1. Fetch Payment record within transaction
       const paymentQuery = Payment.findById(paymentId);
       if (activeSession) paymentQuery.session(activeSession);
-      const payment = await paymentQuery;
+      payment = await paymentQuery;
 
       if (!payment) {
         throw new HttpError(404, `Payment record ${paymentId} not found.`);
@@ -91,10 +95,11 @@ export class PaymentSettlementService {
       }
 
       // 4. Resolve Domain
-      const domain = resolvePaymentDomain(payment);
+      domain = resolvePaymentDomain(payment);
       const handler = settlementHandlerRegistry.getHandler(domain);
 
       // 5. Update Payment Record to SUCCESS inside transaction
+      previousStatus = payment.status || 'pending';
       payment.status = 'success';
       if (gatewayTransactionId) payment.gatewayTransactionId = gatewayTransactionId;
       if (gatewayOrderId) payment.gatewayOrderId = gatewayOrderId;
@@ -176,6 +181,33 @@ export class PaymentSettlementService {
             alreadySettled: true,
             payment: freshPayment,
           };
+        }
+      }
+
+      if (!activeSession && paymentId) {
+        try {
+          await Payment.updateOne(
+            { _id: paymentId, status: 'success' },
+            { $set: { status: previousStatus || 'failed', errorReason: error.message } }
+          );
+          const refId = payment?.referenceId;
+          const refType = payment?.referenceType;
+          const dom = domain || (payment ? resolvePaymentDomain(payment) : null);
+          if (refId && (dom === 'AMENITY' || refType === 'AmenityBooking')) {
+            const AmenityBooking = (await import('../amenityBooking/amenityBooking.model.js')).default;
+            await AmenityBooking.updateOne(
+              { _id: refId },
+              { $set: { paymentStatus: 'pending', status: 'pending' } }
+            );
+          } else if (refId && (dom === 'INVOICE' || refType === 'Invoice')) {
+            const Invoice = (await import('../invoice/invoice.model.js')).default;
+            await Invoice.updateOne(
+              { _id: refId },
+              { $set: { status: 'UNPAID', paidAmount: 0 } }
+            );
+          }
+        } catch (revertErr) {
+          logger.error('payment.settlement.standalone_revert_failed', { paymentId, error: revertErr.message });
         }
       }
 

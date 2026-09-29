@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Pressable } from 'react-native';
-import { Shield, Phone, Home, MoreVertical } from 'lucide-react-native';
+import { Shield, Phone, Home, MoreVertical, Edit2 } from 'lucide-react-native';
 import { StatusBadge, StatusVariant } from '@/components/ui/StatusBadge';
 import { useTranslation, i18n } from '@/src/utils/i18n';
 import { UserData, AssignedUnit } from '../services/userService';
 import { UserOverflowMenu } from './UserOverflowMenu';
+import { Button } from '@/components/common/Button';
 
 export interface UserCardProps {
   user: UserData;
@@ -75,41 +76,41 @@ export const UserCard: React.FC<UserCardProps> = ({
   return (
     <>
       <View
-        className={`mb-3 p-3.5 bg-card border border-border/80 rounded-2xl shadow-2xs ${className}`}
+        className={`mb-4 p-4 bg-card border border-border/40 rounded-3xl shadow-sm ${className}`}
       >
         {/* Top Section: Avatar + Details (Left) and Status + Menu Button (Right) */}
         <View className="flex-row items-start justify-between">
           {/* Left: Avatar + Identity */}
           <View className="flex-row items-start flex-1 me-2">
-            {/* Circular Avatar */}
-            <View className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 items-center justify-center me-3 shrink-0 mt-0.5">
-              <Text className="text-xs font-bold text-primary font-sans">
+            {/* Premium Circular Avatar */}
+            <View className="w-12 h-12 rounded-full bg-primary/10 border-2 border-primary/20 items-center justify-center me-3.5 shrink-0 shadow-sm">
+              <Text className="text-sm font-extrabold text-primary font-sans">
                 {getInitials(user.name)}
               </Text>
             </View>
 
             {/* Name, Email, Phone, Role */}
-            <View className="flex-1">
+            <View className="flex-1 mt-0.5">
               <Text
-                className="text-[14px] font-bold text-foreground font-sans tracking-tight"
+                className="text-[15px] font-bold text-foreground font-sans tracking-tight"
                 numberOfLines={1}
               >
                 {user.name}
               </Text>
 
               <Text
-                className="text-xs text-muted-foreground font-sans mt-0.5"
+                className="text-[13px] text-muted-foreground font-sans mt-0.5"
                 numberOfLines={1}
               >
                 {user.email}
               </Text>
 
               {/* Phone & Role Row */}
-              <View className="flex-row items-center flex-wrap gap-1.5 mt-1.5">
+              <View className="flex-row items-center flex-wrap gap-2 mt-2">
                 {user.phone ? (
                   <View className="flex-row items-center me-1.5">
-                    <Phone size={11} className="text-muted-foreground me-1" />
-                    <Text className="text-[11px] font-medium text-muted-foreground font-sans">
+                    <Phone size={12} className="text-muted-foreground me-1" />
+                    <Text className="text-[12px] font-medium text-muted-foreground font-sans">
                       {user.phone}
                     </Text>
                   </View>
@@ -118,7 +119,7 @@ export const UserCard: React.FC<UserCardProps> = ({
                 {globalRolesList.map((roleStr, idx) => (
                   <View
                     key={idx}
-                    className="bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex-row items-center gap-1"
+                    className="bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-full flex-row items-center gap-1"
                   >
                     <Shield size={10} className="text-primary" />
                     <Text className="text-[10px] font-bold text-primary font-sans">
@@ -135,45 +136,57 @@ export const UserCard: React.FC<UserCardProps> = ({
             <StatusBadge
               label={displayStatus}
               variant={mapStatusVariant(user.status)}
-              className="py-0.5 px-2"
+              className="py-1 px-2.5 rounded-full shadow-sm"
             />
 
             <TouchableOpacity
               onPress={handleMenuPress}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              className="w-8 h-8 rounded-full items-center justify-center bg-secondary/80 border border-border/60 active:bg-secondary"
+              className="w-9 h-9 rounded-full items-center justify-center bg-secondary/80 border border-border/60 active:bg-secondary transition-colors"
               accessibilityRole="button"
               accessibilityLabel={`More options for ${user.name}`}
             >
-              <MoreVertical size={16} className="text-foreground" />
+              <MoreVertical size={18} className="text-foreground" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Bottom Section: Assigned Villa Units Box (Subtle Tinted Background) */}
+        {/* Bottom Section: Assigned Villa Units Box */}
         {user.assignedUnits && user.assignedUnits.length > 0 ? (
-          <View className="mt-2.5 pt-2.5 border-t border-border/50 gap-1.5">
+          <View className="mt-3.5 pt-3.5 border-t border-border/40 gap-2">
             {user.assignedUnits.map((unit, idx) => (
               <View
                 key={idx}
-                className="flex-row items-center justify-between p-2 rounded-xl bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/15"
+                className="flex-row items-center justify-between p-2.5 rounded-2xl bg-emerald-500/10 dark:bg-emerald-900/20 border border-emerald-500/20 shadow-sm"
               >
-                <View className="flex-row items-center flex-1 me-2">
-                  <Home size={12} color="#10b981" className="me-1.5 shrink-0" />
-                  <Text className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 font-sans me-1.5">
-                    {t('unit_label', 'Unit')} {unit.villaNumber} {unit.villaBlock ? `(${unit.villaBlock})` : ''}
-                  </Text>
-                  {unit.residentType && unit.residentType !== 'None' ? (
-                    <Text className="text-[10px] text-muted-foreground font-sans">
-                      | {i18n.tRole(unit.residentType)}
+                <View className="flex-row items-center flex-1 shrink me-2">
+                  <View className="w-6 h-6 rounded-full bg-emerald-500/20 items-center justify-center shrink-0 me-2">
+                    <Home size={12} color="#10b981" />
+                  </View>
+                  <View className="flex-row items-center flex-1 shrink">
+                    <Text 
+                      className="text-xs font-bold text-emerald-800 dark:text-emerald-300 font-sans shrink"
+                      numberOfLines={1}
+                    >
+                      {t('unit_label', 'Unit')} {unit.villaNumber} {unit.villaBlock ? `(${unit.villaBlock})` : ''}
                     </Text>
-                  ) : null}
+                    {unit.residentType && unit.residentType !== 'None' ? (
+                      <Text 
+                        className="text-[11px] text-muted-foreground font-sans font-medium shrink-0 ms-1"
+                      >
+                        | {i18n.tRole(unit.residentType)}
+                      </Text>
+                    ) : null}
+                  </View>
                 </View>
 
                 {unit.role ? (
-                  <View className="bg-card border border-border/60 px-1.5 py-0.5 rounded-md">
-                    <Text className="text-[9px] font-semibold text-foreground font-sans">
+                  <View className="bg-card border border-border/60 px-2 py-1 rounded-lg shadow-sm shrink">
+                    <Text 
+                      className="text-[10px] font-bold text-foreground font-sans tracking-wide text-center"
+                      numberOfLines={2}
+                    >
                       {i18n.tRole(unit.role)}
                     </Text>
                   </View>
@@ -182,6 +195,31 @@ export const UserCard: React.FC<UserCardProps> = ({
             ))}
           </View>
         ) : null}
+
+        {/* Premium Inline Action Buttons */}
+        <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-border/40">
+          <TouchableOpacity 
+            onPress={() => onViewDetails?.(user)} 
+            activeOpacity={0.7}
+            className="flex-1 py-3.5 rounded-2xl bg-secondary/80 border border-border/50 active:bg-secondary flex-row items-center justify-center transition-all me-1.5"
+          >
+            <View className="w-6 h-6 rounded-full bg-foreground/5 items-center justify-center shrink-0 me-2">
+              <Edit2 size={13} className="text-foreground" />
+            </View>
+            <Text className="text-[13px] font-extrabold text-foreground tracking-wide shrink" numberOfLines={1}>Edit Profile</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={() => onManageRoles(user)} 
+            activeOpacity={0.7}
+            className="flex-1 py-3.5 rounded-2xl bg-primary/10 border border-primary/20 active:bg-primary/20 flex-row items-center justify-center transition-all ms-1.5"
+          >
+            <View className="w-6 h-6 rounded-full bg-primary/10 items-center justify-center shrink-0 me-2">
+              <Shield size={13} className="text-primary" />
+            </View>
+            <Text className="text-[13px] font-extrabold text-primary tracking-wide shrink" numberOfLines={1}>Permissions</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Internal Overflow Menu fallback if not controlled externally */}

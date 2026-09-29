@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, TouchableOpacity, ScrollView, TextInput, BackHandler } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,8 @@ import { useBottomNavScroll } from '@/components/navigation/BottomNavScrollConte
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
 
+import { InteractionManager } from 'react-native';
+
 export default function AllFeaturesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -31,29 +33,30 @@ export default function AllFeaturesScreen() {
   const { scrollHandlerProps } = useBottomNavScroll();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(params.category || null);
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(params.category || 'visitor_management');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   
   const { user } = useAuth();
   const { featureCatalog, allFeaturesList } = useQuickActions();
 
-  // Smart Back Button Handler: Clears category filter first, then search query, then navigates back to Home/Dashboard
+  // Lazy loading state to prevent navigation stutter
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setIsReady(true);
+    });
+    return () => task.cancel();
+  }, []);
+
+  // Standard Back Button Handler: Navigates back to previous page
   const handleBackPress = useCallback(() => {
-    if (selectedCategoryKey !== null) {
-      setSelectedCategoryKey(null);
-      return true;
-    }
-    if (searchQuery) {
-      setSearchQuery('');
-      return true;
-    }
     if (router.canGoBack()) {
       router.back();
       return true;
     }
     router.replace('/(resident)/dashboard' as any);
     return true;
-  }, [selectedCategoryKey, searchQuery, router]);
+  }, [router]);
 
   // Hardware / Gesture Back Button Listener
   useFocusEffect(
@@ -128,10 +131,11 @@ export default function AllFeaturesScreen() {
       scrollable={false}
       showBackButton={true}
       onBackPress={handleBackPress}
-      showGlobalNavButton={true}
+      loading={!isReady}
     >
-      <ScrollView
-        className="flex-1 px-4 pt-3"
+      {isReady ? (
+        <ScrollView
+          className="flex-1 px-4 pt-3"
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -157,6 +161,44 @@ export default function AllFeaturesScreen() {
               </TouchableOpacity>
             ) : null}
           </View>
+
+          {/* Filter Pills */}
+          {featureCatalog && featureCatalog.length > 0 && (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              className="mb-1 -mt-1"
+              contentContainerStyle={{ paddingRight: 20 }}
+            >
+              <TouchableOpacity
+                onPress={() => setSelectedCategoryKey(null)}
+                className={`px-4 py-1.5 rounded-full mr-2.5 ${!selectedCategoryKey ? 'bg-primary shadow-xs border border-transparent' : 'bg-card border border-border/60'}`}
+              >
+                <Text className={`text-[12px] font-bold tracking-tight ${!selectedCategoryKey ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
+                  {t('all', 'All')}
+                </Text>
+              </TouchableOpacity>
+              
+              {featureCatalog.map((cat) => {
+                const isSelected = selectedCategoryKey === cat.categoryKey;
+                let shortName = tCategoryName(cat.categoryKey, cat.categoryName);
+                if (shortName.includes('&')) {
+                   shortName = shortName.split('&')[0].trim();
+                }
+                return (
+                  <TouchableOpacity
+                    key={cat.categoryKey}
+                    onPress={() => setSelectedCategoryKey(cat.categoryKey)}
+                    className={`px-4 py-1.5 rounded-full mr-2.5 ${isSelected ? 'bg-primary shadow-xs border border-transparent' : 'bg-card border border-border/60'}`}
+                  >
+                    <Text className={`text-[12px] font-bold tracking-tight ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
+                      {shortName}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
 
           {/* DYNAMIC CATEGORY SECTIONS FROM BACKEND */}
           {featureCatalog && featureCatalog.length > 0 ? (
@@ -192,14 +234,14 @@ export default function AllFeaturesScreen() {
                 const hasMore = filteredItems.length > 6;
                 const displayedItems = isExpanded ? filteredItems : filteredItems.slice(0, 6);
 
-                const categoryMeta: Record<string, { icon: string; subKey: string; subtitle: string; color: string }> = {
-                  visitor_management: { icon: 'ShieldCheck', subKey: 'cat_visitor_sub', subtitle: 'Security & Gate Access', color: '#2563EB' },
-                  amenities_facilities: { icon: 'Sparkles', subKey: 'cat_amenities_sub', subtitle: 'Facilities & Reservations', color: '#16A34A' },
-                  complaints_helpdesk: { icon: 'ListTodo', subKey: 'cat_complaints_sub', subtitle: 'Issues & SLA Helpdesk', color: '#7C3AED' },
-                  notice_board_polls: { icon: 'Megaphone', subKey: 'cat_notice_sub', subtitle: 'Broadcasts & Resident Polls', color: '#DB2777' },
-                  digital_wallet: { icon: 'WalletCards', subKey: 'cat_wallet_sub', subtitle: 'Prepaid Balance & Ledger', color: '#10B981' },
-                  financial_billing: { icon: 'CreditCard', subKey: 'cat_billing_sub', subtitle: 'Dues, Invoices & Accounts', color: '#0D9488' },
-                  administration_security: { icon: 'UserRoundCog', subKey: 'cat_admin_sub', subtitle: 'Staff, RBAC & Settings', color: '#D97706' },
+                const categoryMeta: Record<string, { icon: string; subKey: string; subtitle: string; color: string; bgColor: string; darkBgColor: string }> = {
+                  visitor_management: { icon: 'ShieldCheck', subKey: 'cat_visitor_sub', subtitle: 'Security & Gate Access', color: '#2563EB', bgColor: 'bg-blue-50', darkBgColor: 'bg-blue-950/40' },
+                  amenities_facilities: { icon: 'Sparkles', subKey: 'cat_amenities_sub', subtitle: 'Facilities & Reservations', color: '#16A34A', bgColor: 'bg-emerald-50', darkBgColor: 'bg-emerald-950/40' },
+                  complaints_helpdesk: { icon: 'ListTodo', subKey: 'cat_complaints_sub', subtitle: 'Issues & SLA Helpdesk', color: '#7C3AED', bgColor: 'bg-purple-50', darkBgColor: 'bg-purple-950/40' },
+                  notice_board_polls: { icon: 'Megaphone', subKey: 'cat_notice_sub', subtitle: 'Broadcasts & Resident Polls', color: '#DB2777', bgColor: 'bg-pink-50', darkBgColor: 'bg-pink-950/40' },
+                  digital_wallet: { icon: 'WalletCards', subKey: 'cat_wallet_sub', subtitle: 'Prepaid Balance & Ledger', color: '#10B981', bgColor: 'bg-emerald-50', darkBgColor: 'bg-emerald-950/40' },
+                  financial_billing: { icon: 'CreditCard', subKey: 'cat_billing_sub', subtitle: 'Dues, Invoices & Accounts', color: '#0D9488', bgColor: 'bg-teal-50', darkBgColor: 'bg-teal-950/40' },
+                  administration_security: { icon: 'UserRoundCog', subKey: 'cat_admin_sub', subtitle: 'Staff, RBAC & Settings', color: '#D97706', bgColor: 'bg-amber-50', darkBgColor: 'bg-amber-950/40' },
                 };
 
                 const currentMeta = categoryMeta[category.categoryKey] || {
@@ -207,6 +249,8 @@ export default function AllFeaturesScreen() {
                   subKey: '',
                   subtitle: 'Module Features',
                   color: '#FF6A00',
+                  bgColor: 'bg-primary/10',
+                  darkBgColor: 'bg-primary/20'
                 };
 
                 const actionLabel = hasMore
@@ -223,6 +267,7 @@ export default function AllFeaturesScreen() {
                       count={filteredItems.length}
                       icon={currentMeta.icon}
                       iconColor={currentMeta.color}
+                      iconBgColor={isDark ? currentMeta.darkBgColor : currentMeta.bgColor}
                       actionLabel={actionLabel}
                       isExpanded={isExpanded}
                       onAction={hasMore ? () => toggleCategoryExpand(category.categoryKey) : undefined}
@@ -258,6 +303,7 @@ export default function AllFeaturesScreen() {
           ) : null}
         </View>
       </ScrollView>
+      ) : null}
     </ScreenShell>
   );
 }

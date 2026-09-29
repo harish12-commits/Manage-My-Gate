@@ -250,6 +250,20 @@ export class InvoiceRepository {
       },
       {
         $lookup: {
+          from: 'organizations',
+          localField: 'communityId',
+          foreignField: '_id',
+          as: 'communityInfo',
+        },
+      },
+      {
+        $unwind: {
+          path: '$communityInfo',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
           from: 'villas',
           localField: 'unitId',
           foreignField: '_id',
@@ -286,6 +300,8 @@ export class InvoiceRepository {
         $project: {
           invoiceId: '$_id',
           invoiceNumber: 1,
+          communityName: { $ifNull: ['$communityInfo.name', ''] },
+          orgName: { $ifNull: ['$communityInfo.name', ''] },
           unitId: 1,
           unitNumber: {
             $ifNull: [
@@ -618,6 +634,15 @@ export class InvoiceRepository {
       },
       {
         $lookup: {
+          from: 'organizations',
+          localField: 'communityId',
+          foreignField: '_id',
+          as: 'communityInfo',
+        },
+      },
+      { $unwind: { path: '$communityInfo', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
           from: 'users',
           localField: 'targetUserId',
           foreignField: '_id',
@@ -862,6 +887,8 @@ export class InvoiceRepository {
               $project: {
                 _id: 1,
                 invoiceNumber: 1,
+                communityName: { $ifNull: ['$communityInfo.name', { $ifNull: ['$snapshot.billingConfiguration.organizationName', ''] }] },
+                orgName: { $ifNull: ['$communityInfo.name', { $ifNull: ['$snapshot.billingConfiguration.organizationName', ''] }] },
                 billingPeriodString: 1,
                 dueDate: 1,
                 createdAt: 1,

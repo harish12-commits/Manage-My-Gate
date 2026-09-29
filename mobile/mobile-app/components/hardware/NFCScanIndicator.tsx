@@ -20,8 +20,8 @@ export const NFCScanIndicator = ({
     return {
       opacity: withRepeat(
         withSequence(
-          withTiming(0.4, { duration: 600, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) })
+          withTiming(0.4, { duration: 600, easing: Easing.inOut(Easing.quad) }),
+          withTiming(1, { duration: 600, easing: Easing.inOut(Easing.quad) })
         ),
         -1, // infinite
         true

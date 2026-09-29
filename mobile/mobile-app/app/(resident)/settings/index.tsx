@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Modal, Pressable, Alert, Platform } from 'react-native';
+import { View, ScrollView, Modal, Pressable, Alert, Platform, BackHandler, InteractionManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { SheetGrabHandle } from '@/components/ui/SheetGrabHandle';
+import { Skeleton } from '@/components/ui/Skeleton';
 import {
   SettingsRow,
   SettingsCard,
@@ -20,7 +21,7 @@ import { ResidentDirectoryModal } from '@/components/settings/ResidentDirectoryM
 import { SettingToggleRow } from '@/src/features/settings/components/SettingToggleRow';
 import { useSettings } from '@/src/features/settings/hooks/useSettings';
 import { useAuth } from '@/src/features/auth/hooks/useAuth';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useTranslation, LANGUAGE_OPTIONS } from '@/src/utils/i18n';
 import { useCommunityPulse } from '@/src/features/communityPulse/hooks/useCommunityPulse';
 import { InterestSelectorModal } from '@/src/features/communityPulse/components/InterestSelectorModal';
@@ -28,6 +29,8 @@ import { CreatePulseBottomSheet } from '@/src/features/communityPulse/components
 import { VillaSwitchModal } from '@/components/navigation/VillaSwitchModal';
 import { OrgSwitchModal } from '@/components/navigation/OrgSwitchModal';
 import { RoleSwitchModal } from '@/components/navigation/RoleSwitchModal';
+import { BottomNavigationBar } from '@/components/navigation/BottomNavigationBar';
+import { useBottomNavScroll } from '@/components/navigation/BottomNavScrollContext';
 import {
   Bell,
   Check,
@@ -48,6 +51,28 @@ import { getImageUrl } from '@/src/utils/imageUrl';
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { scrollHandlerProps } = useBottomNavScroll();
+  
+  // Lazy loading state to prevent navigation stutter
+  const [isReady, setIsReady] = React.useState(false);
+  React.useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setIsReady(true);
+    });
+    return () => task.cancel();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        router.replace('/(resident)/dashboard');
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [router])
+  );
   const { user, logout, deleteAccount } = useAuth();
   const { t, tRole } = useTranslation();
   const [createPulseOpen, setCreatePulseOpen] = useState(false);
@@ -260,9 +285,18 @@ export default function SettingsScreen() {
         className="flex-1"
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 80 }}
         showsVerticalScrollIndicator={false}
+        {...scrollHandlerProps}
       >
-        {/* 2. Profile Block */}
-        <SettingsProfileBlock
+        {!isReady ? (
+          <View className="px-4 pt-4">
+            <Skeleton variant="card" />
+            <View className="mt-4" />
+            <Skeleton variant="listItem" count={4} />
+          </View>
+        ) : (
+          <>
+            {/* 2. Profile Block */}
+            <SettingsProfileBlock
           name={user?.name || user?.username || (user?.email ? user.email.split('@')[0] : t('logged_in_resident', 'Resident Member'))}
           unitId={dynamicUnit}
           roleLabel={tRole(dynamicRole, dynamicRole)}
@@ -400,6 +434,8 @@ export default function SettingsScreen() {
           onPressPrivacy={handleOpenPrivacyPolicy}
           onPressTerms={handleOpenTerms}
         />
+          </>
+        )}
       </ScrollView>
 
       {/* ─── Modals & Bottom Sheets ─── */}
@@ -534,6 +570,8 @@ export default function SettingsScreen() {
         onConfirm={handleDeleteAccount}
         onCancel={() => setDeleteModalOpen(false)}
       />
+
+      <BottomNavigationBar />
     </View>
   );
 }

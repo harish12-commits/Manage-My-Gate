@@ -152,8 +152,18 @@ const userSlice = createSlice({
       .addCase(fetchUsersAsync.fulfilled, (state, action: any) => {
         state.loading = false;
         const fetchedData = action.payload?.data || [];
-        state.users = fetchedData;
-        state.totalRecords = action.payload?.pagination?.totalRecords || fetchedData.length;
+        const page = action.meta.arg?.page || 1;
+
+        if (page === 1) {
+          state.users = fetchedData;
+        } else {
+          // Append for infinite scroll, avoiding duplicates
+          const existingIds = new Set(state.users.map((u) => u.id || (u as any)._id));
+          const newUsers = fetchedData.filter((u: any) => !existingIds.has(u.id || u._id));
+          state.users = [...state.users, ...newUsers];
+        }
+
+        state.totalRecords = action.payload?.pagination?.totalRecords || state.users.length;
         state.currentPage = action.payload?.pagination?.currentPage || 1;
         state.totalPages = action.payload?.pagination?.totalPages || 1;
       })

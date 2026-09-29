@@ -5,6 +5,7 @@ import { ScreenShell } from '@/components/ui/ScreenShell';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { SuccessToast } from '@/components/feedback';
 import {
   Bell,
   CheckCheck,
@@ -47,6 +48,11 @@ export default function NotificationsScreen() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const [refreshing, setRefreshing] = useState(false);
+
+  // Bulk Delete State
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [successToastMessage, setSuccessToastMessage] = useState<string | null>(null);
 
   // Invitation Modal State
   const [selectedInviteNotification, setSelectedInviteNotification] = useState<NotificationItemData | null>(null);
@@ -350,19 +356,39 @@ export default function NotificationsScreen() {
       trackedStatus === 'Declined' ||
       trackedStatus === 'Rejected';
 
+    const isSelected = selectedIds.has(notifId);
+
     return (
       <TouchableOpacity
         key={notifId}
-        onPress={() => handleNotificationPress(notification)}
+        onPress={() => {
+          if (isSelectionMode) {
+            const newSet = new Set(selectedIds);
+            if (newSet.has(notifId)) newSet.delete(notifId);
+            else newSet.add(notifId);
+            setSelectedIds(newSet);
+          } else {
+            handleNotificationPress(notification);
+          }
+        }}
         activeOpacity={0.8}
         className={`p-4 rounded-2xl border flex-row items-start gap-3.5 mb-2.5 shadow-xs ${
-          isUnread
+          isSelected 
+            ? 'bg-primary/5 border-primary' 
+            : isUnread
             ? 'bg-primary/10 border-primary/30'
             : 'bg-card border-border/80'
         }`}
       >
+        {/* Selection Checkbox */}
+        {isSelectionMode && (
+          <View className={`mt-2 size-5 rounded-md border items-center justify-center shrink-0 ${isSelected ? 'bg-primary border-primary' : 'bg-background border-border'}`}>
+            {isSelected && <Check size={12} color="white" strokeWidth={3} />}
+          </View>
+        )}
+
         {/* Unread Amber/Gold Dot */}
-        {isUnread && (
+        {isUnread && !isSelectionMode && (
           <View className="size-2 rounded-full bg-primary absolute top-3.5 end-3.5" />
         )}
 
@@ -496,49 +522,170 @@ export default function NotificationsScreen() {
         </View>
 
         {/* Delete Action Button */}
-        <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation();
-            deleteNotification(notifId);
-          }}
-          activeOpacity={0.7}
-          className="p-1.5 self-center shrink-0 rounded-full bg-secondary/80 border border-border/40"
-          accessibilityRole="button"
-          accessibilityLabel="Delete notification"
-        >
-          <Trash2 size={14} className="text-muted-foreground" />
-        </TouchableOpacity>
+        {!isSelectionMode && (
+          <TouchableOpacity
+            onPress={async (e) => {
+              e.stopPropagation();
+              blurActiveElement();
+              try {
+                await deleteNotification(notifId);
+                setSuccessToastMessage(t('notification_deleted', 'Notification deleted successfully.'));
+                setTimeout(() => setSuccessToastMessage(null), 3000);
+              } catch (error) {
+                console.error("Failed to delete notification", error);
+              }
+            }}
+            activeOpacity={0.7}
+            className="p-1.5 self-center shrink-0 rounded-full bg-secondary/80 border border-border/40"
+            accessibilityRole="button"
+            accessibilityLabel="Delete notification"
+          >
+            <Trash2 size={14} className="text-muted-foreground" />
+          </TouchableOpacity>
+        )}
       </TouchableOpacity>
     );
   };
 
   return (
     <>
+      {/* Success Toast - positioned absolutely above bottom navigation */}
+      {successToastMessage && (
+        <View className="absolute bottom-24 left-4 right-4 z-[999] elevation-5">
+          <SuccessToast
+            message={successToastMessage}
+            visible={!!successToastMessage}
+            onDismiss={() => setSuccessToastMessage(null)}
+            duration={3000}
+          />
+        </View>
+      )}
+
       <ScreenShell
         title={t('notifications', 'Notifications')}
         subtitle={
-          unreadCount > 0
+          isSelectionMode
+            ? `${selectedIds.size} ${t('selected', 'selected')}`
+            : unreadCount > 0
             ? `${unreadCount} ${t('unread_notifications', 'unread alerts')}`
             : t('all_caught_up', 'All notifications and activity logs')
         }
         iconName="Bell"
         showBackButton={true}
         headerRight={
-          unreadCount > 0 ? (
-            <TouchableOpacity
-              onPress={markAllAsRead}
-              activeOpacity={0.7}
-              className="flex-row items-center gap-1 bg-primary/10 border border-primary/25 px-2.5 py-1.5 rounded-full shadow-xs"
-            >
-              <CheckCheck size={13} color="#FF6A00" />
-              <Text className="text-[11px] font-bold text-primary font-sans">
-                {t('mark_all_read', 'Read all')}
-              </Text>
-            </TouchableOpacity>
-          ) : null
+          <TouchableOpacity
+            onPress={() => {
+              setIsSelectionMode(!isSelectionMode);
+              setSelectedIds(new Set());
+            }}
+            activeOpacity={0.7}
+            className={`flex-row items-center gap-1 border px-3 py-1.5 rounded-full shadow-xs ${
+              isSelectionMode
+                ? 'bg-primary/10 border-primary/25'
+                : 'bg-secondary/80 border-border/40'
+            }`}
+          >
+            <Text className={`text-[11px] font-bold font-sans ${isSelectionMode ? 'text-primary' : 'text-foreground'}`}>
+              {isSelectionMode ? t('cancel', 'Cancel') : t('select', 'Select')}
+            </Text>
+          </TouchableOpacity>
         }
       >
         <View className="flex-1 bg-background">
+
+          {/* Selection Mode Action Bar */}
+          {isSelectionMode && (
+            <View className="flex-row items-center justify-between px-4 py-2.5 bg-card border-b border-border/40">
+              <TouchableOpacity
+                onPress={() => {
+                  const allIds = filteredItems.map(n => n.id || n._id || '').filter(Boolean);
+                  const allSelected = allIds.length > 0 && allIds.every(id => selectedIds.has(id));
+                  if (allSelected) {
+                    setSelectedIds(new Set());
+                  } else {
+                    setSelectedIds(new Set(allIds));
+                  }
+                }}
+                activeOpacity={0.7}
+                className="flex-row items-center gap-1.5"
+              >
+                {(() => {
+                  const allIds = filteredItems.map(n => n.id || n._id || '').filter(Boolean);
+                  const allSelected = allIds.length > 0 && allIds.every(id => selectedIds.has(id));
+                  return (
+                    <>
+                      <View className={`size-5 rounded-md border items-center justify-center ${allSelected ? 'bg-primary border-primary' : 'bg-background border-border'}`}>
+                        {allSelected && <Check size={12} color="white" strokeWidth={3} />}
+                      </View>
+                      <Text className="text-xs font-bold text-foreground font-sans">
+                        {allSelected ? t('deselect_all', 'Deselect All') : t('select_all', 'Select All')}
+                      </Text>
+                    </>
+                  );
+                })()}
+              </TouchableOpacity>
+
+              <View className="flex-row items-center gap-2">
+                <TouchableOpacity
+                  onPress={() => {
+                    if (selectedIds.size === 0) return;
+                    const ids = Array.from(selectedIds);
+                    ids.forEach(id => markAsRead(id));
+                    setSuccessToastMessage(t('notifications_marked_read', `${ids.length} marked as read.`));
+                    setTimeout(() => setSuccessToastMessage(null), 3000);
+                    setIsSelectionMode(false);
+                    setSelectedIds(new Set());
+                  }}
+                  activeOpacity={0.7}
+                  disabled={selectedIds.size === 0}
+                  className={`flex-row items-center gap-1 border px-2.5 py-1.5 rounded-full ${
+                    selectedIds.size > 0
+                      ? 'bg-primary/10 border-primary/25'
+                      : 'bg-muted border-border/40 opacity-40'
+                  }`}
+                >
+                  <CheckCheck size={12} color={selectedIds.size > 0 ? "#FF6A00" : "#888"} />
+                  <Text className={`text-[10px] font-bold font-sans ${selectedIds.size > 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {t('mark_read', 'Read')}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={async () => {
+                    if (selectedIds.size === 0) return;
+                    const ids = Array.from(selectedIds);
+                    let successCount = 0;
+                    for (const id of ids) {
+                      try {
+                        await deleteNotification(id);
+                        successCount++;
+                      } catch (error) {
+                        console.error("Failed to delete notification", error);
+                      }
+                    }
+                    if (successCount > 0) {
+                      setSuccessToastMessage(t('notifications_deleted', `${successCount} notifications deleted.`));
+                      setTimeout(() => setSuccessToastMessage(null), 3000);
+                    }
+                    setIsSelectionMode(false);
+                    setSelectedIds(new Set());
+                  }}
+                  activeOpacity={0.7}
+                  disabled={selectedIds.size === 0}
+                  className={`flex-row items-center gap-1 border px-2.5 py-1.5 rounded-full ${
+                    selectedIds.size > 0
+                      ? 'bg-red-500/10 border-red-500/25'
+                      : 'bg-muted border-border/40 opacity-40'
+                  }`}
+                >
+                  <Trash2 size={12} color={selectedIds.size > 0 ? "#DC2626" : "#888"} />
+                  <Text className={`text-[10px] font-bold font-sans ${selectedIds.size > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                    {t('delete', 'Delete')} {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
           {/* Full-Page Paginated List with Infinity Scroll & Pull to Refresh */}
           <PaginatedList<NotificationItemData>
             data={filteredItems}
@@ -554,37 +701,54 @@ export default function NotificationsScreen() {
             loading={loading}
             refreshing={refreshing}
             ListHeaderComponent={
-              <View className="flex-row items-center gap-2 pt-3 mb-3 pb-1">
-                <TouchableOpacity
-                  onPress={() => setActiveTab('all')}
-                  className={`px-4 py-1.5 rounded-full border ${
-                    getStatusTabStyle('all', activeTab === 'all').containerClass
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-bold ${
-                      getStatusTabStyle('all', activeTab === 'all').textClass
+              !isSelectionMode ? (
+                <View className="flex-row items-center gap-2 pt-3 mb-3 pb-1">
+                  <TouchableOpacity
+                    onPress={() => setActiveTab('all')}
+                    className={`px-4 py-1.5 rounded-full border ${
+                      getStatusTabStyle('all', activeTab === 'all').containerClass
                     }`}
                   >
-                    {t('all', 'All')} ({items.length})
-                  </Text>
-                </TouchableOpacity>
+                    <Text
+                      className={`text-xs font-bold ${
+                        getStatusTabStyle('all', activeTab === 'all').textClass
+                      }`}
+                    >
+                      {t('all', 'All')} ({items.length})
+                    </Text>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => setActiveTab('unread')}
-                  className={`px-4 py-1.5 rounded-full border ${
-                    getStatusTabStyle('warning', activeTab === 'unread').containerClass
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-bold ${
-                      getStatusTabStyle('warning', activeTab === 'unread').textClass
+                  <TouchableOpacity
+                    onPress={() => setActiveTab('unread')}
+                    className={`px-4 py-1.5 rounded-full border ${
+                      getStatusTabStyle('warning', activeTab === 'unread').containerClass
                     }`}
                   >
-                    {t('unread', 'Unread')} ({unreadCount})
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                    <Text
+                      className={`text-xs font-bold ${
+                        getStatusTabStyle('warning', activeTab === 'unread').textClass
+                      }`}
+                    >
+                      {t('unread', 'Unread')} ({unreadCount})
+                    </Text>
+                  </TouchableOpacity>
+
+                  {unreadCount > 0 && (
+                    <TouchableOpacity
+                      onPress={markAllAsRead}
+                      activeOpacity={0.7}
+                      className="flex-row items-center gap-1 bg-primary/10 border border-primary/25 px-2.5 py-1.5 rounded-full ms-auto"
+                    >
+                      <CheckCheck size={12} color="#FF6A00" />
+                      <Text className="text-[10px] font-bold text-primary font-sans">
+                        {t('mark_all_read', 'Read all')}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : (
+                <View className="pt-2" />
+              )
             }
             contentContainerClassName="px-4 pb-28"
             contentContainerStyle={{ paddingBottom: 110 }}

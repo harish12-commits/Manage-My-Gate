@@ -41,8 +41,17 @@ export const useBillingSocket = (userId, communityOrOrgId) => {
 
     // Helper: Event Deduplicator within a 3-second window
     const isDuplicateEvent = (eventName, payload) => {
-      const eventId = payload?._id || payload?.id || payload?.invoiceId || payload?.invoice?._id
-      if (!eventId) return false
+      const eventId =
+        payload?._id ||
+        payload?.id ||
+        payload?.invoiceId ||
+        payload?.invoice?._id ||
+        payload?.invoice?.id ||
+        payload?.data?._id ||
+        payload?.data?.id ||
+        (Array.isArray(payload) ? payload[0]?._id || payload[0]?.id : undefined) ||
+        (Array.isArray(payload?.invoices) ? payload.invoices[0]?._id || payload.invoices[0]?.id : undefined) ||
+        (typeof payload === 'object' && payload !== null ? JSON.stringify(payload).slice(0, 120) : String(payload));
 
       const key = `${eventName}:${eventId}:${payload?.status || ''}`
       const now = Date.now()

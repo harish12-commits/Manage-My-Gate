@@ -222,49 +222,7 @@ export default function AcceptInviteScreen() {
     [logout, clearStatus, targetInviteEmail, resolvedToken, getTokenFromContext, handleNavigateToLogin]
   );
 
-  // Automated account mismatch recovery effect: Automatically logs out mismatched user and routes to invited user
-  const hasAutoSwitchedRef = useRef(false);
-  useEffect(() => {
-    if (
-      !isInitialized ||
-      !isAuthenticated ||
-      !isAccountMismatch ||
-      hasAutoSwitchedRef.current ||
-      submitting
-    ) {
-      return;
-    }
-
-    hasAutoSwitchedRef.current = true;
-    const targetEmail = targetInviteEmail;
-    const currentToken = (resolvedToken || getTokenFromContext() || '').trim();
-
-    (async () => {
-      setSubmitting(true);
-      try {
-        await logout();
-        clearStatus();
-        if (targetEmail) {
-          handleNavigateToLogin(targetEmail, currentToken);
-        }
-      } catch (e) {
-        console.warn('Auto logout error during account mismatch recovery:', e);
-      } finally {
-        setSubmitting(false);
-      }
-    })();
-  }, [
-    isInitialized,
-    isAuthenticated,
-    isAccountMismatch,
-    targetInviteEmail,
-    resolvedToken,
-    getTokenFromContext,
-    submitting,
-    logout,
-    clearStatus,
-    handleNavigateToLogin,
-  ]);
+  // Auto-switch disabled: Mismatched users are presented with an explicit UI choice
 
   const handleRejectInvitation = useCallback(async () => {
     setIsRejecting(true);
@@ -740,40 +698,40 @@ export default function AcceptInviteScreen() {
           {/* CASE 1A: Authenticated Session with Account Mismatch */}
           {!isResolvingInvite && !isRejectedState && isAccountMismatch ? (
             <View className="shadow-xs items-center gap-4 rounded-2xl border border-border bg-card p-6">
-              <View className="items-center justify-center rounded-full border border-primary/20 bg-primary/10 p-4">
-                <ActivityIndicator size="small" color="#FF6A00" />
+              <View className="items-center justify-center rounded-full border border-orange-500/20 bg-orange-500/10 p-4">
+                <AlertCircle size={38} className="text-orange-500" />
               </View>
               <View className="w-full items-center gap-2">
                 <Text className="text-center text-xl font-extrabold text-foreground">
-                  Switching Accounts...
+                  Different Account Invited
                 </Text>
-                <Text className="px-2 text-center text-xs text-muted-foreground">
-                  Signing out <Text className="font-bold text-foreground">{user?.email}</Text> to accept invitation for:
+                <Text className="mt-2 px-2 text-center text-sm text-muted-foreground">
+                  You are currently signed in as <Text className="font-bold text-foreground">{user?.email}</Text>.
                 </Text>
-                <View className="w-full items-center rounded-xl border border-primary/20 bg-primary/10 px-3.5 py-2">
-                  <Text className="font-bold text-sm text-primary">{targetInviteEmail}</Text>
+                <Text className="px-2 text-center text-sm text-muted-foreground">
+                  However, this invitation is intended for:
+                </Text>
+                <View className="mb-2 mt-1 w-full items-center rounded-xl border border-primary/20 bg-primary/10 px-3.5 py-3">
+                  <Text className="font-bold text-base text-primary">{targetInviteEmail}</Text>
                 </View>
-                <Text className="mt-1 px-2 text-center text-xs text-muted-foreground">
-                  Redirecting to accept your community workspace invitation...
-                </Text>
               </View>
 
               {apiError ? <ErrorBanner message={apiError} /> : null}
 
-              <View className="mt-2 w-full flex-col gap-2.5">
+              <View className="mt-2 w-full flex-col gap-3">
                 <Button
                   onPress={() => handleSignOutAndSwitch(targetInviteEmail)}
                   loading={submitting}
                   className="h-12 w-full items-center justify-center rounded-xl bg-primary"
                   textClassName="font-bold text-base">
-                  Continue as {targetInviteEmail || 'Invited User'}
+                  Sign Out & Continue as {targetInviteEmail || 'Invited User'}
                 </Button>
                 <Button
                   onPress={() => router.replace('/(resident)/dashboard')}
                   variant="outline"
-                  className="h-11 w-full items-center justify-center rounded-xl border-border"
-                  textClassName="font-semibold text-sm text-foreground">
-                  Keep Signed In as {user?.email}
+                  className="h-12 w-full items-center justify-center rounded-xl border-border"
+                  textClassName="font-semibold text-base text-foreground">
+                  Stay Signed In as {user?.email}
                 </Button>
               </View>
             </View>

@@ -20,8 +20,8 @@ export interface QRScannerOverlayProps {
 }
 
 export const QRScannerOverlay: React.FC<QRScannerOverlayProps> = ({
-  instruction = 'Align Barcode / QR Code within frame',
-  mode = 'barcode',
+  instruction = 'Align QR Code / Pass within frame',
+  mode = 'qr',
   frameWidth: customWidth,
   frameHeight: customHeight,
   className,
@@ -29,8 +29,8 @@ export const QRScannerOverlay: React.FC<QRScannerOverlayProps> = ({
   const { width: screenWidth } = Dimensions.get('window');
 
   // Barcode dimensions fit wide 1D barcodes and 2D QR passes cleanly
-  const frameWidth = customWidth || (mode === 'barcode' ? Math.min(screenWidth - 48, 320) : 250);
-  const frameHeight = customHeight || (mode === 'barcode' ? 160 : 250);
+  const frameWidth = customWidth || (mode === 'barcode' ? Math.min(screenWidth - 48, 320) : Math.min(screenWidth - 48, 300));
+  const frameHeight = customHeight || (mode === 'barcode' ? 160 : Math.min(screenWidth - 48, 300));
 
   const scanLineOffset = useSharedValue(0);
 
@@ -110,7 +110,7 @@ export const QRScannerOverlay: React.FC<QRScannerOverlayProps> = ({
         <View className="flex-row items-center rounded-full bg-black/80 border border-emerald-500/40 px-3.5 py-1.5 shadow-md">
           <ScanLine size={13} color="#22c55e" />
           <Text className="text-[11px] font-bold text-emerald-400 tracking-wider uppercase ms-1.5">
-            Auto-Detect 1D / 2D Barcode
+            Auto-Detect QR / Barcode
           </Text>
         </View>
       </View>

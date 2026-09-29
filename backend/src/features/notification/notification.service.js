@@ -207,8 +207,10 @@ export class NotificationService {
    */
   async deleteNotification(id, userId) {
     const session = await mongoose.startSession();
-    session.startTransaction();
+    let transactionStarted = false;
     try {
+      session.startTransaction();
+      transactionStarted = true;
       const notification = await notificationRepository.findById(id, session);
       if (!notification) {
         throw new HttpError(404, `Notification with ID ${id} not found.`);
@@ -227,7 +229,30 @@ export class NotificationService {
 
       return deleted;
     } catch (error) {
-      await session.abortTransaction();
+      if (transactionStarted) {
+        try {
+          await session.abortTransaction();
+        } catch {
+          // ignore
+        }
+      }
+
+      const canUseSingleWriteFallback =
+        /retryable writes|Transaction numbers are only allowed|does not support transactions/i.test(
+          error?.message || ''
+        );
+      if (canUseSingleWriteFallback) {
+        const notification = await notificationRepository.findById(id);
+        if (!notification) {
+          throw new HttpError(404, `Notification with ID ${id} not found.`);
+        }
+        if (notification.recipientId.toString() !== userId) {
+          throw new HttpError(403, 'Access denied. You do not own this notification.');
+        }
+        const deleted = await notificationRepository.delete(id);
+        notificationEvents.emit('notification_deleted', deleted);
+        return deleted;
+      }
       throw error;
     } finally {
       await session.endSession();

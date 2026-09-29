@@ -185,6 +185,7 @@ export interface ButtonProps
   leftIcon?: React.ComponentType<{ size?: number; className?: string; color?: string }>;
   rightIcon?: React.ComponentType<{ size?: number; className?: string; color?: string }>;
   loading?: boolean;
+  isLoading?: boolean;
   textClassName?: string;
 }
 
@@ -196,7 +197,8 @@ const Button = React.forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>
       size,
       leftIcon: LeftIcon,
       rightIcon: RightIcon,
-      loading = false,
+      loading: loadingProp,
+      isLoading,
       disabled = false,
       textClassName,
       children,
@@ -204,6 +206,7 @@ const Button = React.forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>
     },
     ref
   ) => {
+    const loading = loadingProp || isLoading || false;
     const isDisabled = disabled || loading;
     const iconSize = size === 'sm' ? 16 : size === 'lg' ? 20 : 18;
     const loadingColor = SOLID_LOADING_VARIANTS.has(variant || 'default') ? '#FFFFFF' : '#F45A0A';

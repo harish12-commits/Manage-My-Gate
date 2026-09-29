@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { useDispatch } from 'react-redux';
-import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
+let Notifications: any = null;
+try { if (Constants.appOwnership !== 'expo') { Notifications = require('expo-notifications'); } } catch(e) {}
 import * as Device from 'expo-device';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { registerForPushNotificationsAsync } from '../services/pushNotificationService';
@@ -81,7 +83,7 @@ export function usePushNotifications() {
 
     async function checkColdStartNotification() {
       try {
-        const lastResponse = await Notifications.getLastNotificationResponseAsync();
+        const lastResponse = await Notifications?.getLastNotificationResponseAsync();
         if (!lastResponse) return;
 
         const data = lastResponse.notification?.request?.content?.data;
@@ -107,7 +109,7 @@ export function usePushNotifications() {
     if (Platform.OS === 'web') return;
 
     // A. Received while app is in foreground
-    notificationListenerRef.current = Notifications.addNotificationReceivedListener((notification: any) => {
+    notificationListenerRef.current = Notifications?.addNotificationReceivedListener((notification: any) => {
       console.log('[usePushNotifications] Foreground notification received by Android system:', notification?.request?.content?.title);
       const content = notification?.request?.content;
       const data = content?.data || {};
@@ -129,7 +131,7 @@ export function usePushNotifications() {
     });
 
     // B. User tapped notification while app was running or in background
-    responseListenerRef.current = Notifications.addNotificationResponseReceivedListener((response: any) => {
+    responseListenerRef.current = Notifications?.addNotificationResponseReceivedListener((response: any) => {
       const data = response?.notification?.request?.content?.data;
       const notifId = data?.notificationId || response?.notification?.request?.identifier;
 
@@ -158,4 +160,6 @@ export function usePushNotifications() {
 }
 
 export default usePushNotifications;
+
+
 

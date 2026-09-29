@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, memo } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { ScannerError } from './ScannerStates.jsx';
 
 const ScannerCamera = memo(({ onScan }) => {
@@ -18,7 +18,14 @@ const ScannerCamera = memo(({ onScan }) => {
         if (document.getElementById("reader")) {
           await html5QrcodeScanner.start(
             { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 250 } },
+            { 
+              fps: 10, 
+              qrbox: (width, height) => {
+                const size = Math.min(width, height) * 0.85;
+                return { width: Math.max(300, size), height: Math.max(300, size) };
+              },
+              formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
+            },
             (decodedText, decodedResult) => {
               // Successfully decoded
               onScan(decodedText);
@@ -54,7 +61,7 @@ const ScannerCamera = memo(({ onScan }) => {
       
       {/* Target Overlay (CSS-based viewfinder) */}
       {isScanning && (
-        <div className="position-absolute top-50 left-50 translate-middle" style={{ width: '250px', height: '250px', border: '3px solid rgba(255,255,255,0.5)', borderRadius: '12px', pointerEvents: 'none', zIndex: 10 }}>
+        <div className="position-absolute top-50 left-50 translate-middle" style={{ width: '85%', height: '85%', maxWidth: '400px', maxHeight: '400px', border: '3px solid rgba(255,255,255,0.5)', borderRadius: '12px', pointerEvents: 'none', zIndex: 10 }}>
           <div className="position-absolute" style={{ top: '-3px', left: '-3px', width: '30px', height: '30px', borderTop: '4px solid #321fdb', borderLeft: '4px solid #321fdb' }}></div>
           <div className="position-absolute" style={{ top: '-3px', right: '-3px', width: '30px', height: '30px', borderTop: '4px solid #321fdb', borderRight: '4px solid #321fdb' }}></div>
           <div className="position-absolute" style={{ bottom: '-3px', left: '-3px', width: '30px', height: '30px', borderBottom: '4px solid #321fdb', borderLeft: '4px solid #321fdb' }}></div>

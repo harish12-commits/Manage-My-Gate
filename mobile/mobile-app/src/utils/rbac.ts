@@ -275,15 +275,16 @@ export const isFeatureAllowedForUser = (
   item: { id: string; permission?: string; categoryKey?: string },
   user: UserLike | null | undefined
 ): boolean => {
-  if (!user || !item) return false;
+  if (!item) return false;
+  const effectiveUser: UserLike = user || { role: 'Resident', permissions: [] };
   if (item.id === 'admin_organizations' || item.id === 'admin_audit_logs') {
-    return user.isPlatform === true || Boolean(user.permissions && (user.permissions.includes('platform:super_admin') || user.permissions.includes('*')));
+    return effectiveUser.isPlatform === true || Boolean(effectiveUser.permissions && (effectiveUser.permissions.includes('platform:super_admin') || effectiveUser.permissions.includes('*')));
   }
 
-  const permissions = Array.isArray(user.permissions) ? user.permissions : [];
+  const permissions = Array.isArray(effectiveUser.permissions) ? effectiveUser.permissions : [];
 
   // Super Admin / Platform bypass (full system visibility)
-  if (user.isPlatform === true || permissions.includes('platform:super_admin') || permissions.includes('*')) {
+  if (effectiveUser.isPlatform === true || permissions.includes('platform:super_admin') || permissions.includes('*')) {
     return true;
   }
 
@@ -292,13 +293,12 @@ export const isFeatureAllowedForUser = (
     return hasWalletLedgerGrant(item.id, permissions);
   }
 
-  const isAdmin = checkIsAdmin(user);
-  const isSecurity = checkIsSecurityRole(user);
+  const isAdmin = checkIsAdmin(effectiveUser);
+  const isSecurity = checkIsSecurityRole(effectiveUser);
 
-  // 1. Community Admin persona: strictly exclude resident self-service and guard hardware equipment
+  // 1. Community Admin persona: strictly exclude resident self-service
   if (isAdmin) {
     if (RESIDENT_ONLY_FEATURE_IDS.has(item.id)) return false;
-    if (GUARD_ONLY_FEATURE_IDS.has(item.id)) return false;
 
     // In GlobalNavModal, keep role-specific amenity item filtering (items prefixed with 'a-')
     if (item.id && item.id.startsWith('a-')) {
@@ -356,7 +356,7 @@ export const isFeatureAllowedForUser = (
   }
 
   // 4. Fallback persona validation when explicit permissions array is not provided:
-  const roleName = getUserRoleName(user).toLowerCase();
+  const roleName = getUserRoleName(effectiveUser).toLowerCase();
 
   // 4a. Staff / Assignee persona
   if (roleName.includes('staff') || roleName.includes('assignee') || roleName.includes('vendor')) {

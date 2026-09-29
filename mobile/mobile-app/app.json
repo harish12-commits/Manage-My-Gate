@@ -2,7 +2,7 @@
   "expo": {
     "name": "Nahom",
     "slug": "atominos",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": [
@@ -12,7 +12,6 @@
       "com.googleusercontent.apps.512495714957-ppgtahfr70hmjclhmq7n3c7822aacd41"
     ],
     "userInterfaceStyle": "automatic",
-    "jsEngine": "hermes",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -23,7 +22,7 @@
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.atominosconsulting.nahom",
-      "buildNumber": "18",
+      "buildNumber": "19",
       "associatedDomains": [
         "applinks:managemygate.e3esg.com",
         "applinks:app.managemygate.com"
@@ -45,7 +44,7 @@
     "android": {
       "softwareKeyboardLayoutMode": "resize",
       "package": "com.atominosconsulting.nahom",
-      "versionCode": 22,
+      "versionCode": 23,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0D1015"
@@ -133,7 +132,11 @@
           "color": "#FF6A00",
           "defaultChannel": "general"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-sharing",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

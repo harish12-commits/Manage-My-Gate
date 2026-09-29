@@ -32,12 +32,12 @@ const WavingHand: React.FC = () => {
   useEffect(() => {
     rotation.value = withRepeat(
       withSequence(
-        withTiming(18, { duration: 170, easing: Easing.inOut(Easing.ease) }),
-        withTiming(-14, { duration: 170, easing: Easing.inOut(Easing.ease) }),
-        withTiming(18, { duration: 170, easing: Easing.inOut(Easing.ease) }),
-        withTiming(-10, { duration: 170, easing: Easing.inOut(Easing.ease) }),
-        withTiming(14, { duration: 170, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0, { duration: 220, easing: Easing.inOut(Easing.ease) }),
+        withTiming(18, { duration: 170, easing: Easing.inOut(Easing.quad) }),
+        withTiming(-14, { duration: 170, easing: Easing.inOut(Easing.quad) }),
+        withTiming(18, { duration: 170, easing: Easing.inOut(Easing.quad) }),
+        withTiming(-10, { duration: 170, easing: Easing.inOut(Easing.quad) }),
+        withTiming(14, { duration: 170, easing: Easing.inOut(Easing.quad) }),
+        withTiming(0, { duration: 220, easing: Easing.inOut(Easing.quad) }),
         withTiming(0, { duration: 1200 }) // pause before next waving cycle
       ),
       -1,
@@ -51,7 +51,7 @@ const WavingHand: React.FC = () => {
 
   return (
     <Animated.View style={animatedStyle} className="items-center justify-center">
-      <Text className="text-[18px] leading-none">👋</Text>
+      <Text className="text-[18px] leading-none">{'\uD83D\uDC4B'}</Text>
     </Animated.View>
   );
 };

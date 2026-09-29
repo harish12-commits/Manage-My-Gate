@@ -43,7 +43,7 @@ export const useNotifications = () => {
 
   const deleteNotification = useCallback(
     (id: string) => {
-      dispatch(deleteNotificationThunk(id));
+      return dispatch(deleteNotificationThunk(id)).unwrap();
     },
     [dispatch]
   );

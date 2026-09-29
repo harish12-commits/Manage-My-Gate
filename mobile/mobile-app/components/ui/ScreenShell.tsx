@@ -306,7 +306,7 @@ export function ScreenShell({
 
       {/* Main content area */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         // This view begins below the app header, so an extra offset leaves the
         // focused field partially behind the keyboard on iOS.
         keyboardVerticalOffset={0}

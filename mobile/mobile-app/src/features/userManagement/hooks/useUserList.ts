@@ -68,15 +68,24 @@ export const useUserList = () => {
     };
   }, [activeOrgId, dispatch, currentPage, rowsPerPage]);
 
-  // Fetch users when query, filters, or pagination change
+  // Fetch users initially or refresh explicitly
   const refreshUsers = useCallback(() => {
-    dispatch(fetchUsersAsync({ page: currentPage || 1, limit: rowsPerPage || 10 }));
-  }, [dispatch, currentPage, rowsPerPage]);
+    dispatch(setCurrentPage(1));
+    dispatch(fetchUsersAsync({ page: 1, limit: rowsPerPage || 10 }));
+  }, [dispatch, rowsPerPage]);
 
+  // Handle infinite scroll trigger
+  const loadMoreUsers = useCallback(() => {
+    if (!loading && currentPage < totalPages) {
+      dispatch(fetchUsersAsync({ page: currentPage + 1, limit: rowsPerPage || 10 }));
+    }
+  }, [dispatch, loading, currentPage, totalPages, rowsPerPage]);
+
+  // When filters change, reset to page 1 and fetch
   useEffect(() => {
-    dispatch(clearUsers());
-    refreshUsers();
-  }, [dispatch, activeOrgId, activeVillaId, currentPage, rowsPerPage, searchQuery, selectedRoles, statusFilter]);
+    dispatch(setCurrentPage(1));
+    dispatch(fetchUsersAsync({ page: 1, limit: rowsPerPage || 10 }));
+  }, [dispatch, activeOrgId, activeVillaId, rowsPerPage, searchQuery, selectedRoles, statusFilter]);
 
   // Load roles on mount if needed
   useEffect(() => {
@@ -93,22 +102,18 @@ export const useUserList = () => {
   // Action Handlers
   const handleSearchChange = (query: string) => {
     dispatch(setSearchQuery(query));
-    dispatch(setCurrentPage(1));
   };
 
   const handleRoleToggle = (role: string) => {
     dispatch(toggleRole(role));
-    dispatch(setCurrentPage(1));
   };
 
   const handleStatusToggle = (status: string) => {
     dispatch(toggleStatus(status));
-    dispatch(setCurrentPage(1));
   };
 
   const handleClearRoleFilter = () => {
     dispatch(clearRoleFilter());
-    dispatch(setCurrentPage(1));
   };
 
   const handlePageChange = (newPage: number) => {
@@ -117,7 +122,6 @@ export const useUserList = () => {
 
   const handleRowsPerPageChange = (newLimit: number) => {
     dispatch(setRowsPerPage(newLimit));
-    dispatch(setCurrentPage(1));
   };
 
   const removeUser = async (payload: { userId: string; villaId?: string | null }) => {
@@ -143,6 +147,13 @@ export const useUserList = () => {
     } else {
       throw resultAction.payload || resultAction.error?.message || 'Failed to bulk invite users';
     }
+  };
+
+  const editUser = async (userId: string, data: { name: string; phone: string }) => {
+    // Simulate API call for now since backend endpoint might not be ready
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    // In a real implementation: await dispatch(updateUserAsync({ userId, ...data })).unwrap();
+    refreshUsers();
   };
 
   // Modal Control States
@@ -204,10 +215,12 @@ export const useUserList = () => {
     deleteUser: removeUser,
     inviteUser,
     bulkInviteUsers,
+    editUser,
     openManageRolesModal,
     closeManageRolesModal,
     handleSaveRoles,
     refreshUsers,
+    loadMoreUsers,
   };
 };
 

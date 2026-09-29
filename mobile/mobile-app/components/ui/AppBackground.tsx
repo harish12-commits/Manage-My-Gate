@@ -23,7 +23,7 @@ export const AppBackground: React.FC<AppBackgroundProps> = memo(({ style }) => {
 
   return (
     <View
-      style={[StyleSheet.absoluteFillObject, style]}
+      style={[StyleSheet.absoluteFill, style]}
       pointerEvents="none"
     >
       <Svg

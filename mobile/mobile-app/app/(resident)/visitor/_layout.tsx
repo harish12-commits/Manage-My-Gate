@@ -1,8 +1,9 @@
 import { Stack } from 'expo-router';
+import { premiumScreenTransition } from '@/src/utils/screenTransitions';
 
 export default function VisitorLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, ...premiumScreenTransition }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="admin" />
       <Stack.Screen name="admin-logs" />

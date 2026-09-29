@@ -2,6 +2,7 @@ import { Redirect, Stack } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { selectAuthUser } from '@/src/features/auth/store/authSelectors';
 import { isFeatureAllowedForUser } from '@/src/utils/rbac';
+import { premiumScreenTransition } from '@/src/utils/screenTransitions';
 
 export default function VisitorAdminLayout() {
   const authUser = useSelector(selectAuthUser);
@@ -12,7 +13,7 @@ export default function VisitorAdminLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, ...premiumScreenTransition }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="analytics" />
       <Stack.Screen name="blacklist" />

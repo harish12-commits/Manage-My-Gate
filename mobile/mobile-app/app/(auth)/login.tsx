@@ -48,6 +48,7 @@ import { parseBackendError } from '@/src/utils/validation';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { storage, sessionStore } from '@/src/utils/storage';
 import { useDispatch, useSelector } from 'react-redux';
+import { clearPendingRoute } from '@/src/features/notification/store/notificationSlice';
 import { useTranslation } from '@/src/utils/i18n';
 import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScrollView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -89,7 +90,7 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const pendingRoute = useSelector((state: any) => state.notification?.pendingRoute);
+  
   const { user, login: performLogin, requestOtp, error, isAuthenticated, otpSent, clearStatus } = useAuth();
   const { handleGoogleSignIn, loading: googleLoading } = useGoogleAuthSession();
   const params = useLocalSearchParams<{
@@ -516,18 +517,17 @@ export default function LoginScreen() {
         )
       );
 
-      if (isCreateOrgIntent || !hasOrg) {
+      dispatch(clearPendingRoute());
+        if (isCreateOrgIntent || !hasOrg) {
         sessionStore.removeItem('mobile_auth_intent');
         router.replace({ pathname: '/(auth)/setup-organization', params: { intent: 'create-org' } });
-      } else if (pendingRoute) {
-        return;
-      } else {
-        router.replace('/(resident)/dashboard');
+        } else {
+        router.replace('/(resident)');
       }
     } else if (!isAuthenticated) {
       hasNavigatedRef.current = false;
     }
-  }, [isAuthenticated, user, isCreateOrgIntent, pendingRoute, dispatch]);
+  }, [isAuthenticated, user, isCreateOrgIntent, dispatch]);
 
   // Reactively route to OTP screen if Phone OTP sent
   React.useEffect(() => {
@@ -614,7 +614,7 @@ export default function LoginScreen() {
             ],
           }}
           pointerEvents="none"
-        >
+          >
           <Image
             source={require('../../assets/images/auth-bg.jpg')}
             style={{ width: '100%', height: '100%' }}
@@ -978,8 +978,7 @@ export default function LoginScreen() {
                             width: 55,
                             transform: [{ translateX: buttonSweepX }, { skewX: '-24deg' }],
                             opacity: buttonSweepOpacity,
-                            backgroundColor: 'rgba(255, 255, 255, 0.28)',
-                          }}
+                            backgroundColor: 'rgba(255, 255, 255, 0.28)', }}
                           pointerEvents="none"
                         />
 
@@ -1089,8 +1088,7 @@ export default function LoginScreen() {
                             width: 55,
                             transform: [{ translateX: buttonSweepX }, { skewX: '-24deg' }],
                             opacity: buttonSweepOpacity,
-                            backgroundColor: 'rgba(255, 255, 255, 0.28)',
-                          }}
+                            backgroundColor: 'rgba(255, 255, 255, 0.28)', }}
                           pointerEvents="none"
                         />
 
@@ -1177,3 +1175,4 @@ export default function LoginScreen() {
 function cnText(...classes: (string | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }
+

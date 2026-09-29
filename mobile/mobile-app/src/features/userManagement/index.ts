@@ -8,3 +8,4 @@ export * from './components/ConfigureInviteTemplateModal';
 export * from './components/ManageRolesModal';
 export * from './components/UserFilterSheet';
 export * from './components/UserOverflowMenu';
+export * from './components/EditUserModal';

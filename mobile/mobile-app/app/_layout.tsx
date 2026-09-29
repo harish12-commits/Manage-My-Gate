@@ -1,3 +1,4 @@
+import '../src/utils/consoleFilter';
 import '../src/utils/cryptoPolyfill';
 import '@/global.css';
 import React, { useEffect, useMemo, useRef } from 'react';
@@ -15,9 +16,11 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { store } from '../src/store/store';
-import { View, ActivityIndicator, I18nManager, TouchableOpacity, Linking, Platform } from 'react-native';
+import { View, ActivityIndicator, I18nManager, TouchableOpacity, Linking, Platform, LogBox } from 'react-native';
 import { AlertTriangle, Mail } from 'lucide-react-native';
 import { Text } from '@/components/ui/text';
+
+
 
 // Enforce standard Left-to-Right layout across all languages (including Arabic)
 try {
@@ -248,11 +251,14 @@ function AuthRouteGuard() {
         if (!isOnboardingRoute) {
           replaceOnce('/(auth)/setup-organization');
         }
-      } else if (pendingRoute) {
-        console.log('[AuthRouteGuard] Navigating to pending notification destination:', pendingRoute);
-        dispatch(clearPendingRoute());
-        replaceOnce(pendingRoute as any);
-      }
+      } else if (inAuthGroup) {
+          if (pendingRoute) dispatch(clearPendingRoute());
+          replaceOnce('/(resident)');
+        } else if (pendingRoute) {
+          console.log('[AuthRouteGuard] Navigating to pending notification destination:', pendingRoute);
+          dispatch(clearPendingRoute());
+          replaceOnce(pendingRoute as any);
+        }
     }
   }, [isAuthenticated, isInitialized, rootNavigationState?.key, stableSegmentsKey, pathname, user, isCreateOrgIntent, pendingRoute, dispatch, stableSearchParams]);
 
@@ -262,7 +268,7 @@ function AuthRouteGuard() {
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
 
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     HankenGrotesk_400Regular,
     HankenGrotesk_500Medium,
     HankenGrotesk_600SemiBold,
@@ -271,10 +277,10 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded || fontError) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
   // Web Accessibility: Prevent Chrome "Blocked aria-hidden on an element because its descendant retained focus"
   useEffect(() => {
@@ -323,7 +329,7 @@ export default function RootLayout() {
     };
   }, []);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded && !fontError) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colorScheme === 'dark' ? '#131316' : '#FFF8EF' }}>
         <ActivityIndicator size="large" color="#F45A0A" />
@@ -340,7 +346,7 @@ export default function RootLayout() {
               <BottomSheetModalProvider>
                 <StatusBar
                   style={colorScheme === 'dark' ? 'light' : 'dark'}
-                  backgroundColor={colorScheme === 'dark' ? '#131316' : '#FFF8EF'}
+                  {...({ backgroundColor: colorScheme === 'dark' ? '#131316' : '#FFF8EF' } as any)}
                 />
                 <Stack screenOptions={{ headerShown: false }} />
                 <AuthRouteGuard />

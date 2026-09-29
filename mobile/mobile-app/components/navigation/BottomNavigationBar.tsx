@@ -302,7 +302,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
 
   useEffect(() => {
     containerBreadth.value = withTiming(isCompact ? COMPACT_BREADTH : FULL_BREADTH, {
-      duration: 220,
+      duration: 200,
       easing: Easing.out(Easing.cubic),
     });
   }, [isCompact, FULL_BREADTH, COMPACT_BREADTH, containerBreadth]);
@@ -314,7 +314,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
 
   useEffect(() => {
     androidBreadth.value = withTiming(isCompact ? ANDROID_COMPACT_BREADTH : ANDROID_FULL_BREADTH, {
-      duration: 220,
+      duration: 200,
       easing: Easing.out(Easing.cubic),
     });
   }, [isCompact, ANDROID_FULL_BREADTH, ANDROID_COMPACT_BREADTH, androidBreadth]);
@@ -349,12 +349,14 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   const navTranslateY = useSharedValue(0);
 
   useEffect(() => {
-    const shouldHide = isKeyboardVisible;
+    // Hide completely if keyboard is visible OR if scrolling down (isCompact)
+    const shouldHide = isKeyboardVisible || isCompact;
+    
     navTranslateY.value = withTiming(shouldHide ? (isIOS ? 140 : 120) : 0, {
-      duration: 220,
-      easing: Easing.out(Easing.cubic),
+      duration: 200,
+      easing: Easing.out(Easing.exp),
     });
-  }, [isKeyboardVisible, isIOS, navTranslateY]);
+  }, [isKeyboardVisible, isCompact, isIOS, navTranslateY]);
 
   const barAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -422,9 +424,9 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
 
   const navigateToTab = useCallback((item: TabItem) => {
     try {
-      router.replace(item.route as any);
-    } catch {
       router.navigate(item.route as any);
+    } catch {
+      router.push(item.route as any);
     }
   }, [router]);
 
@@ -530,25 +532,28 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
     const androidBorderTop = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
 
     return (
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          width: '100%',
-          backgroundColor: androidBarBg,
-          borderTopWidth: 1,
-          borderTopColor: androidBorderTop,
-          paddingBottom: androidNavButtonSpace,
-          elevation: 8,
-          shadowColor: '#000000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: isDark ? 0.35 : 0.06,
-          shadowRadius: 6,
-          zIndex: 50,
-          pointerEvents: isKeyboardVisible ? 'none' : 'box-none',
-        }}
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            width: '100%',
+            backgroundColor: androidBarBg,
+            borderTopWidth: 1,
+            borderTopColor: androidBorderTop,
+            paddingBottom: androidNavButtonSpace,
+            elevation: 8,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: isDark ? 0.35 : 0.06,
+            shadowRadius: 6,
+            zIndex: 50,
+            pointerEvents: isKeyboardVisible ? 'none' : 'box-none',
+          },
+          { transform: [{ translateY: navTranslateY }] }
+        ]}
       >
         <View
           style={{
@@ -570,7 +575,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
             />
           ))}
         </View>
-      </View>
+      </Animated.View>
     );
   }
 

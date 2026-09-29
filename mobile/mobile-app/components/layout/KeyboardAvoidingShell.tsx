@@ -28,7 +28,7 @@ export const KeyboardAvoidingShell = ({
 }: KeyboardAvoidingShellProps) => {
   // Android is configured with adjustResize. iOS needs an explicit padding
   // response so the focused field and submit action remain above the keyboard.
-  const defaultBehavior = Platform.OS === 'ios' ? 'padding' : 'height';
+  const defaultBehavior = Platform.OS === 'ios' ? 'padding' : undefined;
   const activeBehavior = props.behavior ?? defaultBehavior;
 
   const content = scrollable ? (

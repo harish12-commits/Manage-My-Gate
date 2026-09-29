@@ -1,28 +1,29 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useRef, Suspense, lazy } from 'react';
+import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform, ActivityIndicator, Animated, TouchableWithoutFeedback } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Filter, Users, ChevronLeft, ChevronRight, Mail, Users2, Hash, X, Plus } from 'lucide-react-native';
+import { Filter, Users, Mail, Users2, Plus, UserPlus, X } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
-import { FAB } from '@/components/ui/FAB';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { TextInput } from '@/components/forms/TextInput';
 import { Button } from '@/components/common/Button';
-import { RowsPerPageDropdown } from '@/components/ui/RowsPerPageDropdown';
 import { useTranslation } from '@/src/utils/i18n';
 import {
   useUserList,
   UserCard,
-  InviteUserModal,
-  BulkInviteModal,
-  ConfigureInviteTemplateModal,
-  ManageRolesModal,
   UserFilterSheet,
   UserData,
   AssignedUnit,
 } from '@/src/features/userManagement';
+
+// Lazy Load Heavy Modals for Performance Optimization
+const InviteUserModal = lazy(() => import('@/src/features/userManagement').then(m => ({ default: m.InviteUserModal })));
+const BulkInviteModal = lazy(() => import('@/src/features/userManagement').then(m => ({ default: m.BulkInviteModal })));
+const ConfigureInviteTemplateModal = lazy(() => import('@/src/features/userManagement').then(m => ({ default: m.ConfigureInviteTemplateModal })));
+const ManageRolesModal = lazy(() => import('@/src/features/userManagement').then(m => ({ default: m.ManageRolesModal })));
+const EditUserModal = lazy(() => import('@/src/features/userManagement').then(m => ({ default: m.EditUserModal })));
 
 export default function UserManagementScreen() {
   const router = useRouter();
@@ -50,6 +51,7 @@ export default function UserManagementScreen() {
     deleteUser,
     inviteUser,
     bulkInviteUsers,
+    editUser,
     selectedUserForRoles,
     selectedUnitForRoles,
     openManageRolesModal,
@@ -58,16 +60,56 @@ export default function UserManagementScreen() {
     isLoading,
     error,
     refreshUsers,
+    loadMoreUsers,
   } = useUserList();
 
   // Local UI State
+  // Speed Dial UI State & Animation
+  const [isDialOpen, setIsDialOpen] = useState(false);
+  const dialAnimation = useRef(new Animated.Value(0)).current;
+
+  const toggleDial = () => {
+    const toValue = isDialOpen ? 0 : 1;
+    Animated.spring(dialAnimation, {
+      toValue,
+      friction: 5,
+      useNativeDriver: true,
+    }).start();
+    setIsDialOpen(!isDialOpen);
+  };
+
+  const closeDialAndOpen = (setter: (v: boolean) => void) => {
+    toggleDial();
+    setTimeout(() => setter(true), 300);
+  };
+
+  const rotation = dialAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '45deg']
+  });
+
+  // Radial entering pop-out animation (Radius = ~100px)
+  const transX1 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, 0] });
+  const transY1 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -100] });
+
+  const transX2 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -75] });
+  const transY2 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -75] });
+
+  const transX3 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -100] });
+  const transY3 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, 0] });
+  
+  // Staggered entering pop-out scale animation
+  const scale1 = dialAnimation.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.5, 1.1, 1], extrapolate: 'clamp' });
+  const scale2 = dialAnimation.interpolate({ inputRange: [0, 0.7, 1], outputRange: [0.5, 1.1, 1], extrapolate: 'clamp' });
+  const scale3 = dialAnimation.interpolate({ inputRange: [0, 0.9, 1], outputRange: [0.5, 1.1, 1], extrapolate: 'clamp' });
+
+  const dialOpacity = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showBulkInviteModal, setShowBulkInviteModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
-  const [showPageJumpModal, setShowPageJumpModal] = useState(false);
-  const [targetPageInput, setTargetPageInput] = useState('');
   const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
+  const [userToEdit, setUserToEdit] = useState<UserData | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   // Toast / Alert helper
@@ -110,92 +152,14 @@ export default function UserManagementScreen() {
     }
   };
 
-  const handleExecutePageJump = () => {
-    const pageNum = parseInt(targetPageInput.trim(), 10);
-    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
-      setCurrentPage(pageNum);
-      setShowPageJumpModal(false);
-      setTargetPageInput('');
-    } else {
-      Alert.alert('Invalid Page', `Please enter a valid page number between 1 and ${totalPages}.`);
-    }
-  };
-
   const activeFilterCount = (selectedRoles?.length || 0) + (statusFilter?.length < 3 ? 1 : 0);
 
-  // Record Range Calculations
-  const startRecord = totalRecords === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
-  const endRecord = Math.min(currentPage * rowsPerPage, totalRecords);
-
-  // Pagination Footer Component
+  // Infinite Scroll Footer Component
   const renderPaginationFooter = () => {
-    if (totalRecords === 0 || totalPages <= 1) return null;
-
+    if (!isLoading || users.length === 0) return null;
     return (
-      <View className="mt-3 pt-2.5 border-t border-border/40">
-        <View className="flex-row items-center justify-between bg-card border border-border/60 p-2 rounded-xl shadow-xs">
-          {/* Previous Page Button (<) */}
-          <TouchableOpacity
-            onPress={() => {
-              if (currentPage > 1) {
-                setCurrentPage(currentPage - 1);
-              }
-            }}
-            disabled={currentPage <= 1 || isLoading}
-            className={`flex-row items-center px-3 py-1.5 rounded-lg border ${
-              currentPage <= 1 || isLoading
-                ? 'bg-muted/40 border-border/40 opacity-40'
-                : 'bg-blue-500/10 border-blue-500/20 active:opacity-70'
-            }`}
-            accessibilityRole="button"
-            accessibilityLabel="Previous page"
-          >
-            <ChevronLeft size={16} color={currentPage <= 1 || isLoading ? '#9ca3af' : '#6366f1'} className="me-1" />
-            <Text className={`text-xs font-bold ${currentPage <= 1 || isLoading ? 'text-muted-foreground' : 'text-primary'}`}>
-              {t('prev_page', 'Prev')}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Page Counter & Direct Jump Trigger */}
-          <TouchableOpacity
-            onPress={() => {
-              if (totalPages > 1) {
-                setTargetPageInput(String(currentPage));
-                setShowPageJumpModal(true);
-              }
-            }}
-            disabled={totalPages <= 1}
-            className="px-3 py-1.5 rounded-lg bg-muted/60 border border-border/60 flex-row items-center"
-            accessibilityRole="button"
-            accessibilityLabel="Current page"
-          >
-            <Text className="text-xs font-bold text-foreground">
-              {t('page_label', 'Page')} {currentPage} {t('of_users', 'of')} {totalPages}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Next Page Button (>) */}
-          <TouchableOpacity
-            onPress={() => {
-              if (currentPage < totalPages) {
-                setCurrentPage(currentPage + 1);
-              }
-            }}
-            disabled={currentPage >= totalPages || isLoading}
-            className={`flex-row items-center px-3 py-1.5 rounded-lg border ${
-              currentPage >= totalPages || isLoading
-                ? 'bg-muted/40 border-border/40 opacity-40'
-                : 'bg-blue-500/10 border-blue-500/20 active:opacity-70'
-            }`}
-            accessibilityRole="button"
-            accessibilityLabel="Next page"
-          >
-            <Text className={`text-xs font-bold me-1 ${currentPage >= totalPages || isLoading ? 'text-muted-foreground' : 'text-primary'}`}>
-              {t('next_page', 'Next')}
-            </Text>
-            <ChevronRight size={16} color={currentPage >= totalPages || isLoading ? '#9ca3af' : '#2563eb'} />
-          </TouchableOpacity>
-        </View>
+      <View className="mt-3 py-4 items-center justify-center">
+        <ActivityIndicator size="small" color="#6366f1" />
       </View>
     );
   };
@@ -210,100 +174,59 @@ export default function UserManagementScreen() {
       loading={false}
       error={error}
       onRetry={refreshUsers}
-      headerRight={
-        <View className="flex-row items-center gap-1.5">
-          <TouchableOpacity
-            onPress={() => router.push('/(resident)/admin/invitations')}
-            className="p-2 rounded-xl bg-secondary border border-border flex-row items-center active:opacity-75"
-            accessibilityRole="button"
-            accessibilityLabel="View Invitations"
-          >
-            <Mail size={16} className="text-foreground" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowInviteModal(true)}
-            className="flex-row items-center gap-1.5 bg-emerald-600 active:bg-emerald-700 px-3 py-1.5 rounded-full"
-            accessibilityRole="button"
-            accessibilityLabel="Invite User"
-          >
-            <Plus size={14} color="#ffffff" />
-            <Text className="text-xs font-bold text-white">{t('invite_user', 'Invite User')}</Text>
-          </TouchableOpacity>
-        </View>
-      }
     >
-      <View className="flex-1">
-        {/* Search & Filter Bar */}
-        <SearchFilterBar
-          searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
-          searchPlaceholder={t('search_users_placeholder', 'Search by name, email, or unit...')}
-          onFilterPress={() => setShowFilterSheet(true)}
-          activeFilterCount={activeFilterCount}
-        />
-
-        {/* Action Section (Responsive Mini Cards) */}
-        <View className="px-4 py-2.5 border-b border-border/40 bg-card/20 shrink-0">
-          <View className="flex-row items-stretch gap-2.5">
-            {/* Bulk Invite Mini Card */}
-            <TouchableOpacity
-              onPress={() => setShowBulkInviteModal(true)}
-              activeOpacity={0.7}
-              className="flex-1 p-2.5 rounded-xl border border-amber-500/25 bg-amber-500/5 active:bg-amber-500/10 flex-row items-center gap-2.5 shadow-2xs"
-              accessibilityRole="button"
-              accessibilityLabel="Bulk Invite Users"
-            >
-              <View className="w-9 h-9 rounded-lg bg-amber-500/15 items-center justify-center shrink-0">
-                <Users2 size={18} color="#d97706" />
-              </View>
-              <View className="flex-1 justify-center">
-                <Text className="text-xs font-bold text-foreground" numberOfLines={1}>
-                  {t('bulk_invite', 'Bulk Invite')}
-                </Text>
-                <Text className="text-[10px] text-muted-foreground mt-0.5" numberOfLines={1}>
-                  {t('bulk_invite_sub', 'Import via CSV')}
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* Configure Email Mini Card */}
-            <TouchableOpacity
-              onPress={() => setShowTemplateModal(true)}
-              activeOpacity={0.7}
-              className="flex-1 p-2.5 rounded-xl border border-blue-500/25 bg-blue-500/5 active:bg-blue-500/10 flex-row items-center gap-2.5 shadow-2xs"
-              accessibilityRole="button"
-              accessibilityLabel="Configure Invitation Email"
-            >
-              <View className="w-9 h-9 rounded-lg bg-blue-500/15 items-center justify-center shrink-0">
-                <Mail size={18} color="#2563eb" />
-              </View>
-              <View className="flex-1 justify-center">
-                <Text className="text-xs font-bold text-foreground" numberOfLines={1}>
-                  {t('configure_invitation_mail_short', 'Email Template')}
-                </Text>
-                <Text className="text-[10px] text-muted-foreground mt-0.5" numberOfLines={1}>
-                  {t('configure_invitation_mail_sub', 'Customize invite')}
-                </Text>
-              </View>
-            </TouchableOpacity>
+      <View className="flex-1 bg-background">
+        {/* Search Bar - Premium Float */}
+        <View className="px-4 pt-4 pb-2">
+          <View className="bg-card rounded-2xl shadow-sm border border-border/40 overflow-hidden">
+            <SearchFilterBar
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder={t('search_users_placeholder', 'Search users, email, unit...')}
+              onFilterPress={() => setShowFilterSheet(true)}
+              activeFilterCount={activeFilterCount}
+            />
           </View>
         </View>
 
-        {/* User Summary & Compact Rows-Per-Page Dropdown */}
-        <View className="px-3 py-2 flex-row flex-wrap items-center justify-between gap-2 border-b border-border/40 bg-muted/20">
-          <Text className="text-xs font-semibold text-muted-foreground text-start">
-            {t('showing_users', 'Showing')}{' '}
-            <Text className="font-bold text-foreground">{startRecord}–{endRecord}</Text>{' '}
-            {t('of_users', 'of')}{' '}
-            <Text className="font-bold text-foreground">{totalRecords}</Text>{' '}
-            {t('users_label', 'Users')}
-          </Text>
-
-          <RowsPerPageDropdown
-            value={rowsPerPage}
-            options={[10, 20, 50, 100]}
-            onChange={setRowsPerPage}
-          />
+        {/* Premium Pill Tabs */}
+        <View className="pb-3 border-b border-border/30">
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            contentContainerClassName="px-4 gap-2.5"
+          >
+            {['All', 'Resident', 'Guard', 'Staff'].map((tabRole) => {
+              const isActive = tabRole === 'All' 
+                ? selectedRoles.length === 0 
+                : selectedRoles.includes(tabRole);
+              
+              return (
+                <TouchableOpacity
+                  key={tabRole}
+                  onPress={() => {
+                    clearRoleFilter();
+                    if (tabRole !== 'All') {
+                      toggleRole(tabRole);
+                    }
+                  }}
+                  className={`py-2 px-5 rounded-full border transition-all flex-row items-center justify-center ${
+                    isActive 
+                      ? 'bg-primary border-primary shadow-sm' 
+                      : 'bg-card border-border/60'
+                  }`}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isActive }}
+                >
+                  <Text className={`text-[13px] font-bold tracking-wide ${
+                    isActive ? 'text-white' : 'text-muted-foreground'
+                  }`}>
+                    {tabRole === 'All' ? t('all_users', 'All Users') : tabRole}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
 
         {/* List Content */}
@@ -335,16 +258,19 @@ export default function UserManagementScreen() {
                 onManageRoles={(u: UserData, unit?: AssignedUnit | null) => openManageRolesModal(u, unit)}
                 onResendInvite={(u: UserData) => handleResendInvite(u)}
                 onDeleteUser={(u: UserData) => setUserToDelete(u)}
+                onViewDetails={(u: UserData) => setUserToEdit(u)}
               />
             )}
-            contentContainerClassName="p-2.5 pb-28"
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 110 }}
+            contentContainerClassName="p-3 pb-40"
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 160 }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             scrollEventThrottle={16}
             alwaysBounceVertical={true}
             bounces={true}
             showsVerticalScrollIndicator={false}
+            onEndReached={loadMoreUsers}
+            onEndReachedThreshold={0.5}
             ListFooterComponent={renderPaginationFooter}
             refreshControl={
               <RefreshControl
@@ -358,32 +284,134 @@ export default function UserManagementScreen() {
         )}
       </View>
 
+      {/* Animated Speed Dial Overlay */}
+      {isDialOpen && (
+        <TouchableWithoutFeedback onPress={toggleDial}>
+          <Animated.View 
+            style={{ opacity: dialOpacity }}
+            className="absolute inset-0 bg-black/60 z-[9990] elevation-5" 
+          />
+        </TouchableWithoutFeedback>
+      )}
+
+      {/* Speed Dial Action 3: Email Template (Left) */}
+      <Animated.View 
+        className="items-center justify-center z-[9998]"
+        style={{ 
+          position: 'absolute', bottom: 135, right: 25,
+          transform: [{ translateX: transX3 }, { translateY: transY3 }, { scale: scale3 }], 
+          opacity: dialOpacity 
+        }}
+        pointerEvents={isDialOpen ? 'auto' : 'none'}
+      >
+        <TouchableOpacity 
+          activeOpacity={0.7}
+          onPress={() => closeDialAndOpen(setShowTemplateModal)}
+          className="w-[50px] h-[50px] rounded-full bg-secondary border border-border/50 items-center justify-center shadow-lg"
+        >
+          <Mail size={22} className="text-primary" />
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Speed Dial Action 2: Bulk Invite (Top-Left) */}
+      <Animated.View 
+        className="items-center justify-center z-[9998]"
+        style={{ 
+          position: 'absolute', bottom: 135, right: 25,
+          transform: [{ translateX: transX2 }, { translateY: transY2 }, { scale: scale2 }], 
+          opacity: dialOpacity 
+        }}
+        pointerEvents={isDialOpen ? 'auto' : 'none'}
+      >
+        <TouchableOpacity 
+          activeOpacity={0.7}
+          onPress={() => closeDialAndOpen(setShowBulkInviteModal)}
+          className="w-[50px] h-[50px] rounded-full bg-secondary border border-border/50 items-center justify-center shadow-lg"
+        >
+          <Users size={22} className="text-primary" />
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Speed Dial Action 1: Invite User (Top) */}
+      <Animated.View 
+        className="items-center justify-center z-[9998]"
+        style={{ 
+          position: 'absolute', bottom: 135, right: 25,
+          transform: [{ translateX: transX1 }, { translateY: transY1 }, { scale: scale1 }], 
+          opacity: dialOpacity 
+        }}
+        pointerEvents={isDialOpen ? 'auto' : 'none'}
+      >
+        <TouchableOpacity 
+          activeOpacity={0.7}
+          onPress={() => closeDialAndOpen(setShowInviteModal)}
+          className="w-[50px] h-[50px] rounded-full bg-secondary border border-border/50 items-center justify-center shadow-lg"
+        >
+          <UserPlus size={22} className="text-primary" />
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Main Animated FAB */}
+      <TouchableOpacity
+        className="rounded-full bg-primary items-center justify-center shadow-xl border border-primary/50"
+        style={{ position: 'absolute', bottom: 130, right: 20, width: 60, height: 60, elevation: 8, zIndex: 9999 }}
+        activeOpacity={0.9}
+        onPress={toggleDial}
+      >
+        <Animated.View style={{ transform: [{ rotate: rotation }] }}>
+          <Plus size={28} className="text-primary-foreground" />
+        </Animated.View>
+      </TouchableOpacity>
+
       {/* Modals & Bottom Sheets */}
-      <InviteUserModal
-        visible={showInviteModal}
-        onClose={() => setShowInviteModal(false)}
-        onSendInvite={handleSendInvite}
-      />
+      {/* Lazy Loaded Heavy Modals & Bottom Sheets */}
+      <Suspense fallback={null}>
+        {userToEdit && (
+          <EditUserModal
+            visible={!!userToEdit}
+            user={userToEdit}
+            onClose={() => setUserToEdit(null)}
+            onSave={async (id, data) => {
+              await editUser(id, data);
+              Alert.alert('Success', 'Profile updated successfully.');
+            }}
+          />
+        )}
 
-      <BulkInviteModal
-        visible={showBulkInviteModal}
-        onClose={() => setShowBulkInviteModal(false)}
-        onBulkInvite={bulkInviteUsers}
-      />
+        {showInviteModal && (
+          <InviteUserModal
+            visible={showInviteModal}
+            onClose={() => setShowInviteModal(false)}
+            onSendInvite={handleSendInvite}
+          />
+        )}
 
-      <ConfigureInviteTemplateModal
-        visible={showTemplateModal}
-        onClose={() => setShowTemplateModal(false)}
-      />
+        {showBulkInviteModal && (
+          <BulkInviteModal
+            visible={showBulkInviteModal}
+            onClose={() => setShowBulkInviteModal(false)}
+            onBulkInvite={bulkInviteUsers}
+          />
+        )}
 
-      <ManageRolesModal
-        visible={!!selectedUserForRoles}
-        user={selectedUserForRoles}
-        unit={selectedUnitForRoles}
-        onClose={closeManageRolesModal}
-        onSave={handleSaveRoles}
-        availableRoles={ROLES}
-      />
+        {showTemplateModal && (
+          <ConfigureInviteTemplateModal
+            visible={showTemplateModal}
+            onClose={() => setShowTemplateModal(false)}
+          />
+        )}
+
+        {selectedUserForRoles && (
+          <ManageRolesModal
+            visible={!!selectedUserForRoles}
+            user={selectedUserForRoles}
+            unit={selectedUnitForRoles}
+            onClose={closeManageRolesModal}
+            onSave={handleSaveRoles}
+            availableRoles={ROLES}
+          />
+        )}
+      </Suspense>
 
       <UserFilterSheet
         visible={showFilterSheet}
@@ -396,50 +424,6 @@ export default function UserManagementScreen() {
         selectedStatuses={statusFilter}
         onToggleStatus={toggleStatus}
       />
-
-      {/* Quick Jump To Page Modal */}
-      <Modal visible={showPageJumpModal} transparent statusBarTranslucent={true} animationType="fade" onRequestClose={() => setShowPageJumpModal(false)}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}
-        >
-          <View className="flex-1 justify-center items-center bg-black/50 p-4">
-            <View className="bg-card rounded-2xl p-5 border border-border w-full max-w-xs shadow-lg">
-              <View className="flex-row items-center justify-between pb-2 border-b border-border mb-3">
-                <View className="flex-row items-center">
-                  <Hash size={18} color="#6366f1" className="me-2" />
-                  <Text className="text-base font-bold text-foreground">{t('jump_to_page', 'Jump to Page')}</Text>
-                </View>
-                <TouchableOpacity onPress={() => setShowPageJumpModal(false)}>
-                  <X size={16} color="#6b7280" />
-                </TouchableOpacity>
-              </View>
-
-              <Text className="text-xs text-muted-foreground mb-3 text-start">
-                {t('enter_page_number', 'Enter page number between')} <Text className="font-bold text-foreground">1</Text> {t('and_label', 'and')} <Text className="font-bold text-foreground">{totalPages}</Text>:
-              </Text>
-
-              <TextInput
-                value={targetPageInput}
-                onChangeText={setTargetPageInput}
-                placeholder={`1 - ${totalPages}`}
-                keyboardType="number-pad"
-                autoFocus
-                className="mb-4"
-              />
-
-              <View className="flex-row items-center justify-end gap-2">
-                <Button variant="outline" size="sm" onPress={() => setShowPageJumpModal(false)}>
-                  {t('cancel', 'Cancel')}
-                </Button>
-                <Button variant="default" size="sm" onPress={handleExecutePageJump}>
-                  {t('go_to_page', 'Go to Page')}
-                </Button>
-              </View>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
 
       {/* Delete User Confirmation Modal */}
       <ConfirmationModal

@@ -30,7 +30,7 @@ export default function IndexScreen() {
     if (!hasOrg) {
       return <Redirect href="/(auth)/setup-organization" />;
     }
-    return <Redirect href="/(resident)/dashboard" />;
+    return <Redirect href="/(resident)" />;
   }
 
   // Unauthenticated users land directly on the Nahom Login screen

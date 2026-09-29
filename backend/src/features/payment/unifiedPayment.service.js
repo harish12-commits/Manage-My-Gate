@@ -315,6 +315,10 @@ export class UnifiedPaymentService {
     // 5. Handle Verification Failure
     if (!verification.isValid) {
       logger.warn('payment.verification.failed', { paymentId: payment._id, orderId });
+      payment.status = 'failed';
+      payment.errorReason = 'Invalid payment gateway signature';
+      await payment.save();
+      paymentEventEmitter.emit(PAYMENT_FAILED, payment);
       throw new HttpError(400, 'Invalid payment gateway signature.');
     }
 

@@ -29,6 +29,7 @@ export interface ButtonProps extends PressableProps {
   leftIcon?: LucideIcon;
   rightIcon?: LucideIcon;
   loading?: boolean;
+  isLoading?: boolean;
   disabled?: boolean;
   className?: string;
   textClassName?: string;
@@ -42,7 +43,8 @@ export const Button = forwardRef<View, ButtonProps>(
       size = 'default',
       leftIcon: LeftIcon,
       rightIcon: RightIcon,
-      loading = false,
+      loading: loadingProp,
+      isLoading,
       disabled = false,
       className,
       textClassName,
@@ -50,6 +52,7 @@ export const Button = forwardRef<View, ButtonProps>(
     },
     ref
   ) => {
+    const loading = loadingProp || isLoading || false;
     const variantClasses = {
       default: 'bg-primary border border-primary/90 shadow-xs',
       primary: 'bg-primary border border-primary/90 shadow-xs',

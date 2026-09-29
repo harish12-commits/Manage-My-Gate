@@ -1,10 +1,5 @@
 import * as React from 'react';
-import { View, BackHandler, Platform } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedScrollHandler,
-  runOnJS,
-} from 'react-native-reanimated';
+import { View, ScrollView, BackHandler, Platform } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
@@ -25,9 +20,9 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const [customiseOpen, setCustomiseOpen] = React.useState(false);
-  const { handleScroll, scrollHandlerProps } = useBottomNavScroll();
+  const { scrollHandlerProps } = useBottomNavScroll();
+  const insets = useSafeAreaInsets();
 
   const {
     activeQuickActions,
@@ -35,29 +30,6 @@ export default function DashboardScreen() {
     allFeaturesList,
     saveQuickActions,
   } = useQuickActions();
-
-  const insets = useSafeAreaInsets();
-  const scrollY = useSharedValue(0);
-  const lastScrollTime = React.useRef(0);
-
-  const throttledHandleScroll = React.useCallback(
-    (y: number) => {
-      const now = Date.now();
-      if (now - lastScrollTime.current > 120) {
-        lastScrollTime.current = now;
-        handleScroll(y);
-      }
-    },
-    [handleScroll]
-  );
-
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      'worklet';
-      scrollY.value = event.contentOffset.y;
-      runOnJS(throttledHandleScroll)(event.contentOffset.y);
-    },
-  });
 
   // Android: Double Back Press to Exit Application (Home / Root Screen)
   useDoubleBackToExit({
@@ -160,9 +132,9 @@ export default function DashboardScreen() {
       <MobileHeader transparent />
 
       {/* Main Dashboard Scrollable Content with Animated Scroll Minimization */}
-      <Animated.ScrollView 
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
+      <ScrollView 
+        onScroll={scrollHandlerProps.onScroll}
+        scrollEventThrottle={32}
         className="flex-1 px-4 pt-3"
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -184,10 +156,10 @@ export default function DashboardScreen() {
             onTilePress={handleTilePress}
           />
         </View>
-      </Animated.ScrollView>
+      </ScrollView>
 
       {/* Down Bar Navigation with Animated Minimization & Touch Zoom Effects */}
-      <BottomNavigationBar scrollY={scrollY} />
+      <BottomNavigationBar />
 
       {/* Customise Dashboard Slide-Up Sheet Modal */}
       <CustomiseSheetModal

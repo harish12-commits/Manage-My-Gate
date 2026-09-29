@@ -1311,7 +1311,9 @@ export class InvoiceService {
     const query = Invoice.findOne({ $or: matchConditions })
       .populate('unitId')
       .populate('assessmentId')
-      .populate('targetUserId', 'name email username phone');
+      .populate('targetUserId', 'name email username phone')
+      .populate('communityId', 'name organizationType')
+      .populate('orgId', 'name organizationType');
     if (session) query.session(session);
     const invoice = await query;
     if (!invoice) {
@@ -1323,6 +1325,19 @@ export class InvoiceService {
     }
     if (!invObj.unitNumber) {
       invObj.unitNumber = invObj.snapshot?.unitDetails?.unitNumber || invObj.unitId?.unitNumber || invObj.unitId?.villaNumber || '';
+    }
+    if (!invObj.communityName) {
+      invObj.communityName =
+        (typeof invObj.communityId === 'object' ? invObj.communityId?.name : null) ||
+        (typeof invObj.orgId === 'object' ? invObj.orgId?.name : null) ||
+        invObj.snapshot?.billingConfiguration?.organizationName ||
+        '';
+    }
+    if (!invObj.orgName) {
+      invObj.orgName = invObj.communityName;
+    }
+    if (!invObj.organizationName) {
+      invObj.organizationName = invObj.communityName;
     }
     return invObj;
   }
