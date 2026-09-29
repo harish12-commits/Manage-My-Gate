@@ -8,6 +8,7 @@ import Invoice from './invoice.model.js';
 import HttpError from '../../utils/httpError.utils.js';
 import logger, { loggerStorage } from '../../utils/logger.utils.js';
 import paymentService from '../payment/payment.service.js';
+import { buildInvoiceLinks } from './invoicePayLink.service.js';
 import notificationService from '../notification/notification.service.js';
 import { paymentEventEmitter, PAYMENT_SUCCESS } from '../payment/payment.events.js';
 
@@ -246,17 +247,9 @@ export class InvoiceService {
             logger.warn(`Failed to fetch target user for invoice ${insertedInvoice._id}`);
           }
 
-          let paymentLink = null;
-          if (targetUser) {
-            // 2. Generate Razorpay payment link
-            paymentLink = await paymentService.createPaymentLink(insertedInvoice, targetUser);
-
-            // 3. Save link to invoice
-            if (paymentLink) {
-              await Invoice.updateOne({ _id: insertedInvoice._id }, { $set: { paymentLink } });
-              insertedInvoice.paymentLink = paymentLink;
-            }
-          }
+          // 2. No gateway link here: "Pay online" links are issued at click time for the current
+          //    outstanding amount (invoicePayLink.service), so bulk runs make no gateway calls.
+          const paymentLink = buildInvoiceLinks(insertedInvoice).payUrl;
 
           const invoiceObj = insertedInvoice.toObject ? insertedInvoice.toObject() : insertedInvoice;
           invoiceObj.communityId = assessment.communityId;
@@ -355,35 +348,21 @@ export class InvoiceService {
       }
 
       if (targetUser) {
-        let paymentLink = invoice.paymentLink;
-        
-        // If payment link is missing (e.g. legacy invoice), generate it now
-        if (!paymentLink) {
-          try {
-            paymentLink = await paymentService.createPaymentLink(invoice, targetUser);
-            if (paymentLink) {
-              await Invoice.updateOne({ _id: invoice._id }, { $set: { paymentLink } });
-              invoice.paymentLink = paymentLink;
-            }
-          } catch (err) {
-            logger.error(`Failed to generate missing payment link for invoice ${invoice._id}`, err);
-          }
-        }
+        // Secure pay-online link: resolved at click time (current amount, never a paid invoice).
+        const paymentLink = buildInvoiceLinks(invoice).payUrl;
+        const targetPhone = targetUser?.contactSettings?.phone || targetUser?.phone;
+        const userName = targetUser?.name || targetUser?.username || 'Resident';
 
-        if (paymentLink) {
-          const targetPhone = targetUser?.contactSettings?.phone || targetUser?.phone;
-          const userName = targetUser?.name || targetUser?.username || 'Resident';
-
-          if (targetPhone) {
-            invoiceEventEmitter.emit(SEND_WHATSAPP_LINK, {
-              invoiceId: invoice._id,
-              amount: invoice.totalDue,
-              targetPhone,
-              userName,
-              paymentLink: invoice.paymentLink
-            });
-            resentCount++;
-          }
+        if (targetPhone) {
+          invoiceEventEmitter.emit(SEND_WHATSAPP_LINK, {
+            invoiceId: invoice._id,
+            amount: invoice.outstandingAmount ?? invoice.totalDue,
+            currency: invoice.currency || 'INR',
+            targetPhone,
+            userName,
+            paymentLink,
+          });
+          resentCount++;
         }
       }
     }

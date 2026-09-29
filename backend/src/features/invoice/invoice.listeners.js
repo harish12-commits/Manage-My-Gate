@@ -2,11 +2,27 @@ import { paymentEventEmitter, PAYMENT_SUCCESS } from '../payment/payment.events.
 import invoiceService from './invoice.services.js';
 import logger from '../../utils/logger.utils.js';
 import Invoice from './invoice.model.js';
+import { retireActivePaymentLink } from './invoicePayLink.service.js';
 
 /**
  * Register background event listeners for the Invoice module.
  */
+const isInvoicePayment = (payment) => payment?.referenceType === 'Invoice' || payment?.domain === 'INVOICE';
+
 export const registerInvoiceListeners = () => {
+  // Any successful invoice payment (app, wallet, cash, bank approval or the link itself) makes the
+  // outstanding Razorpay link stale: retire it so the resident can't pay the old amount again.
+  paymentEventEmitter.on(PAYMENT_SUCCESS, async (payment) => {
+    if (!isInvoicePayment(payment)) return;
+    const invoiceId = payment.invoiceId || payment.referenceId;
+    if (!invoiceId) return;
+    try {
+      await retireActivePaymentLink(invoiceId);
+    } catch (err) {
+      logger.warn('Failed to retire payment link after invoice payment', { invoiceId: String(invoiceId), error: err.message });
+    }
+  });
+
   paymentEventEmitter.on(PAYMENT_SUCCESS, async (payment, options = {}) => {
     if (options.alreadySettled) {
       logger.info(`Skipping PAYMENT_SUCCESS listener for Invoice ${payment.referenceId} as it was settled in transaction.`);
