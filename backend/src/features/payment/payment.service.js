@@ -237,41 +237,51 @@ export class PaymentService {
   /**
    * Generate Razorpay Payment Link
    */
-  async createPaymentLink(invoice, user) {
+  /**
+   * Razorpay client for the invoice's community (Integration Hub credentials, then ENV).
+   * Returns null when no credentials exist (local/dev).
+   */
+  async _getRazorpayInstance(orgId) {
+    let credentials = {};
     try {
-      const activeGateway = 'razorpay';
-      let credentials = {};
-      try {
-        credentials = await integrationHubService.getDecryptedCredentials(invoice.orgId, activeGateway);
-      } catch (err) {
-        logger.warn('Failed to get credentials from integrationHub, falling back to ENV', { error: err.message });
-      }
+      credentials = await integrationHubService.getDecryptedCredentials(orgId, 'razorpay');
+    } catch (err) {
+      logger.warn('Failed to get credentials from integrationHub, falling back to ENV', { error: err.message });
+    }
+    const key_id = credentials.key_id || process.env.RAZORPAY_KEY_ID;
+    const key_secret = credentials.key_secret || process.env.RAZORPAY_KEY_SECRET;
+    return key_id && key_secret ? new Razorpay({ key_id, key_secret }) : null;
+  }
 
-      const key_id = credentials.key_id || process.env.RAZORPAY_KEY_ID;
-      const key_secret = credentials.key_secret || process.env.RAZORPAY_KEY_SECRET;
-
-      if (!key_id || !key_secret) {
+  /**
+   * Creates a Razorpay Payment Link for `amount` (the invoice's CURRENT outstanding).
+   * Razorpay's own email/SMS is off: the community's email (our template) carries the link.
+   * `attempt` keeps reference_id unique across regenerations (Razorpay requires uniqueness).
+   * @returns {Promise<{ id: string|null, url: string, amount: number, expiresAt: Date|null }>}
+   */
+  async createPaymentLink(invoice, user, { amount, attempt = 0 } = {}) {
+    const payAmount = Number(amount ?? invoice.outstandingAmount ?? invoice.totalDue);
+    try {
+      const instance = await this._getRazorpayInstance(invoice.orgId);
+      if (!instance) {
         logger.warn('Razorpay credentials not found, returning mock payment link for testing');
-        return `https://rzp.io/mock_link/${invoice._id}`;
+        return { id: null, url: `https://rzp.io/mock_link/${invoice._id}`, amount: payAmount, expiresAt: null };
       }
 
-      const instance = new Razorpay({ key_id, key_secret });
-
+      const expireBy = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60; // 30 days
       const payload = {
-        amount: Math.round(invoice.totalDue * 100), // paise
-        currency: 'INR',
-        reference_id: invoice._id.toString(),
+        amount: Math.round(payAmount * 100), // minor units
+        currency: invoice.currency || 'INR',
+        reference_id: attempt ? `${invoice._id}-${attempt}` : invoice._id.toString(),
         description: `Payment for Invoice ${invoice.invoiceNumber || invoice._id}`,
         customer: {
           name: user.name || user.username || 'Resident',
           contact: user.phone || '',
           email: user.email || '',
         },
-        notify: {
-          sms: false,
-          email: true,
-        },
-        reminder_enable: true,
+        notify: { sms: false, email: false },
+        reminder_enable: false,
+        expire_by: expireBy,
         notes: {
           invoiceId: invoice._id.toString(),
           orgId: invoice.orgId.toString(),
@@ -280,11 +290,24 @@ export class PaymentService {
       };
 
       const link = await instance.paymentLink.create(payload);
-
-      return link.short_url;
+      return { id: link.id, url: link.short_url, amount: payAmount, expiresAt: new Date(expireBy * 1000) };
     } catch (error) {
       logger.error('Failed to create Razorpay payment link:', error);
-      throw new HttpError(500, `Payment Link generation failed: ${error.message}`);
+      throw new HttpError(500, `Payment Link generation failed: ${error.message || error?.error?.description}`);
+    }
+  }
+
+  /** Best-effort cancel; a link that is already paid/expired/cancelled is not an error. */
+  async cancelPaymentLink(orgId, paymentLinkId) {
+    if (!paymentLinkId) return false;
+    try {
+      const instance = await this._getRazorpayInstance(orgId);
+      if (!instance) return false;
+      await instance.paymentLink.cancel(paymentLinkId);
+      return true;
+    } catch (error) {
+      logger.warn('Razorpay payment link cancel skipped', { paymentLinkId, reason: error?.error?.description || error.message });
+      return false;
     }
   }
 

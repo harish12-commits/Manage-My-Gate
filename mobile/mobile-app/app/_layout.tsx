@@ -46,7 +46,7 @@ import i18n, { I18nProvider } from '../src/utils/i18n';
 import * as SplashScreen from 'expo-splash-screen';
 import useAutoUpdate from '../src/hooks/useAutoUpdate';
 import usePushNotifications from '../src/features/notification/hooks/usePushNotifications';
-import { clearPendingRoute } from '../src/features/notification/store/notificationSlice';
+import { clearPendingRoute, setPendingRoute } from '../src/features/notification/store/notificationSlice';
 import { useGlobalAppSocket } from '../src/hooks/useGlobalAppSocket';
 import { getDeferredHandoffContext } from '../src/features/auth/services/deferredDeepLinkService';
 import { GlobalNotificationPresenter } from '@/components/feedback/GlobalNotificationPresenter';
@@ -233,6 +233,10 @@ function AuthRouteGuard() {
     }
 
     if (!isAuthenticated && !inAuthGroup) {
+      // Billing email links (/billing/invoice/<id>): return there after login.
+      if (pathname?.startsWith('/billing/invoice/')) {
+        dispatch(setPendingRoute(pathname));
+      }
       // Check for deferred handoff or invitation token from Google Play Install Referrer on first launch
       getDeferredHandoffContext()
         .then((context) => {

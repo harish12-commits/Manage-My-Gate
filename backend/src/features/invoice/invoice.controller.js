@@ -217,7 +217,9 @@ export class InvoiceController {
       }
 
       if (req.body.event === 'payment_link.paid') {
-        const reference_id = req.body.payload.payment_link.entity.reference_id;
+        // Regenerated links use reference_id "<invoiceId>-<n>" (Razorpay needs unique ids); notes carry the plain id.
+        const linkEntity = req.body.payload.payment_link.entity;
+        const reference_id = linkEntity.notes?.invoiceId || String(linkEntity.reference_id || '').split('-')[0];
         const payment_id = req.body.payload.payment?.entity?.id || req.body.payload.payment_link?.entity?.payment_id;
         
         // Razorpay amounts are in paise, divide by 100
