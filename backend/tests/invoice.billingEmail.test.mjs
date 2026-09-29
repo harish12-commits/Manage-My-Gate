@@ -247,3 +247,53 @@ describe('billing emails', () => {
     }
   });
 });
+
+// ── P3: reminders + event wiring ──
+const reminderCron = await import('../src/features/invoice/invoiceReminder.cron.js');
+const { invoiceEventEmitter, INVOICE_GENERATED } = await import('../src/features/invoice/invoice.events.js');
+await import('../src/features/invoice/invoice.listeners.js');
+
+describe('reminders and event wiring', () => {
+  const outbox = [];
+  before(() => {
+    messageTemplateService.getTemplateByPurpose = async () => null; // defaults only
+    emailMod.setEmailSender(async (org, to, subject) => {
+      outbox.push({ to, subject });
+      return true;
+    });
+  });
+  after(() => emailMod.setEmailSender());
+  beforeEach(async () => {
+    outbox.length = 0;
+    if (dbReady) await Invoice.deleteMany({});
+  });
+
+  test('due-soon and recently-overdue invoices get one email each; reruns send nothing', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const day = 86400000;
+    await makeInvoice({ invoiceNumber: 'DUE-SOON', dueDate: new Date(Date.now() + 2 * day) });
+    await makeInvoice({ invoiceNumber: 'DUE-LATER', dueDate: new Date(Date.now() + 10 * day) });
+    await makeInvoice({ invoiceNumber: 'OVERDUE-NEW', dueDate: new Date(Date.now() - 2 * day) });
+    await makeInvoice({ invoiceNumber: 'OVERDUE-OLD', dueDate: new Date(Date.now() - 40 * day) });
+    await makeInvoice({ invoiceNumber: 'PAID', status: 'PAID', outstandingAmount: 0, dueDate: new Date(Date.now() + day) });
+
+    assert.deepEqual(await reminderCron.runInvoiceReminders(), { reminders: 1, overdue: 1 });
+    await emailMod.drainInvoiceEmailQueue();
+    const subjects = outbox.map((m) => m.subject).sort();
+    assert.equal(subjects.length, 2);
+    assert.match(subjects.find((s) => s.startsWith('Overdue')), /OVERDUE-NEW/);
+    assert.match(subjects.find((s) => s.startsWith('Reminder')), /DUE-SOON/);
+
+    assert.deepEqual(await reminderCron.runInvoiceReminders(), { reminders: 0, overdue: 0 });
+  });
+
+  test('INVOICE_GENERATED event sends the invoice email', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const id = await makeInvoice({ invoiceNumber: 'EVT-1' });
+    invoiceEventEmitter.emit(INVOICE_GENERATED, { invoiceId: id });
+    await new Promise((r) => setTimeout(r, 50));
+    await emailMod.drainInvoiceEmailQueue();
+    assert.equal(outbox.length, 1);
+    assert.match(outbox[0].subject, /New invoice EVT-1/);
+  });
+});
