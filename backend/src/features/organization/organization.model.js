@@ -35,6 +35,13 @@ const organizationSchema = new mongoose.Schema(
       type: String,
       default: 'Asia/Kolkata',
     },
+    // ISO 3166-1 alpha-2; default country for phone numbers typed without a country code.
+    countryCode: {
+      type: String,
+      uppercase: true,
+      trim: true,
+      default: 'IN',
+    },
     allowedFeatures: {
       type: [String],
       default: [],

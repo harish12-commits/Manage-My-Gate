@@ -1,4 +1,5 @@
 import { body } from 'express-validator';
+import { isNormalizablePhone, toE164OrSelf } from '../../utils/phone.utils.js';
 
 export const preApprovedEntryRules = [
   body('passId')
@@ -59,8 +60,9 @@ export const walkInRequestRules = [
     .optional({ checkFalsy: true })
     .isString()
     .trim()
-    .matches(/^\d{10}$/)
-    .withMessage('Visitor phone must be exactly 10 digits'),
+    .custom(isNormalizablePhone)
+    .withMessage('Visitor phone must be a valid phone number')
+    .customSanitizer(toE164OrSelf),
 
   body('snapshot.idProofNumber')
     .optional()

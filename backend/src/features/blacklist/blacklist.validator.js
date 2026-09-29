@@ -1,4 +1,5 @@
 import { body, param, query } from 'express-validator';
+import { isNormalizablePhone, toE164OrSelf } from '../../utils/phone.utils.js';
 
 export const createBlacklistRules = [
   body('orgId')
@@ -23,10 +24,13 @@ export const createBlacklistRules = [
     .isLength({ max: 500 })
     .withMessage('Reason cannot exceed 500 characters'),
   body('phone')
-    .optional()
+    .optional({ checkFalsy: true })
     .isString()
     .withMessage('Phone must be a string')
-    .trim(),
+    .trim()
+    .custom(isNormalizablePhone)
+    .withMessage('Phone must be a valid phone number')
+    .customSanitizer(toE164OrSelf),
   body('plate')
     .optional()
     .isString()

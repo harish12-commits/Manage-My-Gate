@@ -342,6 +342,17 @@ export class WorkspaceService {
     const actualWorkspaceId = workspace._id;
     const updated = await workspaceRepository.update(actualWorkspaceId, { settings: settingsData }, session);
 
+    // The community's phone default country lives on the organization so every role receives it at login.
+    const orgIdForCountry = workspace.organizationId || orgId;
+    if (/^[A-Za-z]{2}$/.test(settingsData?.countryCode || '') && orgIdForCountry) {
+      const Organization = (await import('../organization/organization.model.js')).default;
+      await Organization.updateOne(
+        { _id: orgIdForCountry },
+        { $set: { countryCode: String(settingsData.countryCode).toUpperCase() } },
+        { session }
+      );
+    }
+
     await workspaceRepository.addActivityLog(actualWorkspaceId, {
       action: 'Settings Updated',
       performedBy: actorId,

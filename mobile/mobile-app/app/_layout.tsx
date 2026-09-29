@@ -25,6 +25,7 @@ try {
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuth } from '../src/features/auth/hooks/useAuth';
+import { setDefaultPhoneCountry } from '../src/utils/phone';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import {
@@ -72,6 +73,11 @@ function AuthRouteGuard() {
 
   // Initialize and listen to device push notifications
   usePushNotifications();
+
+  // Phone numbers typed without a country code default to the community country
+  useEffect(() => {
+    setDefaultPhoneCountry(user?.orgCountryCode);
+  }, [user?.orgCountryCode]);
 
   const isCreateOrgIntent = searchParams.intent === 'create-org' || searchParams.intent === 'create';
   const stableSearchParams = useMemo(() => ({ ...searchParams }), [JSON.stringify(searchParams || {})]);

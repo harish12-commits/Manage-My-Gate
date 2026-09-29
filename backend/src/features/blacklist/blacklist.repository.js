@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { phoneVariants } from '../../utils/phone.utils.js';
 import Blacklist from './blacklist.model.js';
 
 export class BlacklistRepository {
@@ -37,7 +38,7 @@ export class BlacklistRepository {
     // The name is visitor-supplied text, not a pattern: escape it (e.g. "Ravi (Jr" must not throw).
     const escapedName = name ? name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
     if (name && name.trim() && name.trim() !== '—') matches.push({ name: new RegExp(`^${escapedName}$`, 'i') });
-    if (phone && phone.trim() && phone.trim() !== '—') matches.push({ phone: phone.trim() });
+    if (phone && phone.trim() && phone.trim() !== '—') matches.push({ phone: { $in: phoneVariants(phone) } });
     if (plate && plate.trim() && plate.trim() !== '—') matches.push({ plate: plate.trim().toUpperCase() });
 
     if (matches.length === 0) return null;
