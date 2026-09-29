@@ -297,3 +297,42 @@ describe('reminders and event wiring', () => {
     assert.match(outbox[0].subject, /New invoice EVT-1/);
   });
 });
+
+// ── P4: public pay-online endpoint over HTTP ──
+describe('GET /api/billing-links/:token/pay', () => {
+  let server;
+  let base;
+  before(async () => {
+    const express = (await import('express')).default;
+    const { default: router } = await import('../src/features/invoice/invoicePayLink.router.js');
+    const app = express();
+    app.use('/api/billing-links', router);
+    await new Promise((r) => { server = app.listen(0, r); });
+    base = `http://127.0.0.1:${server.address().port}/api/billing-links`;
+  });
+  after(() => server?.close());
+
+  test('redirects to a fresh gateway link for an unpaid invoice', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const id = await makeInvoice();
+    const token = payLink.signPayToken({ _id: id, orgId });
+    const res = await fetch(`${base}/${token}/pay`, { redirect: 'manual' });
+    assert.equal(res.status, 302);
+    assert.match(res.headers.get('location'), /^https:\/\/rzp\.io\/l\//);
+    assert.equal(res.headers.get('cache-control'), 'no-store');
+  });
+
+  test('shows "already paid" instead of charging a paid invoice', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const id = await makeInvoice({ status: 'PAID', outstandingAmount: 0 });
+    const res = await fetch(`${base}/${payLink.signPayToken({ _id: id, orgId })}/pay`, { redirect: 'manual' });
+    assert.equal(res.status, 200);
+    assert.match(await res.text(), /already paid/);
+  });
+
+  test('invalid or expired token gets a 410 page', async () => {
+    const res = await fetch(`${base}/not-a-token/pay`, { redirect: 'manual' });
+    assert.equal(res.status, 410);
+    assert.match(await res.text(), /expired/);
+  });
+});
