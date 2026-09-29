@@ -462,6 +462,7 @@ export default function SignupScreen() {
                         name="phone"
                         render={({ field: { onChange, value } }) => (
                           <PhoneInput
+                            variant="glass"
                             label={t('phone_number', 'Phone Number')}
                             required
                             placeholder="98765 43210"
@@ -704,6 +705,7 @@ export default function SignupScreen() {
                             name="phone"
                             render={({ field: { onChange, value } }) => (
                               <PhoneInput
+                                variant="glass"
                                 label={t('phone_number', 'Mobile Number')}
                                 required
                                 placeholder="98765 43210"

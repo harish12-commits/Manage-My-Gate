@@ -1010,6 +1010,7 @@ export default function LoginScreen() {
                       name="phone"
                       render={({ field: { onChange, value } }) => (
                         <PhoneInput
+                          variant="glass"
                           label={t('phone_number', 'Mobile Number')}
                           placeholder="98765 43210"
                           value={value}

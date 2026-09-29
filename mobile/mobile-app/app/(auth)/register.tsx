@@ -210,6 +210,7 @@ export default function RegisterScreen() {
                   name="phone"
                   render={({ field: { onChange, value } }) => (
                     <PhoneInput
+                      variant="glass"
                       label="Mobile Number"
                       placeholder="99887 76655"
                       onChangeText={onChange}

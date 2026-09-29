@@ -40,6 +40,8 @@ export interface PhoneInputProps {
   /** Rendered at the end of the field, e.g. a contact-picker button. */
   rightElement?: React.ReactNode;
   testID?: string;
+  /** 'form' matches the standard Input card field; 'glass' is the translucent auth-screen look. */
+  variant?: 'form' | 'glass';
 }
 
 const buildFullNumber = (digits: string, country: PhoneCountry): string => {
@@ -60,7 +62,9 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   defaultCountry,
   rightElement,
   testID,
+  variant = 'form',
 }) => {
+  const isGlass = variant === 'glass';
   const [selectedCountry, setSelectedCountry] = useState<PhoneCountry>(() =>
     getPhoneCountry(defaultCountry || getDefaultPhoneCountry())
   );
@@ -136,7 +140,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
     <View className={cn('w-full', containerClassName)}>
       {Boolean(label) && (
         <View className="flex-row items-center justify-between mb-1.5">
-          <Text className="text-sm font-medium text-foreground">
+          <Text className={isGlass ? 'text-sm font-medium text-foreground' : 'text-foreground font-bold font-sans text-[15px] ms-1'}>
             {label}
             {required && !label?.includes('*') && (
               <Text className="text-destructive font-bold"> *</Text>
@@ -163,7 +167,10 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
 
       <View
         className={cn(
-          'flex-row items-center rounded-2xl border bg-white/75 dark:bg-[#292524]/75 border-white/80 dark:border-white/20 px-3.5 min-h-[48px] py-2.5 shadow-2xs transition-colors backdrop-blur-sm',
+          'flex-row items-center rounded-2xl border px-3.5 min-h-[48px] py-1 shadow-2xs transition-colors',
+          isGlass
+            ? 'bg-white/75 dark:bg-[#292524]/75 border-white/80 dark:border-white/20 py-2.5 backdrop-blur-sm'
+            : 'bg-card border-border/80',
           isFocused && !error && 'border-primary ring-2 ring-primary/20',
           (isIncomplete || isInvalid) && !error && 'border-amber-500/80 bg-amber-500/5',
           isComplete && !error && 'border-emerald-500/80 bg-emerald-500/5',
@@ -188,7 +195,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
 
         {/* National Number Input */}
         <RNTextInput
-          className="flex-1 text-sm font-sans text-foreground self-stretch min-h-[44px] py-3"
+          className={cn('flex-1 font-sans text-foreground self-stretch min-h-[44px] py-3', isGlass ? 'text-sm' : 'text-[16px]')}
           style={{ outlineStyle: 'none' } as any}
           keyboardType="phone-pad"
           placeholder={placeholder || examplePhone(selectedCountry.code) || '99887 76655'}
