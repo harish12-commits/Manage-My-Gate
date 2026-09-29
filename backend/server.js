@@ -19,6 +19,7 @@ import logger from './src/utils/logger.utils.js';
 import { syncPermissions } from './src/utils/permissionSync.util.js';
 import complaintCron from './src/features/complaint/complaint.cron.js';
 import assessmentCron from './src/features/assessment/utils/assessmentCron.js';
+import invoiceReminderCron from './src/features/invoice/invoiceReminder.cron.js';
 import userCron from './src/features/user/user.cron.js';
 import communityEngagementCron from './src/features/communityEngagement/communityEngagement.cron.js';
 import outboxWorker from './src/workers/outbox.worker.js';
@@ -32,6 +33,7 @@ const initCronJobs = () => {
   if (config.nodeEnv !== 'test') {
     complaintCron.init();
     assessmentCron.init();
+    invoiceReminderCron.init();
     userCron.init();
     communityEngagementCron.init();
     logger.info('Background Cron Jobs Initialized');

@@ -2,11 +2,45 @@ import { paymentEventEmitter, PAYMENT_SUCCESS } from '../payment/payment.events.
 import invoiceService from './invoice.services.js';
 import logger from '../../utils/logger.utils.js';
 import Invoice from './invoice.model.js';
+import { retireActivePaymentLink } from './invoicePayLink.service.js';
+import { enqueueInvoiceEmail } from './invoice.email.js';
+import { invoiceEventEmitter, INVOICE_GENERATED } from './invoice.events.js';
 
 /**
  * Register background event listeners for the Invoice module.
  */
+const isInvoicePayment = (payment) => payment?.referenceType === 'Invoice' || payment?.domain === 'INVOICE';
+
+// Settlement may finish just after PAYMENT_SUCCESS (listener-driven path); give it a moment so the
+// receipt shows the updated balance.
+const RECEIPT_DELAY_MS = 1500;
+
 export const registerInvoiceListeners = () => {
+  invoiceEventEmitter.on(INVOICE_GENERATED, (payload) => {
+    const invoiceId = payload?.invoiceId || payload?._id;
+    if (invoiceId) enqueueInvoiceEmail('generated', invoiceId);
+  });
+
+  paymentEventEmitter.on(PAYMENT_SUCCESS, (payment) => {
+    if (!isInvoicePayment(payment) || payment.status === 'failed') return;
+    const invoiceId = payment.invoiceId || payment.referenceId;
+    if (!invoiceId) return;
+    setTimeout(() => enqueueInvoiceEmail('receipt', invoiceId, { payment }), RECEIPT_DELAY_MS);
+  });
+
+  // Any successful invoice payment (app, wallet, cash, bank approval or the link itself) makes the
+  // outstanding Razorpay link stale: retire it so the resident can't pay the old amount again.
+  paymentEventEmitter.on(PAYMENT_SUCCESS, async (payment) => {
+    if (!isInvoicePayment(payment)) return;
+    const invoiceId = payment.invoiceId || payment.referenceId;
+    if (!invoiceId) return;
+    try {
+      await retireActivePaymentLink(invoiceId);
+    } catch (err) {
+      logger.warn('Failed to retire payment link after invoice payment', { invoiceId: String(invoiceId), error: err.message });
+    }
+  });
+
   paymentEventEmitter.on(PAYMENT_SUCCESS, async (payment, options = {}) => {
     if (options.alreadySettled) {
       logger.info(`Skipping PAYMENT_SUCCESS listener for Invoice ${payment.referenceId} as it was settled in transaction.`);

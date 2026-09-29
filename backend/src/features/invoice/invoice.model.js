@@ -145,6 +145,17 @@ const invoiceSchema = new mongoose.Schema(
     paymentLinkGeneratedAt: { type: Date, default: null },
     paymentLinkExpiresAt: { type: Date, default: null },
     paymentLinkRegeneratedCount: { type: Number, default: 0 },
+    // Amount the active link charges; a link is reused only while it equals the outstanding amount.
+    paymentLinkAmount: { type: Number, default: null },
+
+    // --- Email notifications (set atomically before sending → at most one email of each kind) ---
+    emailLog: {
+      generatedSentAt: { type: Date, default: null },
+      reminderSentAt: { type: Date, default: null },
+      overdueSentAt: { type: Date, default: null },
+      // One receipt per payment (partial payments each get their own).
+      receiptPaymentIds: { type: [String], default: [] },
+    },
 
     // --- Billing Calendar & Retries ---
     penaltyDate: { type: Date, default: null },

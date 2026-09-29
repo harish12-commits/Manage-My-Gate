@@ -69,6 +69,16 @@
               "scheme": "https",
               "host": "app.managemygate.com",
               "pathPrefix": "/invite/handoff"
+            },
+            {
+              "scheme": "https",
+              "host": "managemygate.e3esg.com",
+              "pathPrefix": "/billing"
+            },
+            {
+              "scheme": "https",
+              "host": "app.managemygate.com",
+              "pathPrefix": "/billing"
             }
           ],
           "category": [

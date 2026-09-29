@@ -26,7 +26,7 @@ const messageTemplateSchema = new mongoose.Schema(
     purpose: {
       type: String,
       required: [true, 'Template purpose is required'],
-      enum: ['user_invitation', 'default'],
+      enum: ['user_invitation', 'invoice_generated', 'invoice_reminder', 'invoice_overdue', 'invoice_receipt', 'default'],
       default: 'default',
       trim: true,
     },

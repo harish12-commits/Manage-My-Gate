@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import twilio from 'twilio';
 import logger from '../../utils/logger.utils.js';
+import { normalizePhone } from '../../utils/phone.utils.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -61,13 +62,16 @@ invoiceEventEmitter.on(SEND_WHATSAPP_LINK, async (payload) => {
     const client = twilio(accountSid, authToken);
 
     if (payload.targetPhone && payload.paymentLink) {
-      let formattedPhone = payload.targetPhone.replace(/[\s-]/g, '');
-      if (!formattedPhone.startsWith('+')) {
-        formattedPhone = '+91' + formattedPhone; // Defaulting to E.164 +91
+      const formattedPhone = normalizePhone(payload.targetPhone);
+      if (!formattedPhone) {
+        logger.warn('Skipping WhatsApp invoice link: phone number is not valid', { invoiceId: payload.invoiceId });
+        return;
       }
+      const amountText = new Intl.NumberFormat('en-IN', { style: 'currency', currency: payload.currency || 'INR' })
+        .format(Number(payload.amount || 0));
 
       await client.messages.create({
-        body: `Hello ${payload.userName},\nYour invoice for ₹${payload.amount} has been generated. Please pay here: ${payload.paymentLink}`,
+        body: `Hello ${payload.userName},\nYour invoice for ${amountText} is ready. Pay securely here: ${payload.paymentLink}\nOr open the app to pay with your wallet.`,
         from: twilioWhatsAppNumber,
         to: `whatsapp:${formattedPhone}`
       });
