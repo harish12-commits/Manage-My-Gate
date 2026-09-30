@@ -1,25 +1,12 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { getConnections } from '../../integrationHub/store/integrationHubSlice.js'
 import useMessageTemplates from './useMessageTemplates'
+import { TEMPLATE_PURPOSES, missingPlaceholders, token } from '../constants/templatePurposes.js'
 
-const DEFAULT_HTML_TEMPLATE = `<div style="font-family: sans-serif; padding: 24px; color: #1f2937; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px;">
-  <h2 style="color: #4f46e5; margin-bottom: 16px;">Workspace Invitation</h2>
-  <p>You have been invited to join our secure workspace.</p>
-  <p>Please click the button below to set up your password and complete your registration:</p>
-  <div style="margin: 32px 0; text-align: center;">
-    <a href="{{invite_link}}" style="background-color: #4f46e5; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
-      Accept & Activate Account
-    </a>
-  </div>
-  <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 32px 0;" />
-  <p style="color: #6b7280; font-size: 0.85rem;">
-    If you're having trouble clicking the button, copy and paste this link in your browser:<br/>
-    <a href="{{invite_link}}" style="color: #4f46e5;">{{invite_link}}</a>
-  </p>
-</div>`
+const CHANNEL_LABELS = { email: '📧 Email', sms: '💬 SMS Text' }
 
-export const useTemplateEditorCanvas = (visible, onClose) => {
+export const useTemplateEditorCanvas = (visible, onClose, initialPurpose = 'user_invitation') => {
   const dispatch = useDispatch()
   const {
     templates = [],
@@ -36,7 +23,7 @@ export const useTemplateEditorCanvas = (visible, onClose) => {
   const [templateId, setTemplateId] = useState(null)
   const [name, setName] = useState('')
   const [type, setType] = useState('email')
-  const [purpose, setPurpose] = useState('user_invitation')
+  const [purpose, setPurpose] = useState(initialPurpose)
   const [subject, setSubject] = useState('')
   const [cc, setCc] = useState('')
   const [bcc, setBcc] = useState('')
@@ -44,74 +31,66 @@ export const useTemplateEditorCanvas = (visible, onClose) => {
   const [validationError, setValidationError] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const purposeConfig = TEMPLATE_PURPOSES[purpose] || TEMPLATE_PURPOSES.user_invitation
+
   // 1. Fetch templates and integrations on open
   useEffect(() => {
     if (visible) {
       loadTemplates()
       dispatch(getConnections({ limit: 100 }))
       setValidationError(null)
+      setPurpose(initialPurpose)
     }
-  }, [dispatch, visible, loadTemplates])
+  }, [dispatch, visible, loadTemplates, initialPurpose])
 
-  // 2. Compute dynamic available channels based on active integration connections
-  const availableTypes = useMemo(() => {
+  // 2. Channels offered = channels with an active Integration Hub connection ∩ channels the purpose supports
+  const connectedTypes = useMemo(() => {
     if (!connections || !Array.isArray(connections)) return []
     const activeProviders = connections
       .filter((c) => c && c.provider)
       .map((c) => c.provider.toLowerCase())
     const channels = []
-
-    if (activeProviders.includes('smtp') || activeProviders.includes('resend')) {
-      channels.push({ value: 'email', label: '📧 Email' })
-    }
-    if (activeProviders.includes('twilio')) {
-      channels.push({ value: 'sms', label: '💬 SMS Text' })
-    }
+    if (activeProviders.includes('smtp') || activeProviders.includes('resend'))
+      channels.push('email')
+    if (activeProviders.includes('twilio')) channels.push('sms')
     return channels
   }, [connections])
 
-  // 3. Automatically select the first available channel and populate form if template exists
-  useEffect(() => {
-    if (visible && templates.length > 0) {
-      const matchingType = type || availableTypes[0]?.value || 'email'
-      const match = templates.find((t) => t.type === matchingType && t.purpose === purpose)
+  const availableTypes = useMemo(
+    () =>
+      connectedTypes
+        .filter((c) => purposeConfig.channels.includes(c))
+        .map((value) => ({ value, label: CHANNEL_LABELS[value] })),
+    [connectedTypes, purposeConfig],
+  )
 
-      if (match) {
-        setTemplateId(match._id)
-        setName(match.name)
-        setType(match.type)
-        setPurpose(match.purpose)
-        setSubject(match.subject || '')
-        setCc(match.cc || '')
-        setBcc(match.bcc || '')
-        setBody(match.body)
-      } else {
-        setTemplateId(null)
-        setName(`Default ${matchingType ? matchingType.toUpperCase() : ''} Invitation`)
-        setType(matchingType)
-        setSubject('Invitation to join Workspace')
-        setCc('')
-        setBcc('')
-        setBody(
-          matchingType === 'email'
-            ? DEFAULT_HTML_TEMPLATE
-            : `Hello!\n\nYou have been invited to join our workspace. Click the link to register your account:\n\n{{invite_link}}`,
-        )
-      }
-    } else if (visible && availableTypes.length > 0 && templates.length === 0) {
-      const defaultType = type || availableTypes[0].value
-      setType(defaultType)
-      setName(`Default ${defaultType.toUpperCase()} Invitation`)
-      setSubject('Invitation to join Workspace')
+  // 3. Load the saved template for (channel, purpose), or the purpose's starter content
+  useEffect(() => {
+    if (!visible || availableTypes.length === 0) return
+    const channel = availableTypes.some((t) => t.value === type) ? type : availableTypes[0].value
+    const match = templates.find((t) => t.type === channel && t.purpose === purpose)
+
+    if (match) {
+      setTemplateId(match._id)
+      setName(match.name)
+      setSubject(match.subject || '')
+      setCc(match.cc || '')
+      setBcc(match.bcc || '')
+      setBody(match.body)
+    } else {
+      setTemplateId(null)
+      setName(purposeConfig.defaultName)
+      setSubject(purposeConfig.defaultSubject)
       setCc('')
       setBcc('')
-      setBody(
-        defaultType === 'email'
-          ? DEFAULT_HTML_TEMPLATE
-          : `Hello!\n\nYou have been invited to join our workspace. Click the link to register your account:\n\n{{invite_link}}`,
-      )
+      setBody(purposeConfig.defaultBody[channel] || purposeConfig.defaultBody.email)
     }
-  }, [visible, templates, type, purpose, availableTypes])
+    if (channel !== type) setType(channel)
+    setValidationError(null)
+  }, [visible, templates, type, purpose, availableTypes, purposeConfig])
+
+  const insertPlaceholder = (key) =>
+    setBody((prev) => `${prev}${prev.endsWith('\n') ? '' : '\n'}${token(key)}`)
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -125,9 +104,10 @@ export const useTemplateEditorCanvas = (visible, onClose) => {
       setValidationError('Please select an active integration channel.')
       return
     }
-    if (purpose === 'user_invitation' && !body.includes('{{invite_link}}')) {
+    const missing = missingPlaceholders(purpose, body)
+    if (missing.length) {
       setValidationError(
-        'For user invitation templates, you must include the placeholder "{{invite_link}}" in the body.',
+        `This template must include ${missing.map((k) => `"${token(k)}"`).join(', ')} in the body.`,
       )
       return
     }
@@ -158,6 +138,7 @@ export const useTemplateEditorCanvas = (visible, onClose) => {
     connections,
     isHubLoading,
     availableTypes,
+    connectedTypes,
     templateId,
     name,
     setName,
@@ -165,6 +146,7 @@ export const useTemplateEditorCanvas = (visible, onClose) => {
     setType,
     purpose,
     setPurpose,
+    purposeConfig,
     subject,
     setSubject,
     cc,
@@ -173,6 +155,7 @@ export const useTemplateEditorCanvas = (visible, onClose) => {
     setBcc,
     body,
     setBody,
+    insertPlaceholder,
     validationError,
     setValidationError,
     isSubmitting,
