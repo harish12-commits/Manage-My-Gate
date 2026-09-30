@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, ScrollView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, ScrollView, Platform, Alert } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   ShieldCheck,
@@ -25,6 +25,7 @@ import { useAuth } from '../../src/features/auth/hooks/useAuth';
 import { acceptInviteThunk } from '../../src/features/auth/store/authSlice';
 import authService from '../../src/features/auth/services/authService';
 import apiClient from '../../src/services/apiClient';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 // Accept Invite Password Validation Schema - token is managed silently, not by user input
 const acceptInviteSchema = yup.object().shape({
@@ -644,7 +645,7 @@ export default function AcceptInviteScreen() {
             </Text>
           </View>
 
-          {isResolvingInvite ? <ActivityIndicator size={32} /> : null}
+          {isResolvingInvite ? <AppLoader variant="inline" /> : null}
 
           {/* CASE 0: Invitation Rejected State */}
           {!isResolvingInvite && isRejectedState ? (

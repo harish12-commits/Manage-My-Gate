@@ -18,7 +18,7 @@ async function checkSmtpIntegration() {
       if (integ.provider === 'smtp') {
         const getCred = (key) => {
           const cred = integ.credentials.find((c) => c.key === key);
-          return cred ? decrypt(cred.encryptedValue, cred.iv) : null;
+          return cred ? decrypt(cred.encryptedValue, cred.iv, cred.authTag) : null;
         };
         console.log(`  Host: ${getCred('host')}, Port: ${getCred('port')}, User: ${getCred('authUsername')}`);
       }
@@ -31,3 +31,4 @@ async function checkSmtpIntegration() {
 }
 
 checkSmtpIntegration();
+

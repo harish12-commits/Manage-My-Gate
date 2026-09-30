@@ -193,10 +193,10 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           isGlass
             ? 'bg-white/75 dark:bg-[#292524]/75 border-white/80 dark:border-white/20 py-2.5 backdrop-blur-sm'
             : 'bg-card border-border/80',
-          isFocused && !error && 'border-primary ring-2 ring-primary/20',
+          isFocused && !error && 'border-primary shadow-sm bg-primary/5',
           (isIncomplete || isInvalid) && !error && 'border-amber-500/80 bg-amber-500/5',
           isComplete && !error && 'border-emerald-500/80 bg-emerald-500/5',
-          Boolean(error) && 'border-destructive bg-destructive/5 ring-1 ring-destructive/20',
+          Boolean(error) && 'border-destructive bg-destructive/5 shadow-sm',
           className
         )}
       >

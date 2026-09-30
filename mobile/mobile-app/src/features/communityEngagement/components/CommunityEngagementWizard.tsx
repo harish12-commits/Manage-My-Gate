@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { CommunityEngagementFlowHeader } from './CommunityEngagementFlowHeader';
@@ -13,6 +13,7 @@ import { PollConfigStep } from './steps/PollConfigStep';
 import { ReviewPreviewStep } from './steps/ReviewPreviewStep';
 import { useCommunityEngagementWizard } from '../hooks/useCommunityEngagementWizard';
 import { EngagementContentType } from '../types/communityEngagement.types';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface CommunityEngagementWizardProps {
   initialType?: EngagementContentType;
@@ -155,7 +156,7 @@ export const CommunityEngagementWizard: React.FC<CommunityEngagementWizardProps>
   if (loadingItem) {
     return (
       <View className="flex-1 items-center justify-center bg-background p-6">
-        <ActivityIndicator size="large" className="text-primary" />
+        <AppLoader variant="block" />
         <Text className="mt-3 text-sm text-muted-foreground font-medium">
           Loading content for editing...
         </Text>

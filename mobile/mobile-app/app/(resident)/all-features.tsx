@@ -23,7 +23,6 @@ import { useBottomNavScroll } from '@/components/navigation/BottomNavScrollConte
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
 
-import { InteractionManager } from 'react-native';
 
 export default function AllFeaturesScreen() {
   const router = useRouter();
@@ -48,10 +47,9 @@ export default function AllFeaturesScreen() {
   // Lazy loading state to prevent navigation stutter
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
-      setIsReady(true);
-    });
-    return () => task?.cancel?.();
+    // Tab screens have no transition animation, so just wait one frame (header + nav paint first)
+    const id = requestAnimationFrame(() => setIsReady(true));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   // Sync selected category with active workspace modules (Responsiveness)
@@ -148,6 +146,7 @@ export default function AllFeaturesScreen() {
       showBackButton={true}
       onBackPress={handleBackPress}
       loading={!isReady}
+      disableInteractionDeferral
     >
       {isReady ? (
         <ScrollView

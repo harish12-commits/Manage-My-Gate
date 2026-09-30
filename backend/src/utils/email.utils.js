@@ -33,7 +33,8 @@ export const getSmtpTransporter = async (orgId = null) => {
     if (smtpIntegration && smtpIntegration.credentials && smtpIntegration.credentials.length > 0) {
       const getCred = (key) => {
         const cred = smtpIntegration.credentials.find((c) => c.key === key);
-        return cred ? decrypt(cred.encryptedValue, cred.iv) : null;
+        if (!cred) return null;
+        return decrypt(cred.encryptedValue, cred.iv, cred.authTag);
       };
       host = getCred('host') || host;
       port = parseInt(getCred('port') || port, 10);

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import visitorPassTokenRepository from './visitorPassToken.repository.js';
 import HttpError from '../../utils/httpError.utils.js';
 
@@ -18,7 +19,7 @@ export class VisitorPassTokenService {
 
     // Retry up to 10 times to prevent duplicate keys in the active pool
     while (exists && attempts < 10) {
-      key = Math.floor(100000 + Math.random() * 900000).toString();
+      key = crypto.randomInt(100000, 1000000).toString();
       passCode = `${orgId}_${key}`;
       // Keep active short keys unique across communities so a bare key (public share links) is unambiguous.
       const existing = await visitorPassTokenRepository.findByShortKey(key, session);

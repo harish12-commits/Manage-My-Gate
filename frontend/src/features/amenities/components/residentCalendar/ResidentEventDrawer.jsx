@@ -13,11 +13,11 @@ import {
   CModalTitle,
   CModalBody,
   CModalFooter,
-  CSpinner,
   CBadge,
 } from '@coreui/react'
 import AmenityStatusBadge from '../AmenityStatusBadge.jsx'
 import { formatCurrency, formatTimeAMPM } from '../../utils/amenityUtils.js'
+import AppLoader from '../../../../components/common/AppLoader'
 
 const BookingTimeline = ({ status }) => {
   const steps = [
@@ -251,7 +251,7 @@ const ResidentEventDrawer = memo(({ visible, onClose, event, onCancel, onPayNow 
                       width: qrExpanded ? '220px' : '150px',
                       height: qrExpanded ? '220px' : '150px',
                       cursor: 'pointer',
-                      transition: 'all 0.2s',
+                      transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                     }}
                     onClick={() => setQrExpanded(!qrExpanded)}
                   />
@@ -315,7 +315,7 @@ const ResidentEventDrawer = memo(({ visible, onClose, event, onCancel, onPayNow 
         <CModalBody>
           {isCancelling ? (
             <div className="text-center py-4">
-              <CSpinner color="danger" className="mb-3" />
+              <AppLoader variant="block" />
               <p className="mb-0 text-muted">Cancelling your booking...</p>
             </div>
           ) : (

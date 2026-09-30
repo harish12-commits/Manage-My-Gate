@@ -1,5 +1,5 @@
 import React, { useState, useRef, Suspense, lazy } from 'react';
-import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform, ActivityIndicator, Animated, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform, Animated, TouchableWithoutFeedback } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Filter, Users, Mail, Users2, Plus, UserPlus, X } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
@@ -17,6 +17,7 @@ import {
   UserData,
   AssignedUnit,
 } from '@/src/features/userManagement';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 // Lazy Load Heavy Modals for Performance Optimization
 const InviteUserModal = lazy(() => import('@/src/features/userManagement').then(m => ({ default: m.InviteUserModal })));
@@ -159,7 +160,7 @@ export default function UserManagementScreen() {
     if (!isLoading || users.length === 0) return null;
     return (
       <View className="mt-3 py-4 items-center justify-center">
-        <ActivityIndicator size="small" color="#6366f1" />
+        <AppLoader variant="inline" />
       </View>
     );
   };

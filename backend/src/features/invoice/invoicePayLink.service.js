@@ -35,13 +35,13 @@ export const signPayToken = (invoice) =>
   jwt.sign(
     { sub: String(invoice._id), org: String(invoice.orgId || invoice.communityId || ''), typ: TOKEN_TYPE },
     tokenSecret(),
-    { expiresIn: TOKEN_TTL }
+    { expiresIn: TOKEN_TTL, algorithm: 'HS256' }
   );
 
 /** @returns {{ invoiceId: string, orgId: string } | null} */
 export const verifyPayToken = (token) => {
   try {
-    const decoded = jwt.verify(String(token || ''), tokenSecret());
+    const decoded = jwt.verify(String(token || ''), tokenSecret(), { algorithms: ['HS256'] });
     if (decoded?.typ !== TOKEN_TYPE || !decoded.sub) return null;
     return { invoiceId: decoded.sub, orgId: decoded.org };
   } catch {

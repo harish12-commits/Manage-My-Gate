@@ -20,10 +20,9 @@ class WebhookController {
         .digest('hex');
 
       // Compare using crypto.timingSafeEqual to prevent timing attacks
-      const isSignatureValid = crypto.timingSafeEqual(
-        Buffer.from(generatedSignature),
-        Buffer.from(signature)
-      );
+      const sigBuf = Buffer.from(String(signature));
+      const expectedBuf = Buffer.from(generatedSignature);
+      const isSignatureValid = sigBuf.length === expectedBuf.length && crypto.timingSafeEqual(sigBuf, expectedBuf);
 
       if (!isSignatureValid) {
         logger.warn('[Webhook] Signature mismatch for Razorpay webhook');

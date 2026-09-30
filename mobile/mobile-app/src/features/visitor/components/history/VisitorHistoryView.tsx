@@ -1,4 +1,4 @@
-import { InteractionManager } from 'react-native';
+import { runSoon } from '@/src/utils/runSoon';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { View } from 'react-native';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
@@ -52,7 +52,7 @@ export const VisitorHistoryView: React.FC = () => {
   );
 
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
+    const task = runSoon(() => {
         loadData(1, false);
       });
     return () => {

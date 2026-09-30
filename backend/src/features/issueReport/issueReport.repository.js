@@ -40,13 +40,14 @@ export class IssueReportRepository {
   /**
    * Find report by client request ID (used for idempotency / duplicate check).
    *
+   * @param {string} userId - Reporter (keys are scoped per user)
    * @param {string} clientRequestId
    * @param {mongoose.ClientSession|null} [session=null]
    * @returns {Promise<Object|null>}
    */
-  async findByClientRequestId(clientRequestId, session = null) {
-    if (!clientRequestId) return null;
-    const query = IssueReport.findOne({ clientRequestId, isDeleted: false });
+  async findByClientRequestId(userId, clientRequestId, session = null) {
+    if (!clientRequestId || !mongoose.Types.ObjectId.isValid(userId)) return null;
+    const query = IssueReport.findOne({ 'reporter.userId': userId, clientRequestId, isDeleted: false });
     if (session) query.session(session);
     return await query.exec();
   }
@@ -165,6 +166,26 @@ export class IssueReportRepository {
    * @param {mongoose.ClientSession|null} [session=null]
    * @returns {Promise<Object|null>}
    */
+  /**
+   * Locate the report owning a stored attachment file, optionally scoped to an organization.
+   *
+   * @param {string} filename - Stored attachment file name (already validated)
+   * @param {string|null} organisationId - Restrict to this org, or null for platform-wide access
+   * @returns {Promise<{ report: Object, attachment: Object }|null>}
+   */
+  async findAttachment(filename, organisationId = null) {
+    const urls = [`/uploads/issueReports/${filename}`, `/public/uploads/issueReports/${filename}`];
+    const filter = { 'attachments.url': { $in: urls }, isDeleted: false };
+    if (organisationId) {
+      if (!mongoose.Types.ObjectId.isValid(organisationId)) return null;
+      filter['organisation.organisationId'] = new mongoose.Types.ObjectId(organisationId);
+    }
+    const report = await IssueReport.findOne(filter).select('attachments organisation').lean();
+    if (!report) return null;
+    const attachment = report.attachments.find((a) => urls.includes(a.url));
+    return attachment ? { report, attachment } : null;
+  }
+
   async findCommunityReportById(id, organisationId, session = null) {
     if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(organisationId)) return null;
     const query = IssueReport.findOne({

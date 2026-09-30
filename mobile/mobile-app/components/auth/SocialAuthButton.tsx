@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, ActivityIndicator, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, Animated } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useColorScheme } from 'nativewind';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface SocialAuthButtonProps {
   provider: 'google' | 'apple' | 'microsoft';
@@ -124,7 +125,7 @@ export const SocialAuthButton = ({
           } ${disabled || loading ? 'opacity-60' : ''} ${className}`}
         >
         {loading ? (
-          <ActivityIndicator size="small" color={indicatorColor} />
+          <AppLoader variant="inline" />
         ) : (
           <>
             {isGoogle ? (

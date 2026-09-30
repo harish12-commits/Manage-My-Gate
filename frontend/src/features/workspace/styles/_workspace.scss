@@ -8,7 +8,7 @@
 }
 
 .feature-card {
-  transition: all 0.25s ease-in-out;
+  transition: color 0.25s ease-in-out, background-color 0.25s ease-in-out, border-color 0.25s ease-in-out, box-shadow 0.25s ease-in-out, transform 0.25s ease-in-out, opacity 0.25s ease-in-out, width 0.25s ease-in-out, height 0.25s ease-in-out, max-height 0.25s ease-in-out;
   border-width: 2px !important;
   cursor: pointer;
 
@@ -27,7 +27,7 @@
   width: 60px;
   height: 60px;
   background-color: #f8f9fa;
-  transition: all 0.25s ease-in-out;
+  transition: color 0.25s ease-in-out, background-color 0.25s ease-in-out, border-color 0.25s ease-in-out, box-shadow 0.25s ease-in-out, transform 0.25s ease-in-out, opacity 0.25s ease-in-out, width 0.25s ease-in-out, height 0.25s ease-in-out, max-height 0.25s ease-in-out;
   color: #321fdb;
 
   &.selected {
@@ -38,7 +38,7 @@
 
 .feature-card-icon {
   color: inherit;
-  transition: all 0.25s ease-in-out;
+  transition: color 0.25s ease-in-out, background-color 0.25s ease-in-out, border-color 0.25s ease-in-out, box-shadow 0.25s ease-in-out, transform 0.25s ease-in-out, opacity 0.25s ease-in-out, width 0.25s ease-in-out, height 0.25s ease-in-out, max-height 0.25s ease-in-out;
 }
 
 .btn-wizard-submit {

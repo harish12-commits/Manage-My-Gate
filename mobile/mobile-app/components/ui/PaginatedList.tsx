@@ -1,11 +1,12 @@
 import { Icon } from './icon';
 import { Skeleton } from './Skeleton';
+import { AppLoader } from './AppLoader';
 import { Text } from './text';
 import { cn } from '../../lib/utils';
 import * as LucideIcons from 'lucide-react-native';
 import { Inbox } from 'lucide-react-native';
 import * as React from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, View, StyleProp, ViewStyle, Platform } from 'react-native';
+import { FlatList, RefreshControl, View, StyleProp, ViewStyle, Platform } from 'react-native';
 
 import { useBottomNavScroll } from '../navigation/BottomNavScrollContext';
 import { useTranslation } from '../../src/utils/i18n';
@@ -93,6 +94,14 @@ export function PaginatedList<T>({
     onEndReachedCalledDuringMomentum.current = false;
   };
 
+  const onScroll = React.useCallback(
+    (event: any) => {
+      handleScroll(event);
+      onScrollProp?.(event);
+    },
+    [handleScroll, onScrollProp],
+  );
+
   const defaultKeyExtractor = (item: T, index: number): string => {
     if (item && typeof item === 'object') {
       const itemRecord = item as Record<string, any>;
@@ -105,12 +114,24 @@ export function PaginatedList<T>({
     return String(index);
   };
 
+  const refreshControl = React.useMemo(
+    () => (
+      <RefreshControl
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        tintColor="#FF6A00"
+        colors={['#FF6A00']}
+      />
+    ),
+    [refreshing, onRefresh],
+  );
+
   const renderFooter = () => {
     if (data.length > 0 && (paginationSummary || (loading && currentPage < totalPages))) {
       return (
         <View className="py-4 items-center justify-center">
           {loading && currentPage < totalPages ? (
-            <ActivityIndicator size="small" color="#FF6A00" />
+            <AppLoader variant="inline" />
           ) : null}
           {paginationSummary ? (
             <Text className="mt-2 text-xs font-medium text-muted-foreground">
@@ -163,7 +184,7 @@ export function PaginatedList<T>({
       
       // --- PERFORMANCE OPTIMIZATION PROPS ---
       initialNumToRender={8}
-      maxToRenderPerBatch={5}
+      maxToRenderPerBatch={6}
       windowSize={5}
       removeClippedSubviews={Platform.OS !== 'web'} // Crucial for Android, avoid on web for layout issues
       updateCellsBatchingPeriod={50}
@@ -175,28 +196,16 @@ export function PaginatedList<T>({
       onEndReachedThreshold={0.4}
       onMomentumScrollBegin={handleMomentumScrollBegin}
       onScrollBeginDrag={handleScrollBeginDrag}
-      onScroll={(event) => {
-        handleScroll(event);
-        if (onScrollProp) {
-          onScrollProp(event);
-        }
-      }}
+      onScroll={onScroll}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
-      scrollEventThrottle={16}
+      scrollEventThrottle={32}
       alwaysBounceVertical={true}
       bounces={true}
       overScrollMode="always"
       showsVerticalScrollIndicator={false}
       nestedScrollEnabled={true}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor="#FF6A00"
-          colors={['#FF6A00']}
-        />
-      }
+      refreshControl={refreshControl}
       ListHeaderComponent={ListHeaderComponent as React.ReactElement | undefined}
       ListFooterComponent={renderFooter}
       ListEmptyComponent={

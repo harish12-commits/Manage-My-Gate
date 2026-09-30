@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react'
 import AmenitiesTopNav from '../components/AmenitiesTopNav.jsx'
 import useResidentHistory from '../hooks/useResidentHistory.js'
-import { CSpinner, CCard, CCardBody } from '@coreui/react'
+import { CCard, CCardBody } from '@coreui/react'
 import CancelBookingModal from '../components/booking/CancelBookingModal.jsx'
 import { cancelBooking } from '../services/amenityBookingApi.js'
 import toast from 'react-hot-toast'
 import '../styles/_amenities.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 const calculateDuration = (start, end) => {
   if (!start || !end) return ''
@@ -124,7 +125,7 @@ const ResidentHistoryView = () => {
 
             {loading && bookings.length === 0 ? (
               <div className="d-flex justify-content-center p-5">
-                <CSpinner />
+                <AppLoader variant="block" />
               </div>
             ) : error ? (
               <div className="alert alert-danger">{error}</div>

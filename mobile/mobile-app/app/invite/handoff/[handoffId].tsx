@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useDispatch } from 'react-redux';
 import { AlertCircle, CheckCircle2, Smartphone } from 'lucide-react-native';
@@ -9,6 +9,7 @@ import { Text } from '@/components/ui/text';
 import authService from '../../../src/features/auth/services/authService';
 import { updateTokenAndUser } from '../../../src/features/auth/store/authSlice';
 import storage from '../../../src/utils/storage';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export default function MobileHandoffScreen() {
   const router = useRouter();
@@ -81,7 +82,7 @@ export default function MobileHandoffScreen() {
             <View className="mb-4 h-16 w-16 items-center justify-center rounded-3xl bg-primary/10">
               <Smartphone size={32} className="text-primary" />
             </View>
-            <ActivityIndicator size="large" className="mb-4 text-primary" />
+            <AppLoader variant="block" />
             <Text className="mb-1 text-center font-bold font-sans text-lg text-foreground">
               Connecting Your Session
             </Text>

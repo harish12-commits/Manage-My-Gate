@@ -68,11 +68,6 @@ try {
 }
 
 const googleClientId = config.googleClientId
-console.log('====== GOOGLE SSO DEBUG INFO ======')
-console.log('Current Browser Origin:', window.location.origin)
-console.log('Using Client ID:', googleClientId)
-console.log('If these do not EXACTLY match Google Cloud Console, it will fail with 403.')
-console.log('===================================')
 
 const renderApp = () => (
   <ErrorBoundary>
@@ -90,6 +85,18 @@ const renderApp = () => (
   </ErrorBoundary>
 )
 
+// Fade out the boot splash from index.html once React has painted its first frame.
+const hideBootLoader = () => {
+  const el = document.getElementById('boot-loader')
+  if (!el) return
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      el.classList.add('bl-out')
+      setTimeout(() => el.remove(), 500)
+    }),
+  )
+}
+
 // Initialize MSAL, process redirects, and then render the app
 if (msalInstance) {
   msalInstance
@@ -100,12 +107,15 @@ if (msalInstance) {
     })
     .then(() => {
       createRoot(document.getElementById('root')).render(renderApp())
+      hideBootLoader()
     })
     .catch((err) => {
       console.error('MSAL Initialization failed:', err)
       // Render anyway so the rest of the app works, even if Microsoft SSO fails
       createRoot(document.getElementById('root')).render(renderApp())
+      hideBootLoader()
     })
 } else {
   createRoot(document.getElementById('root')).render(renderApp())
+  hideBootLoader()
 }

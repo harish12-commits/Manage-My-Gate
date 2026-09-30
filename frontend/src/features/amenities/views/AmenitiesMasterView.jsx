@@ -9,6 +9,7 @@ import AmenityDeactivationConflictModal from '../components/master/AmenityDeacti
 import AmenitiesTopNav from '../components/AmenitiesTopNav.jsx'
 import toast from 'react-hot-toast'
 import '../styles/_amenities.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 const AmenitiesMasterView = () => {
   const {
@@ -253,7 +254,7 @@ const AmenitiesMasterView = () => {
 
           {loading && items.length === 0 ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-              <CSpinner />
+              <AppLoader variant="block" />
             </div>
           ) : (
             <AmenityGrid

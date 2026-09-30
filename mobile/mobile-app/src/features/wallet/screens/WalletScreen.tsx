@@ -1,4 +1,4 @@
-import { InteractionManager } from 'react-native';
+import { runSoon } from '@/src/utils/runSoon';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, RefreshControl, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -59,7 +59,7 @@ export function WalletScreen() {
   }, [dispatch]);
 
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
+    const task = runSoon(() => {
         loadWallet();
       });
     return () => {

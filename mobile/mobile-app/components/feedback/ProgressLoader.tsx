@@ -1,31 +1,21 @@
 import React from 'react';
-import { View, ActivityIndicator, Text } from 'react-native';
-import { cn } from '../../lib/utils';
+import { AppLoader } from '../ui/AppLoader';
 
 export interface ProgressLoaderProps {
   label?: string;
   message?: string;
+  /** @deprecated kept for API compatibility; size and colour come from the app theme */
   size?: 'small' | 'large';
+  /** @deprecated kept for API compatibility; colour comes from the app theme */
   color?: string;
   className?: string;
 }
 
-export const ProgressLoader = ({
-  label,
-  message,
-  size = 'large',
-  color = '#4f46e5', // indigo-600
-  className,
-}: ProgressLoaderProps) => {
-  const displayText = label || message;
-  return (
-    <View className={cn('items-center justify-center p-4', className)}>
-      <ActivityIndicator size={size} color={color} />
-      {Boolean(displayText) && (
-        <Text className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-400">
-          {displayText}
-        </Text>
-      )}
-    </View>
-  );
-};
+/** Theme-aware loader; thin wrapper over AppLoader so existing call sites keep working. */
+export const ProgressLoader = ({ label, message, size, className }: ProgressLoaderProps) => (
+  <AppLoader
+    variant={size === 'small' ? 'inline' : 'block'}
+    label={label || message}
+    className={className}
+  />
+);

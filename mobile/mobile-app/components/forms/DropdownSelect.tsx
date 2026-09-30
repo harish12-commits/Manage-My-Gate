@@ -92,7 +92,7 @@ export const DropdownSelect = ({
         className={cn(
           'flex-row items-center justify-between rounded-2xl border bg-card px-3.5 py-3 shadow-2xs active:bg-secondary/70 transition-colors',
           'border-border/80',
-          Boolean(error) && 'border-destructive bg-destructive/5 ring-1 ring-destructive/20'
+          Boolean(error) && 'border-destructive bg-destructive/5 shadow-sm'
         )}
         onPress={handlePress}
         accessibilityRole="button"

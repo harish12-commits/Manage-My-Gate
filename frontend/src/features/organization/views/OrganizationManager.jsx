@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CSpinner, CPagination, CPaginationItem } from '@coreui/react'
+import { CPagination, CPaginationItem } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilFolderOpen, cilBan, cilCheckCircle } from '@coreui/icons'
 import useOrganizationManager from '../hooks/useOrganizationManager.js'
 import '../styles/_organization.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 /**
  * Super Admin View — Organization Manager list (Notice Board aligned design).
@@ -66,7 +67,7 @@ export const OrganizationManager = () => {
         {/* Loading */}
         {loading && organizations.length === 0 ? (
           <div className="loading-center">
-            <CSpinner color="primary" />
+            <AppLoader variant="block" />
             <span>{t('superAdmin.orgManager.loading', { defaultValue: 'Loading organizations...' })}</span>
           </div>
         ) : organizations.length === 0 ? (

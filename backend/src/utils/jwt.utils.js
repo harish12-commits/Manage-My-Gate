@@ -8,7 +8,7 @@ import config from '../config/config.js';
  * @returns {string} The signed JWT
  */
 export const signToken = (payload, expiresIn = '24h') => {
-  return jwt.sign(payload, config.jwt.secret, { expiresIn });
+  return jwt.sign(payload, config.jwt.secret, { expiresIn, algorithm: 'HS256' });
 };
 
 /**
@@ -17,7 +17,7 @@ export const signToken = (payload, expiresIn = '24h') => {
  * @returns {object} The decoded token payload
  */
 export const verifyToken = (token) => {
-  return jwt.verify(token, config.jwt.secret);
+  return jwt.verify(token, config.jwt.secret, { algorithms: ['HS256'] });
 };
 
 /**
@@ -26,7 +26,7 @@ export const verifyToken = (token) => {
  * @returns {string} The signed JWT
  */
 export const signRefreshToken = (payload) => {
-  return jwt.sign(payload, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpiresIn });
+  return jwt.sign(payload, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpiresIn, algorithm: 'HS256' });
 };
 
 /**
@@ -35,5 +35,5 @@ export const signRefreshToken = (payload) => {
  * @returns {object} The decoded token payload
  */
 export const verifyRefreshToken = (token) => {
-  return jwt.verify(token, config.jwt.refreshSecret);
+  return jwt.verify(token, config.jwt.refreshSecret, { algorithms: ['HS256'] });
 };

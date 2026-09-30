@@ -11,14 +11,14 @@ import {
   CTableDataCell,
   CBadge,
   CButton,
-  CSpinner,
-} from '@coreui/react'
+  } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSearch, cilPaperclip } from '@coreui/icons'
 import {
   REPORT_TYPES,
   FEATURE_MODULES,
 } from '../constants/issueReport.constants.js'
+import AppLoader from '../../../components/common/AppLoader'
 
 export const IssueReportTable = ({
   reports,
@@ -35,7 +35,7 @@ export const IssueReportTable = ({
   if (loading && (!reports || reports.length === 0)) {
     return (
       <div className="text-center py-5">
-        <CSpinner color="primary" className="me-2" />
+        <AppLoader variant="block" />
         <span className="text-muted">
           {t('issueReport.loadingReports', { defaultValue: 'Loading issue reports...' })}
         </span>

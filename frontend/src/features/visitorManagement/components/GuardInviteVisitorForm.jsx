@@ -234,7 +234,7 @@ export const GuardInviteVisitorForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: walkInType === 'id_proof' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 By ID Proof
@@ -259,7 +259,7 @@ export const GuardInviteVisitorForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: walkInType === 'vehicle' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 By Vehicle Plate

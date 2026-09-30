@@ -5,7 +5,7 @@ import rateLimit from 'express-rate-limit';
  */
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  max: 1500, // Generous per-IP ceiling: authenticated SPA/mobile clients fan out many calls; abuse-prone routes have stricter limiters
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: {
@@ -57,5 +57,37 @@ export const nameCheckLimiter = rateLimit({
   message: {
     success: false,
     message: 'Too many organization name checks from this IP, please try again after 15 minutes',
+  },
+});
+
+/**
+ * Per-user limiter for issue report submissions (each one fans out notifications and an email).
+ * Must be mounted after authentication so req.user is populated.
+ */
+export const reportSubmitLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `report:${String(req.user?.id || req.user?._id)}`,
+  message: {
+    success: false,
+    message: 'Too many issue reports submitted. Please try again after 15 minutes.',
+  },
+});
+
+/**
+ * Per-user limiter for admin test emails, preventing SMTP abuse.
+ * Must be mounted after authentication so req.user is populated.
+ */
+export const testEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `test-email:${String(req.user?.id || req.user?._id)}`,
+  message: {
+    success: false,
+    message: 'Too many test emails requested. Please try again after 15 minutes.',
   },
 });

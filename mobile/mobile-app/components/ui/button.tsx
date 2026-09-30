@@ -2,7 +2,8 @@ import React from 'react';
 import { Text, TextClassContext } from './text';
 import { cn } from '../../lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { ActivityIndicator, Platform, Pressable } from 'react-native';
+import { Platform, Pressable } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 const buttonVariants = cva(
   cn(
@@ -234,10 +235,7 @@ const Button = React.forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>
           {(state) => (
             <>
               {loading ? (
-                <ActivityIndicator
-                  size="small"
-                  color={loadingColor}
-                />
+                <AppLoader variant="inline" />
               ) : (
                 LeftIcon && <LeftIcon size={iconSize} className={cn(buttonTextVariants({ variant }))} />
               )}

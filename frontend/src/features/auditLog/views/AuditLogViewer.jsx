@@ -13,13 +13,13 @@ import {
   CTableHeaderCell,
   CTableBody,
   CTableDataCell,
-  CSpinner,
   CAlert,
   CPagination,
   CPaginationItem,
 } from '@coreui/react'
 import useAuditLog from '../hooks/useAuditLog.js'
 import '../styles/_auditLog.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 /**
  * Super Admin View container rendering system-wide event logs in a table view
@@ -77,7 +77,7 @@ export const AuditLogViewer = () => {
 
                 {loading && logs.length === 0 ? (
                   <div className="text-center py-5">
-                    <CSpinner color="primary" className="me-2" />
+                    <AppLoader variant="block" />
                     <span>
                       {t('superAdmin.auditLog.loading', { defaultValue: 'Loading audit logs...' })}
                     </span>

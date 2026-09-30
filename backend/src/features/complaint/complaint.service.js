@@ -4,6 +4,7 @@ import auditLogService from '../auditLog/auditLog.services.js';
 import technicianRepository from '../technician/technician.repository.js';
 import { complaintEvents } from './complaint.events.js';
 import HttpError from '../../utils/httpError.utils.js';
+import { escapeRegex } from '../../utils/regex.utils.js';
 import mongoose from 'mongoose';
 import ComplaintSettings from '../complaintSettings/complaintSettings.model.js';
 import visitorPassService from '../visitorPass/visitorPass.service.js';
@@ -267,11 +268,11 @@ class ComplaintService {
     
     // Resident search
     if (dbFilters.residentName) {
-      dbFilters.residentName = { $regex: dbFilters.residentName, $options: 'i' };
+      dbFilters.residentName = { $regex: escapeRegex(dbFilters.residentName), $options: 'i' };
     }
     // Complaint Number search
     if (dbFilters.complaintNumber) {
-      dbFilters.complaintNumber = { $regex: dbFilters.complaintNumber, $options: 'i' };
+      dbFilters.complaintNumber = { $regex: escapeRegex(dbFilters.complaintNumber), $options: 'i' };
     }
     
     const result = await complaintRepository.findAll(orgId, dbFilters, pagination, sort);

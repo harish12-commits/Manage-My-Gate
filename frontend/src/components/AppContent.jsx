@@ -21,13 +21,14 @@
 import React, { Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { CContainer, CSpinner } from '@coreui/react'
+import { CContainer } from '@coreui/react'
 import { useAuth } from '../features/auth/hooks/useAuth'
 import AuthGuard from '../features/auth/components/AuthGuard'
 import Page403 from '../views/pages/page403/Page403'
 
 // routes config
 import { routes } from '../routes'
+import AppLoader from './common/AppLoader'
 
 /**
  * AppContent functional component
@@ -49,7 +50,7 @@ const AppContent = () => {
 
   return (
     <CContainer className="px-4" lg>
-      <Suspense fallback={<CSpinner color="primary" />}>
+      <Suspense fallback={<AppLoader variant="page" />}>
         <Routes>
           {routes.map((route, idx) => {
             // Exclude /workspace-setup route from rendering inside DefaultLayout

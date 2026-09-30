@@ -27,7 +27,7 @@ export const resolveSocketIdentity = (socket) => {
   try {
     const token = readSocketToken(socket);
     if (token) {
-      const decoded = jwt.verify(token, config.jwt.secret);
+      const decoded = jwt.verify(token, config.jwt.secret, { algorithms: ['HS256'] });
       identity = { id: String(decoded.id || decoded._id), isPlatform: decoded.isPlatform === true };
     }
   } catch {

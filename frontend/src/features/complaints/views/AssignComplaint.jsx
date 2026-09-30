@@ -948,7 +948,7 @@ const AssignComplaint = ({ complaint, onAssigned, onCancel }) => {
               color: 'var(--surface)',
               cursor: assignLoading ? 'not-allowed' : 'pointer',
               opacity: assignLoading ? 0.7 : 1,
-              transition: 'all 0.2s',
+              transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',

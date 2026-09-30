@@ -21,6 +21,7 @@ import {
   PAYMENT_FAILED,
 } from './payment.events.js';
 import HttpError from '../../utils/httpError.utils.js';
+import { isMockPaymentAllowed, assertMockPaymentAllowed } from './utils/mockGuard.js';
 import logger from '../../utils/logger.utils.js';
 
 /**
@@ -126,6 +127,14 @@ export class UnifiedPaymentService {
       };
     }
 
+    // Server-side dedupe key: concurrent identical requests (double tap, retry on a hung network)
+    // compute the same key, and the unique index lets only one of them create an order.
+    const attemptCount = await Payment.countDocuments({ orgId, userId, referenceId, referenceType });
+    const orderDedupeKey = crypto
+      .createHash('sha256')
+      .update(`${orgId}|${userId}|${referenceType}|${referenceId}|${amount}|${attemptCount}`)
+      .digest('hex');
+
     // 4. Resolve Gateway Provider Strategy
     const provider = paymentProviderFactory.getProvider(activeGateway);
 
@@ -140,9 +149,7 @@ export class UnifiedPaymentService {
         );
       }
     } else if (activeGateway === 'mock') {
-      if (process.env.NODE_ENV === 'production') {
-        throw new HttpError(400, 'Mock payment gateway is disabled in this environment.');
-      }
+      assertMockPaymentAllowed(HttpError);
     }
 
     // 6. Create Order with Payment Gateway
@@ -188,13 +195,42 @@ export class UnifiedPaymentService {
       gatewayTransactionId: orderPayload.orderId,
       paymentMethod: paymentContext.paymentMethod || 'credit_card',
       idempotencyKey: paymentContext.idempotencyKey,
+      orderDedupeKey,
       metadata: {
         ...(paymentContext.metadata || {}),
         receipt,
       },
     });
 
-    await payment.save(options.session ? { session: options.session } : undefined);
+    try {
+      await payment.save(options.session ? { session: options.session } : undefined);
+    } catch (err) {
+      if (err?.code === 11000) {
+        // A concurrent identical request won the race; hand back its order instead of a second one.
+        const winner = await Payment.findOne({
+          $or: [{ orderDedupeKey }, { idempotencyKey: paymentContext.idempotencyKey }],
+          orgId,
+          userId,
+        });
+        if (winner && winner.status === 'pending' && winner.gatewayOrderId) {
+          logger.info('payment.order.race_deduped', { paymentId: winner._id, referenceId });
+          return {
+            success: true,
+            reused: true,
+            paymentId: winner._id,
+            orderId: winner.gatewayOrderId,
+            amount: winner.amount,
+            amountFormatted: formatINR(winner.amount),
+            currency: winner.currency,
+            status: winner.status,
+            gateway: winner.gateway,
+            razorpayKeyId: config.keyId,
+          };
+        }
+        throw new HttpError(409, 'A payment for this item is already in progress. Please retry in a moment.');
+      }
+      throw err;
+    }
 
     logger.info('payment.created', {
       paymentId: payment._id,
@@ -295,8 +331,12 @@ export class UnifiedPaymentService {
 
     // 4. Verify Signature
     let verification;
+    if (activeGateway === 'mock') {
+      // Mock payments never reach the provider's "any signature is valid" path unless explicitly allowed.
+      assertMockPaymentAllowed(HttpError);
+    }
     if (
-      process.env.NODE_ENV !== 'production' &&
+      isMockPaymentAllowed() &&
       (effectiveSignature?.startsWith('sig_mock_') || activeGateway === 'mock')
     ) {
       logger.info('Bypassing signature verification for mock/test signature in non-production');
@@ -630,7 +670,8 @@ export class UnifiedPaymentService {
 
     let gatewayRefund = { refundId: `rfnd_${uuidv4().replace(/-/g, '').substring(0, 12)}` };
 
-    if (process.env.NODE_ENV !== 'production' && activeGateway === 'mock') {
+    if (activeGateway === 'mock') {
+      assertMockPaymentAllowed(HttpError);
       logger.info('Simulating gateway refund for mock provider in non-production');
     } else {
       gatewayRefund = await provider.refund(

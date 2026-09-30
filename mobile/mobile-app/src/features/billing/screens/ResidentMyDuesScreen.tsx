@@ -1,5 +1,6 @@
+import { runSoon } from '@/src/utils/runSoon';
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, ScrollView, RefreshControl, Pressable, InteractionManager } from 'react-native';
+import { View, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { Text } from '@/components/ui/text';
@@ -53,7 +54,7 @@ export function ResidentMyDuesScreen() {
 
   // Load resident dues & wallet balance on screen mount
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
+    const task = runSoon(() => {
       loadResidentDues();
     });
     return () => task.cancel();

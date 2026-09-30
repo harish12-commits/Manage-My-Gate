@@ -119,7 +119,7 @@ export const TemplateEditorCanvasModal = ({ visible, onClose, initialPurpose }) 
               Resend, or Twilio connections in the <strong>Integration Hub</strong>. Please connect
               a provider first before sending custom templates.
             </CAlert>
-          )}
+          ) : null}
 
           {!isHubLoading && (
             <>

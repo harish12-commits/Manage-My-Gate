@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { Redirect } from 'expo-router';
 import { useAuth } from '../src/features/auth/hooks/useAuth';
 
@@ -9,9 +9,7 @@ export default function IndexScreen() {
   // Show a neutral themed loading spinner until auth state bootstrapping finishes
   if (!isInitialized) {
     return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <ActivityIndicator size="large" color="#FF5E00" />
-      </View>
+      <AppLoader variant="fullscreen" />
     );
   }
 

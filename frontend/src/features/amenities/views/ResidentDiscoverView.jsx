@@ -4,6 +4,7 @@ import useResidentDiscover from '../hooks/useResidentDiscover.js'
 import AmenityCardHorizontal from '../components/common/AmenityCardHorizontal.jsx'
 import AmenitiesTopNav from '../components/AmenitiesTopNav.jsx'
 import '../styles/_amenities.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 const ResidentDiscoverView = () => {
   const { items, loading, error, search, setSearch, navigateToBooking } = useResidentDiscover()
@@ -85,7 +86,7 @@ const ResidentDiscoverView = () => {
         {/* ── Content ── */}
         {loading && items.length === 0 ? (
           <div className="discover-loading">
-            <CSpinner color="primary" style={{ width: '3rem', height: '3rem' }} />
+            <AppLoader variant="block" />
             <p>Loading amenities...</p>
           </div>
         ) : items.length === 0 ? (

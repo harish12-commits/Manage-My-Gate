@@ -120,7 +120,7 @@ const DateDetailsPanel = memo(
                       selectedAmenityId === a._id
                         ? 'none'
                         : '1px solid var(--border-light, #E2E8F0)',
-                    transition: 'all 0.2s',
+                    transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                     fontWeight: selectedAmenityId === a._id ? '600' : '400',
                     color: selectedAmenityId !== a._id ? '#475569' : '',
                   }}
@@ -546,7 +546,7 @@ const DateDetailsPanel = memo(
           align-items: center;
           justify-content: center;
           font-size: 15px;
-          transition: all 0.2s ease;
+          transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, width 0.2s ease, height 0.2s ease, max-height 0.2s ease;
           flex-shrink: 0;
         }
 
@@ -656,7 +656,7 @@ const DateDetailsPanel = memo(
           color: #1E293B;
           background: #ffffff;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, width 0.2s ease, height 0.2s ease, max-height 0.2s ease;
           margin-bottom: 16px;
           outline: none;
         }
@@ -704,7 +704,7 @@ const DateDetailsPanel = memo(
           flex-direction: column;
           align-items: flex-start;
           gap: 8px;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: color 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
           background: #ffffff;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
           position: relative;

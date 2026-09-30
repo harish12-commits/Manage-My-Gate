@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, Pressable, ActivityIndicator } from 'react-native';
+import { View, TextInput, Pressable } from 'react-native';
 import { Search, X } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
 
 import { useTranslation } from '../../src/utils/i18n';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface SearchBarProps {
   value: string;
@@ -53,7 +54,7 @@ export const SearchBar = ({
       className={cn(
         'flex-row items-center rounded-2xl bg-card border px-3.5 min-h-[44px] py-0 shadow-xs',
         'border-border/80',
-        isFocused && 'border-primary ring-2 ring-primary/20',
+        isFocused && 'border-primary shadow-sm bg-primary/5',
         containerClassName,
         className
       )}
@@ -78,7 +79,7 @@ export const SearchBar = ({
       />
 
       {loading && (
-        <ActivityIndicator size="small" color="#FF5E00" className="ms-2" />
+        <AppLoader variant="inline" />
       )}
 
       {!loading && value.length > 0 && (

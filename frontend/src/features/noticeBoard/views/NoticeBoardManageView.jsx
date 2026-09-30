@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { CSpinner, CBadge, CButton, CTooltip, CNav, CNavItem, CNavLink } from '@coreui/react'
+import { CBadge, CButton, CTooltip, CNav, CNavItem, CNavLink } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilPin, cilTrash, cilPencil, cilFolderOpen } from '@coreui/icons'
 import { useNoticeBoard } from '../hooks/useNoticeBoard.js'
@@ -15,6 +15,7 @@ import EmptyState from '../components/EmptyState.jsx'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import '../styles/_noticeBoard.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 export const NoticeBoardManageView = () => {
   useNoticeSocket()
@@ -233,7 +234,7 @@ export const NoticeBoardManageView = () => {
         {/* Table Listing */}
         {loading && notices.length === 0 ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
-            <CSpinner color="primary" />
+            <AppLoader variant="block" />
           </div>
         ) : notices.length === 0 ? (
           <EmptyState canCreate={canCreate} onAddClick={handleAddClick} />

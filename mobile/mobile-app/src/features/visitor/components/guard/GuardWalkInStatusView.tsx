@@ -1,4 +1,4 @@
-import { InteractionManager } from 'react-native';
+import { runSoon } from '@/src/utils/runSoon';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
@@ -50,7 +50,7 @@ export const GuardWalkInStatusView: React.FC = () => {
   }, [loadBoard]);
 
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
+    const task = runSoon(() => {
         loadBoard();
       });
     return () => {

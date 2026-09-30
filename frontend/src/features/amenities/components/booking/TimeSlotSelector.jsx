@@ -1,5 +1,6 @@
 import React, { memo } from 'react'
-import { CCard, CCardBody, CButton, CSpinner } from '@coreui/react'
+import { CCard, CCardBody, CButton } from '@coreui/react'
+import AppLoader from '../../../../components/common/AppLoader'
 
 const calculateDuration = (start, end) => {
   if (!start || !end) return ''
@@ -54,7 +55,7 @@ const TimeSlotSelector = memo(
 
           {slotsLoading ? (
             <div className="d-flex justify-content-center p-5">
-              <CSpinner color="primary" />
+              <AppLoader variant="block" />
             </div>
           ) : (
             <div className="d-flex flex-wrap gap-3 mb-4">
@@ -139,7 +140,7 @@ const TimeSlotSelector = memo(
                       <div
                         key={idx}
                         className={`position-relative p-3 rounded-4 bg-body ${borderColor}`}
-                        style={{ cursor, minWidth: '150px', transition: 'all 0.2s', opacity }}
+                        style={{ cursor, minWidth: '150px', transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s', opacity }}
                         onClick={() =>
                           !isDisabled &&
                           updateDraft({

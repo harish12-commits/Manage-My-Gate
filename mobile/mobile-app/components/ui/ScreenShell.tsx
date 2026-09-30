@@ -10,7 +10,6 @@ import {
   Linking,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
-  InteractionManager,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -28,13 +27,25 @@ import { Skeleton } from './Skeleton';
 import { ProgressLoader } from '../feedback/ProgressLoader';
 import { KeyboardAwareScrollView } from '../layout/KeyboardAwareScrollView';
 import { cn } from '../../lib/utils';
-import { RoleSwitchModal } from '../navigation/RoleSwitchModal';
-import { VillaSwitchModal } from '../navigation/VillaSwitchModal';
-import { GlobalNavModal } from '../navigation/GlobalNavModal';
+import { lazyComponent } from '../../src/utils/lazyComponent';
 import { BottomNavigationBar } from '../navigation/BottomNavigationBar';
 import { useBottomNavScroll } from '../navigation/BottomNavScrollContext';
 import { useTranslation } from '../../src/utils/i18n';
 import { AppBackground } from './AppBackground';
+
+// Overlays are only needed on demand; keep them out of the initial screen render path.
+const RoleSwitchModal = lazyComponent(
+  () => import('../navigation/RoleSwitchModal'),
+  null,
+);
+const VillaSwitchModal = lazyComponent(
+  () => import('../navigation/VillaSwitchModal'),
+  null,
+);
+const GlobalNavModal = lazyComponent(
+  () => import('../navigation/GlobalNavModal'),
+  null,
+);
 
 export interface ScreenShellProps {
   title: string;
@@ -92,23 +103,17 @@ export function ScreenShell({
   const { t, translateText, language } = useTranslation();
   const { isCompact, setIsCompact, scrollHandlerProps } = useBottomNavScroll();
 
-  // Defer rendering children until after navigation interactions to keep transitions buttery smooth
+  // Paint the shell (header, background, nav) first and mount the content on the next frame.
+  // Waiting for InteractionManager here added a fixed delay to every page open.
   const [interactionsComplete, setInteractionsComplete] = React.useState(disableInteractionDeferral);
-  
+
   React.useEffect(() => {
     if (disableInteractionDeferral) {
       setInteractionsComplete(true);
       return;
     }
-    const task = InteractionManager.runAfterInteractions(() => {
-      setInteractionsComplete(true);
-    });
-    // Fallback timer just in case InteractionManager gets stuck or animations are disabled
-    const timer = setTimeout(() => setInteractionsComplete(true), 400);
-    return () => {
-      task.cancel();
-      clearTimeout(timer);
-    };
+    const id = requestAnimationFrame(() => setInteractionsComplete(true));
+    return () => cancelAnimationFrame(id);
   }, [disableInteractionDeferral]);
 
   const effectiveLoading = loading || !interactionsComplete;

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { CSpinner } from '@coreui/react'
+import AppLoader from '../../../components/common/AppLoader'
 
 /**
  * AppInviteHandler (Legacy Route)
@@ -27,7 +28,7 @@ export const AppInviteHandler = () => {
   return (
     <div className="min-vh-100 d-flex flex-row align-items-center justify-content-center bg-dark text-white">
       <div className="text-center">
-        <CSpinner color="primary" variant="grow" className="mb-3" />
+        <AppLoader variant="block" />
         <h5>Redirecting to workspace invitation...</h5>
       </div>
     </div>

@@ -1,10 +1,12 @@
 import React, { useRef, useCallback, useMemo, useEffect, useState } from 'react';
-import { View, Modal, Platform } from 'react-native';
+import { View, Modal, Platform, NativeModules } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { X, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react-native';
+// @ts-ignore
 import RazorpayCheckout from 'react-native-razorpay';
+import { WebView } from 'react-native-webview';
 
 export const isMockRazorpayKey = (key?: string, orderId?: string): boolean => {
   if (!key) return true;
@@ -59,12 +61,14 @@ export function RazorpayCheckoutModal({
 }: RazorpayCheckoutModalProps) {
   const isHandledRef = useRef<boolean>(false);
   const [fallbackToMock, setFallbackToMock] = useState<boolean>(false);
+  const [useWebView, setUseWebView] = useState<boolean>(false);
 
   // Reset handled lock and fallback when modal becomes visible
   useEffect(() => {
     if (visible) {
       isHandledRef.current = false;
       setFallbackToMock(false);
+      setUseWebView(false);
     }
   }, [visible]);
 
@@ -88,7 +92,19 @@ export function RazorpayCheckoutModal({
 
   // Handle Native SDK Checkout
   useEffect(() => {
-    if (visible && options && Platform.OS !== 'web' && !isMock) {
+    if (visible && options && Platform.OS !== 'web' && !isMock && !useWebView) {
+      if (!NativeModules.RazorpayCheckout) {
+        console.warn('[RazorpayCheckoutModal] RazorpayCheckout native module is missing (NativeModules). Falling back to WebView.');
+        setUseWebView(true);
+        return;
+      }
+
+      if (!RazorpayCheckout || typeof RazorpayCheckout.open !== 'function') {
+        console.warn('[RazorpayCheckoutModal] RazorpayCheckout SDK is missing. Falling back to WebView.');
+        setUseWebView(true);
+        return;
+      }
+
       // Small timeout to ensure state settles before popping native intent
       const timer = setTimeout(() => {
         if (isHandledRef.current) return;
@@ -108,50 +124,64 @@ export function RazorpayCheckoutModal({
           },
         };
 
-        RazorpayCheckout.open(razorpayOptions)
-          .then((data: any) => {
-            if (!isHandledRef.current) {
-              isHandledRef.current = true;
-              onSuccess({
-                paymentId: options.paymentId || '',
-                razorpayPaymentId: data.razorpay_payment_id,
-                razorpayOrderId: data.razorpay_order_id || options.orderId || '',
-                razorpaySignature: data.razorpay_signature,
-              });
-            }
-          })
-          .catch((error: any) => {
-            if (!isHandledRef.current) {
-              isHandledRef.current = true;
-              // Check if user cancelled
-              const errDesc = String(error.description || error.message || '').toLowerCase();
-              if (error.code === 'BAD_REQUEST_ERROR' && errDesc.includes('cancel')) {
-                onDismiss('User cancelled checkout');
-              } else {
-                // If it's a key error, fallback to mock (useful for testing without valid keys)
-                if (errDesc.includes('unauthorized') || errDesc.includes('invalid') || error.code === 2) {
-                  console.warn('[RazorpayCheckoutModal] API error detected natively. Falling back to test mode.');
-                  isHandledRef.current = false; // Reset so mock can handle it
-                  setFallbackToMock(true);
-                  return;
-                }
-                
-                onError({
-                  code: String(error.code || 'PAYMENT_FAILED'),
-                  description: error.description || error.message || 'Razorpay checkout encountered an error',
+        try {
+          RazorpayCheckout.open(razorpayOptions)
+            .then((data: any) => {
+              if (!isHandledRef.current) {
+                isHandledRef.current = true;
+                onSuccess({
+                  paymentId: options.paymentId || '',
+                  razorpayPaymentId: data.razorpay_payment_id,
+                  razorpayOrderId: data.razorpay_order_id || options.orderId || '',
+                  razorpaySignature: data.razorpay_signature,
                 });
               }
-            }
-          });
+            })
+            .catch((error: any) => {
+              if (!isHandledRef.current) {
+                isHandledRef.current = true;
+                // Check if user cancelled
+                const errDesc = String(error.description || error.message || '').toLowerCase();
+                
+                // Fallback to WebView if Native SDK crashes due to missing underlying native code
+                if (errDesc.includes("read property 'open'") || errDesc.includes("razorpaycheckout is null")) {
+                  console.warn('[RazorpayCheckoutModal] Native SDK crashed missing open property. Falling back to WebView.', error);
+                  isHandledRef.current = false;
+                  setUseWebView(true);
+                  return;
+                }
+
+                if (error.code === 'BAD_REQUEST_ERROR' && errDesc.includes('cancel')) {
+                  onDismiss('User cancelled checkout');
+                } else {
+                  // If it's a key error, fallback to mock (useful for testing without valid keys)
+                  if (errDesc.includes('unauthorized') || errDesc.includes('invalid') || error.code === 2) {
+                    console.warn('[RazorpayCheckoutModal] API error detected natively. Falling back to test mode.');
+                    isHandledRef.current = false; // Reset so mock can handle it
+                    setFallbackToMock(true);
+                    return;
+                  }
+                  
+                  onError({
+                    code: String(error.code || 'PAYMENT_FAILED'),
+                    description: error.description || error.message || 'Razorpay checkout encountered an error',
+                  });
+                }
+              }
+            });
+        } catch (err) {
+          console.warn('[RazorpayCheckoutModal] Error invoking native RazorpayCheckout. Falling back to WebView.', err);
+          setUseWebView(true);
+        }
       }, 100);
 
       return () => clearTimeout(timer);
     }
-  }, [visible, options, isMock, onSuccess, onDismiss, onError]);
+  }, [visible, options, isMock, useWebView, onSuccess, onDismiss, onError]);
 
-  // Construct HTML wrapper for Razorpay Web Checkout (Web platform fallback only)
+  // Construct HTML wrapper for Razorpay Web Checkout (Used by web AND native WebView fallback)
   const htmlContent = useMemo(() => {
-    if (!options || Platform.OS !== 'web') return '';
+    if (!options) return '';
 
     const key = options.razorpayKeyId || '';
     const orderId = options.orderId || '';
@@ -189,66 +219,71 @@ export function RazorpayCheckoutModal({
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
             .text { font-size: 14px; font-weight: 600; color: hsl(215, 20.2%, 65.1%); }
           </style>
-          <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
         </head>
         <body>
           <div class="spinner"></div>
-          <div class="text">Connecting to Secure Razorpay Gateway...</div>
+          <div class="text" id="statusText">Connecting to Secure Razorpay Gateway...</div>
 
           <script>
             function sendToParent(type, data) {
               var payload = JSON.stringify({ type, data });
-              if (window.parent && window.parent !== window) {
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(payload);
+              } else if (window.parent && window.parent !== window) {
                 window.parent.postMessage(payload, '*');
               }
             }
 
-            try {
-              var razorpayOptions = {
-                key: "${key}",
-                amount: "${amountPaise}",
-                currency: "${currency}",
-                name: "${name}",
-                description: "${description}",
-                ${orderIdField}
-                handler: function(response) {
-                  sendToParent('PAYMENT_SUCCESS', {
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_order_id: response.razorpay_order_id || "${orderId}",
-                    razorpay_signature: response.razorpay_signature || ('sig_test_' + Date.now())
-                  });
-                },
-                prefill: {
-                  name: "${customerName}",
-                  contact: "${customerPhone}",
-                  email: "${customerEmail}"
-                },
-                modal: {
-                  ondismiss: function() {
-                    sendToParent('PAYMENT_CANCELLED', { reason: 'User dismissed Razorpay modal' });
-                  }
-                },
-                theme: { color: '#2563eb' }
-              };
+            function initRazorpay() {
+              document.getElementById('statusText').innerText = "Opening Secure Checkout...";
+              try {
+                var razorpayOptions = {
+                  key: "${key}",
+                  amount: "${amountPaise}",
+                  currency: "${currency}",
+                  name: "${name}",
+                  description: "${description}",
+                  ${orderIdField}
+                  handler: function(response) {
+                    sendToParent('PAYMENT_SUCCESS', {
+                      razorpay_payment_id: response.razorpay_payment_id,
+                      razorpay_order_id: response.razorpay_order_id || "${orderId}",
+                      razorpay_signature: response.razorpay_signature || ('sig_test_' + Date.now())
+                    });
+                  },
+                  prefill: {
+                    name: "${customerName}",
+                    contact: "${customerPhone}",
+                    email: "${customerEmail}"
+                  },
+                  modal: {
+                    ondismiss: function() {
+                      sendToParent('PAYMENT_CANCELLED', { reason: 'User dismissed Razorpay modal' });
+                    }
+                  },
+                  theme: { color: '#2563eb' }
+                };
 
-              var rzp = new Razorpay(razorpayOptions);
-              rzp.on('payment.failed', function(response) {
-                sendToParent('PAYMENT_ERROR', {
-                  code: response.error ? response.error.code : 'PAYMENT_FAILED',
-                  description: response.error ? response.error.description : 'Razorpay checkout encountered an error',
-                  source: response.error ? response.error.source : '',
-                  step: response.error ? response.error.step : '',
-                  reason: response.error ? response.error.reason : ''
+                var rzp = new Razorpay(razorpayOptions);
+                rzp.on('payment.failed', function(response) {
+                  sendToParent('PAYMENT_ERROR', {
+                    code: response.error ? response.error.code : 'PAYMENT_FAILED',
+                    description: response.error ? response.error.description : 'Razorpay checkout encountered an error',
+                    source: response.error ? response.error.source : '',
+                    step: response.error ? response.error.step : '',
+                    reason: response.error ? response.error.reason : ''
+                  });
                 });
-              });
-              rzp.open();
-            } catch (err) {
-              sendToParent('PAYMENT_ERROR', {
-                code: 'INIT_ERROR',
-                description: err.message || 'Failed to initialize Razorpay checkout script'
-              });
+                rzp.open();
+              } catch (err) {
+                sendToParent('PAYMENT_ERROR', {
+                  code: 'INIT_ERROR',
+                  description: err.message || 'Failed to initialize Razorpay checkout script'
+                });
+              }
             }
           </script>
+          <script src="https://checkout.razorpay.com/v1/checkout.js" onload="initRazorpay()" onerror="sendToParent('PAYMENT_ERROR', { code: 'NETWORK_ERROR', description: 'Could not load Razorpay network script.' })"></script>
         </body>
       </html>
     `;
@@ -318,7 +353,7 @@ export function RazorpayCheckoutModal({
 
   // On native platforms, if we are not mocking, we don't render a Modal UI because
   // the Razorpay SDK provides its own full-screen native overlay.
-  if (Platform.OS !== 'web' && !isMock) return null;
+  if (Platform.OS !== 'web' && !isMock && !useWebView) return null;
 
   // For Web or Mock mode, we render the Modal UI
   return (
@@ -411,13 +446,22 @@ export function RazorpayCheckoutModal({
                 <Text>Cancel Checkout</Text>
               </Button>
             </View>
-          ) : (
+          ) : Platform.OS === 'web' ? (
             <iframe
               srcDoc={htmlContent}
               style={{ width: '100%', height: '100%', border: 'none' }}
               title="Razorpay Gateway Web"
             />
-          )}
+          ) : useWebView ? (
+            <WebView
+              source={{ html: htmlContent, baseUrl: 'https://razorpay.com' }}
+              onMessage={handleMessage}
+              style={{ flex: 1, backgroundColor: 'transparent' }}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              originWhitelist={['*']}
+            />
+          ) : null}
         </View>
       </View>
     </Modal>

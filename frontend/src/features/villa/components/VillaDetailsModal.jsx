@@ -11,7 +11,6 @@ import {
   CRow,
   CCol,
   CBadge,
-  CSpinner,
   CForm,
   CFormLabel,
   CFormInput,
@@ -32,6 +31,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '../../../services/apiClient'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
+import AppLoader from '../../../components/common/AppLoader'
 
 export const VillaDetailsModal = ({ visible, onClose, villaId, onEdit }) => {
   const { t } = useTranslation()
@@ -231,7 +231,7 @@ export const VillaDetailsModal = ({ visible, onClose, villaId, onEdit }) => {
     >
       {selectedVillaLoading || !selectedVilla ? (
         <CModalBody className="text-center py-5">
-          <CSpinner color="primary" className="mb-2" />
+          <AppLoader variant="block" />
           <div>{t('villas.details.loading', 'Loading unit details...')}</div>
         </CModalBody>
       ) : (

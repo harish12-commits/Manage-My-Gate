@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { CSpinner } from '@coreui/react'
+import AppLoader from '../../../components/common/AppLoader'
 
 export const DashboardDeepLinkRedirector = () => {
   const { id } = useParams()
@@ -29,7 +30,7 @@ export const DashboardDeepLinkRedirector = () => {
   return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
       <div className="text-center">
-        <CSpinner color="primary" />
+        <AppLoader variant="block" />
         <div className="mt-3 text-muted">Redirecting to announcement...</div>
       </div>
     </div>

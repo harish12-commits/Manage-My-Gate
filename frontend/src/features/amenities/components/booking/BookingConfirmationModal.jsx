@@ -6,9 +6,9 @@ import {
   CModalBody,
   CModalFooter,
   CButton,
-  CSpinner,
-} from '@coreui/react'
+  } from '@coreui/react'
 import { formatCurrency } from '../../utils/amenityUtils.js'
+import AppLoader from '../../../../components/common/AppLoader'
 
 const BookingConfirmationModal = memo(
   ({ visible, onClose, onConfirm, isSubmitting, draft, amenity }) => {
@@ -39,7 +39,7 @@ const BookingConfirmationModal = memo(
         <CModalBody>
           {isSubmitting ? (
             <div className="text-center py-4">
-              <CSpinner color="primary" className="mb-3" />
+              <AppLoader variant="block" />
               <p className="mb-0 text-muted">Securing your slot...</p>
             </div>
           ) : (

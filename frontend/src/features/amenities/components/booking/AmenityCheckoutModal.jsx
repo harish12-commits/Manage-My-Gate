@@ -4,7 +4,6 @@ import {
   CModalHeader,
   CModalTitle,
   CModalBody,
-  CSpinner,
   CButton,
   CRow,
   CCol,
@@ -13,6 +12,7 @@ import {
 } from '@coreui/react'
 import { useTranslation } from 'react-i18next'
 import useAmenityPayment from '../../hooks/useAmenityPayment.js'
+import AppLoader from '../../../../components/common/AppLoader'
 
 const AmenityCheckoutModal = memo(
   ({ visible, paymentIntent, onSuccess, onFailure, onClose, draft, amenity }) => {
@@ -53,7 +53,7 @@ const AmenityCheckoutModal = memo(
         <CModalBody className="py-4">
           {loading ? (
             <div className="text-center py-5">
-              <CSpinner color="primary" className="mb-3" />
+              <AppLoader variant="block" />
               <p className="mb-0 text-muted">
                 {t('checkout.processing', 'Processing payment order...')}
               </p>

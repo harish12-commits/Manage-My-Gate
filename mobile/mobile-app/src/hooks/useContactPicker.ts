@@ -47,19 +47,27 @@ export const useContactPicker = () => {
     if (!isContactPickerSupported) return null;
     try {
       if (!(await ensurePermission())) return null;
-      const contact = await Contacts.presentContactPickerAsync();
+      const contact = await Contacts.Contact.presentPicker();
       if (!contact) {
         // Did not pick a contact, or picking failed silently
         Alert.alert('Contact Picker', 'No contact selected or the contact picker could not be opened on your device.');
         return null;
       }
 
+
+      // In SDK 52, the Contact class uses async getters for details
+      const [rawPhones, rawEmails, fullName] = await Promise.all([
+        contact.getPhones(),
+        contact.getEmails(),
+        contact.getFullName()
+      ]);
+
       const seen = new Set<string>();
       const phones: ContactPhoneOption[] = [];
-      for (const pn of contact.phoneNumbers || []) {
-        const raw = pn.number || pn.digits || '';
+      for (const pn of rawPhones || []) {
+        const raw = pn.number || (pn as any).digits || '';
         if (!raw.trim()) continue;
-        const parsed = parsePhone(raw, pn.countryCode?.toUpperCase());
+        const parsed = parsePhone(raw, (pn as any).countryCode?.toUpperCase());
         const phone = parsed.e164 || raw.replace(/[^\d+]/g, '');
         if (seen.has(phone)) continue;
         seen.add(phone);
@@ -71,12 +79,9 @@ export const useContactPicker = () => {
         return null;
       }
 
-      const name =
-        contact.name?.trim() ||
-        [contact.firstName, contact.middleName, contact.lastName].filter(Boolean).join(' ').trim() ||
-        contact.company?.trim() ||
-        '';
-      return { name, email: contact.emails?.[0]?.email, phones };
+      const name = fullName?.trim() || '';
+      const email = rawEmails?.[0]?.address || (rawEmails?.[0] as any)?.email;
+      return { name, email, phones };
     } catch (err: any) {
       Alert.alert('Could not open contacts', err?.message || 'Please type the details manually.');
       return null;

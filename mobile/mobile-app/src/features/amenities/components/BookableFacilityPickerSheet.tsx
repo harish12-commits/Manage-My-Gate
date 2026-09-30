@@ -3,13 +3,14 @@
  */
 
 import React from 'react';
-import { View, ScrollView, ActivityIndicator } from 'react-native';
+import { View, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ListCard } from '@/components/ui/ListCard';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { useTranslation } from '@/src/utils/i18n';
 import { AmenityFacility } from '../types/amenityDomain.types';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface BookableFacilityPickerSheetProps {
   visible: boolean;
@@ -39,7 +40,7 @@ export function BookableFacilityPickerSheet({
             {t('amenity_booking_staff_for', 'Booking for {name}', { name: residentName })}
           </Text>
         ) : null}
-        {loading && facilities.length === 0 ? <ActivityIndicator className="text-primary" /> : null}
+        {loading && facilities.length === 0 ? <AppLoader variant="inline" /> : null}
         <ScrollView className="max-h-[55vh]" contentContainerClassName="gap-2 pb-2" showsVerticalScrollIndicator={false}>
           {facilities.map((f) => (
             <ListCard

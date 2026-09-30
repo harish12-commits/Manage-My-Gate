@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import issueReportConfigController from './issueReportConfig.controller.js';
-import { updateConfigRules } from './issueReportConfig.validator.js';
+import { updateConfigRules, testEmailRules } from './issueReportConfig.validator.js';
 import { validate } from '../../middlewares/validator.middleware.js';
 import isAuthenticated from '../../middlewares/auth.middleware.js';
 import tenantContext from '../../middlewares/tenant.middleware.js';
 import { authorizeRoles } from '../../middlewares/rbac.middleware.js';
+import { testEmailLimiter } from '../../middlewares/rateLimiter.middleware.js';
 
 const router = Router();
 
@@ -45,6 +46,8 @@ router.post(
   isAuthenticated,
   tenantContext({ requirePlatformContext: true }),
   authorizeRoles('Super Admin', 'Platform Admin', 'Platform Super Admin'),
+  testEmailLimiter,
+  validate(testEmailRules),
   issueReportConfigController.sendTestEmail.bind(issueReportConfigController)
 );
 

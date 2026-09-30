@@ -12,6 +12,7 @@ import UserFiltersBar from '../components/UserFiltersBar.jsx'
 import UserDirectoryTable from '../components/UserDirectoryTable.jsx'
 import UserDetailDrawer from '../components/UserDetailDrawer.jsx'
 import '../styles/_organization.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 /**
  * Organization Details view — orchestrates overview cards, org info, user directory.
@@ -125,7 +126,7 @@ export const OrganizationDetails = () => {
         {/* Loading Spinner */}
         {detailsLoading && !organization ? (
           <div className="loading-center">
-            <CSpinner color="primary" />
+            <AppLoader variant="block" />
             <span>{t('superAdmin.orgDetails.loadingDetails', { defaultValue: 'Loading organization details...' })}</span>
           </div>
         ) : (

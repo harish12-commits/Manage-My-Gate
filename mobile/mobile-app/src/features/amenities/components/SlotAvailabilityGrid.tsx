@@ -111,7 +111,7 @@ export function SlotAvailabilityGrid({
               className={cn(
                 'w-[48.5%] rounded-2xl p-3 border flex-col justify-between min-h-[96px] active:scale-[0.98] transition-all bg-card shadow-xs',
                 isSelected
-                  ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                  ? 'border-primary bg-primary/5 shadow-sm'
                   : isAvailable
                   ? 'border-border active:border-primary/50'
                   : 'border-border/60 bg-muted/30 opacity-70'

@@ -22,9 +22,13 @@ export const PasswordInput = forwardRef<any, PasswordInputProps>(
     const isConfirmMismatch =
       confirmValue !== undefined && stringVal.length > 0 && stringVal !== confirmValue;
 
+    // Fix for Chrome [DOM] Password field is not contained in a form violation on Web
+    const FormWrapper = Platform.OS === 'web' ? ('form' as any) : View;
+
     return (
       <View className="w-full">
-        <TextInput
+        <FormWrapper style={Platform.OS === 'web' ? { width: '100%', margin: 0, padding: 0 } : undefined}>
+          <TextInput
           ref={ref}
           value={value}
           secureTextEntry={isSecure}
@@ -37,6 +41,7 @@ export const PasswordInput = forwardRef<any, PasswordInputProps>(
           error={isConfirmMismatch ? t('passwords_not_match', 'Passwords do not match.') : props.error}
           {...props}
         />
+        </FormWrapper>
 
         {showRequirements && Boolean(stringVal) && (
           <View className="flex-row flex-wrap gap-1.5 mt-2 ms-1">

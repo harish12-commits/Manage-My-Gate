@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import AmenityFacility from './amenityFacility.model.js';
+import { escapeRegex } from '../../../utils/regex.utils.js';
 import { getValidSession } from '../domain/concurrency/transaction.utils.js';
 
 export class AmenityFacilityRepository {
@@ -134,9 +135,9 @@ export class AmenityFacilityRepository {
     if (status && status.toUpperCase() !== 'ALL') match.status = status.toUpperCase();
     if (search && search.trim()) {
       match.$or = [
-        { name: { $regex: search.trim(), $options: 'i' } },
-        { code: { $regex: search.trim(), $options: 'i' } },
-        { description: { $regex: search.trim(), $options: 'i' } },
+        { name: { $regex: escapeRegex(search.trim()), $options: 'i' } },
+        { code: { $regex: escapeRegex(search.trim()), $options: 'i' } },
+        { description: { $regex: escapeRegex(search.trim()), $options: 'i' } },
       ];
     }
 

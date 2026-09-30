@@ -101,7 +101,7 @@
     color: var(--text-muted);
     border: 1px solid transparent;
     white-space: nowrap;
-    transition: all 0.18s ease;
+    transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, opacity 0.18s ease, width 0.18s ease, height 0.18s ease, max-height 0.18s ease;
 
     &:hover {
       color: var(--primary);
@@ -252,7 +252,7 @@
     border: 1px solid var(--border-focus);
     background: transparent;
     color: var(--text-main);
-    transition: all 0.18s ease;
+    transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, opacity 0.18s ease, width 0.18s ease, height 0.18s ease, max-height 0.18s ease;
     white-space: nowrap;
     cursor: pointer;
 
@@ -357,7 +357,7 @@
       color: var(--text-main);
       padding: 0 10px;
       outline: none;
-      transition: all .15s;
+      transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s, transform .15s, opacity .15s, width .15s, height .15s, max-height .15s;
 
       &:focus {
         border-color: var(--primary);
@@ -387,7 +387,7 @@
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
-      transition: all 0.18s ease;
+      transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, opacity 0.18s ease, width 0.18s ease, height 0.18s ease, max-height 0.18s ease;
 
       &:hover {
         background: var(--primary);
@@ -421,7 +421,7 @@
     color: var(--text-muted);
     cursor: pointer;
     white-space: nowrap;
-    transition: all .15s;
+    transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s, transform .15s, opacity .15s, width .15s, height .15s, max-height .15s;
 
     &:hover:not(.active) {
       color: var(--primary);
@@ -513,7 +513,7 @@
     background: var(--surface-bg);
     color: var(--text-main);
     outline: none;
-    transition: all .15s;
+    transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s, transform .15s, opacity .15s, width .15s, height .15s, max-height .15s;
 
     &:focus {
       background: #fff;
@@ -668,7 +668,7 @@
     background: #fff;
     outline: none;
     font-size: 13px;
-    transition: all .15s;
+    transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s, transform .15s, opacity .15s, width .15s, height .15s, max-height .15s;
     color: var(--text-main);
 
     &:focus {
@@ -880,7 +880,7 @@
       display: grid; place-items: center;
       font-size: 16px;
       color: var(--text-muted);
-      transition: all .15s;
+      transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s, transform .15s, opacity .15s, width .15s, height .15s, max-height .15s;
 
       &:hover { background: var(--surface-bg); color: var(--text-main); }
     }

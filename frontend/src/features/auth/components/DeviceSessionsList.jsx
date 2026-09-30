@@ -6,7 +6,6 @@ import {
   CButton,
   CListGroup,
   CListGroupItem,
-  CSpinner,
   CAlert,
   CBadge,
 } from '@coreui/react'
@@ -14,6 +13,7 @@ import CIcon from '@coreui/icons-react'
 import { cilScreenDesktop, cilMobile, cilGlobeAlt } from '@coreui/icons'
 import { useTranslation } from 'react-i18next'
 import authService from '../services/authService.js'
+import AppLoader from '../../../components/common/AppLoader'
 
 export const DeviceSessionsList = () => {
   const { t } = useTranslation()
@@ -74,7 +74,7 @@ export const DeviceSessionsList = () => {
 
         {loading ? (
           <div className="text-center py-4">
-            <CSpinner color="primary" />
+            <AppLoader variant="block" />
           </div>
         ) : sessions.length === 0 ? (
           <p className="text-muted text-center py-3">

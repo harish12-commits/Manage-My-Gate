@@ -10,6 +10,7 @@ import BookingConfirmationModal from '../components/booking/BookingConfirmationM
 import BookingSuccess from '../components/booking/BookingSuccess.jsx'
 import AmenitiesTopNav from '../components/AmenitiesTopNav.jsx'
 import '../styles/_amenities.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 const ResidentBookingView = () => {
   const { id } = useParams()
@@ -37,7 +38,7 @@ const ResidentBookingView = () => {
   if (loading && !amenity) {
     return (
       <div className="d-flex justify-content-center p-5">
-        <CSpinner />
+        <AppLoader variant="block" />
       </div>
     )
   }

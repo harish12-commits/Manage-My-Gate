@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon --ignore last_error.json server.js",
-    "test": "node --test tests/google.provider.test.mjs tests/apple.provider.test.mjs"
+    "test": "node --test tests/google.provider.test.mjs tests/apple.provider.test.mjs tests/payment.security.test.mjs"
   },
   "keywords": [],
   "author": "",
@@ -36,7 +36,7 @@
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
     "node-cron": "^4.6.0",
-    "nodemailer": "^9.0.4",
+    "nodemailer": "^10.0.13",
     "pdfkit": "^0.19.1",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
@@ -52,10 +52,15 @@
     "twilio": "^6.0.2",
     "uuid": "^14.0.0",
     "winston": "^3.19.0",
-    "xlsx": "^0.18.5",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "xlsx": "^0.18.5"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "^11.1.1"
+    }
   }
 }

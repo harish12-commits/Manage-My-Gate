@@ -77,7 +77,7 @@ export const errorHandler = (err, req, res, next) => {
   // Handle Mongoose Cast Errors (invalid ObjectId)
   else if (err.name === 'CastError') {
     statusCode = 400;
-    message = `Invalid ID format provided for ${err.path || 'resource'}: ${err.value}`;
+    message = `Invalid ID format provided for ${err.path || 'resource'}.`;
   }
 
   // Log error using Winston logger: 5xx server errors get error level with stack; 4xx client errors get warn level
@@ -94,10 +94,19 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  try {
-    fs.writeFileSync('last_error.json', JSON.stringify({ statusCode, message, stack: err.stack, details, body: req.body }), 'utf-8');
-  } catch (e) {
-    // ignore
+  // Local debugging aid only; never persist request bodies (credentials, OTPs) outside development.
+  if (config.nodeEnv === 'development') {
+    try {
+      const { password, newPassword, currentPassword, confirmPassword, otp, code, token, ...safeBody } = req.body || {};
+      fs.writeFileSync('last_error.json', JSON.stringify({ statusCode, message, stack: err.stack, details, body: safeBody }), 'utf-8');
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // Do not leak internals of unexpected server errors to clients in production
+  if (statusCode >= 500 && config.nodeEnv === 'production' && !err.statusCode) {
+    message = 'Internal Server Error';
   }
 
   const code = err.code || (details && details.code) || undefined;

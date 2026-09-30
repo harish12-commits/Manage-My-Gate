@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Modal, TouchableOpacity, ActivityIndicator, Platform, Alert, KeyboardAvoidingView, Pressable } from 'react-native';
+import { View, ScrollView, Modal, TouchableOpacity, Platform, Alert, KeyboardAvoidingView, Pressable } from 'react-native';
 import { X, Users, Upload, Plus, Trash2, CheckCircle2, AlertTriangle, FileSpreadsheet, Download, FileText } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
@@ -24,6 +24,7 @@ import { downloadCSVFile } from '@/src/utils/downloadHelper';
 import { validateEmail, parseBackendError } from '@/src/utils/validation';
 import apiClient from '../../../services/apiClient';
 import { InviteUserData } from '../services/userService';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 interface BulkInviteModalProps {
   visible: boolean;
@@ -350,7 +351,7 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
           <View className="space-y-2 pb-2">
             {loadingOptions ? (
               <View className="py-8 items-center justify-center">
-                <ActivityIndicator size="small" color="#6366f1" />
+                <AppLoader variant="inline" />
                 <Text className="text-xs text-muted-foreground mt-2">Loading roles & villa units...</Text>
               </View>
             ) : activeTab === 'upload' ? (

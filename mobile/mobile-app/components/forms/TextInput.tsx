@@ -5,13 +5,13 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
   Platform,
 } from 'react-native';
 import { cn } from '../../lib/utils';
 import { LucideIcon, CheckCircle2, AlertCircle, XCircle, X } from 'lucide-react-native';
 import { ValidationStatus } from '../../src/utils/validation';
 import { useTranslation } from '../../src/utils/i18n';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface TextInputProps extends RNTextInputProps {
   label?: string;
@@ -177,8 +177,8 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
             props.multiline ? 'items-start' : 'items-center',
             // Default border
             'border-border/80 dark:border-border/50',
-            // Focused state
-            isFocused && !error && 'border-primary ring-2 ring-primary/20',
+            // Focused state (avoid ring-2 which causes float/overlap on some Android versions)
+            isFocused && !error && 'border-primary shadow-sm bg-primary/5',
             // Incomplete status
             effectiveStatus === 'incomplete' && !error && 'border-amber-500/80 bg-amber-500/5',
             // Validating status
@@ -186,7 +186,7 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
             // Valid status
             effectiveStatus === 'valid' && !error && 'border-emerald-500/80 bg-emerald-500/5',
             // Error / Invalid status
-            Boolean(error) && 'border-destructive bg-destructive/5 ring-1 ring-destructive/20',
+            Boolean(error) && 'border-destructive bg-destructive/5 shadow-sm',
             className
           )}
         >
@@ -245,7 +245,7 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
           {/* Right Accessories: Spinner, Valid Checkmark, or Custom rightIcon */}
           {isValidating ? (
             <View className="ms-2">
-              <ActivityIndicator size="small" color="#FF5E00" />
+              <AppLoader variant="inline" />
             </View>
           ) : effectiveStatus === 'valid' && !rightIcon && !error ? (
             <View className="ms-2">

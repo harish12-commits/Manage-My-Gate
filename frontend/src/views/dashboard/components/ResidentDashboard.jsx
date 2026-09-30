@@ -22,6 +22,7 @@ import CIcon from '@coreui/icons-react'
 import { cilHome, cilPeople, cilPhone, cilCheckCircle, cilNotes, cilBullhorn } from '@coreui/icons'
 import apiClient from '../../../services/apiClient'
 import toast from 'react-hot-toast'
+import AppLoader from '../../../components/common/AppLoader'
 
 export const ResidentDashboard = () => {
   const { user } = useSelector((state) => state.auth)
@@ -155,7 +156,7 @@ export const ResidentDashboard = () => {
         <CCol lg={7}>
           {loading || !villaDetails ? (
             <div className="text-center py-5 bg-body rounded-4 shadow-sm border">
-              <CSpinner color="primary" className="mb-2" />
+              <AppLoader variant="block" />
               <div>Loading villa occupancy data...</div>
             </div>
           ) : (

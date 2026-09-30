@@ -74,19 +74,22 @@ export interface BottomNavigationBarProps {
 interface AndroidTabButtonProps {
   item: TabItem;
   isActive: boolean;
-  onPress?: () => void;
+  onPress?: (item: TabItem) => void;
   isDark: boolean;
   isCompact?: boolean;
+  isPending?: boolean;
 }
 
+import { AppLoader } from '../ui/AppLoader';
 import { useTranslation } from '../../src/utils/i18n';
 
-const AndroidTabButton: React.FC<AndroidTabButtonProps> = ({
+const AndroidTabButton = React.memo(function AndroidTabButton({
   item,
   isActive,
   onPress,
   isDark,
-}) => {
+  isPending,
+}: AndroidTabButtonProps) {
   const { t, language } = useTranslation();
   const IconComponent = item.icon;
   const viewAllScale = useSharedValue(1);
@@ -113,10 +116,11 @@ const AndroidTabButton: React.FC<AndroidTabButtonProps> = ({
   const viewAllAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: viewAllScale.value }],
   }));
+  const handlePress = useCallback(() => onPress?.(item), [onPress, item]);
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       android_ripple={{
         color: isDark ? 'rgba(255, 106, 0, 0.2)' : 'rgba(0, 0, 0, 0.08)',
         borderless: true,
@@ -141,11 +145,17 @@ const AndroidTabButton: React.FC<AndroidTabButtonProps> = ({
           marginBottom: 3,
         }]}
       >
-        <IconComponent
-          size={22}
-          color={iconColor}
-          strokeWidth={isActive ? 2.4 : 1.8}
-        />
+        {isPending ? (
+          <View style={{ width: 22, height: 22 }} className="items-center justify-center">
+            <AppLoader variant="inline" />
+          </View>
+        ) : (
+          <IconComponent
+            size={22}
+            color={iconColor}
+            strokeWidth={isActive ? 2.4 : 1.8}
+          />
+        )}
       </Animated.View>
 
       <Text
@@ -163,23 +173,24 @@ const AndroidTabButton: React.FC<AndroidTabButtonProps> = ({
       </Text>
     </Pressable>
   );
-};
+});
 
 interface InsetTabButtonProps {
   item: TabItem;
   isActive: boolean;
-  onPress?: () => void;
+  onPress?: (item: TabItem) => void;
   isDark: boolean;
-  isCompact: boolean;
+  isCompact?: boolean;
+  isPending?: boolean;
 }
 
-const InsetTabButton: React.FC<InsetTabButtonProps> = ({
+const InsetTabButton = React.memo(function InsetTabButton({
   item,
   isActive,
   onPress,
   isDark,
-  isCompact,
-}) => {
+  isPending,
+}: InsetTabButtonProps) {
   const { t, language } = useTranslation();
   const IconComponent = item.icon;
   const pressScale = useSharedValue(1.0);
@@ -240,10 +251,11 @@ const InsetTabButton: React.FC<InsetTabButtonProps> = ({
   const labelColor = isActive ? activeColor : (isDark ? '#94A3B8' : '#64748B');
   const translatedLabel = t(item.key === 'dashboard' ? 'home' : item.key, item.label);
 
+  const handlePress = useCallback(() => onPress?.(item), [onPress, item]);
+
   return (
     <Pressable
-      onPress={onPress}
-      onPressIn={onPress}
+      onPress={handlePress}
       className="flex-1 items-center justify-center h-full select-none z-10"
       accessibilityRole="tab"
       accessibilityState={{ selected: isActive }}
@@ -252,11 +264,17 @@ const InsetTabButton: React.FC<InsetTabButtonProps> = ({
       <View className="items-center justify-center py-0.5 relative">
         {/* Icon: Visibly bigger than label text */}
         <Animated.View style={animatedIconStyle} className="items-center justify-center">
-          <IconComponent
-            size={21}
-            color={iconColor}
-            strokeWidth={isActive ? 2.4 : 1.9}
-          />
+          {isPending ? (
+            <View style={{ width: 21, height: 21 }} className="items-center justify-center">
+              <AppLoader variant="inline" />
+            </View>
+          ) : (
+            <IconComponent
+              size={21}
+              color={iconColor}
+              strokeWidth={isActive ? 2.4 : 1.9}
+            />
+          )}
         </Animated.View>
 
         {/* Icon Name: Standard font size underneath */}
@@ -280,7 +298,7 @@ const InsetTabButton: React.FC<InsetTabButtonProps> = ({
       </View>
     </Pressable>
   );
-};
+});
 
 export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   scrollY,
@@ -294,30 +312,14 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   const isIOS = Platform.OS === 'ios';
   const { isCompact } = useBottomNavScroll();
 
-  // Breadth (width) transition dimensions — height remains constant
+  // Width is fixed: the bar slides fully off-screen while compact, so animating its width
+  // only forced a layout pass on every scroll direction change.
   const FULL_BREADTH = Math.min(SCREEN_WIDTH - 32, 410);
-  const COMPACT_BREADTH = Math.min(SCREEN_WIDTH - 32, 410) * 0.82;
-
-  const containerBreadth = useSharedValue(isCompact ? COMPACT_BREADTH : FULL_BREADTH);
+  const containerBreadth = useSharedValue(FULL_BREADTH);
 
   useEffect(() => {
-    containerBreadth.value = withTiming(isCompact ? COMPACT_BREADTH : FULL_BREADTH, {
-      duration: 200,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [isCompact, FULL_BREADTH, COMPACT_BREADTH, containerBreadth]);
-
-  const ANDROID_FULL_BREADTH = SCREEN_WIDTH;
-  const ANDROID_COMPACT_BREADTH = Math.min(SCREEN_WIDTH - 40, 360);
-
-  const androidBreadth = useSharedValue(isCompact ? ANDROID_COMPACT_BREADTH : ANDROID_FULL_BREADTH);
-
-  useEffect(() => {
-    androidBreadth.value = withTiming(isCompact ? ANDROID_COMPACT_BREADTH : ANDROID_FULL_BREADTH, {
-      duration: 200,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [isCompact, ANDROID_FULL_BREADTH, ANDROID_COMPACT_BREADTH, androidBreadth]);
+    containerBreadth.value = FULL_BREADTH;
+  }, [FULL_BREADTH, containerBreadth]);
 
   const activeTab: MainTabKey = useMemo(() => {
     if (pathname.includes('/all-features')) return 'view_all';
@@ -366,14 +368,9 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
     };
   });
 
-  const androidBarAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      width: androidBreadth.value,
-      height: 58, // Constant height — no height transition
-      borderRadius: isCompact ? 28 : 0,
-      transform: [{ translateY: navTranslateY.value }],
-    };
-  });
+  const navTranslateStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: navTranslateY.value }],
+  }));
 
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -390,6 +387,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   const pillScaleX = useSharedValue(1.0);
   const dragStartRatio = useSharedValue(activeIndex);
   const isDraggingShared = useSharedValue(false);
+  const lastHovered = useSharedValue(-1);
 
   const FAST_SPRING = useMemo(
     () => ({
@@ -422,7 +420,23 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
     };
   });
 
+  // Tab whose page is still opening: its icon shows the themed loader until the route lands.
+  const [pendingKey, setPendingKey] = useState<MainTabKey | null>(null);
+
+  useEffect(() => {
+    if (!pendingKey) return;
+    if (activeTab === pendingKey) {
+      setPendingKey(null);
+      return;
+    }
+    // Safety net so a failed navigation can never leave the spinner stuck
+    const timer = setTimeout(() => setPendingKey(null), 3000);
+    return () => clearTimeout(timer);
+  }, [pendingKey, activeTab]);
+
+  // Navigate immediately (animations run on the UI thread) and show the loader in the gap.
   const navigateToTab = useCallback((item: TabItem) => {
+    setPendingKey(item.key);
     try {
       router.navigate(item.route as any);
     } catch {
@@ -479,6 +493,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
         isDraggingShared.value = true;
         dragStartRatio.value = activeTabRatio.value;
         pillScaleX.value = withTiming(1.10, { duration: 40 });
+        lastHovered.value = -1;
       })
       .onUpdate((event) => {
         'worklet';
@@ -492,7 +507,10 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           Math.max(Math.round(nextRatio), 0),
           TAB_ITEMS.length - 1
         );
-        runOnJS(onHoverTab)(currentHovered);
+        if (currentHovered !== lastHovered.value) {
+          lastHovered.value = currentHovered;
+          runOnJS(onHoverTab)(currentHovered);
+        }
       })
       .onEnd(() => {
         'worklet';
@@ -505,7 +523,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
         activeTabRatio.value = withSpring(targetIndex, FAST_SPRING);
         runOnJS(onDragEnd)(targetIndex);
       });
-  }, [activeTabRatio, pillScaleX, containerBreadth, dragStartRatio, isDraggingShared, onDragEnd, onHoverTab, FAST_SPRING]);
+  }, [activeTabRatio, pillScaleX, containerBreadth, dragStartRatio, isDraggingShared, lastHovered, onDragEnd, onHoverTab, FAST_SPRING]);
 
   const handleLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
@@ -560,7 +578,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
             zIndex: 50,
             pointerEvents: isKeyboardVisible ? 'none' : 'box-none',
           },
-          useAnimatedStyle(() => ({ transform: [{ translateY: navTranslateY.value }] }))
+          navTranslateStyle,
         ]}
       >
         <View
@@ -578,7 +596,8 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
               key={item.key}
               item={item}
               isActive={selectedTabKey === item.key}
-              onPress={() => handleTabPress(item)}
+              onPress={handleTabPress}
+              isPending={pendingKey === item.key}
               isDark={isDark}
             />
           ))}
@@ -643,9 +662,9 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
                 key={item.key}
                 item={item}
                 isActive={selectedTabKey === item.key}
-                onPress={() => handleTabPress(item)}
+                onPress={handleTabPress}
+                isPending={pendingKey === item.key}
                 isDark={isDark}
-                isCompact={isCompact}
               />
             ))}
           </Animated.View>

@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { DetailSection } from '@/components/ui/DetailSection';
@@ -13,6 +13,7 @@ import { DetailRow } from '@/components/ui/DetailRow';
 import { AmenityFacility, AmenityResource, AmenityPricingSnapshot } from '../../../types/amenityDomain.types';
 import { getArchetypeMeta } from '../../../utils/amenityPresentation';
 import { ShieldCheck, Sparkles, AlertCircle } from 'lucide-react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface BookingReviewStepProps {
   facility: AmenityFacility;
@@ -80,7 +81,7 @@ export function BookingReviewStep({
       <DetailSection title="Pricing Quote (Server-Calculated)" className="bg-card border border-border">
         {calculatingPricing ? (
           <View className="py-6 items-center justify-center">
-            <ActivityIndicator size="small" className="text-primary" />
+            <AppLoader variant="inline" />
             <Text variant="muted" className="text-xs mt-2">Retrieving authoritative server quote...</Text>
           </View>
         ) : pricingSnapshot ? (

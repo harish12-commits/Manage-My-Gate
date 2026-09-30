@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Image, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
+import { View, ScrollView, Image, TouchableOpacity, Modal } from 'react-native';
 import dayjs from 'dayjs';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Text } from '@/components/ui/text';
@@ -15,7 +15,9 @@ import {
   X,
 } from 'lucide-react-native';
 import { IssueReportItem } from '../types/issueReport.types';
+import { useAttachmentSource } from '../hooks/useAttachmentSource';
 import { REPORT_TYPES, FEATURE_MODULES } from '../constants/issueReport.constants';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface CommunityIssueReportDetailSheetProps {
   visible: boolean;
@@ -23,6 +25,18 @@ export interface CommunityIssueReportDetailSheetProps {
   loading?: boolean;
   error?: string | null;
   onClose: () => void;
+}
+
+function AttachmentImage({ url, className, resizeMode }: { url: string; className: string; resizeMode: 'cover' | 'contain' }) {
+  const source = useAttachmentSource(url);
+  if (!source) {
+    return (
+      <View className={`${className} items-center justify-center`}>
+        <AppLoader variant="inline" />
+      </View>
+    );
+  }
+  return <Image source={source} className={className} resizeMode={resizeMode} />;
 }
 
 export function CommunityIssueReportDetailSheet({
@@ -65,7 +79,7 @@ export function CommunityIssueReportDetailSheet({
             </View>
           ) : loading && !report ? (
             <View className="py-12 items-center justify-center">
-              <ActivityIndicator size="large" color="#6366f1" />
+              <AppLoader variant="block" />
               <Text className="text-xs text-muted-foreground mt-3 font-medium">
                 Loading issue report details...
               </Text>
@@ -134,7 +148,7 @@ export function CommunityIssueReportDetailSheet({
                         onPress={() => setPreviewImage(attachment.url)}
                         className="w-24 h-24 rounded-xl overflow-hidden border border-border bg-muted items-center justify-center relative"
                       >
-                        <Image source={{ uri: attachment.url }} className="w-full h-full" resizeMode="cover" />
+                        <AttachmentImage url={attachment.url} className="w-full h-full" resizeMode="cover" />
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -164,11 +178,7 @@ export function CommunityIssueReportDetailSheet({
               <Icon as={X} size={24} className="text-white" />
             </TouchableOpacity>
 
-            <Image
-              source={{ uri: previewImage }}
-              className="w-full h-4/5 rounded-2xl"
-              resizeMode="contain"
-            />
+            <AttachmentImage url={previewImage} className="w-full h-4/5 rounded-2xl" resizeMode="contain" />
           </View>
         </Modal>
       ) : null}

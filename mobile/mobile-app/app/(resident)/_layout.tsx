@@ -3,7 +3,7 @@ import { premiumScreenTransition, fadeScreenTransition, instantTransition } from
 
 export default function ResidentLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false, ...premiumScreenTransition }}>
+    <Stack screenOptions={{ headerShown: false, freezeOnBlur: true, ...premiumScreenTransition }}>
       <Stack.Screen name="index" options={{ ...instantTransition }} />
       <Stack.Screen name="dashboard" options={{ ...instantTransition }} />
       <Stack.Screen name="showcase" />

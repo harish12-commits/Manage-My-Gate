@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, ScrollView, Modal, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { View, ScrollView, Modal, TouchableOpacity, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { X, Mail, Sparkles, CheckCircle2, AlertTriangle, Plus } from 'lucide-react-native';
 import { TextInput } from '@/components/forms/TextInput';
 import { DropdownSelect } from '@/components/forms/DropdownSelect';
@@ -7,6 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Text } from '@/components/ui/text';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import apiClient from '../../../services/apiClient';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 interface ConfigureInviteTemplateModalProps {
   visible: boolean;
@@ -169,7 +170,7 @@ export const ConfigureInviteTemplateModal: React.FC<ConfigureInviteTemplateModal
 
       {loading ? (
         <View className="py-8 items-center justify-center">
-          <ActivityIndicator size="small" color="#6366f1" />
+          <AppLoader variant="inline" />
           <Text className="text-xs text-muted-foreground mt-2">Loading template configuration...</Text>
         </View>
       ) : (

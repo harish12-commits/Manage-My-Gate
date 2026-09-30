@@ -2,6 +2,7 @@ import Poll from './poll.model.js';
 import PollVote from './pollVote.model.js';
 import mongoose from 'mongoose';
 import HttpError from '../../utils/httpError.utils.js';
+import { escapeRegex } from '../../utils/regex.utils.js';
 
 export const createPoll = async (pollData, session = null) => {
   if (session && !session._isMockSession) {
@@ -62,7 +63,7 @@ const buildMatchStage = (baseMatch, search, userContext = null, audienceOr = nul
   const conditions = [baseMatch];
 
   if (search) {
-    conditions.push({ question: { $regex: search, $options: 'i' } });
+    conditions.push({ question: { $regex: escapeRegex(search), $options: 'i' } });
   }
 
   if (userContext && !userContext.isCommunityAdmin) {

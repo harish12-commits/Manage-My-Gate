@@ -148,7 +148,7 @@ export class PaymentConfigResolver {
           if (cred.authTag) {
             decryptedCreds[cred.key] = decryptGCM(cred.encryptedValue, cred.iv, cred.authTag);
           } else {
-            decryptedCreds[cred.key] = decrypt(cred.encryptedValue, cred.iv);
+            decryptedCreds[cred.key] = decrypt(cred.encryptedValue, cred.iv, cred.authTag);
           }
         }
 
@@ -273,3 +273,4 @@ export class PaymentConfigResolver {
 export const paymentConfigResolver = new PaymentConfigResolver();
 
 export default paymentConfigResolver;
+

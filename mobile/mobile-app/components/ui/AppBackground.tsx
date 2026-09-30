@@ -25,6 +25,9 @@ export const AppBackground: React.FC<AppBackgroundProps> = memo(({ style }) => {
     <View
       style={[StyleSheet.absoluteFill, style]}
       pointerEvents="none"
+      // Static artwork: cache it as a bitmap so it is not re-rasterised on every screen frame.
+      renderToHardwareTextureAndroid
+      shouldRasterizeIOS
     >
       <Svg
         width="100%"

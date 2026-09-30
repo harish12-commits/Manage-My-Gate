@@ -5,7 +5,6 @@ import {
   ScrollView,
   Modal,
   TouchableOpacity,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -26,6 +25,7 @@ import {
   parseBackendError,
   ValidationStatus,
 } from '@/src/utils/validation';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 interface InviteUserModalProps {
   visible: boolean;
@@ -443,7 +443,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
                   <View>
                     {loadingRoles ? (
                       <View className="py-3 items-center justify-center">
-                        <ActivityIndicator size="small" color="#FF5E00" />
+                        <AppLoader variant="inline" />
                         <Text className="text-xs text-muted-foreground mt-1">{t('loading', 'Loading roles...')}</Text>
                       </View>
                     ) : (
@@ -464,7 +464,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
                     <View>
                       {loadingVillas ? (
                         <View className="py-3 items-center justify-center">
-                          <ActivityIndicator size="small" color="#FF5E00" />
+                          <AppLoader variant="inline" />
                           <Text className="text-xs text-muted-foreground mt-1">
                             {t('loading', 'Loading villas...')}
                           </Text>

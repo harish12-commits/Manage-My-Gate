@@ -811,7 +811,7 @@ export class PlatformQuoteService {
       if (smtpIntegration && smtpIntegration.credentials && smtpIntegration.credentials.length > 0) {
         const getCred = (key) => {
           const cred = smtpIntegration.credentials.find((c) => c.key === key);
-          return cred ? decrypt(cred.encryptedValue, cred.iv) : null;
+          return cred ? decrypt(cred.encryptedValue, cred.iv, cred.authTag) : null;
         };
         host = getCred('host') || envHost;
         port = parseInt(getCred('port') || envPort, 10);
@@ -870,7 +870,7 @@ export class PlatformQuoteService {
             resendIntegration = await IntegrationHub.findOne({ provider: 'resend' });
           }
 
-          const resendApiKey = process.env.RESEND_API_KEY || (resendIntegration && resendIntegration.credentials ? decrypt(resendIntegration.credentials.find((c) => c.key === 'apiKey')?.encryptedValue, resendIntegration.credentials.find((c) => c.key === 'apiKey')?.iv) : null);
+          const resendApiKey = process.env.RESEND_API_KEY || (resendIntegration && resendIntegration.credentials ? decrypt(resendIntegration.credentials.find((c) => c.key === 'apiKey')?.encryptedValue, resendIntegration.credentials.find((c) => c.key === 'apiKey')?.iv, resendIntegration.credentials.find((c) => c.key === 'apiKey')?.authTag) : null);
 
           if (resendApiKey) {
             const resendRes = await fetch('https://api.resend.com/emails', {
@@ -965,3 +965,5 @@ export class PlatformQuoteService {
 }
 
 export default new PlatformQuoteService();
+
+

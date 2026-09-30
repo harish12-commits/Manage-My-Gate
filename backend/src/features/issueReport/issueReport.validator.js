@@ -1,5 +1,6 @@
 import { body, query, param } from 'express-validator';
-import { REPORT_TYPES, REPORT_MODULES, SUPPORTED_PLATFORMS } from './issueReport.constants.js';
+import { ATTACHMENT_FILENAME_PATTERN } from './middlewares/upload.middleware.js';
+import { REPORT_TYPES, REPORT_MODULES, SUPPORTED_PLATFORMS, REPORT_SOURCES, SORTABLE_FIELDS } from './issueReport.constants.js';
 
 export const createReportRules = [
   // 1. Report Type Validation
@@ -45,6 +46,11 @@ export const createReportRules = [
       }
       return true;
     }),
+
+  body('source')
+    .optional({ nullable: true, checkFalsy: true })
+    .isIn(REPORT_SOURCES)
+    .withMessage(`Invalid source. Allowed values: ${REPORT_SOURCES.join(', ')}`),
 
   // 5. Technical Context Sanitization & Validation
   body('technicalContext')
@@ -123,6 +129,16 @@ export const queryPlatformReportsRules = [
     .isMongoId()
     .withMessage('organisationId must be a valid Mongo ID.'),
 
+  query('sortBy')
+    .optional({ nullable: true, checkFalsy: true })
+    .isIn(SORTABLE_FIELDS)
+    .withMessage(`Invalid sortBy. Allowed values: ${SORTABLE_FIELDS.join(', ')}`),
+
+  query('sortOrder')
+    .optional({ nullable: true, checkFalsy: true })
+    .isIn(['asc', 'desc'])
+    .withMessage('sortOrder must be asc or desc.'),
+
   query('search')
     .optional({ nullable: true, checkFalsy: true })
     .isString()
@@ -138,6 +154,12 @@ export const queryPlatformReportsRules = [
     .optional({ nullable: true, checkFalsy: true })
     .isISO8601()
     .withMessage('endDate must be a valid ISO 8601 date.'),
+];
+
+export const getAttachmentRules = [
+  param('filename')
+    .matches(ATTACHMENT_FILENAME_PATTERN)
+    .withMessage('Invalid attachment file name.'),
 ];
 
 export const getReportByIdRules = [

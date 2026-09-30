@@ -98,7 +98,7 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: guestPassType === 'default' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Default Pass
@@ -120,7 +120,7 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: guestPassType === 'id_proof' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 By ID Proof
@@ -286,7 +286,7 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: cabUsageType === 'one_time' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 One-time Pass
@@ -308,7 +308,7 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: cabUsageType === 'multi_use' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Multi-use Pass
@@ -351,7 +351,7 @@ export const InvitationForm = ({
                       ? '0 1px 3px rgba(0,0,0,0.1)'
                       : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Delivery / Order
@@ -377,7 +377,7 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: formData.cabCategory === 'cab' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Cab / Taxi
@@ -566,7 +566,7 @@ export const InvitationForm = ({
                               ? 'var(--primary, #0084FF)'
                               : 'var(--text-muted, #64748B)',
                             cursor: 'pointer',
-                            transition: 'all 0.2s',
+                            transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                           }}
                         >
                           {day.name}
@@ -701,7 +701,7 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: servicePassType === 'default' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Default Pass
@@ -723,7 +723,7 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: servicePassType === 'id_proof' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 By ID Proof
@@ -758,7 +758,7 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: serviceUsageType === 'one_time' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 One-time Pass
@@ -781,7 +781,7 @@ export const InvitationForm = ({
                   boxShadow:
                     serviceUsageType === 'multi_use' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Multi-use Pass
@@ -952,7 +952,7 @@ export const InvitationForm = ({
                               ? 'var(--primary, #0084FF)'
                               : 'var(--text-muted, #64748B)',
                             cursor: 'pointer',
-                            transition: 'all 0.2s',
+                            transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                           }}
                         >
                           {day.name}

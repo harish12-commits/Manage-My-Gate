@@ -1,6 +1,7 @@
 import amenityRepository from './amenity.repository.js';
 import { amenityEventEmitter, AMENITY_CREATED, AMENITY_UPDATED, AMENITY_DELETED } from './amenity.events.js';
 import HttpError from '../../utils/httpError.utils.js';
+import { escapeRegex } from '../../utils/regex.utils.js';
 
 export class AmenityService {
   async getAllAmenities(orgId, filters = {}) {
@@ -8,16 +9,16 @@ export class AmenityService {
     
     const dbFilter = { isDeleted: false };
     if (filters.status) dbFilter.status = filters.status;
-    if (filters.category && filters.category !== 'All') dbFilter.type = { $regex: new RegExp(filters.category, 'i') };
+    if (filters.category && filters.category !== 'All') dbFilter.type = { $regex: new RegExp(escapeRegex(filters.category), 'i') };
     if (filters.capacity) {
       const cap = parseInt(filters.capacity, 10);
       if (!isNaN(cap)) dbFilter.capacity = { $gte: cap };
     }
     if (filters.search) {
       dbFilter.$or = [
-        { name: { $regex: new RegExp(filters.search, 'i') } },
-        { location: { $regex: new RegExp(filters.search, 'i') } },
-        { type: { $regex: new RegExp(filters.search, 'i') } }
+        { name: { $regex: new RegExp(escapeRegex(filters.search), 'i') } },
+        { location: { $regex: new RegExp(escapeRegex(filters.search), 'i') } },
+        { type: { $regex: new RegExp(escapeRegex(filters.search), 'i') } }
       ];
     }
     
@@ -846,15 +847,15 @@ export class AmenityService {
 
   async searchAvailableAmenities(orgId, dateStr, startTime, endTime, filters = {}) {
     const dbFilter = { status: 'active' };
-    if (filters.category && filters.category !== 'All') dbFilter.type = { $regex: new RegExp(filters.category, 'i') };
+    if (filters.category && filters.category !== 'All') dbFilter.type = { $regex: new RegExp(escapeRegex(filters.category), 'i') };
     if (filters.capacity) {
       const cap = parseInt(filters.capacity, 10);
       if (!isNaN(cap)) dbFilter.capacity = { $gte: cap };
     }
     if (filters.search) {
       dbFilter.$or = [
-        { name: { $regex: new RegExp(filters.search, 'i') } },
-        { location: { $regex: new RegExp(filters.search, 'i') } }
+        { name: { $regex: new RegExp(escapeRegex(filters.search), 'i') } },
+        { location: { $regex: new RegExp(escapeRegex(filters.search), 'i') } }
       ];
     }
     

@@ -193,7 +193,7 @@ const DefaultLayout = () => {
                     borderRadius: '10px',
                     cursor: 'pointer',
                     boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
-                    transition: 'all 0.2s ease'
+                    transition: 'color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, width 0.2s ease, height 0.2s ease, max-height 0.2s ease'
                   }}
                 >
                   {isRenewing ? 'Processing Renewal...' : '💳 Renew Subscription Now & Restore Access'}

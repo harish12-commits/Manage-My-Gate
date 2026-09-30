@@ -134,7 +134,7 @@ const ResidentBookingModal = memo(({ visible, onClose, amenities, onSlotSelect }
                 style={{
                   backgroundColor: selectedAmenityId !== a._id ? 'var(--bg-secondary)' : '',
                   border: selectedAmenityId === a._id ? 'none' : '1px solid var(--border-light)',
-                  transition: 'all 0.2s',
+                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                   fontWeight: selectedAmenityId === a._id ? '600' : '400',
                 }}
               >
@@ -295,7 +295,7 @@ const ResidentBookingModal = memo(({ visible, onClose, amenities, onSlotSelect }
                               flexDirection: 'column',
                               alignItems: 'center',
                               gap: '6px',
-                              transition: 'all 0.2s ease',
+                              transition: 'color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, width 0.2s ease, height 0.2s ease, max-height 0.2s ease',
                             }}
                             className={isAvailable ? 'slot-hover' : ''}
                           >

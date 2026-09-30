@@ -1,5 +1,6 @@
 export * from './ActionBar';
 export * from './ActionGrid';
+export * from './AppLoader';
 export * from './AttachmentPicker';
 export * from './BottomSheet';
 export * from './ConfirmationModal';

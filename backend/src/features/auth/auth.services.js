@@ -1789,10 +1789,10 @@ export class AuthService {
 
     if (firebaseIntegration) {
       // Proxy request to Google Identity Toolkit
-      const { decrypt } = await import('../integrationHub/utils/crypto.util.js');
+      const { decryptCredential } = await import('../integrationHub/utils/crypto.util.js');
       const apiKeyCred = firebaseIntegration.credentials.find(c => c.key === 'apiKey');
       if (apiKeyCred) {
-        const apiKey = decrypt(apiKeyCred.encryptedValue, apiKeyCred.iv);
+        const apiKey = decryptCredential(apiKeyCred);
         
         const url = `https://identitytoolkit.googleapis.com/v1/accounts:sendVerificationCode?key=${apiKey}`;
         const response = await fetch(url, {
@@ -1867,9 +1867,9 @@ export class AuthService {
         const firebaseIntegration = await integrationHubService.getGlobalConnectionByProvider('firebase', session);
         if (!firebaseIntegration) throw new HttpError(400, 'Firebase configuration missing.');
         
-        const { decrypt } = await import('../integrationHub/utils/crypto.util.js');
+        const { decryptCredential } = await import('../integrationHub/utils/crypto.util.js');
         const apiKeyCred = firebaseIntegration.credentials.find(c => c.key === 'apiKey');
-        const apiKey = decrypt(apiKeyCred.encryptedValue, apiKeyCred.iv);
+        const apiKey = decryptCredential(apiKeyCred);
 
         const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPhoneNumber?key=${apiKey}`;
         const response = await fetch(url, {

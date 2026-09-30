@@ -16,7 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { store } from '../src/store/store';
-import { View, ActivityIndicator, I18nManager, TouchableOpacity, Linking, Platform, LogBox } from 'react-native';
+import { View, I18nManager, TouchableOpacity, Linking, Platform, LogBox } from 'react-native';
 import { AlertTriangle, Mail } from 'lucide-react-native';
 import { Text } from '@/components/ui/text';
 
@@ -80,6 +80,8 @@ import { clearPendingRoute, setPendingRoute } from '../src/features/notification
 import { useGlobalAppSocket } from '../src/hooks/useGlobalAppSocket';
 import { getDeferredHandoffContext } from '../src/features/auth/services/deferredDeepLinkService';
 import { GlobalNotificationPresenter } from '@/components/feedback/GlobalNotificationPresenter';
+import { AnimatedSplash } from '@/components/feedback/AnimatedSplash';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 // Prevent splash screen from auto-hiding before asset loading is complete
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -372,7 +374,7 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colorScheme === 'dark' ? '#131316' : '#FFF8EF' }}>
-        <ActivityIndicator size="large" color="#F45A0A" />
+        <AppLoader variant="block" />
       </View>
     );
   }
@@ -388,10 +390,11 @@ export default function RootLayout() {
                   style={colorScheme === 'dark' ? 'light' : 'dark'}
                   {...({ backgroundColor: colorScheme === 'dark' ? '#131316' : '#FFF8EF' } as any)}
                 />
-                <Stack screenOptions={{ headerShown: false }} />
+                <Stack screenOptions={{ headerShown: false, freezeOnBlur: true }} />
                 <AuthRouteGuard />
                 <GlobalNotificationPresenter />
                 <PortalHost />
+                <AnimatedSplash />
               </BottomSheetModalProvider>
             </I18nProvider>
           </Provider>

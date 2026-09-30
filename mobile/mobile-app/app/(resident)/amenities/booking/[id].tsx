@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import amenityManagementService from '../../../../src/features/amenities/service
 import { normalizeFacilityFromApi } from '../../../../src/features/amenities/utils/amenityPayloadMappers';
 import { AmenityBookingWizard } from '../../../../src/features/amenities/components/wizard/AmenityBookingWizard';
 import { AlertTriangle, ArrowLeft } from 'lucide-react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export default function AmenityBookingRoute() {
   // `date` (YYYY-MM-DD) pre-selects a day, e.g. when arriving from the calendar.
@@ -77,7 +78,7 @@ export default function AmenityBookingRoute() {
     return (
       <ScreenShell title="Reserve Facility" subtitle="Loading facility..." loading>
         <View className="flex-1 items-center justify-center p-6">
-          <ActivityIndicator size="large" className="text-primary" />
+          <AppLoader variant="block" />
           <Text variant="muted" className="text-sm mt-3">Fetching facility details...</Text>
         </View>
       </ScreenShell>

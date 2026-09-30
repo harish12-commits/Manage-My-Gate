@@ -1,4 +1,5 @@
 import VisitorPassToken from './visitorPassToken.model.js';
+import { escapeRegex } from '../../utils/regex.utils.js';
 
 export class VisitorPassTokenRepository {
   /**
@@ -30,7 +31,7 @@ export class VisitorPassTokenRepository {
         { passCode: clean },
         { shortKey: raw },
         { shortKey: clean },
-        { passCode: { $regex: new RegExp(`_${clean}$`, 'i') } },
+        { passCode: { $regex: new RegExp(`_${escapeRegex(clean)}$`, 'i') } },
       ],
     }).session(session || null);
   }

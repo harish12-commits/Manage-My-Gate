@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { BottomSheet } from '../../../../components/ui/BottomSheet';
 import { Button } from '../../../../components/ui/button';
 import { Icon } from '../../../../components/ui/icon';
@@ -10,6 +10,7 @@ import { RoleData } from '../services/roleService';
 import { useRoleForm } from '../hooks/useRoleForm';
 import PermissionMatrixGrid from './PermissionMatrixGrid';
 import RoleIntegrationConfigurator from './RoleIntegrationConfigurator';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 interface RoleFormSheetModalProps {
   visible: boolean;
@@ -149,7 +150,7 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
           <View className="mt-1">
             {isPermissionsLoading ? (
               <View className="py-6 items-center justify-center bg-card rounded-2xl border border-border">
-                <ActivityIndicator size="small" color="#03A9F4" />
+                <AppLoader variant="inline" />
                 <Text className="text-xs text-muted-foreground mt-2">Loading permissions matrix...</Text>
               </View>
             ) : (

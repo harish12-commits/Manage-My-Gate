@@ -1,6 +1,9 @@
 import issueReportConfigRepository from './issueReportConfig.repository.js';
 import HttpError from '../../utils/httpError.utils.js';
 
+// Exactly one plain address: no whitespace, list separators, display names or header-injection characters.
+export const SINGLE_EMAIL_REGEX = /^[^\s@,;<>"'()\\]+@[^\s@,;<>"'()\\]+\.[^\s@,;<>"'()\\]+$/;
+
 export class IssueReportConfigService {
   /**
    * Retrieve the current platform admin issue report email configuration.
@@ -37,8 +40,7 @@ export class IssueReportConfigService {
 
     // Sanitize and validate email address syntax if provided
     if (rawEmail) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(rawEmail)) {
+      if (rawEmail.length > 254 || !SINGLE_EMAIL_REGEX.test(rawEmail)) {
         throw new HttpError(400, 'Invalid email address format.');
       }
     }
@@ -54,9 +56,12 @@ export class IssueReportConfigService {
    * @param {string} overrideEmail - Optional email to send test to (instead of saved config)
    */
   async sendTestEmail(overrideEmail) {
-    const targetEmail = overrideEmail || await this.getPlatformReportEmail();
+    const targetEmail = String(overrideEmail || await this.getPlatformReportEmail()).trim().toLowerCase();
     if (!targetEmail) {
       throw new HttpError(400, 'No email configured to receive the test.');
+    }
+    if (targetEmail.length > 254 || !SINGLE_EMAIL_REGEX.test(targetEmail)) {
+      throw new HttpError(400, 'Invalid email address format.');
     }
     
     const { sendEmail } = await import('../../utils/email.utils.js');

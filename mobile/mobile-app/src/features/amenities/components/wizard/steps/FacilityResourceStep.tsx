@@ -4,11 +4,12 @@
  */
 
 import React from 'react';
-import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { AmenityFacility, AmenityResource } from '../../../types/amenityDomain.types';
 import { CheckCircle2, Circle } from 'lucide-react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface FacilityResourceStepProps {
   facility: AmenityFacility;
@@ -52,7 +53,7 @@ export function FacilityResourceStep({
 
       {loading ? (
         <View className="py-8 items-center justify-center">
-          <ActivityIndicator size="small" className="text-primary" />
+          <AppLoader variant="inline" />
           <Text variant="muted" className="text-xs mt-2">Loading available resources...</Text>
         </View>
       ) : availableResources.length === 0 ? (

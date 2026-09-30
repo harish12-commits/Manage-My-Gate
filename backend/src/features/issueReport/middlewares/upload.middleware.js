@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import HttpError from '../../../utils/httpError.utils.js';
 
@@ -10,6 +11,12 @@ const __dirname = path.dirname(__filename);
 // Resolve target upload directory relative to project root (4 levels up from features/issueReport/middlewares)
 const projectRoot = path.resolve(__dirname, '../../../..');
 const uploadDir = path.resolve(projectRoot, 'uploads/issueReports');
+
+/** Absolute directory holding issue report screenshots (private; served only via the authenticated endpoint). */
+export const UPLOAD_ROOT = uploadDir;
+
+/** Generated attachment file names: rep-<uuid>.<ext> (legacy: rep-<timestamp>-<n>.<ext>) */
+export const ATTACHMENT_FILENAME_PATTERN = /^rep-[A-Za-z0-9-]{8,64}\.(jpg|png|webp)$/;
 
 // Ensure upload directory exists
 if (!fs.existsSync(uploadDir)) {
@@ -21,7 +28,7 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const uniqueSuffix = crypto.randomUUID();
     let ext = path.extname(file.originalname || '').toLowerCase();
     if (!ext || !['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
       const mime = (file.mimetype || '').toLowerCase();

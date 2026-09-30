@@ -134,9 +134,19 @@ export const decryptGCM = (encryptedText, ivHex, authTagHex) => {
   return decrypted;
 };
 
+/**
+ * Decrypts a stored credential entry of either format: AES-256-GCM (has authTag) or legacy CBC.
+ * @param {{encryptedValue: string, iv: string, authTag?: string}} cred
+ * @returns {string}
+ */
+export const decryptCredential = (cred) =>
+  cred.authTag ? decryptGCM(cred.encryptedValue, cred.iv, cred.authTag) : decrypt(cred.encryptedValue, cred.iv, cred.authTag);
+
 export default {
   encrypt,
   decrypt,
   encryptGCM,
-  decryptGCM
+  decryptGCM,
+  decryptCredential
 };
+

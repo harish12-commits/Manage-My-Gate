@@ -1,6 +1,7 @@
 import razorpayProvider from './razorpay.provider.js';
 import mockProvider from './mock.provider.js';
 import PaymentProviderInterface from './PaymentProviderInterface.js';
+import { isMockPaymentAllowed } from '../utils/mockGuard.js';
 import logger from '../../../utils/logger.utils.js';
 import HttpError from '../../../utils/httpError.utils.js';
 
@@ -76,7 +77,7 @@ export class PaymentProviderFactory {
       return this._providers.get(selected);
     }
 
-    if (options.fallbackToMock) {
+    if (options.fallbackToMock && isMockPaymentAllowed()) {
       logger.warn(
         `Unknown payment provider '${selected}'. Falling back to mock provider. Supported providers: ${this.listSupportedProviders().join(', ')}`
       );

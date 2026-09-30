@@ -272,7 +272,7 @@ const styles = {
     borderRadius: '8px',
     boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
     color: '#ffffff',
-    transition: 'all 0.2s',
+    transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
   },
   backButton: {
     padding: '12px 24px',
@@ -281,7 +281,7 @@ const styles = {
     borderRadius: '8px',
     color: '#6b7280',
     border: '1px solid #d1d5db',
-    transition: 'all 0.2s',
+    transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
     minWidth: '100px',
   },
   submitButtonDisabled: {

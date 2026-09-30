@@ -1,10 +1,17 @@
 import fs from 'fs';
+import path from 'path';
 import mongoose from 'mongoose';
 import issueReportRepository from './issueReport.repository.js';
 import organizationService from '../organization/organization.services.js';
 import issueReportEventEmitter, { ISSUE_REPORT_EVENTS } from './issueReport.events.js';
 import HttpError from '../../utils/httpError.utils.js';
 import logger from '../../utils/logger.utils.js';
+import { REPORT_SOURCES, SORTABLE_FIELDS } from './issueReport.constants.js';
+import { UPLOAD_ROOT, ATTACHMENT_FILENAME_PATTERN } from './middlewares/upload.middleware.js';
+
+const buildSort = (sortBy, sortOrder) => ({
+  [SORTABLE_FIELDS.includes(sortBy) ? sortBy : 'createdAt']: sortOrder === 'asc' ? 1 : -1,
+});
 
 export class IssueReportService {
   /**
@@ -23,9 +30,11 @@ export class IssueReportService {
       throw new HttpError(401, 'Authentication required to submit an issue report.');
     }
 
-    // 1. Idempotency Check: Prevent double-submits with identical X-Request-ID
+    const userId = authenticatedUser.id || authenticatedUser._id;
+
+    // 1. Idempotency Check: Prevent double-submits with identical key (scoped to this reporter)
     if (clientRequestId) {
-      const existing = await issueReportRepository.findByClientRequestId(clientRequestId);
+      const existing = await issueReportRepository.findByClientRequestId(userId, clientRequestId);
       if (existing) {
         logger.info(`[IssueReport] Duplicate submission detected for clientRequestId: ${clientRequestId}, returning existing report: ${existing.reportNumber}`);
         // Clean up redundant file uploaded on duplicate request
@@ -40,7 +49,6 @@ export class IssueReportService {
     }
 
     // 2. Strict Context Extraction (Never trusted from client request body)
-    const userId = authenticatedUser.id || authenticatedUser._id;
     const userEmail = authenticatedUser.email || '';
     const userPhone = authenticatedUser.phone || authenticatedUser.mobile || '';
     const userName = authenticatedUser.name || authenticatedUser.firstName || authenticatedUser.username || (authenticatedUser.email ? authenticatedUser.email.split('@')[0] : (userPhone || 'User'));
@@ -125,7 +133,7 @@ export class IssueReportService {
         description: String(reportPayload.description || '').trim(),
         attachments,
         technicalContext: cleanTechnicalContext,
-        source: reportPayload.source || 'MOBILE_APP',
+        source: REPORT_SOURCES.includes(reportPayload.source) ? reportPayload.source : 'MOBILE_APP',
         clientRequestId: clientRequestId || undefined,
       };
 
@@ -151,6 +159,14 @@ export class IssueReportService {
         createdAt: savedReport.createdAt,
       };
     } catch (saveError) {
+      // Concurrent duplicate submit (unique reporter + key index): return the report that won the race.
+      if (saveError?.code === 11000 && clientRequestId) {
+        const existing = await issueReportRepository.findByClientRequestId(userId, clientRequestId);
+        if (existing) {
+          if (file && file.path && fs.existsSync(file.path)) fs.unlink(file.path, () => {});
+          return { reportNumber: existing.reportNumber, createdAt: existing.createdAt };
+        }
+      }
       // 6. File Cleanup on Database Failure
       if (file && file.path && fs.existsSync(file.path)) {
         fs.unlink(file.path, (unlinkErr) => {
@@ -183,7 +199,7 @@ export class IssueReportService {
       sortOrder = 'desc',
     } = queryParams;
 
-    const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+    const sort = buildSort(sortBy, sortOrder);
 
     return await issueReportRepository.findPlatformReports({
       search,
@@ -243,7 +259,7 @@ export class IssueReportService {
       sortOrder = 'desc',
     } = queryParams;
 
-    const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+    const sort = buildSort(sortBy, sortOrder);
 
     // Always overwrite organisationId with the authenticated tenant orgId boundary
     return await issueReportRepository.findPlatformReports({
@@ -281,6 +297,37 @@ export class IssueReportService {
     }
 
     return report;
+  }
+
+  /**
+   * Resolve an attachment file for an authorized viewer.
+   * Platform users may read any report's attachment; everyone else only their own organization's.
+   *
+   * @param {string} filename - Stored attachment file name
+   * @param {{ orgId?: string, isPlatform?: boolean }} tenant - req.tenant
+   * @returns {Promise<{ filePath: string, mimeType: string }>}
+   */
+  async getAttachmentFile(filename, tenant = {}) {
+    if (!filename || !ATTACHMENT_FILENAME_PATTERN.test(filename)) {
+      throw new HttpError(400, 'Invalid attachment file name.');
+    }
+
+    const orgScope = tenant.isPlatform === true ? null : tenant.orgId;
+    if (!orgScope && tenant.isPlatform !== true) {
+      throw new HttpError(400, 'Valid workspace organization context is required.');
+    }
+
+    const match = await issueReportRepository.findAttachment(filename, orgScope);
+    if (!match) {
+      throw new HttpError(404, 'Attachment not found.');
+    }
+
+    const filePath = path.join(UPLOAD_ROOT, path.basename(filename));
+    if (!fs.existsSync(filePath)) {
+      throw new HttpError(404, 'Attachment not found.');
+    }
+
+    return { filePath, mimeType: match.attachment.mimeType };
   }
 }
 

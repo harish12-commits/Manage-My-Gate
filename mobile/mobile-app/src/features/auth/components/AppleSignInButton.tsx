@@ -1,8 +1,9 @@
 import * as React from 'react';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { SocialAuthButton } from '@/components/auth/SocialAuthButton';
 import { useAppleAuthSession } from '../hooks/useAppleAuthSession';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface AppleSignInButtonProps {
   inviteToken?: string;
@@ -49,7 +50,7 @@ export function AppleSignInButton(props: AppleSignInButtonProps = {}) {
       />
       {loading ? (
         <View pointerEvents="none" className="absolute inset-0 items-center justify-center">
-          <ActivityIndicator size="small" color="#000000" />
+          <AppLoader variant="inline" />
         </View>
       ) : null}
     </View>

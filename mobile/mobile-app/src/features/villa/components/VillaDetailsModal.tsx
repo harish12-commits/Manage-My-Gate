@@ -15,6 +15,7 @@ import { fetchUsers, inviteUser, UserData } from '@/src/features/userManagement/
 import { PhoneInput } from '@/components/forms/PhoneInput';
 import { ContactPickerButton } from '@/components/forms/ContactPickerButton';
 import { validatePhone } from '@/src/utils/validation';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 interface VillaDetailsModalProps {
   visible: boolean;
@@ -441,7 +442,7 @@ export const VillaDetailsModal: React.FC<VillaDetailsModalProps> = ({
 
                   {usersLoading ? (
                     <View className="py-4 items-center justify-center">
-                      <ActivityIndicator size="small" color="#0d9488" />
+                      <AppLoader variant="inline" />
                       <Text variant="muted" className="text-xs mt-1">Loading community members...</Text>
                     </View>
                   ) : (

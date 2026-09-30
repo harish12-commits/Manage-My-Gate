@@ -170,7 +170,7 @@ const ConversationsView = () => {
                     border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
                     backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease'
+                    transition: 'color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease, width 0.15s ease, height 0.15s ease, max-height 0.15s ease'
                   }}
                 >
                   <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>{inq.organizationName || 'Organization'}</div>

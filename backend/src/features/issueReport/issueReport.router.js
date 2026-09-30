@@ -6,10 +6,12 @@ import {
   createReportRules,
   queryPlatformReportsRules,
   getReportByIdRules,
+  getAttachmentRules,
 } from './issueReport.validator.js';
 import isAuthenticated from '../../middlewares/auth.middleware.js';
 import tenantContext from '../../middlewares/tenant.middleware.js';
 import { authorizeRoles } from '../../middlewares/rbac.middleware.js';
+import { reportSubmitLimiter } from '../../middlewares/rateLimiter.middleware.js';
 
 // Primary router mounted at /support/reports
 const router = Router();
@@ -23,6 +25,7 @@ router.post(
   '/',
   isAuthenticated,
   tenantContext(),
+  reportSubmitLimiter,
   upload.single('screenshot'),
   imageSignatureValidator,
   validate(createReportRules),
@@ -55,6 +58,20 @@ router.get(
   authorizeRoles('Admin', 'Community Admin', 'Facility Manager', 'Super Admin', 'Platform Admin', 'Platform Super Admin'),
   validate(getReportByIdRules),
   issueReportController.getCommunityReportById.bind(issueReportController)
+);
+
+/**
+ * @route   GET /api/v1/support/reports/attachments/:filename
+ * @desc    Download a report screenshot (private; org-scoped for community admins, global for platform)
+ * @access  Private (Authenticated Active User + Tenant Context + Admin Role)
+ */
+router.get(
+  '/attachments/:filename',
+  isAuthenticated,
+  tenantContext(),
+  authorizeRoles('Admin', 'Community Admin', 'Facility Manager', 'Super Admin', 'Platform Admin', 'Platform Super Admin'),
+  validate(getAttachmentRules),
+  issueReportController.getAttachment.bind(issueReportController)
 );
 
 // Platform Admin router mounted at /platform/reports
