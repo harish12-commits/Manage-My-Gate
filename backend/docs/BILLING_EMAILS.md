@@ -30,7 +30,7 @@
 
 - [ ] `PUBLIC_APP_URL` (optional) — the public web origin for links. Defaults to `https://$MOBILE_UNIVERSAL_LINK_DOMAIN` (`app.managemygate.com`). The web server must proxy `/api` to the backend (already the case in `frontend/nginx.conf`).
 - [ ] `JWT_SECRET` must be set. Pay tokens use a key derived from it, so rotating it expires all emailed pay links (residents can still pay in the app).
-- [ ] **Razorpay webhook** → `POST /api/invoices/webhook` with event `payment_link.paid`, per community account.
+- [ ] **Razorpay webhook** (per community's Razorpay account) → `POST https://<api-domain>/api/payments/webhook`, events `payment.captured`, `payment.failed` and `payment_link.paid`. The community's webhook secret goes in Integration Hub → Razorpay (falls back to `RAZORPAY_WEBHOOK_SECRET`). Link payments are settled through the same settlement/ledger path as app payments and are idempotent per gateway payment id.
 - [ ] **iOS universal links**: replace `<APPLE_TEAM_ID>` in `apple-app-site-association` (frontend and backend copies). Until then iOS opens the web landing page, which still works.
 - [ ] **Android app links**: `/billing` is in `app.json` intent filters, so a **new EAS build** is required.
 - [ ] Deploy the web frontend (new public route `/billing/invoice/:id`).

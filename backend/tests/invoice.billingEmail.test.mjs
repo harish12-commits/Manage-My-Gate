@@ -16,6 +16,11 @@ const { default: Invoice } = await import('../src/features/invoice/invoice.model
 const { default: paymentService } = await import('../src/features/payment/payment.service.js');
 const { default: userService } = await import('../src/features/user/user.services.js');
 const payLink = await import('../src/features/invoice/invoicePayLink.service.js');
+// Settlement writes these inside a transaction; register them so the fixture can create collections + indexes first.
+await import('../src/features/ledger/financialLedgerEntry.model.js');
+await import('../src/features/ledger/ledger.model.js');
+await import('../src/features/wallet/wallet.model.js');
+await import('../src/features/payment/payment.model.js');
 
 const DB_URI = (process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mmg').replace(/\/[^/?]+(\?|$)/, '/mmg_billing_email_test$1');
 let dbReady = false;
@@ -28,6 +33,11 @@ before(async () => {
   try {
     await mongoose.connect(DB_URI, { serverSelectionTimeoutMS: 3000 });
     await mongoose.connection.db.dropDatabase();
+    // Transactions cannot create collections implicitly: pre-create every registered model collection.
+    for (const model of Object.values(mongoose.models)) {
+      await model.createCollection().catch(() => {});
+      await model.ensureIndexes().catch(() => {});
+    }
     dbReady = true;
   } catch {
     dbReady = false;
@@ -63,6 +73,10 @@ const makeInvoice = (overrides = {}) =>
     communityId: orgId,
     targetUserId: new mongoose.Types.ObjectId(),
     invoiceNumber: `INV-${Math.random().toString(36).slice(2, 8)}`,
+    unitId: new mongoose.Types.ObjectId(),
+    assessmentId: new mongoose.Types.ObjectId(),
+    billingPeriodString: '2026-10',
+    currentCharge: 1500,
     currency: 'INR',
     totalAmount: 1500,
     totalDue: 1500,
@@ -334,5 +348,70 @@ describe('GET /api/billing-links/:token/pay', () => {
     const res = await fetch(`${base}/not-a-token/pay`, { redirect: 'manual' });
     assert.equal(res.status, 410);
     assert.match(await res.text(), /expired/);
+  });
+});
+
+// ── P4: a Payment Link payment settles the invoice through the live webhook ──
+const { default: unifiedPaymentService } = await import('../src/features/payment/unifiedPayment.service.js');
+const { default: Payment } = await import('../src/features/payment/payment.model.js');
+
+describe('payment_link.paid webhook', () => {
+  const outbox = [];
+  const prevEnv = process.env.NODE_ENV;
+  before(() => {
+    process.env.NODE_ENV = 'test'; // processWebhook skips HMAC verification in test
+    messageTemplateService.getTemplateByPurpose = async () => null;
+    emailMod.setEmailSender(async (org, to, subject) => { outbox.push({ to, subject }); return true; });
+  });
+  after(() => { process.env.NODE_ENV = prevEnv; emailMod.setEmailSender(); });
+  beforeEach(() => { outbox.length = 0; cancelled.length = 0; });
+
+  const linkEvent = (invoiceId, payId, { form = 'payment_link.paid', amountPaise = 150000 } = {}) => {
+    const notes = { invoiceId: String(invoiceId), orgId: String(orgId) };
+    const paymentEntity = { id: payId, amount: amountPaise, currency: 'INR', status: 'captured', order_id: `order_${payId}`, method: 'upi', notes };
+    const body = form === 'payment_link.paid'
+      ? { event: 'payment_link.paid', payload: { payment_link: { entity: { id: 'plink_1', reference_id: `${invoiceId}-1`, amount: amountPaise, amount_paid: amountPaise, notes, status: 'paid' } }, payment: { entity: paymentEntity } } }
+      : { event: 'payment.captured', payload: { payment: { entity: paymentEntity } } };
+    return unifiedPaymentService.processWebhook(JSON.stringify(body), 'sig', { 'x-razorpay-event-id': `evt_${payId}` });
+  };
+
+  test('settles the invoice, records the payment once, retires the link and emails a receipt', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const id = await makeInvoice({ invoiceNumber: 'LINK-1' });
+    await payLink.ensureFreshPaymentLink(id); // the link the resident clicked
+
+    const res = await linkEvent(id, 'pay_LINK1');
+    assert.equal(res.success, true);
+    const inv = await Invoice.findById(id);
+    assert.equal(inv.status, 'PAID');
+    assert.equal(inv.outstandingAmount, 0);
+    assert.equal(await Payment.countDocuments({ gatewayTransactionId: 'pay_LINK1', status: 'success' }), 1);
+
+    const dup = await linkEvent(id, 'pay_LINK1');
+    assert.equal(dup.success, true);
+    assert.equal(await Payment.countDocuments({ gatewayTransactionId: 'pay_LINK1' }), 1, 'duplicate webhook is idempotent');
+
+    await new Promise((r) => setTimeout(r, 2000));
+    await emailMod.drainInvoiceEmailQueue();
+    assert.equal(cancelled.length, 1, 'stale Razorpay link cancelled after payment');
+    assert.equal((await Invoice.findById(id)).paymentLinkStatus, 'PAID');
+    assert.ok(outbox.some((m) => /Payment received/.test(m.subject)), 'receipt email sent');
+  });
+
+  test('the payment.captured form of a link payment also settles', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const id = await makeInvoice({ invoiceNumber: 'LINK-2' });
+    const res = await linkEvent(id, 'pay_LINK2', { form: 'payment.captured' });
+    assert.equal(res.success, true);
+    assert.equal((await Invoice.findById(id)).status, 'PAID');
+  });
+
+  test('a partial link payment leaves the balance outstanding', async (t) => {
+    if (!dbReady) return t.skip('local MongoDB not available');
+    const id = await makeInvoice({ invoiceNumber: 'LINK-3' });
+    await linkEvent(id, 'pay_LINK3', { amountPaise: 50000 });
+    const inv = await Invoice.findById(id);
+    assert.equal(inv.status, 'PARTIALLY_PAID');
+    assert.equal(inv.outstandingAmount, 1000);
   });
 });

@@ -413,9 +413,17 @@ export class UnifiedPaymentService {
     // 2. Tenant-Aware Credential Resolution for Signature Verification
     let webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
-    if (payment && payment.orgId) {
+    // Payment Link payments (invoice emails / WhatsApp) have no pre-created Payment record;
+    // their notes carry orgId + invoiceId (see paymentService.createPaymentLink).
+    const linkEntity = payload?.payment_link?.entity || null;
+    const linkNotes = linkEntity?.notes || {};
+    const linkInvoiceId = notes.invoiceId || linkNotes.invoiceId || (linkEntity?.reference_id ? String(linkEntity.reference_id).split('-')[0] : null);
+    const isInvoiceLinkPayment = !!linkInvoiceId && !notes.domain;
+    const secretOrgId = payment?.orgId || (isInvoiceLinkPayment ? notes.orgId || linkNotes.orgId : null);
+
+    if (secretOrgId) {
       const config = await paymentConfigResolver.getConfig({
-        orgId: payment.orgId,
+        orgId: secretOrgId,
         provider: 'razorpay',
       });
       if (config.webhookSecret) {
@@ -439,6 +447,26 @@ export class UnifiedPaymentService {
     }
 
     // 4. Handle Webhook Events
+
+    // 4a. Invoice Payment Link paid (either event form; settlement is idempotent per gateway payment id).
+    const isLinkEvent = event === 'payment_link.paid' || (event === 'payment.captured' && !payment && isInvoiceLinkPayment);
+    if (isLinkEvent) {
+      if (!linkInvoiceId || !razorpayPaymentId || (paymentEntity.status && paymentEntity.status !== 'captured')) {
+        logger.info('payment.webhook.link_ignored', { event, linkInvoiceId, razorpayPaymentId, status: paymentEntity.status });
+        return { success: true, message: 'Payment link webhook ignored (not a captured invoice payment)' };
+      }
+      const invoiceService = (await import('../invoice/invoice.services.js')).default;
+      const result = await invoiceService.settleInvoiceFromWebhook(linkInvoiceId, {
+        paymentId: razorpayPaymentId,
+        orderId: paymentEntity.order_id || null,
+        eventId,
+        // Razorpay 'wallet' is a third-party wallet (not the app's digital wallet); other methods fall back to RAZORPAY.
+        method: { upi: 'UPI', card: 'CARD', netbanking: 'NETBANKING' }[String(paymentEntity.method || '').toLowerCase()] || 'RAZORPAY',
+        amount: Number(paymentEntity.amount || linkEntity?.amount_paid || 0) / 100,
+      });
+      return { success: true, message: 'Invoice payment link settled', invoiceId: linkInvoiceId, paymentId: result?.payment?._id };
+    }
+
     if (event === 'payment.captured') {
       if (!payment) {
         logger.info('payment.webhook.unmatched', { orderId, razorpayPaymentId, notes });
