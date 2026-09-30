@@ -17,8 +17,10 @@ import logger from '../../utils/logger.utils.js';
  * @param {string} title - Notification title
  * @param {string} body - Notification text body
  * @param {string} actionUrl - Deep link destination URI
+ * @param {Object} reportObj - Issue report object for email template
+ * @param {Array} mailAttachments - Mail attachments for email
  */
-export async function notifyCommunityAdmins(orgId, title, body, actionUrl) {
+export async function notifyCommunityAdmins(orgId, title, body, actionUrl, reportObj = null, mailAttachments = []) {
   try {
     if (!orgId) return;
     const adminRoleNames = ['Admin', 'Community Admin', 'Facility Manager', 'FacilityManager'];
@@ -85,6 +87,20 @@ export async function notifyCommunityAdmins(orgId, title, body, actionUrl) {
           actionUrl,
           type: 'INFO',
         });
+
+        if (reportObj) {
+          const User = (await import('../user/user.model.js')).default;
+          const { default: emailService } = await import('../../utils/email.service.js');
+          const user = await User.findById(userId).select('email').lean();
+          if (user && user.email) {
+            await emailService.sendReportedIssueEmail({
+              to: user.email,
+              report: reportObj,
+              attachments: mailAttachments,
+            });
+            logger.info(`[IssueReportListener] Email sent to Community Admin ${user.email}`);
+          }
+        }
       } catch (err) {
         logger.error(`[IssueReportListener] Failed to create notification for user ${userId}:`, err.message);
       }
@@ -100,8 +116,10 @@ export async function notifyCommunityAdmins(orgId, title, body, actionUrl) {
  * @param {string} title - Notification title
  * @param {string} body - Notification text body
  * @param {string} actionUrl - Deep link destination URI
+ * @param {Object} reportObj - Issue report object for email template
+ * @param {Array} mailAttachments - Mail attachments for email
  */
-export async function notifyPlatformAdmins(title, body, actionUrl) {
+export async function notifyPlatformAdmins(title, body, actionUrl, reportObj = null, mailAttachments = []) {
   try {
     const platformUsers = await User.find({
       status: 'Active',
@@ -134,6 +152,26 @@ export async function notifyPlatformAdmins(title, body, actionUrl) {
           actionUrl,
           type: 'INFO',
         });
+
+        if (reportObj) {
+          const User = (await import('../user/user.model.js')).default;
+          const { default: emailService } = await import('../../utils/email.service.js');
+          const issueReportConfigService = (await import('../issueReportConfig/issueReportConfig.service.js')).default;
+          let configuredEmail = null;
+          try {
+            configuredEmail = await issueReportConfigService.getPlatformReportEmail();
+          } catch(e) {}
+
+          const user = await User.findById(userId).select('email').lean();
+          if (user && user.email && user.email !== configuredEmail) {
+            await emailService.sendReportedIssueEmail({
+              to: user.email,
+              report: reportObj,
+              attachments: mailAttachments,
+            });
+            logger.info(`[IssueReportListener] Email sent to Platform Admin user ${user.email}`);
+          }
+        }
       } catch (err) {
         logger.error(`[IssueReportListener] Failed to create in-app notification for Platform Admin ${userId}:`, err.message);
       }
@@ -163,11 +201,34 @@ issueReportEventEmitter.on(ISSUE_REPORT_EVENTS.REPORT_SUBMITTED, async (payload)
     const communityActionUrl = `/admin/complaints/issue-reports?reportId=${reportId}`;
     const platformActionUrl = `/platform/reports/${reportId}`;
 
+    // PREPARE REPORT OBJECT AND ATTACHMENTS FOR EMAIL
+    const report = await issueReportRepository.findById(reportId);
+    const mailAttachments = [];
+    if (report && Array.isArray(report.attachments) && report.attachments.length > 0) {
+      const projectRoot = process.cwd();
+      for (const att of report.attachments) {
+        if (!att.url) continue;
+        let localPath = att.url;
+        if (localPath.startsWith('/')) {
+          localPath = path.join(projectRoot, localPath);
+        }
+        if (fs.existsSync(localPath)) {
+          mailAttachments.push({
+            filename: att.fileName || path.basename(localPath),
+            path: localPath,
+            contentType: att.mimeType || 'image/jpeg',
+          });
+        } else {
+          logger.warn(`[IssueReportListener] Image file attachment path not found on disk: ${localPath}`);
+        }
+      }
+    }
+
     // 1. Existing Community Admin Notification Flow
-    await notifyCommunityAdmins(organisationId, notifTitle, notifBody, communityActionUrl);
+    await notifyCommunityAdmins(organisationId, notifTitle, notifBody, communityActionUrl, report, mailAttachments);
 
     // 2. Existing Platform Admin Notification Flow
-    await notifyPlatformAdmins(notifTitle, notifBody, platformActionUrl);
+    await notifyPlatformAdmins(notifTitle, notifBody, platformActionUrl, report, mailAttachments);
 
     // 3. New Requirement: Configured Platform Admin Email Notification Flow
     try {
@@ -175,30 +236,7 @@ issueReportEventEmitter.on(ISSUE_REPORT_EVENTS.REPORT_SUBMITTED, async (payload)
       if (configuredEmail) {
         logger.info(`[IssueReportListener] Triggering issue report email to configured Platform Admin email: ${configuredEmail}`);
         
-        const report = await issueReportRepository.findById(reportId);
         if (report) {
-          // Prepare image attachments if present
-          const mailAttachments = [];
-          if (Array.isArray(report.attachments) && report.attachments.length > 0) {
-            const projectRoot = process.cwd();
-            for (const att of report.attachments) {
-              if (!att.url) continue;
-              let localPath = att.url;
-              if (localPath.startsWith('/')) {
-                localPath = path.join(projectRoot, localPath);
-              }
-              if (fs.existsSync(localPath)) {
-                mailAttachments.push({
-                  filename: att.fileName || path.basename(localPath),
-                  path: localPath,
-                  contentType: att.mimeType || 'image/jpeg',
-                });
-              } else {
-                logger.warn(`[IssueReportListener] Image file attachment path not found on disk: ${localPath}`);
-              }
-            }
-          }
-
           const emailSent = await emailService.sendReportedIssueEmail({
             to: configuredEmail,
             report,
