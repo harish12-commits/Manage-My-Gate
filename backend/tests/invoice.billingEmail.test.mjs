@@ -415,3 +415,26 @@ describe('payment_link.paid webhook', () => {
     assert.equal(inv.outstandingAmount, 1000);
   });
 });
+
+// ── Message template rules for billing purposes ──
+describe('billing template validation', () => {
+  const run = async (bodyFields) => {
+    const { validationResult } = await import('express-validator');
+    const { createTemplateRules } = await import('../src/features/messageTemplate/messageTemplate.validateRules.js');
+    const req = { body: { name: 'Billing email', type: 'email', subject: 'Subject', ...bodyFields }, params: {}, query: {} };
+    for (const rule of createTemplateRules) await rule.run(req);
+    return validationResult(req).array().map((e) => e.msg);
+  };
+
+  test('billing purposes are accepted', async () => {
+    for (const purpose of ['invoice_generated', 'invoice_reminder', 'invoice_overdue']) {
+      assert.deepEqual(await run({ purpose, body: '<a href="{{app_link}}">Pay</a>' }), [], purpose);
+    }
+    assert.deepEqual(await run({ purpose: 'invoice_receipt', body: 'Thanks {{resident_name}}' }), []);
+  });
+
+  test('invoice emails must keep {{app_link}} and be email-only', async () => {
+    assert.ok((await run({ purpose: 'invoice_generated', body: 'no link' })).some((m) => /app_link/.test(m)));
+    assert.ok((await run({ purpose: 'invoice_reminder', type: 'sms', body: '{{app_link}}' })).some((m) => /email-only/.test(m)));
+  });
+});

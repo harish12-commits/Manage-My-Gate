@@ -23,8 +23,7 @@
    - If a community has no SMTP, the **platform** SMTP is used. It never falls back to another community's mailbox.
    - With neither configured, no email is sent (logged). The in-app notification still arrives, and the next cron run or a manual reminder retries.
 2. **Integration Hub → Razorpay**: add the community's keys. Without keys, "Pay online" gives a mock link (dev only).
-3. Optional: **Message Templates** with type `email` and purpose `invoice_generated`, `invoice_reminder`, `invoice_overdue` or `invoice_receipt` override the default design. Placeholders: `{{resident_name}} {{community_name}} {{invoice_number}} {{billing_period}} {{amount_due}} {{total_amount}} {{amount_paid}} {{due_date}} {{app_link}} {{pay_link}} {{payment_reference}}`.
-   - The web template editor currently only edits the invitation template. Billing templates can be created through the API until a purpose picker is added.
+3. Optional: **Billing → Assessment Manager → Resident Email Templates** (also under User Management → templates). Pick *Billing — new invoice / due soon / overdue / payment receipt*, edit, save. Until saved, residents get the built-in design. `{{app_link}}` is required for invoice, reminder and overdue emails; billing templates are email-only. Placeholders: `{{resident_name}} {{community_name}} {{invoice_number}} {{billing_period}} {{amount_due}} {{total_amount}} {{amount_paid}} {{due_date}} {{app_link}} {{pay_link}} {{payment_reference}}`.
 
 ## Deployment checklist
 
