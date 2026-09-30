@@ -38,7 +38,7 @@ import {
   switchWorkspaceContextThunk,
 } from '@/src/features/auth/store/authSlice';
 import { getStatusTabStyle } from '@/components/ui/statusTabColors';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from '@/src/utils/i18n';
 
 export default function NotificationsScreen() {
@@ -60,12 +60,6 @@ export default function NotificationsScreen() {
   const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
   const [inviteStatusMap, setInviteStatusMap] = useState<Record<string, 'ACCEPTED' | 'REJECTED'>>({});
 
-  const blurActiveElement = useCallback(() => {
-    if (Platform.OS === 'web' && typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  }, []);
-
   const {
     items,
     unreadCount,
@@ -76,6 +70,23 @@ export default function NotificationsScreen() {
     markAllAsRead,
     deleteNotification,
   } = useNotifications();
+
+  useFocusEffect(
+    useCallback(() => {
+      // Auto-clear notification badge when the screen is focused
+      if (unreadCount > 0) {
+        markAllAsRead();
+      }
+    }, [unreadCount, markAllAsRead])
+  );
+
+  const blurActiveElement = useCallback(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, []);
+
+
 
   // Helper to determine if a notification represents an invitation
   const isInvitationNotification = useCallback((notification?: NotificationItemData | null): boolean => {

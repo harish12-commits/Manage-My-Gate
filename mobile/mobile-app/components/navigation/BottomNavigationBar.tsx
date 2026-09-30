@@ -432,7 +432,15 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
 
   const handleTabPress = useCallback((item: TabItem) => {
     if (isDraggingShared.value) return;
-    if (item.key === selectedTabKey) return;
+    
+    // If the tab is already selected visually, ensure we actually navigate to it
+    // if the user is deep inside a sub-route
+    if (item.key === selectedTabKey) {
+      if (pathname !== item.route) {
+        navigateToTab(item);
+      }
+      return;
+    }
 
     const targetIdx = TAB_ITEMS.findIndex((t) => t.key === item.key);
     if (targetIdx >= 0) {
@@ -552,7 +560,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
             zIndex: 50,
             pointerEvents: isKeyboardVisible ? 'none' : 'box-none',
           },
-          { transform: [{ translateY: navTranslateY }] }
+          useAnimatedStyle(() => ({ transform: [{ translateY: navTranslateY.value }] }))
         ]}
       >
         <View

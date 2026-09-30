@@ -1,25 +1,28 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
   CContainer,
   CRow,
   CCol,
   CCard,
   CCardBody,
-  CFormInput,
-  CFormSelect,
   CButton,
   CSpinner,
   CAlert,
-  CPagination,
-  CPaginationItem,
+  CBadge,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilPlus, cilGrid } from '@coreui/icons'
+import { cilPlus, cilGrid, cilPencil, cilSearch, cilCloudUpload } from '@coreui/icons'
 import { useTranslation } from 'react-i18next'
+
+import PageHeader from '../../../components/common/PageHeader'
+import DataTable from '../../../components/common/DataTable'
+import ActionIconButton from '../../../components/common/ActionIconButton'
+
 import { useAuth } from '../../auth/hooks/useAuth'
 import useVilla from '../hooks/useVilla'
 import useVillaSocket from '../hooks/useVillaSocket'
-import VillaGrid from '../components/VillaGrid'
+
+import VillaToolbar from '../components/VillaToolbar'
 import VillaDetailsModal from '../components/VillaDetailsModal'
 import BatchGenerateModal from '../components/BatchGenerateModal'
 import BulkUploadVillasModal from '../components/BulkUploadVillasModal'
@@ -86,9 +89,129 @@ export const VillaManagementView = () => {
     }
   }
 
+  // "?"? DataTable Columns Configuration "?"?
+  const columns = useMemo(
+    () => [
+      {
+        key: 'unitNumber',
+        label: t('villas.table.unitNumber', 'Unit Number'),
+        render: (val) => <span className="fw-semibold text-primary">{val}</span>,
+      },
+      {
+        key: 'blockOrBuilding',
+        label: t('villas.table.block', 'Block/Building'),
+      },
+      {
+        key: 'type',
+        label: t('villas.table.type', 'Type'),
+      },
+      {
+        key: 'status',
+        label: t('villas.table.status', 'Status'),
+        render: (val) => {
+          let badgeColor = 'secondary'
+          if (val === 'Occupied') badgeColor = 'success'
+          if (val === 'Vacant') badgeColor = 'warning'
+          if (val === 'Under Maintenance') badgeColor = 'danger'
+          return (
+            <CBadge color={badgeColor} className="small px-2 py-1">
+              {val}
+            </CBadge>
+          )
+        },
+      },
+    ],
+    [t],
+  )
+
+  // "?"? Render Actions for Data Grid "?"?
+  const renderRowActions = (villa) => {
+    return (
+      <div className="d-flex gap-2">
+        <ActionIconButton
+          id={`view-villa-${villa._id}`}
+          color="secondary"
+          onClick={() => openDetails(villa)}
+          title={t('common.viewDetails', 'View Details')}
+          icon={<CIcon icon={cilSearch} size="sm" />}
+        />
+        {canCreate && (
+          <ActionIconButton
+            id={`edit-villa-${villa._id}`}
+            color="primary"
+            onClick={() => openForm(villa)}
+            title={t('common.edit', 'Edit')}
+            icon={<CIcon icon={cilPencil} size="sm" />}
+          />
+        )}
+      </div>
+    )
+  }
+
+  // "?"? Responsive Toolbar Wrapper "?"?
+  const toolbar = (
+    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 w-100">
+      <VillaToolbar
+        searchQuery={searchQuery}
+        handleSearch={handleSearch}
+        blockFilter={blockFilter}
+        handleBlockChange={handleBlockChange}
+        statusFilter={statusFilter}
+        handleStatusChange={handleStatusChange}
+        blocks={blocks}
+        blocksLoading={blocksLoading}
+      />
+
+      {canCreate && (
+        <div className="d-flex gap-2 flex-wrap">
+          <CButton
+            color="secondary"
+            variant="outline"
+            size="sm"
+            onClick={openBulkUpload}
+            className="fw-semibold d-flex align-items-center gap-1"
+          >
+            <CIcon icon={cilCloudUpload} size="sm" />
+            <span>{t('villas.bulkUpload', 'Bulk Upload')}</span>
+          </CButton>
+          <CButton
+            color="primary"
+            variant="outline"
+            size="sm"
+            onClick={openBatch}
+            className="fw-semibold d-flex align-items-center gap-1"
+          >
+            <CIcon icon={cilGrid} size="sm" />
+            <span>{t('villas.batchGenerate', 'Batch Generate')}</span>
+          </CButton>
+        </div>
+      )}
+    </div>
+  )
+
   return (
-    <div className="villa-manager-view py-3">
-      <CContainer fluid>
+    <div className="p-4" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <PageHeader
+        title={t('villas.pageTitle', 'Unit Management')}
+        subtitle={t(
+          'villas.pageSubtitle',
+          'Manage community units, occupancies, and property configuration.',
+        )}
+        actionButtons={
+          canCreate ? (
+            <CButton
+              color="primary"
+              onClick={() => openForm()}
+              className="fw-semibold d-flex align-items-center gap-2"
+            >
+              <CIcon icon={cilPlus} />
+              {t('villas.createUnit', 'Create Unit')}
+            </CButton>
+          ) : null
+        }
+      />
+
+      <CContainer fluid className="px-0">
         {/* Statistics Banner */}
         <CRow className="villa-dashboard-stats g-3 mb-4">
           <CCol xs={12} sm={3}>
@@ -133,86 +256,6 @@ export const VillaManagementView = () => {
           </CCol>
         </CRow>
 
-        {/* Toolbar Controls */}
-        <CCard className="border-0 shadow-sm mb-4">
-          <CCardBody className="p-3">
-            <CRow className="g-3 align-items-center">
-              <CCol md={3} sm={6} xs={12}>
-                <CFormInput
-                  type="text"
-                  placeholder={t('villas.searchPlaceholder', 'Search unit number...')}
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  size="sm"
-                />
-              </CCol>
-              <CCol md={2} sm={3} xs={6}>
-                <CFormSelect
-                  value={blockFilter}
-                  onChange={(e) => handleBlockChange(e.target.value)}
-                  size="sm"
-                  disabled={blocksLoading}
-                >
-                  <option value="">{t('villas.allBlocks', 'All Blocks')}</option>
-                  {blocks.map((block) => (
-                    <option key={block} value={block}>
-                      {block}
-                    </option>
-                  ))}
-                </CFormSelect>
-              </CCol>
-              <CCol md={2} sm={3} xs={6}>
-                <CFormSelect
-                  value={statusFilter}
-                  onChange={(e) => handleStatusChange(e.target.value)}
-                  size="sm"
-                >
-                  <option value="">{t('villas.allStatuses', 'All Statuses')}</option>
-                  <option value="Vacant">{t('villas.statusTypes.Vacant', 'Vacant')}</option>
-                  <option value="Occupied">{t('villas.statusTypes.Occupied', 'Occupied')}</option>
-                  <option value="Under Maintenance">
-                    {t('villas.statusTypes.UnderMaintenance', 'Under Maintenance')}
-                  </option>
-                </CFormSelect>
-              </CCol>
-              <CCol md={5} sm={12} xs={12} className="text-md-end text-center d-flex gap-2">
-                {canCreate && (
-                  <>
-                    <CButton
-                      color="secondary"
-                      variant="outline"
-                      size="sm"
-                      onClick={openBulkUpload}
-                      className="w-100 fw-semibold d-flex align-items-center justify-content-center gap-1"
-                    >
-                      <CIcon icon={cilPlus} size="sm" />
-                      <span>{t('villas.bulkUpload', 'Bulk Upload')}</span>
-                    </CButton>
-                    <CButton
-                      color="secondary"
-                      size="sm"
-                      onClick={() => openForm()}
-                      className="w-100 fw-semibold d-flex align-items-center justify-content-center gap-1"
-                    >
-                      <CIcon icon={cilPlus} size="sm" />
-                      <span>{t('villas.createUnit', 'Create Unit')}</span>
-                    </CButton>
-                    <CButton
-                      color="primary"
-                      size="sm"
-                      onClick={openBatch}
-                      className="w-100 fw-semibold d-flex align-items-center justify-content-center gap-1"
-                    >
-                      <CIcon icon={cilPlus} size="sm" />
-                      <span>{t('villas.batchGenerate', 'Batch Generate')}</span>
-                    </CButton>
-                  </>
-                )}
-              </CCol>
-            </CRow>
-          </CCardBody>
-        </CCard>
-
         {/* Global Error Banner */}
         {error && (
           <CAlert color="danger" dismissible>
@@ -220,69 +263,18 @@ export const VillaManagementView = () => {
           </CAlert>
         )}
 
-        {/* Grid Area */}
-        {loading && villas.length === 0 ? (
-          <div className="text-center py-5">
-            <CSpinner color="primary" className="mb-2" />
-            <div>{t('villas.loading', 'Loading units directory...')}</div>
-          </div>
-        ) : villas.length === 0 ? (
-          <CCard className="text-center py-5 shadow-sm border-0">
-            <CCardBody>
-              <CIcon icon={cilGrid} size="xl" className="text-muted mb-3 icon-opacity-30" />
-              <h4>{t('villas.noVillas', 'No Units Configured')}</h4>
-              <p className="text-muted mb-4">
-                {t(
-                  'villas.noVillasDesc',
-                  'You can manually create or batch generate the community units grid.',
-                )}
-              </p>
-              {canCreate && (
-                <CButton color="primary" size="sm" onClick={openBatch} className="fw-semibold">
-                  {t('villas.generateVillas', 'Generate 54 Units')}
-                </CButton>
-              )}
-            </CCardBody>
-          </CCard>
-        ) : (
-          <>
-            <VillaGrid villas={villas} onCardClick={openDetails} />
-
-            {/* Pagination Banner */}
-            {totalPages > 1 && (
-              <div className="d-flex justify-content-center mt-4">
-                <CPagination aria-label="Villa pages navigation">
-                  <CPaginationItem
-                    aria-label="Previous"
-                    disabled={currentPage === 1}
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    className={`pagination-item-link ${currentPage === 1 ? 'disabled' : ''}`}
-                  >
-                    <span aria-hidden="true">&laquo;</span>
-                  </CPaginationItem>
-                  {[...Array(totalPages)].map((_, i) => (
-                    <CPaginationItem
-                      key={i + 1}
-                      active={currentPage === i + 1}
-                      onClick={() => handlePageChange(i + 1)}
-                      className="pagination-item-link"
-                    >
-                      {i + 1}
-                    </CPaginationItem>
-                  ))}
-                  <CPaginationItem
-                    aria-label="Next"
-                    disabled={currentPage === totalPages}
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    className={`pagination-item-link ${currentPage === totalPages ? 'disabled' : ''}`}
-                  >
-                    <span aria-hidden="true">&raquo;</span>
-                  </CPaginationItem>
-                </CPagination>
-              </div>
-            )}
-          </>
-        )}
+        {/* Data Table */}
+        <DataTable
+          columns={columns}
+          data={villas}
+          toolbar={toolbar}
+          renderRowActions={renderRowActions}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          rowsPerPage={12}
+          onPageChange={handlePageChange}
+          loading={loading}
+        />
       </CContainer>
 
       {/* Details Dialog */}

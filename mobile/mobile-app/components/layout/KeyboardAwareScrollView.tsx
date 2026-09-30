@@ -95,7 +95,9 @@ export const KeyboardAwareScrollView = forwardRef<ScrollView, KeyboardAwareScrol
     }, [keyboardShown, keyboardHeight]);
 
     // Extra dynamic padding when keyboard is open so bottom inputs have space to scroll above keyboard
-    const dynamicBottomPadding = keyboardShown ? Math.max(keyboardHeight + 20, 120) : 24;
+    // The OS (iOS automaticallyAdjustKeyboardInsets / Android adjustResize) already shrinks the view,
+    // so we only need to add extraScrollHeight for breathing room, not the entire keyboard height.
+    const dynamicBottomPadding = keyboardShown ? extraScrollHeight : 24;
 
     return (
       <ScrollView
@@ -105,8 +107,9 @@ export const KeyboardAwareScrollView = forwardRef<ScrollView, KeyboardAwareScrol
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
         contentContainerStyle={[
-          { flexGrow: 1, paddingBottom: dynamicBottomPadding },
+          { flexGrow: 1 },
           contentContainerStyle,
+          { paddingBottom: dynamicBottomPadding },
         ]}
         {...props}
       >

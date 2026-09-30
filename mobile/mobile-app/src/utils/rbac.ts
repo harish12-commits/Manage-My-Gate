@@ -288,9 +288,19 @@ export const isFeatureAllowedForUser = (
     return true;
   }
 
-  // Digital Wallet & Ledger is role-agnostic: when Role Builder permissions are present they are the only source of truth.
-  if (WALLET_LEDGER_FEATURE_IDS.has(item.id) && permissions.length > 0) {
-    return hasWalletLedgerGrant(item.id, permissions);
+  // STRICT ROLE BUILDER ENFORCEMENT
+  // If the Role Builder explicitly assigned permissions (array is not empty), it is the sole source of truth.
+  if (permissions.length > 0) {
+    // Special handling for Digital Wallet & Ledger which has multiple overlapping grants
+    if (WALLET_LEDGER_FEATURE_IDS.has(item.id)) {
+      return hasWalletLedgerGrant(item.id, permissions);
+    }
+    
+    if (!item.permission) {
+      // If the dashboard feature does not require a specific permission (e.g. general directory), allow it
+      return true;
+    }
+    return matchesUserPermissions(item.permission, item.id, permissions);
   }
 
   const isAdmin = checkIsAdmin(effectiveUser);
@@ -348,11 +358,6 @@ export const isFeatureAllowedForUser = (
       return matchesUserPermissions(item.permission, item.id, permissions);
     }
     return true;
-  }
-
-  // Strict evaluation of permissions assigned in Role Builder (when permissions array is populated)
-  if (permissions.length > 0) {
-    return matchesUserPermissions(item.permission, item.id, permissions);
   }
 
   // 4. Fallback persona validation when explicit permissions array is not provided:

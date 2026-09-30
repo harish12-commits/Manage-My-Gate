@@ -48,7 +48,7 @@ export function PollCard({
   const [submittingIndex, setSubmittingIndex] = useState<number | null>(null);
   const isClosed = poll.status === 'Closed';
   const isVoted = Boolean(poll.hasVoted);
-  const isVotingDisabled = isClosed || isVoted || submittingIndex !== null;
+  const isVotingDisabled = isClosed || submittingIndex !== null;
 
   const totalVotes = poll.totalVotes !== undefined
     ? poll.totalVotes
@@ -197,3 +197,4 @@ export function PollCard({
 }
 
 export default PollCard;
+

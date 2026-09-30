@@ -1,3 +1,4 @@
+import { InteractionManager } from 'react-native';
 import { useEffect, useCallback, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../store/store';
@@ -69,19 +70,24 @@ export const useQuickActions = () => {
       const needsCatalog = (!rawCatalog || rawCatalog.length === 0) || orgChanged;
       const needsModules = (!modules || modules.length === 0) || orgChanged;
 
-      if (needsCatalog && !loading) {
-        dispatch(
-          fetchQuickActionsThunk({
-            orgId: activeOrgId,
-            villaId: activeVillaId,
-            villaNumber: activeVillaNum,
-          })
-        );
-      }
-      if (needsModules) {
-        loadWorkspaceModules('current');
-      }
+      const task = InteractionManager.runAfterInteractions(() => {
+          if (needsCatalog && !loading) {
+            dispatch(
+              fetchQuickActionsThunk({
+                orgId: activeOrgId,
+                villaId: activeVillaId,
+                villaNumber: activeVillaNum,
+              })
+            );
+          }
+          if (needsModules) {
+            loadWorkspaceModules('current');
+          }
+        });
       lastFetchedOrgRef.current = orgKey;
+      return () => {
+        task.cancel();
+      };
     }
   }, [dispatch, isAuthenticated, currentUserId, activeOrgId, activeVillaId, activeVillaNum, loadWorkspaceModules, rawCatalog, modules, loading]);
 
@@ -297,3 +303,4 @@ export const useQuickActions = () => {
 };
 
 export default useQuickActions;
+

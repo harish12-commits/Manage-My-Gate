@@ -130,7 +130,9 @@ export const VillaDetailsModal = ({ visible, onClose, villaId, onEdit }) => {
     setInviteError(null)
 
     if (invitePhone && invitePhone.length < expectedPhoneLength) {
-      setInviteError(t('villas.details.phoneInvalid', 'Invalid phone number length for this country.'))
+      setInviteError(
+        t('villas.details.phoneInvalid', 'Invalid phone number length for this country.'),
+      )
       setInviting(false)
       return
     }
@@ -495,7 +497,12 @@ export const VillaDetailsModal = ({ visible, onClose, villaId, onEdit }) => {
                               {t('villas.details.chooseUser', 'Choose a user...')}
                             </option>
                             {workspaceUsers
-                              .filter((u) => !selectedVilla.residents.some((r) => (r._id || r.id) === (u._id || u.id)))
+                              .filter(
+                                (u) =>
+                                  !selectedVilla.residents.some(
+                                    (r) => (r._id || r.id) === (u._id || u.id),
+                                  ),
+                              )
                               .map((u) => (
                                 <option key={u._id || u.id} value={u._id || u.id}>
                                   {u.name || u.email} ({u.email})

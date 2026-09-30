@@ -5,7 +5,7 @@ import { cn } from '../../lib/utils';
 import * as LucideIcons from 'lucide-react-native';
 import { Inbox } from 'lucide-react-native';
 import * as React from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, View, StyleProp, ViewStyle } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, View, StyleProp, ViewStyle, Platform } from 'react-native';
 
 import { useBottomNavScroll } from '../navigation/BottomNavScrollContext';
 import { useTranslation } from '../../src/utils/i18n';
@@ -160,6 +160,15 @@ export function PaginatedList<T>({
       style={{ flex: 1 }}
       data={data}
       extraData={extraDataProp !== undefined ? extraDataProp : language}
+      
+      // --- PERFORMANCE OPTIMIZATION PROPS ---
+      initialNumToRender={8}
+      maxToRenderPerBatch={5}
+      windowSize={5}
+      removeClippedSubviews={Platform.OS !== 'web'} // Crucial for Android, avoid on web for layout issues
+      updateCellsBatchingPeriod={50}
+      // ---------------------------------------
+      
       renderItem={({ item, index }) => renderItemProp(item, index) as React.ReactElement | null}
       keyExtractor={keyExtractor || defaultKeyExtractor}
       onEndReached={handleEndReached}

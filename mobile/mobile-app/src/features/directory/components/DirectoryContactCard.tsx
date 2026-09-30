@@ -114,35 +114,19 @@ export const DirectoryContactCard = ({
       )}
 
       {/* Action Row */}
-      {(canCall || canIntercom) && (
+      {canCall && (
         <View className="flex-row items-center gap-2 pt-3 mt-2.5 border-t border-border/40 w-full">
           {/* Call CTA */}
-          {canCall && (
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={handlePhonePress}
-              leftIcon={Phone}
-              className="flex-1 h-9.5 rounded-xl border-border bg-muted/30 px-2"
-              textClassName="text-xs font-semibold text-foreground"
-            >
-              {t('action_call', 'Call')}
-            </Button>
-          )}
-
-          {/* Intercom CTA */}
-          {canIntercom && (
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={() => (onIntercom ? onIntercom(intercomUnit) : handleIntercomPress())}
-              leftIcon={MessageSquare}
-              className="flex-1 h-9.5 rounded-xl border-border bg-muted/30 px-2"
-              textClassName="text-xs font-semibold text-foreground"
-            >
-              #{intercomUnit}
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={handlePhonePress}
+            leftIcon={Phone}
+            className="flex-1 h-9.5 rounded-xl border-border bg-muted/30 px-2"
+            textClassName="text-xs font-semibold text-foreground"
+          >
+            {t('action_call', 'Call')}
+          </Button>
         </View>
       )}
     </ListCard>
@@ -150,3 +134,4 @@ export const DirectoryContactCard = ({
 };
 
 export default DirectoryContactCard;
+

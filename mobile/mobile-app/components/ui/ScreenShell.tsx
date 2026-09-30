@@ -10,6 +10,7 @@ import {
   Linking,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
+  InteractionManager,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -24,6 +25,7 @@ import { ChevronLeft, AlertCircle, Compass, Mail } from 'lucide-react-native';
 import { Text } from './text';
 import { Icon } from './icon';
 import { Skeleton } from './Skeleton';
+import { ProgressLoader } from '../feedback/ProgressLoader';
 import { KeyboardAwareScrollView } from '../layout/KeyboardAwareScrollView';
 import { cn } from '../../lib/utils';
 import { RoleSwitchModal } from '../navigation/RoleSwitchModal';
@@ -57,6 +59,8 @@ export interface ScreenShellProps {
   collapsibleHeader?: boolean;   // Move top header up/down dynamically with scroll (default: true)
   showIconWithBackButton?: boolean; // Show icon badge even when back button is active (default: false)
   showGlobalNavButton?: boolean; // Force show compass navigation button even with headerRight (default: false)
+  loaderVariant?: 'skeleton' | 'spinner' | 'none'; // Defines what loader to show when loading
+  disableInteractionDeferral?: boolean; // Set to true if a screen shouldn't wait for interactions
 }
 
 export function ScreenShell({
@@ -79,12 +83,35 @@ export function ScreenShell({
   collapsibleHeader = true,
   showIconWithBackButton = false,
   showGlobalNavButton = false,
+  loaderVariant = 'skeleton',
+  disableInteractionDeferral = false,
 }: ScreenShellProps) {
   const router = useRouter();
   const pathname = usePathname() || '';
   const insets = useSafeAreaInsets();
   const { t, translateText, language } = useTranslation();
   const { isCompact, setIsCompact, scrollHandlerProps } = useBottomNavScroll();
+
+  // Defer rendering children until after navigation interactions to keep transitions buttery smooth
+  const [interactionsComplete, setInteractionsComplete] = React.useState(disableInteractionDeferral);
+  
+  React.useEffect(() => {
+    if (disableInteractionDeferral) {
+      setInteractionsComplete(true);
+      return;
+    }
+    const task = InteractionManager.runAfterInteractions(() => {
+      setInteractionsComplete(true);
+    });
+    // Fallback timer just in case InteractionManager gets stuck or animations are disabled
+    const timer = setTimeout(() => setInteractionsComplete(true), 400);
+    return () => {
+      task.cancel();
+      clearTimeout(timer);
+    };
+  }, [disableInteractionDeferral]);
+
+  const effectiveLoading = loading || !interactionsComplete;
 
   // Reset scroll compact state on route change so every screen begins fully expanded
   React.useEffect(() => {
@@ -312,8 +339,14 @@ export function ScreenShell({
         keyboardVerticalOffset={0}
         className="flex-1 bg-transparent"
       >
-        {loading && !hasChildren ? (
-          <Skeleton variant="listItem" count={5} />
+        {!interactionsComplete || (loading && !hasChildren) ? (
+          loaderVariant === 'spinner' ? (
+            <ProgressLoader message={t('common_loading', 'Loading...')} className="flex-1 mt-10" />
+          ) : loaderVariant === 'skeleton' ? (
+            <Skeleton variant="listItem" count={5} />
+          ) : (
+            <View className="flex-1 bg-transparent" />
+          )
         ) : scrollable ? (
           <KeyboardAwareScrollView 
             extraScrollHeight={48}

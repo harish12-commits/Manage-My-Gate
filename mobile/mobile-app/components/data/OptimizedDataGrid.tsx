@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import React, { memo } from 'react';
 import { View, Text, FlatList, RefreshControl } from 'react-native';
 import { cn } from '../../lib/utils';
@@ -112,7 +113,7 @@ const OptimizedDataGridComponent = <T extends any>({
         }
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
-        removeClippedSubviews={true}
+        removeClippedSubviews={Platform.OS !== 'web'}
         maxToRenderPerBatch={15}
         initialNumToRender={10}
         windowSize={5}

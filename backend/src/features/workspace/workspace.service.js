@@ -383,12 +383,21 @@ export class WorkspaceService {
       // Self-healing bootstrap: Get organization name and create workspace
       const name = org ? org.name : 'Default Workspace';
       
-      workspace = await this.createWorkspace({
-        workspaceName: `${name} Workspace`,
-        description: 'Auto-bootstrapped workspace context.',
-        organizationId: orgId,
-        status: 'Active',
-      }, actorId, session);
+      try {
+        workspace = await this.createWorkspace({
+          workspaceName: `${name} Workspace`,
+          description: 'Auto-bootstrapped workspace context.',
+          organizationId: orgId,
+          status: 'Active',
+        }, actorId, session);
+      } catch (err) {
+        if (err.status === 409 || err.code === 11000) {
+          workspace = await workspaceRepository.findOne({ organizationId: orgId }, session);
+          if (!workspace) throw err;
+        } else {
+          throw err;
+        }
+      }
     } else if (workspace && Array.isArray(DEFAULT_MODULES)) {
       let modified = false;
       if (!workspace.modules) {

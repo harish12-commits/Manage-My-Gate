@@ -45,6 +45,7 @@ import {
   Home,
   UserCheck,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react-native';
 import { getImageUrl } from '@/src/utils/imageUrl';
 
@@ -354,6 +355,15 @@ export default function SettingsScreen() {
             title={t('community_directory', 'Community Directory')}
             subtitle={t('find_residents_security', 'Find residents, security & staff')}
             onPress={() => router.push('/(resident)/directory' as any)}
+            isLast={false}
+          />
+          <SettingsRow
+            icon={Sparkles}
+            iconColor="#ec4899"
+            iconBgColor="rgba(236, 72, 153, 0.12)"
+            title={t('all_community_notes', 'All Community Notes')}
+            subtitle={t('community_notes_desc', 'Public notes, statuses and pulses')}
+            onPress={() => router.push('/(resident)/notes' as any)}
             isLast={true}
           />
         </SettingsCard>

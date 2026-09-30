@@ -244,6 +244,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
                   outlineStyle: 'none',
                   outlineWidth: 0,
                   outlineColor: 'transparent',
+                  color: isGlass ? undefined : undefined, 
                 } as any,
                 style,
               ]}

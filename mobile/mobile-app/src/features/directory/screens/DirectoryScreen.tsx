@@ -49,12 +49,7 @@ export function DirectoryScreen() {
     onOpenQuickMessage,
     onOpenConversation,
   } = useDirectoryMessaging();
-
-  const handleBack = () => {
-    router.replace({ pathname: '/(resident)/dashboard', params: { openProfile: 'true' } } as any);
-  };
-
-  const renderHeader = (
+const renderHeader = (
     <View className="gap-3 pb-3">
       {/* Search Bar */}
       <DirectorySearch
@@ -74,8 +69,7 @@ export function DirectoryScreen() {
       subtitle={t('nav_community_directory_sub', 'Find and contact residents, security & community staff')}
       iconName="Users"
       showBackButton={true}
-      onBackPress={handleBack}
-    >
+>
       <View className="flex-1 bg-background">
         <PaginatedList<DirectoryMember>
           data={members}
@@ -115,3 +109,4 @@ export function DirectoryScreen() {
 }
 
 export default DirectoryScreen;
+

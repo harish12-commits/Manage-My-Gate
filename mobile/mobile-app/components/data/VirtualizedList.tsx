@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import React from 'react';
 import { FlatList, FlatListProps, View, Text } from 'react-native';
 import { cn } from '../../lib/utils';
@@ -63,7 +64,7 @@ export const VirtualizedList = <T extends any>({
       initialNumToRender={10}
       maxToRenderPerBatch={10}
       windowSize={5}
-      removeClippedSubviews={true}
+      removeClippedSubviews={Platform.OS !== 'web'}
       {...props}
     />
   );

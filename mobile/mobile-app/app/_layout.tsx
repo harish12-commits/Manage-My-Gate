@@ -28,6 +28,36 @@ try {
   I18nManager.forceRTL(false);
 } catch (e) {}
 
+// Suppress BFCache WebSocket disconnection crash on Web in DEV mode
+if (__DEV__ && Platform.OS === 'web' && typeof window !== 'undefined') {
+  const handlePageShow = (event: any) => {
+    // If the page is restored from the Back-Forward Cache, WebSockets are dead.
+    // Force a clean reload to reconnect the Expo HMR CLI and Socket.io.
+    if (event?.persisted) {
+      window.location.reload();
+    }
+  };
+  window.addEventListener('pageshow', handlePageShow);
+}
+
+// Web-specific aggressive patch to silence React Native Web's Chromium violations & auxiliary warnings
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  LogBox.ignoreAllLogs(true);
+  
+  const originalAddEventListener = EventTarget.prototype.addEventListener;
+  EventTarget.prototype.addEventListener = function (
+    this: EventTarget,
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | AddEventListenerOptions
+  ) {
+    if (type === 'wheel' || type === 'mousewheel' || type === 'touchstart' || type === 'touchmove') {
+      options = typeof options === 'object' ? { ...options, passive: true } : { passive: true };
+    }
+    return originalAddEventListener.call(this, type, listener, options);
+  } as any;
+}
+
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuth } from '../src/features/auth/hooks/useAuth';
 import { setDefaultPhoneCountry } from '../src/utils/phone';

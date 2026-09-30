@@ -15,11 +15,10 @@ export interface PickedContact {
   phones: ContactPhoneOption[];
 }
 
+import * as Contacts from 'expo-contacts';
+
 /** The native contact picker exists only on iOS/Android builds. */
 export const isContactPickerSupported = Platform.OS === 'ios' || Platform.OS === 'android';
-
-// Lazy require: expo-contacts has no web implementation and is mocked away in unit tests.
-const loadContacts = () => require('expo-contacts') as typeof import('expo-contacts');
 
 /**
  * Opens the system contact picker for one contact. Only the chosen contact is
@@ -29,7 +28,6 @@ const loadContacts = () => require('expo-contacts') as typeof import('expo-conta
 export const useContactPicker = () => {
   const ensurePermission = useCallback(async (): Promise<boolean> => {
     if (Platform.OS !== 'android') return true;
-    const Contacts = loadContacts();
     const current = await Contacts.getPermissionsAsync();
     if (current.granted) return true;
     const requested = current.canAskAgain ? await Contacts.requestPermissionsAsync() : current;
@@ -49,8 +47,12 @@ export const useContactPicker = () => {
     if (!isContactPickerSupported) return null;
     try {
       if (!(await ensurePermission())) return null;
-      const contact = await loadContacts().presentContactPickerAsync();
-      if (!contact) return null;
+      const contact = await Contacts.presentContactPickerAsync();
+      if (!contact) {
+        // Did not pick a contact, or picking failed silently
+        Alert.alert('Contact Picker', 'No contact selected or the contact picker could not be opened on your device.');
+        return null;
+      }
 
       const seen = new Set<string>();
       const phones: ContactPhoneOption[] = [];
@@ -64,14 +66,19 @@ export const useContactPicker = () => {
         phones.push({ phone, display: parsed.e164 ? formatPhoneDisplay(parsed.e164) : raw, label: pn.label });
       }
 
+      if (phones.length === 0) {
+        Alert.alert('No Number Found', 'The selected contact does not have a valid phone number.');
+        return null;
+      }
+
       const name =
         contact.name?.trim() ||
         [contact.firstName, contact.middleName, contact.lastName].filter(Boolean).join(' ').trim() ||
         contact.company?.trim() ||
         '';
       return { name, email: contact.emails?.[0]?.email, phones };
-    } catch (err) {
-      Alert.alert('Could not open contacts', 'Please type the details manually.');
+    } catch (err: any) {
+      Alert.alert('Could not open contacts', err?.message || 'Please type the details manually.');
       return null;
     }
   }, [ensurePermission]);

@@ -19,6 +19,7 @@ import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScroll
 import apiClient from '../../../services/apiClient';
 import { InviteUserData } from '../services/userService';
 import { useTranslation } from '@/src/utils/i18n';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import {
   validateEmail,
   validateRequired,
@@ -321,53 +322,11 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
   }));
 
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      transparent
-      statusBarTranslucent={true}
-      animationType="slide"
-      onRequestClose={onClose}
+      onClose={onClose}
+      title={t('invite_user', 'Invite Community User')}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-        style={{ flex: 1 }}
-      >
-        <View className="flex-1 justify-end bg-black/60">
-          <Pressable className="flex-1" onPress={onClose} />
-          <View className="bg-card rounded-t-3xl p-5 border-t border-border max-h-[88%] shadow-2xl">
-            {/* Modal Header */}
-            <View className="flex-row items-center justify-between pb-3 border-b border-border mb-4">
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 rounded-xl bg-primary/10 items-center justify-center me-2.5">
-                  <Mail size={18} color="#FF5E00" />
-                </View>
-                <View>
-                  <Text className="text-base font-bold text-foreground text-start">
-                    {t('invite_user', 'Invite Community User')}
-                  </Text>
-                  <Text className="text-[11px] text-muted-foreground text-start">
-                    {t('send_invitation_subtitle', 'Send invitation link to join community')}
-                  </Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                onPress={onClose}
-                className="p-1.5 rounded-full bg-muted"
-                accessibilityRole="button"
-                accessibilityLabel="Close invitation modal"
-              >
-                <X size={16} className="text-muted-foreground" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Scrollable Form Content */}
-            <KeyboardAwareScrollView
-              extraScrollHeight={48}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
-            >
               {/* SUCCESS VIEW */}
               {successData ? (
                 <View className="gap-4 py-2">
@@ -545,11 +504,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
                   </View>
                 </View>
               )}
-            </KeyboardAwareScrollView>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+    </BottomSheet>
   );
 };
 

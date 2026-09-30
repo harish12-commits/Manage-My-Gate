@@ -1,3 +1,4 @@
+import { InteractionManager } from 'react-native';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, RefreshControl, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -58,7 +59,12 @@ export function WalletScreen() {
   }, [dispatch]);
 
   useEffect(() => {
-    loadWallet();
+    const task = InteractionManager.runAfterInteractions(() => {
+        loadWallet();
+      });
+    return () => {
+      task.cancel();
+    };
   }, [loadWallet]);
 
   const handleRefresh = useCallback(() => {

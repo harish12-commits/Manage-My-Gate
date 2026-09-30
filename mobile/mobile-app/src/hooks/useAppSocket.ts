@@ -31,7 +31,7 @@ export const useAppSocket = () => {
         sharedSocket.disconnect();
         sharedSocket = null;
         setActiveSocket(null);
-        console.log('[Socket] Disconnected due to unauthenticated state');
+        // console.log('[Socket] Disconnected due to unauthenticated state');
       }
       return;
     }
@@ -61,7 +61,7 @@ export const useAppSocket = () => {
 
     // Create singleton instance if it doesn't exist
     if (!sharedSocket) {
-      console.log(`[Socket] Initializing shared connection to: ${socketUrl}`);
+      // console.log(`[Socket] Initializing shared connection to: ${socketUrl}`);
 
       sharedSocket = io(socketUrl, {
         transports: ['websocket', 'polling'],
@@ -77,7 +77,7 @@ export const useAppSocket = () => {
       });
 
       sharedSocket.on('connect', () => {
-        console.log(`[Socket] Connected successfully: ${sharedSocket?.id}`);
+        // console.log(`[Socket] Connected successfully: ${sharedSocket?.id}`);
         if (sharedSocket) {
           setActiveSocket(sharedSocket);
           joinUserRooms(sharedSocket);
@@ -88,14 +88,14 @@ export const useAppSocket = () => {
         const now = Date.now();
         // Throttle connection error warnings to avoid spamming terminal (log once every 30s)
         if (now - lastLoggedErrorTime > 30000) {
-          console.warn('[Socket] Connection error (backend server may be offline):', error.message || error);
+          // console.warn('[Socket] Connection error (backend server may be offline):', error.message || error);
           lastLoggedErrorTime = now;
         }
       });
 
       sharedSocket.on('disconnect', (reason) => {
         if (reason !== 'io client disconnect') {
-          console.log('[Socket] Disconnected:', reason);
+          // console.log('[Socket] Disconnected:', reason);
         }
       });
 
@@ -116,7 +116,7 @@ export const useAppSocket = () => {
     if (sock && sock.connected) {
       sock.emit(eventName, payload);
     } else {
-      console.warn('[Socket] Cannot emit event, socket is not connected');
+      // console.warn('[Socket] Cannot emit event, socket is not connected');
     }
   };
 
@@ -127,4 +127,6 @@ export const useAppSocket = () => {
 };
 
 export default useAppSocket;
+
+
 

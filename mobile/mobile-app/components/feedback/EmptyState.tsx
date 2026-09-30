@@ -5,6 +5,7 @@ import { LucideIcon } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { useTranslation } from '../../src/utils/i18n';
+import { Icon as UIIcon } from '../ui/icon';
 
 export interface EmptyStateProps {
   icon?: LucideIcon;
@@ -16,7 +17,7 @@ export interface EmptyStateProps {
 }
 
 export const EmptyState = ({
-  icon: Icon,
+  icon: RawIcon,
   title,
   description,
   actionLabel,
@@ -27,9 +28,9 @@ export const EmptyState = ({
 
   return (
     <View className={cn('items-center justify-center py-10 px-4', className)}>
-      {Icon && (
+      {RawIcon && (
         <View className="mb-4 h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 border border-primary/20 shadow-2xs">
-          <Icon size={28} className="text-primary" />
+          <UIIcon as={RawIcon} size={28} className="text-primary" />
         </View>
       )}
       <Text className="mb-1 text-center text-[18px] font-bold font-sans text-foreground tracking-tight">

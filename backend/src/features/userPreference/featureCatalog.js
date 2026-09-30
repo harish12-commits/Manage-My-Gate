@@ -40,7 +40,7 @@ export const SYSTEM_FEATURE_CATALOG = [
     items: [
       { id: 'complaints_dashboard', name: 'Complaints Dashboard', permission: 'complaints:dashboard', iconName: 'BarChart3', colorBg: 'bg-purple-500/15', colorIcon: '#a855f7', route: '/(resident)/complaints/dashboard' },
       { id: 'complaints_raise_ticket', name: 'Raise Ticket', permission: 'complaints:raise_ticket', iconName: 'PlusCircle', colorBg: 'bg-red-500/15', colorIcon: '#ef4444', route: '/(resident)/complaints/raise-ticket' },
-      { id: 'complaints_track_requests', name: 'Track My Tickets', permission: 'complaints:track_requests', iconName: 'Clock', colorBg: 'bg-amber-500/15', colorIcon: '#f59e0b', route: '/(resident)/complaints/my-tickets', badge: '1', badgeColor: 'bg-rose-500 text-white' },
+      { id: 'complaints_track_requests', name: 'Track My Tickets', permission: 'complaints:track_requests', iconName: 'Clock', colorBg: 'bg-amber-500/15', colorIcon: '#f59e0b', route: '/(resident)/complaints/my-tickets' },
       { id: 'complaints_complaint_management', name: 'Complaint Management', permission: 'complaints:complaint_management', iconName: 'Kanban', colorBg: 'bg-blue-500/15', colorIcon: '#3b82f6', route: '/(resident)/complaints/manage' },
       { id: 'complaints_staff', name: 'Staff & Vendors', permission: 'complaints:staff', iconName: 'Users2', colorBg: 'bg-emerald-500/15', colorIcon: '#10b981', route: '/(resident)/complaints/staff' },
       { id: 'complaints_assignee', name: 'Assignee Console', permission: 'complaints:assignee', iconName: 'UserCheck', colorBg: 'bg-teal-500/15', colorIcon: '#14b8a6', route: '/(resident)/complaints/assignee' }
@@ -51,7 +51,7 @@ export const SYSTEM_FEATURE_CATALOG = [
     categoryName: 'Notice Board & Polls',
     actionButton: { label: 'View all', type: 'link', route: '/(resident)/community-engagement' },
     items: [
-      { id: 'community_engagement', name: 'Community Engagement', permission: 'notices:polls', iconName: 'Megaphone', colorBg: 'bg-indigo-500/15', colorIcon: '#6366f1', route: '/(resident)/community-engagement', badge: 'NEW', badgeColor: 'bg-indigo-600 text-white' },
+      { id: 'community_engagement', name: 'Community Engagement', permission: 'notices:polls', iconName: 'Megaphone', colorBg: 'bg-indigo-500/15', colorIcon: '#6366f1', route: '/(resident)/community-engagement' },
       { id: 'notices_active_board', name: 'Resident Feed', permission: 'notices:active_board', iconName: 'Users', colorBg: 'bg-emerald-500/15', colorIcon: '#10b981', route: '/(resident)/notices/active-board' },
       { id: 'community_engagement_manage', name: 'Manage Engagement', permission: 'notices:manage_notices', iconName: 'FileEdit', colorBg: 'bg-pink-500/15', colorIcon: '#ec4899', route: '/(resident)/community-engagement/ledger' }
     ]
@@ -70,7 +70,7 @@ export const SYSTEM_FEATURE_CATALOG = [
     categoryName: 'Billing & Invoices',
     actionButton: { label: 'View all', type: 'link', route: '/(resident)/billing' },
     items: [
-      { id: 'billing_dashboard', name: 'Billing Dashboard', permission: 'billing:action_center', iconName: 'CreditCard', colorBg: 'bg-emerald-500/15', colorIcon: '#10b981', route: '/(resident)/billing', badge: 'Due', badgeColor: 'bg-amber-500 text-white' },
+      { id: 'billing_dashboard', name: 'Billing Dashboard', permission: 'billing:action_center', iconName: 'CreditCard', colorBg: 'bg-emerald-500/15', colorIcon: '#10b981', route: '/(resident)/billing' },
       { id: 'billing_my_dues', name: 'My Personal Dues', permission: 'billing:action_center', iconName: 'Receipt', colorBg: 'bg-rose-500/15', colorIcon: '#f43f5e', route: '/(resident)/billing/my-dues' },
       { id: 'billing_assessment_manager', name: 'Assessment Manager', permission: 'billing:assessment_manager', iconName: 'Calculator', colorBg: 'bg-indigo-500/15', colorIcon: '#6366f1', route: '/(resident)/admin/billing/assessments' },
       { id: 'billing_action_center', name: 'Billing Ledger', permission: 'billing:dashboard', iconName: 'FileSpreadsheet', colorBg: 'bg-cyan-600/15', colorIcon: '#0891b2', route: '/(resident)/admin/billing/ledger' }

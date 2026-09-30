@@ -115,11 +115,13 @@ export const TemplateEditorCanvasModal = ({ visible, onClose, initialPurpose }) 
             </CAlert>
           ) : availableTypes.length === 0 ? (
             <CAlert color="warning" className="my-2 small">
-              ⚠️ <strong>No Active Integrations:</strong> You have not configured any active SMTP,
+              <strong>No Active Integrations:</strong> You have not configured any active SMTP,
               Resend, or Twilio connections in the <strong>Integration Hub</strong>. Please connect
-              a provider first before writing custom templates.
+              a provider first before sending custom templates.
             </CAlert>
-          ) : (
+          )}
+
+          {!isHubLoading && (
             <>
               {/* Template Name & Channel Selection Row */}
               <CRow className="g-3 mb-3">
@@ -261,7 +263,7 @@ export const TemplateEditorCanvasModal = ({ visible, onClose, initialPurpose }) 
             color="primary"
             size="sm"
             style={{ fontWeight: 600 }}
-            disabled={isSubmitting || availableTypes.length === 0}
+            disabled={isSubmitting}
           >
             {isSubmitting ? 'Saving Template...' : 'Save Template'}
           </CButton>
@@ -282,3 +284,5 @@ TemplateEditorCanvasModal.defaultProps = {
 }
 
 export default TemplateEditorCanvasModal
+
+

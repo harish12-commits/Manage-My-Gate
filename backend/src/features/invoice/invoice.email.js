@@ -80,40 +80,40 @@ const baseRows = [
 
 export const DEFAULT_TEMPLATES = {
   generated: {
-    subject: 'New invoice {{invoice_number}} — {{amount_due}} due {{due_date}}',
+    subject: 'New invoice {{invoice_number}} from {{community_name}} - {{amount_due}} due {{due_date}}',
     body: layout({
-      heading: 'Your new invoice is ready',
-      intro: 'Hi {{resident_name}}, your community has issued a new invoice. You can pay it in the app using your wallet balance or any payment method.',
+      heading: 'New invoice from {{community_name}}',
+      intro: 'Hi {{resident_name}}, {{community_name}} has issued a new invoice for your unit. You can pay it securely using the Pay Online button below or directly within the app using your wallet balance.',
       rows: [...baseRows, ['Amount due', '{{amount_due}}'], ['Due date', '{{due_date}}']],
       showPay: true,
       footer: 'You are receiving this because you are a resident of {{community_name}}.',
     }),
   },
   reminder: {
-    subject: 'Reminder: {{amount_due}} due {{due_date}} ({{invoice_number}})',
+    subject: 'Reminder: {{amount_due}} due {{due_date}} from {{community_name}} ({{invoice_number}})',
     body: layout({
-      heading: 'Payment due soon',
-      intro: 'Hi {{resident_name}}, this is a friendly reminder that your invoice is due on {{due_date}}.',
+      heading: 'Payment due soon to {{community_name}}',
+      intro: 'Hi {{resident_name}}, this is a friendly reminder that your invoice from {{community_name}} is due on {{due_date}}.',
       rows: [...baseRows, ['Amount due', '{{amount_due}}'], ['Due date', '{{due_date}}']],
       showPay: true,
-      footer: 'Already paid? Please ignore this email — it can take a few minutes to update.',
+      footer: 'Already paid? Please ignore this email - it can take a few minutes to update.',
     }),
   },
   overdue: {
-    subject: 'Overdue: {{amount_due}} for invoice {{invoice_number}}',
+    subject: 'Overdue: {{amount_due}} for invoice {{invoice_number}} from {{community_name}}',
     body: layout({
-      heading: 'Your invoice is overdue',
-      intro: 'Hi {{resident_name}}, the due date of {{due_date}} has passed. Please pay as soon as possible to avoid late fees.',
+      heading: 'Your invoice from {{community_name}} is overdue',
+      intro: 'Hi {{resident_name}}, the due date of {{due_date}} for your {{community_name}} invoice has passed. Please pay as soon as possible to avoid late fees.',
       rows: [...baseRows, ['Amount due', '{{amount_due}}'], ['Was due', '{{due_date}}']],
       showPay: true,
-      footer: 'Already paid? Please ignore this email — it can take a few minutes to update.',
+      footer: 'Already paid? Please ignore this email - it can take a few minutes to update.',
     }),
   },
   receipt: {
-    subject: 'Payment received — {{amount_paid}} for {{invoice_number}}',
+    subject: 'Payment received - {{amount_paid}} for {{invoice_number}} by {{community_name}}',
     body: layout({
       heading: 'Thank you, payment received',
-      intro: 'Hi {{resident_name}}, we have received your payment. Your receipt and full history are in the app.',
+      intro: 'Hi {{resident_name}}, we have received your payment for your {{community_name}} invoice. Your receipt and full history are in the app.',
       rows: [...baseRows, ['Amount paid', '{{amount_paid}}'], ['Reference', '{{payment_reference}}'], ['Balance remaining', '{{amount_due}}']],
       showPay: false,
       footer: 'Keep this email for your records.',
@@ -272,3 +272,6 @@ export const drainInvoiceEmailQueue = async () => {
 };
 
 export default { sendInvoiceEmail, enqueueInvoiceEmail, drainInvoiceEmailQueue, compileTemplate, buildVariables, DEFAULT_TEMPLATES };
+
+
+

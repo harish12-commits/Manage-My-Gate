@@ -5,6 +5,7 @@ import { TextInput } from '@/components/forms/TextInput';
 import { DropdownSelect } from '@/components/forms/DropdownSelect';
 import { Button } from '@/components/common/Button';
 import { Text } from '@/components/ui/text';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import apiClient from '../../../services/apiClient';
 
 interface ConfigureInviteTemplateModalProps {
@@ -147,183 +148,156 @@ export const ConfigureInviteTemplateModal: React.FC<ConfigureInviteTemplateModal
   };
 
   return (
-    <Modal visible={visible} transparent statusBarTranslucent={true} animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
-        <View className="flex-1 justify-end bg-black/50">
-          <Pressable className="flex-1" onPress={onClose} />
-          <View className="bg-card rounded-t-3xl p-5 border-t border-border max-h-[85%] flex-col">
-          {/* Header */}
-          <View className="flex-row items-center justify-between pb-3 border-b border-border mb-3">
-            <View className="flex-row items-center">
-              <Mail size={20} color="#6366f1" className="me-2" />
-              <View>
-                <Text className="text-lg font-bold text-foreground text-start">Configure Invitation Mail</Text>
-                <Text className="text-[11px] text-muted-foreground text-start">Customize invitation email & SMS template</Text>
-              </View>
-            </View>
-            <TouchableOpacity onPress={onClose} className="p-1 rounded-full bg-muted">
-              <X size={18} color="#6b7280" />
-            </TouchableOpacity>
+    <BottomSheet
+      visible={visible}
+      onClose={onClose}
+      title="Configure Invitation Mail"
+    >
+      {errorMsg ? (
+        <View className="p-3 mb-3 bg-destructive/10 border border-destructive/20 rounded-xl flex-row items-start">
+          <AlertTriangle size={16} color="#ef4444" className="me-2 mt-0.5" />
+          <Text className="text-xs text-destructive font-semibold flex-1 text-start">{errorMsg}</Text>
+        </View>
+      ) : null}
+
+      {successMsg ? (
+        <View className="p-3 mb-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex-row items-center">
+          <CheckCircle2 size={16} color="#10b981" className="me-2" />
+          <Text className="text-xs text-emerald-600 font-semibold flex-1 text-start">{successMsg}</Text>
+        </View>
+      ) : null}
+
+      {loading ? (
+        <View className="py-8 items-center justify-center">
+          <ActivityIndicator size="small" color="#6366f1" />
+          <Text className="text-xs text-muted-foreground mt-2">Loading template configuration...</Text>
+        </View>
+      ) : (
+        <View className="space-y-3 pb-2">
+          {/* Template Label */}
+          <View className="mb-3">
+            <Text className="text-xs font-bold text-foreground text-start mb-1">
+              Template Label *
+            </Text>
+            <TextInput
+              placeholder="e.g. Standard Org Welcome"
+              value={name}
+              onChangeText={setName}
+            />
           </View>
 
-          {errorMsg ? (
-            <View className="p-3 mb-3 bg-destructive/10 border border-destructive/20 rounded-xl flex-row items-start">
-              <AlertTriangle size={16} color="#ef4444" className="me-2 mt-0.5" />
-              <Text className="text-xs text-destructive font-semibold flex-1 text-start">{errorMsg}</Text>
-            </View>
-          ) : null}
+          {/* Channel Selector */}
+          <View className="mb-3">
+            <Text className="text-xs font-bold text-foreground text-start mb-1">
+              Dispatch Channel (Integration Hub Derived)
+            </Text>
+            <DropdownSelect
+              options={availableTypes}
+              value={type}
+              onValueChange={(val: any) => setType(val)}
+            />
+          </View>
 
-          {successMsg ? (
-            <View className="p-3 mb-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex-row items-center">
-              <CheckCircle2 size={16} color="#10b981" className="me-2" />
-              <Text className="text-xs text-emerald-600 font-semibold flex-1 text-start">{successMsg}</Text>
-            </View>
-          ) : null}
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ flexGrow: 1 }}
-            className="flex-1"
-          >
-            {loading ? (
-              <View className="py-8 items-center justify-center">
-                <ActivityIndicator size="small" color="#6366f1" />
-                <Text className="text-xs text-muted-foreground mt-2">Loading template configuration...</Text>
+          {/* Subject Line (Email Channel) */}
+          {type === 'email' && (
+            <>
+              <View className="mb-3">
+                <Text className="text-xs font-bold text-foreground text-start mb-1">
+                  Email Subject Line *
+                </Text>
+                <TextInput
+                  placeholder="Invitation to join Workspace"
+                  value={subject}
+                  onChangeText={setSubject}
+                />
               </View>
-            ) : (
-              <View className="space-y-3">
-                {/* Template Label */}
-                <View className="mb-3">
+
+              {/* CC / BCC fields */}
+              <View className="flex-row gap-2 mb-3">
+                <View className="flex-1">
                   <Text className="text-xs font-bold text-foreground text-start mb-1">
-                    Template Label *
+                    CC (Optional)
                   </Text>
                   <TextInput
-                    placeholder="e.g. Standard Org Welcome"
-                    value={name}
-                    onChangeText={setName}
+                    placeholder="admin@org.com"
+                    value={cc}
+                    onChangeText={setCc}
                   />
                 </View>
-
-                {/* Channel Selector */}
-                <View className="mb-3">
+                <View className="flex-1">
                   <Text className="text-xs font-bold text-foreground text-start mb-1">
-                    Dispatch Channel (Integration Hub Derived)
+                    BCC (Optional)
                   </Text>
-                  <DropdownSelect
-                    options={availableTypes}
-                    value={type}
-                    onValueChange={(val: any) => setType(val)}
-                  />
-                </View>
-
-                {/* Subject Line (Email Channel) */}
-                {type === 'email' && (
-                  <>
-                    <View className="mb-3">
-                      <Text className="text-xs font-bold text-foreground text-start mb-1">
-                        Email Subject Line *
-                      </Text>
-                      <TextInput
-                        placeholder="Invitation to join Workspace"
-                        value={subject}
-                        onChangeText={setSubject}
-                      />
-                    </View>
-
-                    {/* CC / BCC fields */}
-                    <View className="flex-row gap-2 mb-3">
-                      <View className="flex-1">
-                        <Text className="text-xs font-bold text-foreground text-start mb-1">
-                          CC (Optional)
-                        </Text>
-                        <TextInput
-                          placeholder="admin@org.com"
-                          value={cc}
-                          onChangeText={setCc}
-                        />
-                      </View>
-                      <View className="flex-1">
-                        <Text className="text-xs font-bold text-foreground text-start mb-1">
-                          BCC (Optional)
-                        </Text>
-                        <TextInput
-                          placeholder="audit@org.com"
-                          value={bcc}
-                          onChangeText={setBcc}
-                        />
-                      </View>
-                    </View>
-                  </>
-                )}
-
-                {/* Template Body */}
-                <View className="mb-3">
-                  <View className="flex-row items-center justify-between mb-1">
-                    <Text className="text-xs font-bold text-foreground text-start">
-                      Template Body Canvas *
-                    </Text>
-                    <TouchableOpacity
-                      onPress={handleInsertPlaceholder}
-                      className="px-2 py-1 rounded-lg bg-primary/10 border border-primary/20 flex-row items-center"
-                    >
-                      <Plus size={12} color="#6366f1" className="me-1" />
-                      <Text className="text-[10px] font-bold text-primary">Insert {'{{invite_link}}'}</Text>
-                    </TouchableOpacity>
-                  </View>
-
                   <TextInput
-                    placeholder="Write your email body template..."
-                    value={body}
-                    onChangeText={setBody}
-                    multiline
-                    numberOfLines={8}
-                    className="font-mono text-xs min-h-[140px]"
+                    placeholder="audit@org.com"
+                    value={bcc}
+                    onChangeText={setBcc}
                   />
-
-                  <View className="mt-2 p-2 rounded-xl bg-muted/40 border border-border/60 flex-row items-center justify-between">
-                    <Text className="text-[11px] text-muted-foreground text-start">
-                      Required token: <Text className="font-mono font-bold text-primary">{'{{invite_link}}'}</Text>
-                    </Text>
-                    {body.includes('{{invite_link}}') ? (
-                      <View className="flex-row items-center">
-                        <CheckCircle2 size={12} color="#10b981" className="me-1" />
-                        <Text className="text-[10px] font-bold text-emerald-600">Present</Text>
-                      </View>
-                    ) : (
-                      <View className="flex-row items-center">
-                        <AlertTriangle size={12} color="#ef4444" className="me-1" />
-                        <Text className="text-[10px] font-bold text-destructive">Missing Token</Text>
-                      </View>
-                    )}
-                  </View>
                 </View>
               </View>
-            )}
-          </ScrollView>
+            </>
+          )}
 
-          {/* Footer */}
-          <View className="flex-row items-center justify-end gap-2 pt-3 border-t border-border mt-2">
-            <Button variant="outline" size="sm" onPress={onClose} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onPress={handleSave}
-              loading={submitting}
-              disabled={submitting || loading || !body.includes('{{invite_link}}')}
-            >
-              Save Template
-            </Button>
+          {/* Template Body */}
+          <View className="mb-3">
+            <View className="flex-row items-center justify-between mb-1">
+              <Text className="text-xs font-bold text-foreground text-start">
+                Template Body Canvas *
+              </Text>
+              <TouchableOpacity
+                onPress={handleInsertPlaceholder}
+                className="px-2 py-1 rounded-lg bg-primary/10 border border-primary/20 flex-row items-center"
+              >
+                <Plus size={12} color="#6366f1" className="me-1" />
+                <Text className="text-[10px] font-bold text-primary">Insert {'{{invite_link}}'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              placeholder="Write your email body template..."
+              value={body}
+              onChangeText={setBody}
+              multiline
+              numberOfLines={8}
+              className="font-mono text-xs min-h-[140px]"
+            />
+
+            <View className="mt-2 p-2 rounded-xl bg-muted/40 border border-border/60 flex-row items-center justify-between">
+              <Text className="text-[11px] text-muted-foreground text-start">
+                Required token: <Text className="font-mono font-bold text-primary">{'{{invite_link}}'}</Text>
+              </Text>
+              {body.includes('{{invite_link}}') ? (
+                <View className="flex-row items-center">
+                  <CheckCircle2 size={12} color="#10b981" className="me-1" />
+                  <Text className="text-[10px] font-bold text-emerald-600">Present</Text>
+                </View>
+              ) : (
+                <View className="flex-row items-center">
+                  <AlertTriangle size={12} color="#ef4444" className="me-1" />
+                  <Text className="text-[10px] font-bold text-destructive">Missing Token</Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
+      )}
+
+      {/* Footer */}
+      <View className="flex-row items-center justify-end gap-2 pt-3 border-t border-border mt-2">
+        <Button variant="outline" size="sm" onPress={onClose} disabled={submitting}>
+          Cancel
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onPress={handleSave}
+          loading={submitting}
+          disabled={submitting || loading || !body.includes('{{invite_link}}')}
+        >
+          Save Template
+        </Button>
       </View>
-    </KeyboardAvoidingView>
-  </Modal>
+    </BottomSheet>
   );
 };
 

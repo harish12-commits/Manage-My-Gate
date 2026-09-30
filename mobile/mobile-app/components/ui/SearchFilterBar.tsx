@@ -23,7 +23,7 @@ export interface SortOption {
   icon?: any;
 }
 
-const searchFilterBarVariants = cva('w-full flex-col px-4 py-2', {
+const searchFilterBarVariants = cva('w-full flex-col px-4 pt-4 pb-2', {
   variants: {
     variant: {
       default: '',
@@ -139,10 +139,10 @@ export const SearchFilterBar = React.forwardRef<View, SearchFilterBarProps>(
         className={cn(searchFilterBarVariants({ variant }), className)}
         {...props}
       >
-        {/* Single Clean Row: Search Input + Filter Icon Button */}
-        <View className="flex-row items-center gap-2">
+        {/* Premium Float Card Wrapper */}
+        <View className="bg-card rounded-2xl shadow-sm border border-border/40 overflow-hidden p-1.5 flex-row items-center gap-2">
           {/* Search input container */}
-          <View className="flex-1 flex-row items-center bg-card border border-border/80 rounded-2xl px-3.5 h-11 text-foreground shadow-2xs">
+          <View className="flex-1 flex-row items-center bg-muted/40 rounded-xl px-3 h-10 text-foreground">
             <Icon
               as={Search}
               size={18}

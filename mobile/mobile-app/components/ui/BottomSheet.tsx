@@ -68,7 +68,10 @@ function BottomSheet({
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // IMPORTANT: On Android, `adjustResize` fails completely inside a Modal with `transparent={true}`.
+        // Therefore, we MUST use behavior="padding" on Android as well to prevent the keyboard from
+        // covering the bottom sheet.
+        behavior="padding"
         keyboardVerticalOffset={0}
         style={{ flex: 1 }}
         className="flex-1 justify-end items-center"

@@ -275,20 +275,6 @@ export const DirectoryNoteComposer = ({
                           {t('btn_interested', 'Interested')}
                         </Button>
 
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onPress={() => {
-                            onOpenConversation(targetMember as any);
-                            onClose();
-                          }}
-                          leftIcon={MessageSquare}
-                          className="h-7.5 rounded-xl bg-primary/10 border border-primary/20 px-2.5"
-                          textClassName="text-[11px] font-bold text-primary"
-                        >
-                          {t('btn_message', 'Message')}
-                        </Button>
-
                         {phoneNum ? (
                           <Button
                             variant="outline"
@@ -299,21 +285,6 @@ export const DirectoryNoteComposer = ({
                             textClassName="text-[11px] font-semibold text-foreground"
                           >
                             {t('btn_call', 'Call')}
-                          </Button>
-                        ) : null}
-
-                        {intercomNum ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onPress={() => {
-                              onOpenConversation(targetMember as any);
-                              onClose();
-                            }}
-                            className="h-7.5 rounded-xl border-border bg-background px-2"
-                            textClassName="text-[11px] font-semibold text-foreground"
-                          >
-                            #{intercomNum}
                           </Button>
                         ) : null}
                       </View>

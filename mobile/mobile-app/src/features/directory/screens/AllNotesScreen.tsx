@@ -12,11 +12,14 @@ import { useCommunityNote, formatExpirationCountdown } from '../hooks/useCommuni
 import { useDirectoryMessaging } from '../hooks/useDirectoryMessaging';
 import { DirectoryQuickMessageSheet } from '../components/DirectoryQuickMessageSheet';
 import { useTranslation } from '@/src/utils/i18n';
+import { useAuth } from '@/src/features/auth/hooks/useAuth';
 import { Sparkles, Send, Trash2, ThumbsUp, MessageSquare, Phone, Clock } from 'lucide-react-native';
 
 export function AllNotesScreen() {
   const [currentTab, setCurrentTab] = useState<'feed' | 'compose'>('feed');
   const { onOpenConversation } = useDirectoryMessaging();
+  const { user } = useAuth();
+  const currentUserId = (user as any)?.id || (user as any)?._id || (user as any)?.userId;
   const { t, tRole } = useTranslation();
 
   const {
@@ -55,19 +58,13 @@ export function AllNotesScreen() {
   };
 
   const router = useRouter();
-
-  const handleBack = () => {
-    router.replace({ pathname: '/(resident)/dashboard', params: { openProfile: 'true' } } as any);
-  };
-
-  return (
+return (
     <ScreenShell
       title={t('all_community_notes', 'All Community Notes')}
       subtitle={t('community_notes_sub', 'Discover 24-hour neighbor notes & publish your status')}
       iconName="Sparkles"
       showBackButton={true}
-      onBackPress={handleBack}
-    >
+>
       <View className="flex-1 bg-background px-4 pt-3 pb-6 gap-3.5">
         {/* Navigation Segmented Control */}
         <SegmentedControl
@@ -198,19 +195,9 @@ export function AllNotesScreen() {
                 const phoneNum = note.phone || note.memberData?.phone;
                 const intercomNum = note.intercomNumber || note.memberData?.intercomNumber;
 
-                const targetUserId = typeof note.userId === 'string' ? note.userId : (note.userId as any)?._id || note._id;
+                const targetUserId = typeof note.userId === 'string' ? note.userId : (note.userId as any)?._id || note.authorId || null;
 
-                const targetMember = note.memberData || {
-                  id: targetUserId,
-                  userId: targetUserId,
-                  name: authorName,
-                  unitNumber: authorUnit,
-                  role: String(rawRole).toLowerCase(),
-                  phone: phoneNum,
-                  intercomNumber: intercomNum,
-                };
-
-                return (
+                const targetMember = note.memberData || { id: targetUserId, userId: targetUserId, name: authorName, unitNumber: authorUnit, role: String(rawRole).toLowerCase(), phone: phoneNum, intercomNumber: intercomNum }; const isMyOwnNote = targetUserId && String(targetUserId) === String(currentUserId); return (
                   <View key={note._id || note.id} className="bg-card border border-border/80 rounded-2xl p-4 gap-3 shadow-xs">
                     {/* Header Row: Avatar + Author Info + Expiry */}
                     <View className="flex-row items-start justify-between">
@@ -247,42 +234,33 @@ export function AllNotesScreen() {
                     </View>
 
                     {/* Action Row */}
-                    <View className="flex-row items-center gap-2 pt-2 border-t border-border/30 w-full mt-0.5">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onPress={() => handleInterested(targetMember)}
-                        leftIcon={ThumbsUp}
-                        className="flex-1 h-9.5 rounded-xl bg-primary border border-primary"
-                        textClassName="text-xs font-bold text-primary-foreground"
-                      >
-                        {t('btn_interested', 'Interested')}
-                      </Button>
-
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onPress={() => onOpenConversation(targetMember as any)}
-                        leftIcon={MessageSquare}
-                        className="flex-1 h-9.5 rounded-xl bg-primary/10 border border-primary/20"
-                        textClassName="text-xs font-bold text-primary"
-                      >
-                        {t('btn_message', 'Message')}
-                      </Button>
-
-                      {phoneNum ? (
+                    {!isMyOwnNote && (
+                      <View className="flex-row items-center gap-2 pt-2 border-t border-border/30 w-full mt-0.5">
                         <Button
-                          variant="outline"
+                          variant="default"
                           size="sm"
-                          onPress={() => Linking.openURL(`tel:${phoneNum}`)}
-                          leftIcon={Phone}
-                          className="h-9.5 rounded-xl border-border bg-muted/30 px-3.5"
-                          textClassName="text-xs font-semibold text-foreground"
+                          onPress={() => handleInterested(targetMember)}
+                          leftIcon={ThumbsUp}
+                          className="flex-1 h-9.5 rounded-xl bg-primary border border-primary"
+                          textClassName="text-xs font-bold text-primary-foreground"
                         >
-                          {t('btn_call', 'Call')}
+                          {t('btn_interested', 'Interested')}
                         </Button>
-                      ) : null}
-                    </View>
+
+                        {phoneNum ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onPress={() => Linking.openURL(`tel:${phoneNum}`)}
+                            leftIcon={Phone}
+                            className="flex-1 h-9.5 rounded-xl border-border bg-muted/30 px-3.5"
+                            textClassName="text-xs font-semibold text-foreground"
+                          >
+                            {t('btn_call', 'Call')}
+                          </Button>
+                        ) : null}
+                      </View>
+                    )}
                   </View>
                 );
               })
@@ -322,3 +300,10 @@ export function AllNotesScreen() {
 }
 
 export default AllNotesScreen;
+
+
+
+
+
+
+

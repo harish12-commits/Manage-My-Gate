@@ -169,7 +169,7 @@ export async function requestNotificationPermissionsAsync(forcePrompt = false): 
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
   try {
     if (Platform.OS === 'web') {
-      console.log('[PushNotificationService] Push notifications not supported on Web target');
+      // console.log('[PushNotificationService] Push notifications not supported on Web target');
       return null;
     }
 

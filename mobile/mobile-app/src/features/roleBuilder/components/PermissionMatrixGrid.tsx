@@ -100,7 +100,7 @@ const getCategoryDisplayName = (category: string): string => {
     billing: 'Billing & Invoices',
     villas: 'Unit Management',
     users: 'User Management',
-    notices: 'Notices Board',
+    notices: 'Notice Board & Polls',
     integrations: 'Integrations Hub',
     complaints: 'Complaints & Maintenance',
   };
@@ -222,6 +222,11 @@ export const PermissionMatrixGrid: React.FC<PermissionMatrixGridProps> = ({
       } else if (lowerKey === 'digital_wallet' || lowerKey === 'wallet') {
         result['digital_wallet'] = [
           ...(result['digital_wallet'] || []),
+          ...(perms || []),
+        ];
+      } else if (lowerKey === 'notices' || lowerKey === 'polls' || lowerKey === 'noticeboard') {
+        result['notices'] = [
+          ...(result['notices'] || []),
           ...(perms || []),
         ];
       } else {
@@ -401,27 +406,37 @@ export const PermissionMatrixGrid: React.FC<PermissionMatrixGridProps> = ({
                 })}
               </View>
             ) : (
-              <View className="bg-card border border-border/80 rounded-2xl overflow-hidden shadow-xs">
+              <View className="flex-row flex-wrap gap-2">
                 {perms.map((perm, idx) => {
                   const permValue = perm.name || perm.code || perm._id || '';
                   const isChecked = isPermissionSelected(perm, selectedIds);
-                  const isLast = idx === perms.length - 1;
                   const label = formatPermissionLabel(perm.name || String(permValue));
                   const description = getPermissionDescription(perm.name || String(permValue));
+
+                  // Adaptive Layout: Items with descriptions take full width. Simple items act as wrap chips.
+                  const containerClass = description ? 'w-full' : 'self-start';
 
                   return (
                     <TouchableOpacity
                       key={permValue}
                       onPress={() => onTogglePermission(permValue, !isChecked)}
                       activeOpacity={0.7}
-                      className={`flex-row items-center justify-between p-3 ${
-                        !isLast ? 'border-b border-border/40' : ''
-                      } ${isChecked ? 'bg-primary/5' : 'bg-card'}`}
+                      className={`${containerClass} flex-row items-center p-2.5 rounded-xl border ${
+                        isChecked
+                          ? 'bg-primary/10 border-primary/40 shadow-xs'
+                          : 'bg-card border-border/80 shadow-2xs'
+                      }`}
                     >
-                      <View className="flex-1 me-3">
+                      <View className="me-2.5">
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={(val) => onTogglePermission(permValue, !!val)}
+                        />
+                      </View>
+                      <View className="flex-1">
                         <Text
-                          className={`text-xs font-semibold text-start ${
-                            isChecked ? 'text-primary font-bold' : 'text-foreground'
+                          className={`text-[11px] text-start ${
+                            isChecked ? 'text-primary font-bold' : 'text-foreground font-semibold'
                           }`}
                         >
                           {label}
@@ -432,11 +447,6 @@ export const PermissionMatrixGrid: React.FC<PermissionMatrixGridProps> = ({
                           </Text>
                         ) : null}
                       </View>
-
-                      <Checkbox
-                        checked={isChecked}
-                        onCheckedChange={(val) => onTogglePermission(permValue, !!val)}
-                      />
                     </TouchableOpacity>
                   );
                 })}
