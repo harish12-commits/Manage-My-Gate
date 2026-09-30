@@ -105,6 +105,31 @@ export async function notifyCommunityAdmins(orgId, title, body, actionUrl, repor
         logger.error(`[IssueReportListener] Failed to create notification for user ${userId}:`, err.message);
       }
     }
+
+    // 4. Send a copy to the Community's configured SMTP email address (shared support inbox)
+    if (reportObj) {
+      try {
+        const { getSmtpTransporter } = await import('../../utils/email.utils.js');
+        const IntegrationHub = (await import('../integrationHub/integrationHub.model.js')).default;
+        const smtpIntegration = await IntegrationHub.findOne({ $or: [{ orgId }, { organizationId: orgId }], provider: 'smtp' }).exec();
+        
+        if (smtpIntegration) {
+          // It has its own SMTP integration, meaning it has a shared inbox email.
+          const smtpObj = await getSmtpTransporter(orgId);
+          if (smtpObj && smtpObj.authUsername) {
+            const { default: emailService } = await import('../../utils/email.service.js');
+            await emailService.sendReportedIssueEmail({
+              to: smtpObj.authUsername,
+              report: reportObj,
+              attachments: mailAttachments,
+            });
+            logger.info(`[IssueReportListener] Email sent to Community Shared Inbox (SMTP User) ${smtpObj.authUsername}`);
+          }
+        }
+      } catch (err) {
+        logger.error(`[IssueReportListener] Error sending to Community Shared Inbox:`, err.message);
+      }
+    }
   } catch (error) {
     logger.error(`[IssueReportListener] Error notifying Community Admins for org ${orgId}:`, error);
   }
