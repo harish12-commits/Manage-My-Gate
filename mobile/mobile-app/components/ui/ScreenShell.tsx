@@ -213,11 +213,14 @@ export function ScreenShell({
       {/* Global Luxury Warm Peach-to-Ivory Background Layer */}
       <AppBackground />
 
-      {/* Top Status Bar Safe Area Spacer */}
-      <View
-        style={{ height: topInsetPadding }}
-        className="bg-transparent z-30"
-      />
+      {/* Standard screens own this inset. Full-screen flows render a custom
+          header which already includes the device safe area. */}
+      {!hideHeader && (
+        <View
+          style={{ height: topInsetPadding }}
+          className="bg-transparent z-30"
+        />
+      )}
 
       {/* Header row (seamless transparent header showing warm peach gradient) */}
       {!hideHeader && (

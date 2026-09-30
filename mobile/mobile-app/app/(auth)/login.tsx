@@ -12,7 +12,6 @@ import {
   ArrowRight,
   Sparkles,
   X,
-  Settings,
 } from 'lucide-react-native';
 import * as React from 'react';
 import {
@@ -624,14 +623,6 @@ export default function LoginScreen() {
           />
         </Animated.View>
         <View className="absolute inset-0 bg-black/40 dark:bg-black/60" pointerEvents="none" />
-
-        <TouchableOpacity 
-          className="absolute z-50 size-12 rounded-full bg-blue-500 shadow-md items-center justify-center shadow-blue-500/30"
-          style={{ top: Math.max(insets.top, 24) + 8, right: 20 }}
-          activeOpacity={0.8}
-        >
-          <Settings size={26} color="#FFFFFF" strokeWidth={2.5} />
-        </TouchableOpacity>
 
         {/* Fixed Brand Identity Section (Stays put when keyboard opens) */}
         <View 

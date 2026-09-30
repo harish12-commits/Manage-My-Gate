@@ -2,7 +2,8 @@ import * as React from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import { Button } from '@/components/ui/button';
-import { Text, Alert } from 'react-native';
+import { Alert } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { useAuth } from '../hooks/useAuth';
 import { router } from 'expo-router';
 

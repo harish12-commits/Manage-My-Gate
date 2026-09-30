@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Checkbox } from '../../../../components/forms/Checkbox';
 import { Icon } from '../../../../components/ui/icon';
 import { ShieldCheck, Compass, Check, Layers, Users, Key, Landmark, Sparkles, WalletCards } from 'lucide-react-native';
 import { PermissionGroupMap, PermissionItem } from '../store/roleSlice';
+import { Text } from '../../../../components/ui/text';
 
 const PERMISSION_LABEL_OVERRIDES: Record<string, string> = {
   'billing:action_center': 'Digital Wallet & Resident Ledger',

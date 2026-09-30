@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   Modal,
   TouchableOpacity,
@@ -26,6 +25,7 @@ import {
   ValidationStatus,
 } from '@/src/utils/validation';
 import { AppLoader } from '@/components/ui/AppLoader';
+import { Text } from '@/components/ui/text';
 
 interface InviteUserModalProps {
   visible: boolean;

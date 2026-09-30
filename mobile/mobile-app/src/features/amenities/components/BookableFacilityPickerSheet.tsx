@@ -40,7 +40,7 @@ export function BookableFacilityPickerSheet({
             {t('amenity_booking_staff_for', 'Booking for {name}', { name: residentName })}
           </Text>
         ) : null}
-        {loading && facilities.length === 0 ? <ActivityIndicator className="text-primary" /> : null}
+        {loading && facilities.length === 0 ? <AppLoader variant="inline" /> : null}
         <View className="gap-2 pb-2">
           {facilities.map((f) => (
             <ListCard

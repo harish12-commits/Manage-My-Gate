@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, ImageSourcePropType } from 'react-native';
+import { View, Image, ImageSourcePropType } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { FileImage } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
 

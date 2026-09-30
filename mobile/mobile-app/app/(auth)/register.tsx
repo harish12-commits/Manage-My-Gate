@@ -328,9 +328,11 @@ export default function RegisterScreen() {
                 <View className="flex-1">
                   <GoogleSignInButton />
                 </View>
-                <View className="flex-1">
-                  <AppleSignInButton />
-                </View>
+                {Platform.OS === 'ios' ? (
+                  <View className="flex-1">
+                    <AppleSignInButton />
+                  </View>
+                ) : null}
               </View>
 
               {/* Login Link */}

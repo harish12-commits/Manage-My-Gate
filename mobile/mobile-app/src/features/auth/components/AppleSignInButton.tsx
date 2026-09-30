@@ -1,7 +1,6 @@
 import * as React from 'react';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Platform, View } from 'react-native';
-import { SocialAuthButton } from '@/components/auth/SocialAuthButton';
 import { useAppleAuthSession } from '../hooks/useAppleAuthSession';
 import { AppLoader } from '@/components/ui/AppLoader';
 
@@ -18,34 +17,26 @@ export interface AppleSignInButtonProps {
 export function AppleSignInButton(props: AppleSignInButtonProps = {}) {
   const { disabled = false, variant = 'glass', className = '', style, ...authOptions } = props;
   const { handleAppleSignIn, loading, isAvailable } = useAppleAuthSession(authOptions);
+  const buttonHeight = variant === 'compact' ? 44 : 50;
+  const isDisabled = disabled || loading;
 
-  // If glass variant requested or on non-iOS/unavailable, render the custom glass button
-  if (variant === 'glass' || Platform.OS !== 'ios' || !isAvailable) {
-    return (
-      <SocialAuthButton
-        provider="apple"
-        variant={variant}
-        onPress={handleAppleSignIn}
-        loading={loading}
-        disabled={disabled || loading}
-        className={className}
-      />
-    );
-  }
+  // expo-apple-authentication is a native iOS API. Keep Apple Sign-In out of
+  // Android/web UI and render only after the device confirms availability.
+  if (Platform.OS !== 'ios' || !isAvailable) return null;
 
   return (
     <View
-      pointerEvents={disabled ? 'none' : 'auto'}
-      style={style}
-      className={`h-12 flex-1 overflow-hidden rounded-xl ${disabled ? 'opacity-60' : ''} ${className}`}
+      pointerEvents={isDisabled ? 'none' : 'auto'}
+      style={[{ height: buttonHeight }, style]}
+      className={`w-full flex-1 overflow-hidden rounded-xl ${isDisabled ? 'opacity-60' : ''} ${className}`}
     >
       <AppleAuthentication.AppleAuthenticationButton
         buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
         buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
         cornerRadius={12}
-        style={{ width: '100%', height: 48, opacity: loading ? 0.6 : 1 }}
+        style={{ width: '100%', height: buttonHeight, opacity: loading ? 0.6 : 1 }}
         onPress={() => {
-          if (!disabled) void handleAppleSignIn();
+          if (!isDisabled) void handleAppleSignIn();
         }}
       />
       {loading ? (

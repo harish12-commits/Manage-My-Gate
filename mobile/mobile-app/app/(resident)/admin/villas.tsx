@@ -117,6 +117,11 @@ export default function VillaManagementScreen() {
     fetchVillas({ search: '', status: '', blockOrBuilding: '', page: 1 });
   };
 
+  const handleOpenCreateForm = () => {
+    setEditingVilla(null);
+    setFormModalVisible(true);
+  };
+
   const activeFilterCount = (filters.status ? 1 : 0) + (filters.blockOrBuilding ? 1 : 0);
 
   const availableStatuses = ['Vacant', 'Occupied', 'Under Maintenance', 'For Sale', 'For Rent'];

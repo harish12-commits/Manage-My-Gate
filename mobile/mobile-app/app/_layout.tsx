@@ -82,6 +82,9 @@ import { getDeferredHandoffContext } from '../src/features/auth/services/deferre
 import { GlobalNotificationPresenter } from '@/components/feedback/GlobalNotificationPresenter';
 import { AnimatedSplash } from '@/components/feedback/AnimatedSplash';
 import { AppLoader } from '@/components/ui/AppLoader';
+import { installLocalizedAlertTranslation } from '@/src/utils/alertUtils';
+
+installLocalizedAlertTranslation();
 
 // Prevent splash screen from auto-hiding before asset loading is complete
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -133,7 +136,6 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
 function AuthRouteGuard() {
   const dispatch = useDispatch();
   const { isAuthenticated, isInitialized, user, bootstrap } = useAuth();
-  const { setColorScheme } = useColorScheme();
   const segments = useSegments();
   const router = useRouter();
   const pathname = usePathname();
@@ -175,21 +177,11 @@ function AuthRouteGuard() {
     router.replace(target as any);
   };
 
-  // Restore saved theme, language, and session restoration on startup (Mount once)
+  // Restore language and session state on startup. Theme restoration is handled
+  // by RootLayout so authentication routes can keep a fixed light appearance.
   useEffect(() => {
     bootstrap();
     const restorePreferences = async () => {
-      try {
-        const savedTheme = await storage.getItem('theme_preference');
-        if (savedTheme === 'dark' || savedTheme === 'light') {
-          setColorScheme(savedTheme);
-        } else {
-          setColorScheme('light');
-          await storage.setItem('theme_preference', 'light');
-        }
-      } catch (e) {
-        console.warn('Failed to restore theme on startup:', e);
-      }
       try {
         await i18n.initLanguage();
       } catch (e) {
@@ -308,7 +300,45 @@ function AuthRouteGuard() {
 }
 
 export default function RootLayout() {
-  const { colorScheme } = useColorScheme();
+  const { colorScheme, setColorScheme } = useColorScheme();
+  const setColorSchemeRef = useRef(setColorScheme);
+  setColorSchemeRef.current = setColorScheme;
+  const segments = useSegments();
+  const isAuthRoute = segments[0] === '(auth)';
+  const visibleColorScheme = isAuthRoute ? 'light' : colorScheme;
+
+  useEffect(() => {
+    let isCurrentRoute = true;
+
+    const applyRouteTheme = async () => {
+      if (isAuthRoute) {
+        setColorSchemeRef.current('light');
+        return;
+      }
+
+      try {
+        const savedTheme = await storage.getItem('theme_preference');
+        if (!isCurrentRoute) return;
+
+        if (savedTheme === 'dark' || savedTheme === 'light' || savedTheme === 'system') {
+          setColorSchemeRef.current(savedTheme);
+        } else {
+          setColorSchemeRef.current('light');
+          await storage.setItem('theme_preference', 'light');
+        }
+      } catch (e) {
+        if (isCurrentRoute) {
+          setColorSchemeRef.current('light');
+          console.warn('Failed to restore theme on startup:', e);
+        }
+      }
+    };
+
+    applyRouteTheme();
+    return () => {
+      isCurrentRoute = false;
+    };
+  }, [isAuthRoute]);
 
   const [fontsLoaded, fontError] = useFonts({
     HankenGrotesk_400Regular,
@@ -373,7 +403,7 @@ export default function RootLayout() {
 
   if (!fontsLoaded && !fontError) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colorScheme === 'dark' ? '#131316' : '#FFF8EF' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: visibleColorScheme === 'dark' ? '#131316' : '#FFF8EF' }}>
         <AppLoader variant="block" />
       </View>
     );
@@ -382,13 +412,13 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <View className={colorScheme === 'dark' ? 'dark flex-1 bg-background' : 'flex-1 bg-background'}>
+        <View className={visibleColorScheme === 'dark' ? 'dark flex-1 bg-background' : 'flex-1 bg-background'}>
           <Provider store={store}>
             <I18nProvider>
               <BottomSheetModalProvider>
                 <StatusBar
-                  style={colorScheme === 'dark' ? 'light' : 'dark'}
-                  {...({ backgroundColor: colorScheme === 'dark' ? '#131316' : '#FFF8EF' } as any)}
+                  style={visibleColorScheme === 'dark' ? 'light' : 'dark'}
+                  {...({ backgroundColor: visibleColorScheme === 'dark' ? '#131316' : '#FFF8EF' } as any)}
                 />
                 <Stack screenOptions={{ headerShown: false, freezeOnBlur: true }} />
                 <AuthRouteGuard />

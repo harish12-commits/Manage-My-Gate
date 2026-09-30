@@ -687,7 +687,7 @@ export default function ProfileScreen() {
 
         {/* Section: Organisation, Role & Villa Switching */}
         <View className="gap-2.5">
-          <Text className="text-[12px] font-bold font-sans text-muted-foreground uppercase px-1 tracking-wider">
+          <Text className="text-base font-extrabold font-sans text-foreground px-1 tracking-tight">
             {t('workspace_context', 'Organisation, Role & Villa')}
           </Text>
 
@@ -699,7 +699,7 @@ export default function ProfileScreen() {
                   <Building2 size={18} color="#6366f1" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <Text className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {t('current_organisation', 'Current Organisation')}
                   </Text>
                   <Text className="text-base font-bold text-foreground mt-0.5" numberOfLines={1}>
@@ -716,7 +716,7 @@ export default function ProfileScreen() {
                   <ShieldCheck size={18} color="#03A9F4" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <Text className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {t('current_role', 'Current Role')}
                   </Text>
                   <Text className="text-base font-bold text-foreground mt-0.5" numberOfLines={1}>
@@ -739,7 +739,7 @@ export default function ProfileScreen() {
                     <Home size={18} color="#10b981" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    <Text className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       {t('current_unit', 'Current Property Unit')}
                     </Text>
                     <Text className="text-base font-bold text-foreground mt-0.5" numberOfLines={1}>
@@ -766,7 +766,7 @@ export default function ProfileScreen() {
                     <MapPin size={18} color="#0ea5e9" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    <Text className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       {t('current_assignment', 'Current Assignment')}
                     </Text>
                     <Text className="text-base font-bold text-foreground mt-0.5" numberOfLines={1}>
@@ -851,7 +851,7 @@ export default function ProfileScreen() {
         {/* Section: Personal Details & Edit Form */}
         <View className="gap-2.5">
           <Text
-            className="text-[12px] font-bold font-sans text-muted-foreground uppercase px-1 tracking-wider"
+            className="text-base font-extrabold font-sans text-foreground px-1 tracking-tight"
             style={{ fontWeight: 'bold' }}
           >
             {t('personal_details', 'Personal Details')}
@@ -860,6 +860,7 @@ export default function ProfileScreen() {
           <View className="bg-card border border-border/70 rounded-3xl p-5 shadow-2xs gap-4">
             <TextInput
               label={t('full_name', 'Full Name')}
+              labelClassName="text-sm font-bold"
               required
               placeholder={t('full_name_placeholder', 'e.g. Jane Doe')}
               value={name}
@@ -884,6 +885,7 @@ export default function ProfileScreen() {
 
             <TextInput
               label={t('email_address', 'Email Address')}
+              labelClassName="text-sm font-bold"
               placeholder={t('email_placeholder', 'e.g. user@example.com')}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -921,6 +923,7 @@ export default function ProfileScreen() {
 
             <TextInput
               label={t('phone_number', 'Phone Number')}
+              labelClassName="text-sm font-bold"
               placeholder={t('phone_placeholder', 'e.g. +91 9876543210')}
               keyboardType="phone-pad"
               value={phone}
@@ -961,6 +964,7 @@ export default function ProfileScreen() {
             <View className="gap-2">
               <TextInput
                 label={t('bio', 'Bio')}
+                labelClassName="text-sm font-bold"
                 placeholder={t('bio_placeholder', 'Tell your neighbours about yourself')}
                 value={bio}
                 onChangeText={setBio}
@@ -971,7 +975,7 @@ export default function ProfileScreen() {
               <View className="gap-1.5">
                 <View className="flex-row items-center gap-1.5 px-0.5">
                   <Sparkles size={12} className="text-primary" />
-                  <Text className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     {t('quick_bio_suggestions', 'Quick Bio Suggestions')}
                   </Text>
                 </View>
@@ -1000,6 +1004,7 @@ export default function ProfileScreen() {
               <TextInput
                 containerClassName="w-full"
                 label={t('work', 'Work / Profession')}
+                labelClassName="text-sm font-bold"
                 placeholder={t('add_work', 'e.g. Software Engineer, Doctor, Architect')}
                 value={work}
                 onChangeText={setWork}
@@ -1009,7 +1014,7 @@ export default function ProfileScreen() {
               <View className="gap-1.5">
                 <View className="flex-row items-center gap-1.5 px-0.5">
                   <Sparkles size={12} className="text-primary" />
-                  <Text className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     {t('popular_roles', 'Popular Roles')}
                   </Text>
                 </View>
@@ -1038,7 +1043,7 @@ export default function ProfileScreen() {
               <View className="flex-row items-center justify-between px-0.5">
                 <View className="flex-row items-center gap-1.5">
                   <MapPin size={14} className="text-primary" />
-                  <Text className="text-[13.5px] font-bold font-sans text-foreground">
+                  <Text className="text-sm font-bold font-sans text-foreground">
                     {t('hometown', 'Hometown / Location')}
                   </Text>
                 </View>
@@ -1123,7 +1128,7 @@ export default function ProfileScreen() {
               <View className="flex-row items-center justify-between px-0.5">
                 <View className="flex-row items-center gap-1.5">
                   <Sparkles size={14} className="text-primary" />
-                  <Text className="text-[13.5px] font-bold font-sans text-foreground">
+                  <Text className="text-sm font-bold font-sans text-foreground">
                     {t('interests', 'Interests & Hobbies')}
                   </Text>
                 </View>
@@ -1137,7 +1142,7 @@ export default function ProfileScreen() {
               {/* Selected Interests Tag Cloud */}
               {currentInterests.length > 0 ? (
                 <View className="p-2.5 bg-secondary/30 rounded-2xl border border-border/70 gap-1.5">
-                  <Text className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     {t('your_interests', 'Your Interests')}
                   </Text>
                   <View className="flex-row flex-wrap gap-1.5">
@@ -1146,7 +1151,7 @@ export default function ProfileScreen() {
                         key={interest}
                         className="flex-row items-center px-2.5 py-1 rounded-lg bg-primary/15 border border-primary/30"
                       >
-                        <Text className="text-[11px] font-bold text-primary me-1.5">
+                        <Text className="text-xs font-bold text-primary me-1.5">
                           {interest}
                         </Text>
                         <Pressable
@@ -1197,14 +1202,14 @@ export default function ProfileScreen() {
 
               {/* Suggestions by Field Category */}
               <View className="bg-muted/20 p-3 rounded-2xl border border-border/70 gap-2.5 overflow-hidden">
-                <View className="flex-row items-center justify-between">
+                <View className="gap-1">
                   <View className="flex-row items-center gap-1.5">
-                    <Sparkles size={12} className="text-primary" />
-                    <Text className="text-[11.5px] font-bold text-foreground">
+                    <Sparkles size={16} className="text-primary" />
+                    <Text className="text-sm font-extrabold text-foreground">
                       {t('suggested_by_category', 'Suggestions by Category')}
                     </Text>
                   </View>
-                  <Text className="text-[10.5px] text-muted-foreground font-medium">
+                  <Text className="text-xs text-muted-foreground font-medium ms-[22px]">
                     {t('tap_to_toggle', 'Tap to add / remove')}
                   </Text>
                 </View>
@@ -1257,7 +1262,7 @@ export default function ProfileScreen() {
                         ) : (
                           <Plus size={14} className="text-muted-foreground me-1.5" />
                         )}
-                        <Text className={`text-[13px] ${isSelected ? 'text-white font-semibold' : 'text-foreground font-medium'}`}>
+                        <Text className={`text-xs ${isSelected ? 'text-white font-semibold' : 'text-foreground font-medium'}`}>
                           {item}
                         </Text>
                       </Pressable>
@@ -1296,7 +1301,7 @@ export default function ProfileScreen() {
           <Pressable className="absolute inset-0" onPress={() => setShowPhotoOptions(false)} />
           <View className="bg-card rounded-t-3xl overflow-hidden border-t border-border">
             <SheetGrabHandle onClose={() => setShowPhotoOptions(false)} />
-            <Text className="text-base font-bold text-foreground text-center py-2">
+            <Text className="text-lg font-extrabold text-foreground text-center py-2">
               {t('profile_photo_options', 'Update Profile Photo')}
             </Text>
             <View className="px-5 pb-5 gap-2.5">

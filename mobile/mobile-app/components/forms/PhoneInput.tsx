@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   Modal,
   FlatList,
@@ -13,6 +12,8 @@ import {
 import { ChevronDown, Check, CheckCircle2, AlertCircle, Search } from 'lucide-react-native';
 import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
 import { cn } from '../../lib/utils';
+import { Text } from '../ui/text';
+import { useTranslation } from '../../src/utils/i18n';
 import {
   examplePhone,
   getDefaultPhoneCountry,
@@ -54,8 +55,6 @@ export interface PhoneInputProps {
   defaultCountry?: string;
   /** Rendered at the end of the field, e.g. a contact-picker button. */
   rightElement?: React.ReactNode;
-  /** Called when the number field gains focus (e.g. to scroll it above the keyboard). */
-  onFocus?: () => void;
   testID?: string;
   /** 'form' matches the standard Input card field; 'glass' is the translucent auth-screen look. */
   variant?: 'form' | 'glass';
@@ -88,7 +87,6 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   helperClassName,
   feedbackContainerClassName,
   errorClassName,
-  onFocus,
   onBlur,
   style,
   helperText,
@@ -97,6 +95,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   testID,
   variant = 'form',
 }) => {
+  const { translateText } = useTranslation();
   const isGlass = variant === 'glass';
   const [selectedCountry, setSelectedCountry] = useState<PhoneCountry>(() =>
     getPhoneCountry(defaultCountry || getDefaultPhoneCountry())
@@ -260,7 +259,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
                 style,
               ]}
               keyboardType="phone-pad"
-              placeholder={placeholder || (typeof examplePhone === 'function' ? examplePhone(selectedCountry.code) : undefined) || '99887 76655'}
+              placeholder={placeholder ? translateText(placeholder) : (typeof examplePhone === 'function' ? examplePhone(selectedCountry.code) : undefined) || '99887 76655'}
               placeholderTextColor={placeholderTextColor || '#737c88'}
               value={nationalNumber}
               onFocus={() => {
@@ -273,7 +272,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
               }}
               onChangeText={handleNumberChange}
               maxLength={maxDigits + 1}
-              accessibilityLabel={label}
+              accessibilityLabel={translateText(label)}
               testID={testID}
             />
           );
@@ -335,7 +334,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
                   <RNTextInput
                     className="h-full min-w-0 flex-1 p-0 font-sans text-[13px] font-medium text-foreground"
                     style={{ outlineStyle: 'none', includeFontPadding: false, textAlignVertical: 'center' } as any}
-                    placeholder="Search country or code..."
+                    placeholder={translateText('Search country or code...')}
                     placeholderTextColor="#737c88"
                     value={searchQuery}
                     onChangeText={setSearchQuery}

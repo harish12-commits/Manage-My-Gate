@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   Alert,
   ScrollView,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -12,6 +11,7 @@ import { BookingSlot } from '../models/booking.model';
 import { generateMockSlots, MOCK_AMENITIES } from '../data/mockAmenitiesData';
 import { TimeSlotPicker } from '../components/TimeSlotPicker';
 import { cn } from '@/lib/utils';
+import { Text } from '@/components/ui/text';
 
 export interface AmenityBookingModalProps {
   amenity?: Amenity;

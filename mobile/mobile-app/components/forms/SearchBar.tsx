@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, Pressable } from 'react-native';
+import { ActivityIndicator, View, TextInput, Pressable } from 'react-native';
 import { Search, X } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
 

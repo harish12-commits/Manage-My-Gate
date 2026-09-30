@@ -76,10 +76,8 @@ interface AndroidTabButtonProps {
   onPressIn?: () => void;
   isDark: boolean;
   isCompact?: boolean;
-  isPending?: boolean;
 }
 
-import { AppLoader } from '../ui/AppLoader';
 import { useTranslation } from '../../src/utils/i18n';
 
 const AndroidTabButton = React.memo(function AndroidTabButton({
@@ -88,7 +86,6 @@ const AndroidTabButton = React.memo(function AndroidTabButton({
   onPress,
   onPressIn,
   isDark,
-  isPending,
 }: AndroidTabButtonProps) {
   const { t, language } = useTranslation();
   const IconComponent = item.icon;
@@ -109,8 +106,6 @@ const AndroidTabButton = React.memo(function AndroidTabButton({
   const activeAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: activeScale.value }],
   }));
-  const handlePress = useCallback(() => onPress?.(item), [onPress, item]);
-
   return (
     <Pressable
       onPress={onPress}
@@ -140,17 +135,11 @@ const AndroidTabButton = React.memo(function AndroidTabButton({
           marginBottom: 3,
         }]}
       >
-        {isPending ? (
-          <View style={{ width: 22, height: 22 }} className="items-center justify-center">
-            <AppLoader variant="inline" />
-          </View>
-        ) : (
-          <IconComponent
-            size={22}
-            color={iconColor}
-            strokeWidth={isActive ? 2.4 : 1.8}
-          />
-        )}
+        <IconComponent
+          size={22}
+          color={iconColor}
+          strokeWidth={isActive ? 2.4 : 1.8}
+        />
       </Animated.View>
 
       <Text
@@ -184,7 +173,7 @@ const InsetTabButton = React.memo(function InsetTabButton({
   onPress,
   onPressIn,
   isDark,
-}) => {
+}: InsetTabButtonProps) {
   const { t, language } = useTranslation();
   const IconComponent = item.icon;
   const pressScale = useSharedValue(1.0);
@@ -207,8 +196,6 @@ const InsetTabButton = React.memo(function InsetTabButton({
   const labelColor = isActive ? activeColor : (isDark ? '#94A3B8' : '#64748B');
   const translatedLabel = t(item.key === 'dashboard' ? 'home' : item.key, item.label);
 
-  const handlePress = useCallback(() => onPress?.(item), [onPress, item]);
-
   return (
     <Pressable
       onPress={onPress}
@@ -221,17 +208,11 @@ const InsetTabButton = React.memo(function InsetTabButton({
       <View className="items-center justify-center py-0.5 relative">
         {/* Icon: Visibly bigger than label text */}
         <Animated.View style={animatedIconStyle} className="items-center justify-center">
-          {isPending ? (
-            <View style={{ width: 21, height: 21 }} className="items-center justify-center">
-              <AppLoader variant="inline" />
-            </View>
-          ) : (
-            <IconComponent
-              size={21}
-              color={iconColor}
-              strokeWidth={isActive ? 2.4 : 1.9}
-            />
-          )}
+          <IconComponent
+            size={21}
+            color={iconColor}
+            strokeWidth={isActive ? 2.4 : 1.9}
+          />
         </Animated.View>
 
         {/* Icon Name: Standard font size underneath */}
@@ -270,8 +251,8 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   const { isCompact } = useBottomNavScroll();
 
   // Breadth (width) transition dimensions — height remains constant
-  const FULL_BREADTH = 230;
-  const COMPACT_BREADTH = 230;
+  const FULL_BREADTH = Math.min(SCREEN_WIDTH - 32, 252);
+  const COMPACT_BREADTH = FULL_BREADTH;
 
   const containerBreadth = useSharedValue(isCompact ? COMPACT_BREADTH : FULL_BREADTH);
 
@@ -486,7 +467,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
       }}
       className="absolute left-0 right-0 items-center justify-center z-50"
     >
-      <View style={{ width: 230, alignItems: 'center' }}>
+      <View style={{ width: FULL_BREADTH, alignItems: 'center' }}>
         <GestureDetector gesture={panGesture}>
           <Animated.View
             onLayout={handleLayout}
@@ -514,7 +495,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
             <BlurView
               intensity={isDark ? 60 : 80}
               tint={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFillObject}
+              style={StyleSheet.absoluteFill}
             />
             {containerWidth > 0 && (
               <Animated.View

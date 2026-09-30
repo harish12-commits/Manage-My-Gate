@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { BottomSheet } from '../../../../components/ui/BottomSheet';
 import { Button } from '../../../../components/ui/button';
 import { Icon } from '../../../../components/ui/icon';

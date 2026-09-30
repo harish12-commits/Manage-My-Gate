@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { View, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { BookUser, Phone } from 'lucide-react-native';
 import { useContactPicker, type ContactPhoneOption, type PickedContact } from '../../src/hooks/useContactPicker';
+import { Text } from '../ui/text';
 
 export interface ContactSelection {
   name: string;

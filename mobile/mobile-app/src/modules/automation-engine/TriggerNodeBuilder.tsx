@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { Plus, Settings2, Trash2 } from 'lucide-react-native';
 import { cn } from '../../../lib/utils';
 import { DropdownSelect } from '../../../components/forms/DropdownSelect';

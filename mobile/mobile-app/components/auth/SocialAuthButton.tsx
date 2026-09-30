@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, Animated } from 'react-native';
+import { View, TouchableOpacity, Modal, Animated } from 'react-native';
+import { Text } from '@/components/ui/text';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useColorScheme } from 'nativewind';
 import { AppLoader } from '@/components/ui/AppLoader';
