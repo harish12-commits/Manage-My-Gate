@@ -7,6 +7,7 @@ import {
   loadCommunityReportDetails,
   loadIssueReportConfig,
   saveIssueReportConfig,
+  testIssueReportConfig,
   setFilters,
   resetFilters,
   setSelectedReport,
@@ -38,6 +39,13 @@ export const useIssueReports = () => {
   const updateEmailConfig = useCallback(
     (email) => {
       return dispatch(saveIssueReportConfig(email))
+    },
+    [dispatch],
+  )
+
+  const testEmailConfig = useCallback(
+    (email) => {
+      return dispatch(testIssueReportConfig(email))
     },
     [dispatch],
   )
@@ -181,6 +189,7 @@ export const useIssueReports = () => {
     detailsError,
     fetchEmailConfig,
     updateEmailConfig,
+    testEmailConfig,
     clearEmailStatus,
     fetchReports,
     updateFilters,

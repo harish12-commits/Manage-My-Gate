@@ -105,6 +105,20 @@ export const saveIssueReportConfig = createAsyncThunk(
   },
 )
 
+export const testIssueReportConfig = createAsyncThunk(
+  'issueReport/testIssueReportConfig',
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await issueReportApi.testIssueReportConfigEmail(email)
+      const data = response?.data !== undefined ? response.data : response
+      return data
+    } catch (error) {
+      const msg = error.response?.data?.message || error.message || 'Failed to send test email'
+      return rejectWithValue(msg)
+    }
+  },
+)
+
 const initialFilters = {
   search: '',
   reportType: '',
@@ -314,6 +328,21 @@ export const issueReportSlice = createSlice({
       .addCase(saveIssueReportConfig.rejected, (state, action) => {
         state.emailConfig.saving = false
         state.emailConfig.error = action.payload || 'Failed to save email configuration'
+      })
+
+      // Issue Report Email Config Test
+      .addCase(testIssueReportConfig.pending, (state) => {
+        state.emailConfig.saving = true
+        state.emailConfig.error = null
+        state.emailConfig.successMessage = null
+      })
+      .addCase(testIssueReportConfig.fulfilled, (state) => {
+        state.emailConfig.saving = false
+        state.emailConfig.successMessage = 'Test email successfully sent via SMTP'
+      })
+      .addCase(testIssueReportConfig.rejected, (state, action) => {
+        state.emailConfig.saving = false
+        state.emailConfig.error = action.payload || 'Failed to send test email'
       })
   },
 })

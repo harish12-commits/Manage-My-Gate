@@ -35,4 +35,17 @@ router.put(
   issueReportConfigController.updateConfig.bind(issueReportConfigController)
 );
 
+/**
+ * @route   POST /api/v1/platform/reports/config/test-email
+ * @desc    Send a test email to verify SMTP configuration
+ * @access  Private (Platform Admin only)
+ */
+router.post(
+  '/test-email',
+  isAuthenticated,
+  tenantContext({ requirePlatformContext: true }),
+  authorizeRoles('Super Admin', 'Platform Admin', 'Platform Super Admin'),
+  issueReportConfigController.sendTestEmail.bind(issueReportConfigController)
+);
+
 export default router;

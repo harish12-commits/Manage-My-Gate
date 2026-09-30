@@ -49,6 +49,36 @@ export class IssueReportConfigService {
       updatedAt: updatedDoc.updatedAt,
     };
   }
+  /**
+   * Send a test email to verify SMTP configuration
+   * @param {string} overrideEmail - Optional email to send test to (instead of saved config)
+   */
+  async sendTestEmail(overrideEmail) {
+    const targetEmail = overrideEmail || await this.getPlatformReportEmail();
+    if (!targetEmail) {
+      throw new HttpError(400, 'No email configured to receive the test.');
+    }
+    
+    const { sendEmail } = await import('../../utils/email.utils.js');
+    
+    const htmlBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+        <h2 style="color: #333;">SMTP Configuration Test Successful</h2>
+        <p style="color: #555; font-size: 16px;">Hello Platform Admin,</p>
+        <p style="color: #555; font-size: 16px;">This is a test email to confirm that your SMTP integration is correctly configured and working.</p>
+        <p style="color: #555; font-size: 16px;">You will now successfully receive real-time notifications when a user submits an Issue Report (App Complaint) from the mobile app.</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+        <p style="color: #777; font-size: 14px;">Best regards,</p>
+        <p style="color: #333; font-weight: bold; font-size: 14px;">Nahom System</p>
+      </div>
+    `;
+
+    const success = await sendEmail(null, targetEmail, 'Nahom: SMTP Configuration Test', htmlBody);
+    if (!success) {
+      throw new HttpError(500, 'Failed to send test email. Please check your SMTP settings in Integration Hub.');
+    }
+    return true;
+  }
 }
 
 export const issueReportConfigService = new IssueReportConfigService();

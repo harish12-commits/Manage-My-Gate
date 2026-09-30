@@ -28,6 +28,20 @@ export class IssueReportConfigController {
       next(error);
     }
   }
+
+  /**
+   * POST /api/v1/platform/reports/config/test-email
+   * Send a test email to the configured email or provided email
+   */
+  async sendTestEmail(req, res, next) {
+    try {
+      const { email } = req.body || {};
+      await issueReportConfigService.sendTestEmail(email);
+      res.success(null, 'Test email sent successfully', 200);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const issueReportConfigController = new IssueReportConfigController();

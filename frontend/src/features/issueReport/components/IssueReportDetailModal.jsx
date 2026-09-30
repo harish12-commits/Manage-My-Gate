@@ -210,6 +210,13 @@ export const IssueReportDetailModal = ({
                         <span className="text-dark">{report.reporter?.email || '—'}</span>
                       </div>
 
+                      <div className="mb-2">
+                        <span className="text-muted small d-block">
+                          {t('issueReport.reporterPhone', { defaultValue: 'Phone' })}
+                        </span>
+                        <span className="text-dark">{report.reporter?.phone || '—'}</span>
+                      </div>
+
                       <div className="mb-3">
                         <span className="text-muted small d-block">
                           {t('issueReport.reporterRole', { defaultValue: 'Role' })}

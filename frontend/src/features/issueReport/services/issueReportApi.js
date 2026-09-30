@@ -67,6 +67,10 @@ export const updateIssueReportConfig = async (email) => {
   return await apiClient.put('/platform/reports/config', { email })
 }
 
+export const testIssueReportConfigEmail = async (email) => {
+  return await apiClient.post('/platform/reports/config/test-email', { email })
+}
+
 export default {
   fetchPlatformReports,
   fetchPlatformReportById,
@@ -74,4 +78,5 @@ export default {
   fetchCommunityReportById,
   fetchIssueReportConfig,
   updateIssueReportConfig,
+  testIssueReportConfigEmail,
 }

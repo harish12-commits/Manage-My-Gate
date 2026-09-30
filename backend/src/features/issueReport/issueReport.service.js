@@ -41,8 +41,9 @@ export class IssueReportService {
 
     // 2. Strict Context Extraction (Never trusted from client request body)
     const userId = authenticatedUser.id || authenticatedUser._id;
-    const userName = authenticatedUser.name || authenticatedUser.username || (authenticatedUser.email ? authenticatedUser.email.split('@')[0] : 'User');
     const userEmail = authenticatedUser.email || '';
+    const userPhone = authenticatedUser.phone || authenticatedUser.mobile || '';
+    const userName = authenticatedUser.name || authenticatedUser.firstName || authenticatedUser.username || (authenticatedUser.email ? authenticatedUser.email.split('@')[0] : (userPhone || 'User'));
     const userRole = tenantContext?.role || authenticatedUser.role || 'Resident';
 
     const rawOrgId = tenantContext?.orgId || authenticatedUser.orgId;
@@ -111,6 +112,7 @@ export class IssueReportService {
           userId,
           name: userName,
           email: userEmail,
+          phone: userPhone,
           role: userRole,
         },
         organisation: {
