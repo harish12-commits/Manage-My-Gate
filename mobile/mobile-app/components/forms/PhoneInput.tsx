@@ -50,6 +50,8 @@ export interface PhoneInputProps {
   defaultCountry?: string;
   /** Rendered at the end of the field, e.g. a contact-picker button. */
   rightElement?: React.ReactNode;
+  /** Called when the number field gains focus (e.g. to scroll it above the keyboard). */
+  onFocus?: () => void;
   testID?: string;
   /** 'form' matches the standard Input card field; 'glass' is the translucent auth-screen look. */
   variant?: 'form' | 'glass';
@@ -66,6 +68,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   required = false,
   value = '',
   onChangeText,
+  onFocus,
   error,
   placeholder,
   placeholderTextColor,
@@ -252,10 +255,13 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
               placeholder={placeholder || (typeof examplePhone === 'function' ? examplePhone(selectedCountry.code) : undefined) || '99887 76655'}
               placeholderTextColor={placeholderTextColor || '#737c88'}
               value={nationalNumber}
-              onFocus={() => setIsFocused(true)}
+              onFocus={() => {
+                setIsFocused(true);
+                onFocus?.();
+              }}
               onBlur={() => setIsFocused(false)}
               onChangeText={handleNumberChange}
-              maxLength={selectedCountry.digitsLength}
+              maxLength={maxDigits + 1}
               accessibilityLabel={label}
               testID={testID}
             />
@@ -278,7 +284,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
       {!error && isIncomplete && (
         <View className={cn('flex-row items-center mt-1.5 ms-1 gap-1', helperContainerClassName)}>
           <Text className={cn('text-[11px] text-amber-600 dark:text-amber-400 font-medium', helperClassName)}>
-            Enter {selectedCountry.digitsLength - currentLength} more digit{selectedCountry.digitsLength - currentLength > 1 ? 's' : ''} to complete.
+            Enter {maxDigits - currentLength} more digit{maxDigits - currentLength > 1 ? 's' : ''} to complete.
           </Text>
         </View>
       )}

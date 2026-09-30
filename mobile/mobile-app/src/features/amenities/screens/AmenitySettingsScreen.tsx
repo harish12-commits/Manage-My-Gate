@@ -29,21 +29,32 @@ export function AmenitySettingsScreen() {
       error={!settings && error ? error : null}
       onRetry={reload}
       scrollable={false}
+      hideBottomNav
     >
       <View className="flex-1 bg-background">
-        {settings && error ? (
-          <View className="px-4 pt-2">
-            <ErrorBanner title={t('amenity_settings_not_saved', 'Not saved')} message={error} onDismiss={clearError} />
-          </View>
+        {settings ? (
+          <AmenitySettingsForm
+            settings={settings}
+            saving={saving}
+            onSave={save}
+            banner={
+              <>
+                {error ? (
+                  <View className="mx-4 mt-3">
+                    <ErrorBanner title={t('amenity_settings_not_saved', 'Not saved')} message={error} onDismiss={clearError} />
+                  </View>
+                ) : null}
+                {justSaved && !error ? (
+                  <View testID="amenity-settings-saved" className="mx-4 mt-3 p-3 rounded-2xl bg-status-success/10 border border-status-success/30">
+                    <Text className="text-xs font-semibold text-foreground">
+                      {t('amenity_settings_saved', 'Settings saved. New bookings follow these rules.')}
+                    </Text>
+                  </View>
+                ) : null}
+              </>
+            }
+          />
         ) : null}
-        {justSaved && !error ? (
-          <View testID="amenity-settings-saved" className="mx-4 mt-2 p-3 rounded-2xl bg-status-success/10 border border-status-success/30">
-            <Text className="text-xs font-semibold text-foreground">
-              {t('amenity_settings_saved', 'Settings saved. New bookings follow these rules.')}
-            </Text>
-          </View>
-        ) : null}
-        {settings ? <AmenitySettingsForm settings={settings} saving={saving} onSave={save} /> : null}
       </View>
     </ScreenShell>
   );

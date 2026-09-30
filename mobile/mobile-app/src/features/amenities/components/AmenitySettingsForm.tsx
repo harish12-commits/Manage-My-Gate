@@ -4,7 +4,8 @@
  */
 
 import React, { useEffect } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View } from 'react-native';
+import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScrollView';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -50,9 +51,11 @@ export interface AmenitySettingsFormProps {
   settings: AmenityCommunitySettings;
   saving?: boolean;
   onSave: (update: AmenitySettingsUpdate) => Promise<boolean>;
+  /** Saved / error notices, rendered inside the scroll area so they share the card gutters. */
+  banner?: React.ReactNode;
 }
 
-export function AmenitySettingsForm({ settings, saving = false, onSave }: AmenitySettingsFormProps) {
+export function AmenitySettingsForm({ settings, saving = false, onSave, banner }: AmenitySettingsFormProps) {
   const { t } = useTranslation();
   const {
     control,
@@ -103,7 +106,8 @@ export function AmenitySettingsForm({ settings, saving = false, onSave }: Amenit
 
   return (
     <View className="flex-1">
-      <ScrollView contentContainerClassName="pb-28" keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView extraScrollHeight={48} contentContainerStyle={{ paddingBottom: 112 }}>
+        {banner}
         <SettingsCard title={t('amenity_settings_quota_title', 'Booking quota per unit')} className="p-4 gap-4">
           <Controller
             control={control}
@@ -157,7 +161,7 @@ export function AmenitySettingsForm({ settings, saving = false, onSave }: Amenit
             {t('amenity_settings_updated', 'Last changed {date}', { date: new Date(settings.updatedAt).toLocaleString() })}
           </Text>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {isDirty ? (
         <ActionBar

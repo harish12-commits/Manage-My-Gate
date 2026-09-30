@@ -6,12 +6,19 @@ const mockPicker = jest.fn();
 const mockGetPerms = jest.fn();
 const mockRequestPerms = jest.fn();
 jest.mock('expo-contacts', () => ({
-  presentContactPickerAsync: () => mockPicker(),
+  Contact: { presentPicker: () => mockPicker() },
   getPermissionsAsync: () => mockGetPerms(),
   requestPermissionsAsync: () => mockRequestPerms(),
 }));
 
 import { ContactPickerButton } from '../../../components/forms/ContactPickerButton';
+
+/** Shape returned by Contact.presentPicker(): details are read through async getters. */
+const pickedContact = (c: { name: string; phoneNumbers: any[]; emails?: any[] }) => ({
+  getFullName: async () => c.name,
+  getPhones: async () => c.phoneNumbers,
+  getEmails: async () => c.emails ?? [],
+});
 
 describe('ContactPickerButton', () => {
   const originalOS = Platform.OS;
@@ -23,11 +30,13 @@ describe('ContactPickerButton', () => {
   afterAll(() => Object.defineProperty(Platform, 'OS', { get: () => originalOS, configurable: true }));
 
   it('fills name and an E.164 phone from a single-number contact', async () => {
-    mockPicker.mockResolvedValue({
-      name: 'Aisha Khan',
-      phoneNumbers: [{ number: '+971 50 123 4567', label: 'mobile' }],
-      emails: [{ email: 'aisha@example.com' }],
-    });
+    mockPicker.mockResolvedValue(
+      pickedContact({
+        name: 'Aisha Khan',
+        phoneNumbers: [{ number: '+971 50 123 4567', label: 'mobile' }],
+        emails: [{ address: 'aisha@example.com' }],
+      })
+    );
     const onPick = jest.fn();
     await render(<ContactPickerButton onPick={onPick} />);
     fireEvent.press(screen.getByTestId('contact-picker-button'));
@@ -37,7 +46,9 @@ describe('ContactPickerButton', () => {
   });
 
   it('reads bare local numbers using the contact country code', async () => {
-    mockPicker.mockResolvedValue({ name: 'Ravi', phoneNumbers: [{ number: '098765 43210', countryCode: 'in' }] });
+    mockPicker.mockResolvedValue(
+      pickedContact({ name: 'Ravi', phoneNumbers: [{ number: '098765 43210', countryCode: 'in' }] })
+    );
     const onPick = jest.fn();
     await render(<ContactPickerButton onPick={onPick} />);
     fireEvent.press(screen.getByTestId('contact-picker-button'));
@@ -45,13 +56,15 @@ describe('ContactPickerButton', () => {
   });
 
   it('asks which number to use when the contact has several', async () => {
-    mockPicker.mockResolvedValue({
-      name: 'Sam',
-      phoneNumbers: [
-        { number: '+44 7400 123456', label: 'mobile' },
-        { number: '+1 415 555 2671', label: 'work' },
-      ],
-    });
+    mockPicker.mockResolvedValue(
+      pickedContact({
+        name: 'Sam',
+        phoneNumbers: [
+          { number: '+44 7400 123456', label: 'mobile' },
+          { number: '+1 415 555 2671', label: 'work' },
+        ],
+      })
+    );
     const onPick = jest.fn();
     await render(<ContactPickerButton onPick={onPick} />);
     fireEvent.press(screen.getByTestId('contact-picker-button'));
