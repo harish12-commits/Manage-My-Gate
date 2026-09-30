@@ -238,7 +238,15 @@ class EmailService {
     `;
 
     try {
-      const orgId = report.organisation?._id || report.organisation || null;
+      let orgId = null;
+      if (report.organisation) {
+        orgId = report.organisation.organisationId || report.organisation._id || report.organisation;
+      }
+      // Ensure orgId is actually a string or ObjectId, not a plain Object
+      if (typeof orgId === 'object' && orgId !== null && !orgId._bsontype && !orgId.toHexString) {
+        orgId = orgId.toString();
+      }
+      
       const smtpObj = await getSmtpTransporter(orgId);
       if (!smtpObj) {
         logger.warn(`[EmailService] Cannot send reported issue email to ${to}: SMTP transporter unavailable.`);
