@@ -2,6 +2,45 @@ import jwt from 'jsonwebtoken';
 import config from '../config/config.js';
 import HttpError from '../utils/httpError.utils.js';
 import userService from '../features/user/user.services.js';
+import OrgMembership from '../features/orgMembership/orgMembership.model.js';
+
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+/**
+ * Cookie-borne sessions are sent automatically by browsers, so state-changing requests that rely on
+ * the cookie must come from a trusted origin (CSRF defence). Bearer-header requests are unaffected.
+ */
+const assertTrustedOriginForCookieAuth = (req) => {
+  if (SAFE_METHODS.has(req.method)) return;
+  const source = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer, 'http://invalid').origin : null);
+  const isLocal = config.nodeEnv !== 'production'
+    && /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/i.test(source || '');
+  if (!source || !(isLocal || config.cors.allowedOrigins.includes(source))) {
+    throw new HttpError(403, 'Cross-site request blocked.');
+  }
+};
+
+const JWT_VERIFY_OPTIONS = { algorithms: ['HS256'] };
+
+/**
+ * Client-supplied organisation headers are untrusted. If one names an organisation other than the
+ * one in the signed token, the caller must hold an active membership there (platform users exempt).
+ */
+const assertOrgHeaderAllowed = async (req, decoded) => {
+  const headerOrg = req.headers['x-organization-id'] || req.headers['x-org-id'];
+  if (!headerOrg || decoded.isPlatform === true) return;
+  const requested = String(headerOrg);
+  if (decoded.orgId && String(decoded.orgId) === requested) return;
+  if (!/^[a-f\d]{24}$/i.test(requested)) {
+    throw new HttpError(400, 'Invalid organization identifier.');
+  }
+  const membership = await OrgMembership.findOne({ userId: decoded.id, orgId: requested, status: 'Active' })
+    .select('_id')
+    .lean();
+  if (!membership) {
+    throw new HttpError(403, 'Forbidden. You are not a member of the requested organization.');
+  }
+};
 
 /**
  * Authentication middleware to verify JWT token.
@@ -16,10 +55,12 @@ export const isAuthenticated = async (req, res, next) => {
     } 
     // Check cookies
     else if (req.cookies && req.cookies.token) {
+      assertTrustedOriginForCookieAuth(req);
       token = req.cookies.token;
     }
     // Check query params (for file downloads like export, pdf)
-    else if (req.query && req.query.auth_token) {
+    else if (req.method === 'GET' && typeof req.query?.auth_token === 'string') {
+      // Legacy file-download links only; tokens in URLs leak via logs, so never accept them for writes.
       token = req.query.auth_token;
     }
 
@@ -27,7 +68,7 @@ export const isAuthenticated = async (req, res, next) => {
       throw new HttpError(401, 'Access denied. No authentication token provided.');
     }
 
-    const decoded = jwt.verify(token, config.jwt.secret);
+    const decoded = jwt.verify(token, config.jwt.secret, JWT_VERIFY_OPTIONS);
     
     // Verify that the user still exists in the database and is Active
     let user;
@@ -40,6 +81,8 @@ export const isAuthenticated = async (req, res, next) => {
     if (!user || user.status !== 'Active') {
       throw new HttpError(401, 'User account is inactive.');
     }
+
+    await assertOrgHeaderAllowed(req, decoded);
 
     req.user = decoded; // Contains user ID, email, role, permissions, etc.
     next();
@@ -68,7 +111,7 @@ export const optionalAuth = async (req, res, next) => {
     }
 
     if (token) {
-      const decoded = jwt.verify(token, config.jwt.secret);
+      const decoded = jwt.verify(token, config.jwt.secret, JWT_VERIFY_OPTIONS);
       const user = await userService.getUserById(decoded.id).catch(() => null);
       if (user && user.status === 'Active') {
         req.user = decoded;

@@ -28,6 +28,7 @@ import useWorkspaceDetails from '../hooks/useWorkspaceDetails.js'
 import SearchableLanguageSelect from '../components/SearchableLanguageSelect.jsx'
 import '../../visitorManagement/styles/_visitorManagement.scss'
 import '../styles/_workspace.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 export const WorkspaceDetailsView = () => {
   const {
@@ -107,7 +108,7 @@ export const WorkspaceDetailsView = () => {
     }
     return (
       <div className="text-center py-5">
-        <CSpinner color="primary" className="mb-2" />
+        <AppLoader variant="block" />
         <div>{t('workspace.details.loading', 'Loading workspace settings...')}</div>
       </div>
     )

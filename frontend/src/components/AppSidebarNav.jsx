@@ -7,7 +7,7 @@ import 'simplebar-react/dist/simplebar.min.css'
 
 import { CBadge, CNavLink, CSidebarNav } from '@coreui/react'
 
-export const AppSidebarNav = ({ items }) => {
+const AppSidebarNavComponent = ({ items }) => {
   const navLink = (name, icon, badge, indent = false) => {
     return (
       <>
@@ -68,6 +68,8 @@ export const AppSidebarNav = ({ items }) => {
   )
 }
 
-AppSidebarNav.propTypes = {
+AppSidebarNavComponent.propTypes = {
   items: PropTypes.arrayOf(PropTypes.any).isRequired,
 }
+
+export const AppSidebarNav = React.memo(AppSidebarNavComponent)

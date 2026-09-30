@@ -7,12 +7,12 @@ import {
   CModalBody,
   CButton,
   CFormCheck,
-  CSpinner,
   CAlert,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilCreditCard } from '@coreui/icons'
 import useWalletPayment from '../../hooks/useWalletPayment.js'
+import AppLoader from '../../../../components/common/AppLoader'
 
 export const WalletRechargeModal = memo(
   ({ isOpen, onClose, walletBalance, isPaymentGatewayConfigured = true, onSuccess, onFailure, user }) => {
@@ -54,7 +54,7 @@ export const WalletRechargeModal = memo(
         <CModalBody className="p-4">
           {loading ? (
             <div className="text-center py-5">
-              <CSpinner color="primary" className="mb-3" />
+              <AppLoader variant="block" />
               <p className="mb-0 text-muted">
                 {t('wallet.recharge.processing', 'Connecting to payment gateway...')}
               </p>

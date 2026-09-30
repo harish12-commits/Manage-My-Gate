@@ -21,15 +21,24 @@ export const InviteMobileHandoffCard = ({ handoffData, orgName }) => {
   const playStoreFallback = 'https://play.google.com/store/apps/details?id=com.atominosconsulting.nahom'
   const appStoreFallback = 'https://apps.apple.com/app/manage-my-gate/id6746501635'
 
+  const APP_IN_REVIEW_IOS = true // Set to false once the app is approved on the App Store
+
   const isIos =
     typeof navigator !== 'undefined' &&
     (/iphone|ipad|ipod/i.test(navigator.userAgent || '') ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
   const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent || '')
 
-  const storeUrl = isIos
-    ? (handoffData?.appStoreUrl || appStoreFallback)
-    : (handoffData?.playStoreUrl || playStoreFallback)
+  let storeUrl = isAndroid
+    ? (handoffData?.playStoreUrl || playStoreFallback)
+    : (handoffData?.appStoreUrl || appStoreFallback)
+
+  // Temporarily route iOS users to the web dashboard if they don't have the app installed,
+  // since the App Store link won't work while the app is in review.
+  if (isIos && APP_IN_REVIEW_IOS) {
+    storeUrl = '/dashboard'
+  }
+
   const deepLink = handoffData?.deepLink
 
   useEffect(() => {
@@ -38,21 +47,35 @@ export const InviteMobileHandoffCard = ({ handoffData, orgName }) => {
       window.location.href = deepLink
     }
 
-    // 2. Automatic fallback: If browser window remains active/focused after 1.8s,
-    // the native app is not installed. Transition state and redirect to store.
+    // 2. Automatic fallback: If browser goes to background, it means the app opened.
+    // Otherwise, transition state and redirect to store (or dashboard) after 1.8s.
     const fallbackTimer = setTimeout(() => {
-      if (typeof document !== 'undefined' && document.hasFocus && document.hasFocus()) {
-        setRedirectingToStore(true)
-        if (storeUrl) {
-          window.location.href = storeUrl
-        }
+      setRedirectingToStore(true)
+      if (storeUrl) {
+        window.location.href = storeUrl
       }
     }, 1800)
 
-    return () => clearTimeout(fallbackTimer)
+    const cancelOnHide = () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        clearTimeout(fallbackTimer)
+        document.removeEventListener('visibilitychange', cancelOnHide)
+      }
+    }
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', cancelOnHide)
+    }
+
+    return () => {
+      clearTimeout(fallbackTimer)
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', cancelOnHide)
+      }
+    }
   }, [deepLink, storeUrl])
 
-  const storeName = isIos ? 'Apple App Store' : 'Google Play Store'
+  const storeName = isIos && APP_IN_REVIEW_IOS ? 'Web Dashboard' : isIos ? 'Apple App Store' : 'Google Play Store'
 
   return (
     <CCard className="invite-card invite-handoff-card border-0 shadow-lg rounded-4 overflow-hidden text-center p-4 p-md-5">
@@ -78,7 +101,9 @@ export const InviteMobileHandoffCard = ({ handoffData, orgName }) => {
           <CSpinner color="primary" size="sm" className="me-2 mb-1" />
           <span className="fw-semibold text-dark small">
             {redirectingToStore
-              ? t('auth.handoff.redirectingStore', 'Opening {{storeName}} to install Nahom...', { storeName })
+              ? isIos && APP_IN_REVIEW_IOS
+                ? t('auth.handoff.redirectingDashboard', 'Opening Web Dashboard...')
+                : t('auth.handoff.redirectingStore', 'Opening {{storeName}} to install Nahom...', { storeName })
               : t('auth.handoff.connectingApp', 'Launching the Nahom mobile app...')}
           </span>
           <p className="text-muted small mt-2 mb-0" style={{ fontSize: '0.82rem' }}>

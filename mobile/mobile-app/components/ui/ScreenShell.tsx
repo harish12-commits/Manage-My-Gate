@@ -24,15 +24,28 @@ import { ChevronLeft, AlertCircle, Compass, Mail } from 'lucide-react-native';
 import { Text } from './text';
 import { Icon } from './icon';
 import { Skeleton } from './Skeleton';
+import { ProgressLoader } from '../feedback/ProgressLoader';
 import { KeyboardAwareScrollView } from '../layout/KeyboardAwareScrollView';
 import { cn } from '../../lib/utils';
-import { RoleSwitchModal } from '../navigation/RoleSwitchModal';
-import { VillaSwitchModal } from '../navigation/VillaSwitchModal';
-import { GlobalNavModal } from '../navigation/GlobalNavModal';
+import { lazyComponent } from '../../src/utils/lazyComponent';
 import { BottomNavigationBar } from '../navigation/BottomNavigationBar';
 import { useBottomNavScroll } from '../navigation/BottomNavScrollContext';
 import { useTranslation } from '../../src/utils/i18n';
 import { AppBackground } from './AppBackground';
+
+// Overlays are only needed on demand; keep them out of the initial screen render path.
+const RoleSwitchModal = lazyComponent(
+  () => import('../navigation/RoleSwitchModal'),
+  null,
+);
+const VillaSwitchModal = lazyComponent(
+  () => import('../navigation/VillaSwitchModal'),
+  null,
+);
+const GlobalNavModal = lazyComponent(
+  () => import('../navigation/GlobalNavModal'),
+  null,
+);
 
 export interface ScreenShellProps {
   title: string;
@@ -57,6 +70,8 @@ export interface ScreenShellProps {
   collapsibleHeader?: boolean;   // Move top header up/down dynamically with scroll (default: true)
   showIconWithBackButton?: boolean; // Show icon badge even when back button is active (default: false)
   showGlobalNavButton?: boolean; // Force show compass navigation button even with headerRight (default: false)
+  loaderVariant?: 'skeleton' | 'spinner' | 'none'; // Defines what loader to show when loading
+  disableInteractionDeferral?: boolean; // Set to true if a screen shouldn't wait for interactions
 }
 
 export function ScreenShell({
@@ -79,12 +94,29 @@ export function ScreenShell({
   collapsibleHeader = true,
   showIconWithBackButton = false,
   showGlobalNavButton = false,
+  loaderVariant = 'skeleton',
+  disableInteractionDeferral = false,
 }: ScreenShellProps) {
   const router = useRouter();
   const pathname = usePathname() || '';
   const insets = useSafeAreaInsets();
   const { t, translateText, language } = useTranslation();
   const { isCompact, setIsCompact, scrollHandlerProps } = useBottomNavScroll();
+
+  // Paint the shell (header, background, nav) first and mount the content on the next frame.
+  // Waiting for InteractionManager here added a fixed delay to every page open.
+  const [interactionsComplete, setInteractionsComplete] = React.useState(disableInteractionDeferral);
+
+  React.useEffect(() => {
+    if (disableInteractionDeferral) {
+      setInteractionsComplete(true);
+      return;
+    }
+    const id = requestAnimationFrame(() => setInteractionsComplete(true));
+    return () => cancelAnimationFrame(id);
+  }, [disableInteractionDeferral]);
+
+  const effectiveLoading = loading || !interactionsComplete;
 
   // Reset scroll compact state on route change so every screen begins fully expanded
   React.useEffect(() => {

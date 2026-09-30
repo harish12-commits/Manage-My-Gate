@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Button } from '../../../../components/ui/button';
 import { Icon } from '../../../../components/ui/icon';
 import { Plug } from 'lucide-react-native';
@@ -9,6 +9,7 @@ import {
   ProviderItem,
   IntegrationConnection,
 } from '../hooks/useRoleIntegrationConfigurator';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 interface RoleIntegrationConfiguratorProps {
   isOpen: boolean;
@@ -97,7 +98,7 @@ export const RoleIntegrationConfigurator: React.FC<RoleIntegrationConfiguratorPr
       <View className="border border-border rounded-xl bg-card overflow-hidden">
         {isLoading ? (
           <View className="py-4 items-center justify-center">
-            <ActivityIndicator size="small" color="#03A9F4" />
+            <AppLoader variant="inline" />
             <Text className="text-[10px] text-muted-foreground mt-1">Loading connections...</Text>
           </View>
         ) : (

@@ -22,8 +22,9 @@ export const tenantContext = (optionsOrReq, res, next) => {
           throw new HttpError(401, 'Unauthorized. Authentication required.');
         }
 
-        const isPlatformRole = ['Super Admin', 'Platform Admin', 'Platform Super Admin', 'SUPER_ADMIN', 'PLATFORM_ADMIN'].includes(req.user.role);
-        const userIsPlatform = req.user.isPlatform === true || isPlatformRole;
+        // Platform access derives only from the organisation's isPlatform flag (carried in the signed
+        // token). Role names are tenant-controlled and must never grant platform privileges.
+        const userIsPlatform = req.user.isPlatform === true;
 
         // Logic Branch A (Platform Context):
         if (requirePlatformContext) {

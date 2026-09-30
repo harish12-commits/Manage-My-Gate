@@ -5,6 +5,7 @@ import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DirectoryMember } from '../types/directoryTypes';
+import { getLocalizedQuickMessages } from '../types/messagingTypes';
 import { useDirectoryMessaging } from '../hooks/useDirectoryMessaging';
 import { useTranslation } from '@/src/utils/i18n';
 import { Send, MessageSquare } from 'lucide-react-native';
@@ -20,11 +21,21 @@ export const DirectoryQuickMessageSheet = ({
   onClose,
   member,
 }: DirectoryQuickMessageSheetProps) => {
-  const { onSendQuickMessage, quickOptions, sending } = useDirectoryMessaging();
+  const { onSendQuickMessage, sending } = useDirectoryMessaging();
   const [customMessage, setCustomMessage] = useState('');
   const { t } = useTranslation();
-
+  
   if (!member) return null;
+
+  // Compute quick options using the provided member
+  const computeQuickOptions = () => {
+    const localized = getLocalizedQuickMessages(t);
+    if (member.role === 'guard' || member.role === 'security') {
+      return [...localized.guard, ...localized.default];
+    }
+    return localized.default;
+  };
+  const quickOptions = computeQuickOptions();
 
   const handleSendQuickOption = async (text: string) => {
     await onSendQuickMessage(text, member);

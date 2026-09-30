@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, Pressable, ActivityIndicator } from 'react-native';
+import { View, TextInput, Pressable } from 'react-native';
 import { Search, X } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
 
 import { useTranslation } from '../../src/utils/i18n';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface SearchBarProps {
   value: string;

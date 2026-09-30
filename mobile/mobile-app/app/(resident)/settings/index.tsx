@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Modal, Pressable, Alert, Platform, BackHandler, InteractionManager } from 'react-native';
+import { View, ScrollView, Modal, Pressable, Alert, Platform, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { Text } from '@/components/ui/text';
@@ -45,6 +45,7 @@ import {
   Home,
   UserCheck,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react-native';
 import { getImageUrl } from '@/src/utils/imageUrl';
 
@@ -56,10 +57,9 @@ export default function SettingsScreen() {
   // Lazy loading state to prevent navigation stutter
   const [isReady, setIsReady] = React.useState(false);
   React.useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
-      setIsReady(true);
-    });
-    return () => task.cancel();
+    // Tab screens have no transition animation, so just wait one frame
+    const id = requestAnimationFrame(() => setIsReady(true));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   useFocusEffect(

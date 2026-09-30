@@ -1,8 +1,9 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { CSpinner, CPagination, CPaginationItem } from '@coreui/react'
+import { CPagination, CPaginationItem } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilFolderOpen } from '@coreui/icons'
+import AppLoader from '../../../components/common/AppLoader'
 
 /**
  * User Directory Table — Notice Board `.table-wrapper` + `.ent-table` pattern.
@@ -66,7 +67,7 @@ export const UserDirectoryTable = ({
               <tr>
                 <td colSpan={8}>
                   <div className="loading-center" style={{ padding: '40px' }}>
-                    <CSpinner color="primary" />
+                    <AppLoader variant="block" />
                     <span>{t('superAdmin.orgDetails.loadingUsers', { defaultValue: 'Loading organization users...' })}</span>
                   </div>
                 </td>

@@ -28,7 +28,7 @@ export function PollVotingSection({
   const isPerUnit = poll.votingMode === 'ONE_PER_UNIT';
 
   // Selected options state
-  const [selectedIndices, setSelectedIndices] = useState([]);
+  const [selectedIndices, setSelectedIndices] = useState(poll.votedOptions?.length ? poll.votedOptions : (poll.votedOptionIndex != null ? [poll.votedOptionIndex] : []));
   const [unitNumber, setUnitNumber] = useState(userUnit || '');
   const [validationError, setValidationError] = useState('');
 
@@ -46,6 +46,17 @@ export function PollVotingSection({
       }
     } else {
       setSelectedIndices([index]);
+      
+      // Auto-submit for standard single choice polls
+      if (!isPerUnit) {
+        onVote({
+          optionIndex: index,
+          selectedOptions: [index],
+          selectedOptionIndices: [index],
+          optionIndices: [index],
+          selectedOptionIndex: index,
+        });
+      }
     }
   };
 
@@ -164,19 +175,28 @@ export function PollVotingSection({
       )}
 
       {/* Submit Button */}
-      <Button
-        variant="default"
-        size="lg"
-        onPress={handleSubmitVote}
-        loading={submitting}
-        disabled={submitting || selectedIndices.length === 0}
-        accessibilityRole="button"
-        accessibilityLabel="Submit Ballot"
-      >
-        <Text className="font-bold text-white text-base">{t('submit_ballot', 'Submit Ballot')}</Text>
-      </Button>
+      {(isMultiple || isPerUnit) && (
+        <Button
+          variant="default"
+          size="lg"
+          onPress={handleSubmitVote}
+          loading={submitting}
+          disabled={submitting || selectedIndices.length === 0}
+          accessibilityRole="button"
+          accessibilityLabel="Submit Ballot"
+        >
+          <Text className="font-bold text-white text-base">
+            {(poll.votedOptions?.length || poll.votedOptionIndex != null) 
+              ? t('update_vote', 'Update Vote') 
+              : t('submit_ballot', 'Submit Ballot')}
+          </Text>
+        </Button>
+      )}
     </View>
   );
 }
 
 export default PollVotingSection;
+
+
+

@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CAlert, CSpinner, CCard, CCardBody, CCardHeader, CButton } from '@coreui/react'
+import { CAlert, CCard, CCardBody, CCardHeader, CButton } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilBell, cilChevronLeft, cilChevronRight } from '@coreui/icons'
 import useNotifications from '../hooks/useNotifications.js'
 import NotificationItem from '../components/NotificationItem.jsx'
 import PageHeader from '../../../components/common/PageHeader.jsx'
 import '../styles/_notification.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 /**
  * Top-level view orchestrator for `/notifications` full-page route.
@@ -113,7 +114,7 @@ export const NotificationView = () => {
           <div className="notifications-list">
             {status === 'loading' && currentPageNotifications.length === 0 ? (
               <div className="d-flex justify-content-center align-items-center p-5">
-                <CSpinner color="primary" />
+                <AppLoader variant="block" />
               </div>
             ) : currentPageNotifications.length === 0 ? (
               <div className="notification-empty-state py-5">

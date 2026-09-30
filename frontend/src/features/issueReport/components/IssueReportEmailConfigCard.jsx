@@ -13,12 +13,12 @@ import {
   CCol,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilEnvelopeClosed, cilSave, cilCheckCircle, cilWarning } from '@coreui/icons'
+import { cilEnvelopeClosed, cilSave, cilCheckCircle, cilWarning, cilSend } from '@coreui/icons'
 import useIssueReports from '../hooks/useIssueReports.js'
 
 export const IssueReportEmailConfigCard = () => {
   const { t } = useTranslation()
-  const { emailConfig, fetchEmailConfig, updateEmailConfig, clearEmailStatus } = useIssueReports()
+  const { emailConfig, fetchEmailConfig, updateEmailConfig, testEmailConfig, clearEmailStatus } = useIssueReports()
 
   const [inputEmail, setInputEmail] = useState('')
   const [validationError, setValidationError] = useState('')
@@ -56,6 +56,23 @@ export const IssueReportEmailConfigCard = () => {
     }
 
     updateEmailConfig(trimmed)
+  }
+
+  const handleTestEmail = async () => {
+    setValidationError('')
+    clearEmailStatus()
+    
+    const trimmed = inputEmail.trim()
+    if (!trimmed || !validateEmailFormat(trimmed)) {
+      setValidationError(
+        t('issueReport.invalidEmailForTest', {
+          defaultValue: 'Please enter and save a valid email address first.',
+        }),
+      )
+      return
+    }
+    
+    await testEmailConfig(trimmed)
   }
 
   return (
@@ -108,7 +125,7 @@ export const IssueReportEmailConfigCard = () => {
 
         <CForm onSubmit={handleSubmit}>
           <CRow className="align-items-center g-3">
-            <CCol md={8} lg={9}>
+            <CCol md={6} lg={6}>
               <CFormInput
                 type="email"
                 id="platformNotificationEmail"
@@ -125,7 +142,21 @@ export const IssueReportEmailConfigCard = () => {
               />
             </CCol>
 
-            <CCol md={4} lg={3} className="text-md-end">
+            <CCol md={3} lg={3}>
+              <CButton
+                type="button"
+                color="secondary"
+                variant="outline"
+                className="w-100"
+                onClick={handleTestEmail}
+                disabled={emailConfig.loading || emailConfig.saving || !inputEmail.trim()}
+              >
+                <CIcon icon={cilSend} className="me-2" />
+                {t('issueReport.testEmail', { defaultValue: 'Test SMTP' })}
+              </CButton>
+            </CCol>
+
+            <CCol md={3} lg={3}>
               <CButton
                 type="submit"
                 color="primary"
@@ -140,12 +171,15 @@ export const IssueReportEmailConfigCard = () => {
                 ) : (
                   <>
                     <CIcon icon={cilSave} className="me-2" />
-                    {t('issueReport.saveEmail', { defaultValue: 'Save Configuration' })}
+                    {t('issueReport.saveEmail', { defaultValue: 'Save' })}
                   </>
                 )}
               </CButton>
             </CCol>
           </CRow>
+          <div className="mt-2 text-muted small">
+            <em>Need to configure SMTP server settings to send emails? Visit the <a href="#/admin/integration-hub">Integration Hub</a> to set up your mail provider.</em>
+          </div>
         </CForm>
       </CCardBody>
     </CCard>

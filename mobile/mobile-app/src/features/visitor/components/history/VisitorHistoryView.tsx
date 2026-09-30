@@ -1,3 +1,4 @@
+import { runSoon } from '@/src/utils/runSoon';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { View } from 'react-native';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
@@ -51,7 +52,12 @@ export const VisitorHistoryView: React.FC = () => {
   );
 
   useEffect(() => {
-    loadData(1, false);
+    const task = runSoon(() => {
+        loadData(1, false);
+      });
+    return () => {
+      task.cancel();
+    };
   }, [activeTab, loadData]);
 
   const handleRefresh = useCallback(async () => {

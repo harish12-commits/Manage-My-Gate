@@ -111,7 +111,7 @@ const CalendarHeader = memo(
           font-weight: 600;
           color: #334155;
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease, width 0.15s ease, height 0.15s ease, max-height 0.15s ease;
         }
         .rcv-btn-ghost:hover {
           background: #F0F7FF;
@@ -134,7 +134,7 @@ const CalendarHeader = memo(
           align-items: center;
           justify-content: center;
           font-size: 12px;
-          transition: all 0.15s ease;
+          transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease, width 0.15s ease, height 0.15s ease, max-height 0.15s ease;
         }
         .rcv-btn-icon:hover {
           background: #F0F7FF;
@@ -157,7 +157,7 @@ const CalendarHeader = memo(
           font-weight: 600;
           color: #64748B;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s;
         }
         .rcv-view-btn.active {
           background: #fff;

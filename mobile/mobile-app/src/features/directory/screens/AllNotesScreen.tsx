@@ -60,19 +60,13 @@ export function AllNotesScreen() {
   };
 
   const router = useRouter();
-
-  const handleBack = () => {
-    router.replace({ pathname: '/(resident)/dashboard', params: { openProfile: 'true' } } as any);
-  };
-
-  return (
+return (
     <ScreenShell
       title={t('all_community_notes', 'All Community Notes')}
       subtitle={t('community_notes_sub', 'Discover 24-hour neighbor notes & publish your status')}
       iconName="Sparkles"
       showBackButton={true}
-      onBackPress={handleBack}
-    >
+>
       <View className="flex-1 bg-background px-4 pt-3 pb-6 gap-3.5">
         {/* Navigation Segmented Control */}
         <SegmentedControl
@@ -206,17 +200,7 @@ export function AllNotesScreen() {
                 const targetUserId = typeof note.userId === 'string' ? note.userId : (note.userId as any)?._id || note._id;
                 const noteId = note._id || note.id || targetUserId;
 
-                const targetMember = note.memberData || {
-                  id: targetUserId,
-                  userId: targetUserId,
-                  name: authorName,
-                  unitNumber: authorUnit,
-                  role: String(rawRole).toLowerCase(),
-                  phone: phoneNum,
-                  intercomNumber: intercomNum,
-                };
-
-                return (
+                const targetMember = note.memberData || { id: targetUserId, userId: targetUserId, name: authorName, unitNumber: authorUnit, role: String(rawRole).toLowerCase(), phone: phoneNum, intercomNumber: intercomNum }; const isMyOwnNote = targetUserId && String(targetUserId) === String(currentUserId); return (
                   <View key={note._id || note.id} className="bg-card border border-border/80 rounded-2xl p-4 gap-3 shadow-xs">
                     {/* Header Row: Avatar + Author Info + Expiry */}
                     <View className="flex-row items-start justify-between">
@@ -269,17 +253,30 @@ export function AllNotesScreen() {
 
                       {phoneNum ? (
                         <Button
-                          variant="outline"
+                          variant="default"
                           size="sm"
                           onPress={() => handleCall(phoneNum)}
                           leftIcon={Phone}
                           className="h-9.5 rounded-xl border-border bg-muted/30 px-3.5"
                           textClassName="text-xs font-semibold text-foreground"
                         >
-                          {t('btn_call', 'Call')}
+                          {t('btn_interested', 'Interested')}
                         </Button>
-                      ) : null}
-                    </View>
+
+                        {phoneNum ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onPress={() => Linking.openURL(`tel:${phoneNum}`)}
+                            leftIcon={Phone}
+                            className="flex-1 h-9.5 rounded-xl border-border bg-muted/30 px-3.5"
+                            textClassName="text-xs font-semibold text-foreground"
+                          >
+                            {t('btn_call', 'Call')}
+                          </Button>
+                        ) : null}
+                      </View>
+                    )}
                   </View>
                 );
               })
@@ -319,3 +316,10 @@ export function AllNotesScreen() {
 }
 
 export default AllNotesScreen;
+
+
+
+
+
+
+

@@ -17,6 +17,28 @@ for (const envVar of requiredEnvVars) {
   }
 }
 
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_REFRESH_SECRET || process.env.JWT_REFRESH_SECRET === process.env.JWT_SECRET) {
+    throw new Error('JWT_REFRESH_SECRET must be set and different from JWT_SECRET in production.');
+  }
+  if (process.env.JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters in production.');
+  }
+  // Payment/banking credentials are encrypted with these keys: require strong, separate secrets.
+  if (process.env.ENCRYPTION_KEY.length < 32) {
+    throw new Error('ENCRYPTION_KEY must be at least 32 characters in production.');
+  }
+  if (!process.env.VAULT_ENCRYPTION_KEY || process.env.VAULT_ENCRYPTION_KEY.length < 32) {
+    throw new Error('VAULT_ENCRYPTION_KEY must be set (32+ characters) in production.');
+  }
+  if ([process.env.ENCRYPTION_KEY, process.env.JWT_SECRET, process.env.JWT_REFRESH_SECRET].includes(process.env.VAULT_ENCRYPTION_KEY)) {
+    throw new Error('VAULT_ENCRYPTION_KEY must differ from ENCRYPTION_KEY and the JWT secrets in production.');
+  }
+  if (process.env.ALLOW_MOCK_PAYMENTS === 'true') {
+    throw new Error('ALLOW_MOCK_PAYMENTS must not be enabled in production.');
+  }
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '5000', 10),
   host: process.env.HOST || 'localhost',

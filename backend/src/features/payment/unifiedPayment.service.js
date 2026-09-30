@@ -21,6 +21,7 @@ import {
   PAYMENT_FAILED,
 } from './payment.events.js';
 import HttpError from '../../utils/httpError.utils.js';
+import { isMockPaymentAllowed, assertMockPaymentAllowed } from './utils/mockGuard.js';
 import logger from '../../utils/logger.utils.js';
 
 /**
@@ -126,6 +127,14 @@ export class UnifiedPaymentService {
       };
     }
 
+    // Server-side dedupe key: concurrent identical requests (double tap, retry on a hung network)
+    // compute the same key, and the unique index lets only one of them create an order.
+    const attemptCount = await Payment.countDocuments({ orgId, userId, referenceId, referenceType });
+    const orderDedupeKey = crypto
+      .createHash('sha256')
+      .update(`${orgId}|${userId}|${referenceType}|${referenceId}|${amount}|${attemptCount}`)
+      .digest('hex');
+
     // 4. Resolve Gateway Provider Strategy
     const provider = paymentProviderFactory.getProvider(activeGateway);
 
@@ -140,9 +149,7 @@ export class UnifiedPaymentService {
         );
       }
     } else if (activeGateway === 'mock') {
-      if (process.env.NODE_ENV === 'production') {
-        throw new HttpError(400, 'Mock payment gateway is disabled in this environment.');
-      }
+      assertMockPaymentAllowed(HttpError);
     }
 
     // 6. Create Order with Payment Gateway
@@ -188,13 +195,42 @@ export class UnifiedPaymentService {
       gatewayTransactionId: orderPayload.orderId,
       paymentMethod: paymentContext.paymentMethod || 'credit_card',
       idempotencyKey: paymentContext.idempotencyKey,
+      orderDedupeKey,
       metadata: {
         ...(paymentContext.metadata || {}),
         receipt,
       },
     });
 
-    await payment.save(options.session ? { session: options.session } : undefined);
+    try {
+      await payment.save(options.session ? { session: options.session } : undefined);
+    } catch (err) {
+      if (err?.code === 11000) {
+        // A concurrent identical request won the race; hand back its order instead of a second one.
+        const winner = await Payment.findOne({
+          $or: [{ orderDedupeKey }, { idempotencyKey: paymentContext.idempotencyKey }],
+          orgId,
+          userId,
+        });
+        if (winner && winner.status === 'pending' && winner.gatewayOrderId) {
+          logger.info('payment.order.race_deduped', { paymentId: winner._id, referenceId });
+          return {
+            success: true,
+            reused: true,
+            paymentId: winner._id,
+            orderId: winner.gatewayOrderId,
+            amount: winner.amount,
+            amountFormatted: formatINR(winner.amount),
+            currency: winner.currency,
+            status: winner.status,
+            gateway: winner.gateway,
+            razorpayKeyId: config.keyId,
+          };
+        }
+        throw new HttpError(409, 'A payment for this item is already in progress. Please retry in a moment.');
+      }
+      throw err;
+    }
 
     logger.info('payment.created', {
       paymentId: payment._id,
@@ -295,8 +331,12 @@ export class UnifiedPaymentService {
 
     // 4. Verify Signature
     let verification;
+    if (activeGateway === 'mock') {
+      // Mock payments never reach the provider's "any signature is valid" path unless explicitly allowed.
+      assertMockPaymentAllowed(HttpError);
+    }
     if (
-      process.env.NODE_ENV !== 'production' &&
+      isMockPaymentAllowed() &&
       (effectiveSignature?.startsWith('sig_mock_') || activeGateway === 'mock')
     ) {
       logger.info('Bypassing signature verification for mock/test signature in non-production');
@@ -417,9 +457,17 @@ export class UnifiedPaymentService {
     // 2. Tenant-Aware Credential Resolution for Signature Verification
     let webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
-    if (payment && payment.orgId) {
+    // Payment Link payments (invoice emails / WhatsApp) have no pre-created Payment record;
+    // their notes carry orgId + invoiceId (see paymentService.createPaymentLink).
+    const linkEntity = payload?.payment_link?.entity || null;
+    const linkNotes = linkEntity?.notes || {};
+    const linkInvoiceId = notes.invoiceId || linkNotes.invoiceId || (linkEntity?.reference_id ? String(linkEntity.reference_id).split('-')[0] : null);
+    const isInvoiceLinkPayment = !!linkInvoiceId && !notes.domain;
+    const secretOrgId = payment?.orgId || (isInvoiceLinkPayment ? notes.orgId || linkNotes.orgId : null);
+
+    if (secretOrgId) {
       const config = await paymentConfigResolver.getConfig({
-        orgId: payment.orgId,
+        orgId: secretOrgId,
         provider: 'razorpay',
       });
       if (config.webhookSecret) {
@@ -443,6 +491,26 @@ export class UnifiedPaymentService {
     }
 
     // 4. Handle Webhook Events
+
+    // 4a. Invoice Payment Link paid (either event form; settlement is idempotent per gateway payment id).
+    const isLinkEvent = event === 'payment_link.paid' || (event === 'payment.captured' && !payment && isInvoiceLinkPayment);
+    if (isLinkEvent) {
+      if (!linkInvoiceId || !razorpayPaymentId || (paymentEntity.status && paymentEntity.status !== 'captured')) {
+        logger.info('payment.webhook.link_ignored', { event, linkInvoiceId, razorpayPaymentId, status: paymentEntity.status });
+        return { success: true, message: 'Payment link webhook ignored (not a captured invoice payment)' };
+      }
+      const invoiceService = (await import('../invoice/invoice.services.js')).default;
+      const result = await invoiceService.settleInvoiceFromWebhook(linkInvoiceId, {
+        paymentId: razorpayPaymentId,
+        orderId: paymentEntity.order_id || null,
+        eventId,
+        // Razorpay 'wallet' is a third-party wallet (not the app's digital wallet); other methods fall back to RAZORPAY.
+        method: { upi: 'UPI', card: 'CARD', netbanking: 'NETBANKING' }[String(paymentEntity.method || '').toLowerCase()] || 'RAZORPAY',
+        amount: Number(paymentEntity.amount || linkEntity?.amount_paid || 0) / 100,
+      });
+      return { success: true, message: 'Invoice payment link settled', invoiceId: linkInvoiceId, paymentId: result?.payment?._id };
+    }
+
     if (event === 'payment.captured') {
       if (!payment) {
         logger.info('payment.webhook.unmatched', { orderId, razorpayPaymentId, notes });
@@ -602,7 +670,8 @@ export class UnifiedPaymentService {
 
     let gatewayRefund = { refundId: `rfnd_${uuidv4().replace(/-/g, '').substring(0, 12)}` };
 
-    if (process.env.NODE_ENV !== 'production' && activeGateway === 'mock') {
+    if (activeGateway === 'mock') {
+      assertMockPaymentAllowed(HttpError);
       logger.info('Simulating gateway refund for mock provider in non-production');
     } else {
       gatewayRefund = await provider.refund(

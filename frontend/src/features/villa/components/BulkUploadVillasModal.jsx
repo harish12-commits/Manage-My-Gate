@@ -59,7 +59,8 @@ const parseXLSX = (arrayBuffer) => {
       else if (header.includes('phone') || header.includes('mobile')) key = 'phone'
       else if (header.includes('name') || header.includes('resident name')) key = 'name'
 
-      let rawVal = values[index] !== undefined && values[index] !== null ? values[index].toString().trim() : ''
+      let rawVal =
+        values[index] !== undefined && values[index] !== null ? values[index].toString().trim() : ''
       if (key === 'phone' && rawVal && /[eE]\+/i.test(rawVal)) {
         const num = Number(rawVal)
         if (!isNaN(num)) rawVal = num.toFixed(0)
@@ -71,20 +72,18 @@ const parseXLSX = (arrayBuffer) => {
 
     if (row.email) {
       row.isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)
-      row.isValidResidentType = !row.residentType || [
-        'owner',
-        'tenant',
-        'family',
-        'resident owner',
-        'resident tenant',
-        'family member',
-      ].some((t) => (row.residentType || '').toLowerCase().includes(t))
+      row.isValidResidentType =
+        !row.residentType ||
+        ['owner', 'tenant', 'family', 'resident owner', 'resident tenant', 'family member'].some(
+          (t) => (row.residentType || '').toLowerCase().includes(t),
+        )
 
       // Fallback to determine roleName from residentType if not provided
       if (!row.roleName && row.residentType) {
         const lowerRes = row.residentType.toLowerCase()
         if (lowerRes.includes('owner')) row.roleName = 'Resident Owner'
-        else if (lowerRes.includes('tenant') || lowerRes.includes('resident')) row.roleName = 'Resident Tenant'
+        else if (lowerRes.includes('tenant') || lowerRes.includes('resident'))
+          row.roleName = 'Resident Tenant'
         else if (lowerRes.includes('family')) row.roleName = 'Family Member'
         else row.roleName = 'Resident Tenant'
       }
@@ -162,7 +161,8 @@ const parseCSV = (csvText) => {
       else if (header.includes('phone') || header.includes('mobile')) key = 'phone'
       else if (header.includes('name') || header.includes('resident name')) key = 'name'
 
-      let rawVal = values[index] !== undefined && values[index] !== null ? values[index].toString().trim() : ''
+      let rawVal =
+        values[index] !== undefined && values[index] !== null ? values[index].toString().trim() : ''
       if (key === 'phone' && rawVal && /[eE]\+/i.test(rawVal)) {
         const num = Number(rawVal)
         if (!isNaN(num)) rawVal = num.toFixed(0)
@@ -173,19 +173,17 @@ const parseCSV = (csvText) => {
     row.isValidVilla = !!row.unitNumber
     if (row.email) {
       row.isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)
-      row.isValidResidentType = !row.residentType || [
-        'owner',
-        'tenant',
-        'family',
-        'resident owner',
-        'resident tenant',
-        'family member',
-      ].some((t) => (row.residentType || '').toLowerCase().includes(t))
+      row.isValidResidentType =
+        !row.residentType ||
+        ['owner', 'tenant', 'family', 'resident owner', 'resident tenant', 'family member'].some(
+          (t) => (row.residentType || '').toLowerCase().includes(t),
+        )
 
       if (!row.roleName && row.residentType) {
         const lowerRes = row.residentType.toLowerCase()
         if (lowerRes.includes('owner')) row.roleName = 'Resident Owner'
-        else if (lowerRes.includes('tenant') || lowerRes.includes('resident')) row.roleName = 'Resident Tenant'
+        else if (lowerRes.includes('tenant') || lowerRes.includes('resident'))
+          row.roleName = 'Resident Tenant'
         else if (lowerRes.includes('family')) row.roleName = 'Family Member'
         else row.roleName = 'Resident Tenant'
       }
@@ -522,7 +520,10 @@ export const BulkUploadVillasModal = ({ visible, onClose, onBulkUpload }) => {
                         <span className="text-muted ms-2">({s.action})</span>
                         {s.email && (
                           <div className="text-muted bulk-text-xxs">
-                            Resident: <span className="fw-semibold">{s.name ? `${s.name} (${s.email})` : s.email}</span>
+                            Resident:{' '}
+                            <span className="fw-semibold">
+                              {s.name ? `${s.name} (${s.email})` : s.email}
+                            </span>
                             {s.userInvited ? (
                               <span className="text-success ms-1">✓ Invited</span>
                             ) : (

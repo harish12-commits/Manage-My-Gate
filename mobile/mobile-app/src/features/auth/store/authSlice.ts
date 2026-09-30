@@ -198,11 +198,16 @@ export const bootstrapAuth = createAsyncThunk(
             try {
               response = await authService.switchContext(switchPayload);
             } catch (syncErr: any) {
+              if (syncErr?.message === 'Session expired. Please log in again.' || syncErr?.message?.includes('Network Error')) {
+                return;
+              }
               console.warn('Target workspace context unavailable or deleted, falling back to default active context:', syncErr?.message);
               try {
                 response = await authService.switchContext({});
-              } catch (fallbackErr) {
-                console.warn('Fallback switchContext failed:', fallbackErr);
+              } catch (fallbackErr: any) {
+                if (fallbackErr?.message !== 'Session expired. Please log in again.') {
+                  console.warn('Fallback switchContext failed:', fallbackErr);
+                }
               }
             }
 
@@ -611,6 +616,9 @@ export const switchWorkspaceContextThunk = createAsyncThunk<
     try {
       response = await authService.switchContext(cleanPayload);
     } catch (err: any) {
+      if (err?.message === 'Session expired. Please log in again.') {
+        throw err;
+      }
       if (cleanPayload.targetOrgId || cleanPayload.targetVillaId || cleanPayload.targetRole || cleanPayload.targetAssignmentId) {
         console.warn(`Target org ${cleanPayload.targetOrgId} unavailable or deleted. Falling back to default workspace context.`);
         response = await authService.switchContext({});

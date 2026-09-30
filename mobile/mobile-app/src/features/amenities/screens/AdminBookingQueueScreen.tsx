@@ -10,6 +10,7 @@ import { View } from 'react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { KPIRow } from '@/components/ui/KPIRow';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
+import { TabBar } from '@/components/ui/TabBar';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
@@ -42,12 +43,12 @@ export function AdminBookingQueueScreen() {
 
   const tabs = useMemo(
     () => [
-      { label: t('amenity_admin_tab_approvals', 'Approvals'), value: 'APPROVALS' },
-      { label: t('amenity_admin_tab_review', 'Needs decision'), value: 'REVIEW' },
-      { label: t('amenity_admin_tab_upcoming', 'Upcoming'), value: 'UPCOMING' },
-      { label: t('amenity_admin_tab_all', 'All'), value: 'ALL' },
+      { key: 'APPROVALS', label: t('amenity_admin_tab_approvals', 'Approvals'), badge: queue.counts.approvals },
+      { key: 'REVIEW', label: t('amenity_admin_tab_review', 'Needs decision'), badge: queue.counts.review },
+      { key: 'UPCOMING', label: t('amenity_admin_tab_upcoming', 'Upcoming') },
+      { key: 'ALL', label: t('amenity_admin_tab_all', 'All') },
     ],
-    [t]
+    [t, queue.counts.approvals, queue.counts.review]
   );
 
   const emptyText: Record<AdminQueueTab, string> = {
@@ -96,44 +97,6 @@ export function AdminBookingQueueScreen() {
       }
     >
       <View className="flex-1 bg-background">
-        <View className="py-2.5">
-          <KPIRow
-            cards={[
-              {
-                title: t('amenity_admin_kpi_approvals', 'Awaiting approval'),
-                value: String(queue.counts.approvals),
-                subtitle: t('amenity_admin_kpi_approvals_sub', 'Approve or reject'),
-                iconName: 'Hourglass',
-                variant: 'warning',
-                onPress: () => queue.setTab('APPROVALS'),
-              },
-              {
-                title: t('amenity_admin_kpi_review', 'Needs decision'),
-                value: String(queue.counts.review),
-                subtitle: t('amenity_admin_kpi_review_sub', 'No-shows, unpaid, returns'),
-                iconName: 'ShieldAlert',
-                variant: 'destructive',
-                onPress: () => queue.setTab('REVIEW'),
-              },
-            ]}
-          />
-        </View>
-
-        {queue.error ? (
-          <View className="px-4 pb-2">
-            <ErrorBanner message={queue.error} onDismiss={queue.clearError} onRetry={queue.refresh} />
-          </View>
-        ) : null}
-
-        <SearchFilterBar
-          searchValue={queue.search}
-          onSearchChange={queue.setSearch}
-          searchPlaceholder={t('amenity_admin_search', 'Search booking # or resident')}
-          sortOptions={tabs}
-          currentSort={queue.tab}
-          onSortChange={(value) => queue.setTab(value as AdminQueueTab)}
-        />
-
         <PaginatedList<AmenityReservation>
           data={queue.items}
           keyExtractor={(item) => item._id}
@@ -143,10 +106,56 @@ export function AdminBookingQueueScreen() {
           onRefresh={queue.refresh}
           refreshing={queue.refreshing}
           loading={queue.loading}
+          paginationSummary
+          ListHeaderComponent={
+            <View className="mb-3 gap-3">
+              <KPIRow
+                layout="grid"
+                className="px-0"
+                cards={[
+                  {
+                    title: t('amenity_admin_kpi_approvals', 'Awaiting approval'),
+                    value: String(queue.counts.approvals),
+                    subtitle: t('amenity_admin_kpi_approvals_sub', 'Approve or reject'),
+                    iconName: 'Hourglass',
+                    variant: 'warning',
+                    onPress: () => queue.setTab('APPROVALS'),
+                  },
+                  {
+                    title: t('amenity_admin_kpi_review', 'Needs decision'),
+                    value: String(queue.counts.review),
+                    subtitle: t('amenity_admin_kpi_review_sub', 'No-shows, unpaid, returns'),
+                    iconName: 'ShieldAlert',
+                    variant: 'destructive',
+                    onPress: () => queue.setTab('REVIEW'),
+                  },
+                ]}
+              />
+
+              <TabBar
+                tabs={tabs}
+                activeTab={queue.tab}
+                onTabChange={(key) => queue.setTab(key as AdminQueueTab)}
+                variant="pill"
+                className="my-0"
+              />
+
+              <SearchFilterBar
+                searchValue={queue.search}
+                onSearchChange={queue.setSearch}
+                searchPlaceholder={t('amenity_admin_search', 'Search booking # or resident')}
+                className="px-0 py-0 border-0"
+              />
+
+              {queue.error ? (
+                <ErrorBanner message={queue.error} onDismiss={queue.clearError} onRetry={queue.refresh} />
+              ) : null}
+            </View>
+          }
           emptyIcon="CalendarCheck"
           emptyTitle={t('amenity_admin_empty_title', 'Nothing here')}
           emptySubtitle={emptyText[queue.tab]}
-          contentContainerClassName="px-4 py-2 pb-28"
+          contentContainerClassName="px-4 pt-2 pb-28"
         />
       </View>
 

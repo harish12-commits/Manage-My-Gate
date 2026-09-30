@@ -60,8 +60,7 @@ export function DirectoryScreen() {
       subtitle={t('nav_community_directory_sub', 'Find and contact residents, security & community staff')}
       iconName="Users"
       showBackButton={true}
-      onBackPress={handleBack}
-    >
+>
       <View className="flex-1 bg-background">
         <PaginatedList<DirectoryMember>
           data={members}
@@ -91,3 +90,4 @@ export function DirectoryScreen() {
 }
 
 export default DirectoryScreen;
+

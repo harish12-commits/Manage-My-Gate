@@ -15,11 +15,10 @@ export interface PickedContact {
   phones: ContactPhoneOption[];
 }
 
+import * as Contacts from 'expo-contacts';
+
 /** The native contact picker exists only on iOS/Android builds. */
 export const isContactPickerSupported = Platform.OS === 'ios' || Platform.OS === 'android';
-
-// Lazy require: expo-contacts has no web implementation and is mocked away in unit tests.
-const loadContacts = () => require('expo-contacts') as typeof import('expo-contacts');
 
 /**
  * Opens the system contact picker for one contact. Only the chosen contact is
@@ -29,7 +28,6 @@ const loadContacts = () => require('expo-contacts') as typeof import('expo-conta
 export const useContactPicker = () => {
   const ensurePermission = useCallback(async (): Promise<boolean> => {
     if (Platform.OS !== 'android') return true;
-    const Contacts = loadContacts();
     const current = await Contacts.getPermissionsAsync();
     if (current.granted) return true;
     const requested = current.canAskAgain ? await Contacts.requestPermissionsAsync() : current;

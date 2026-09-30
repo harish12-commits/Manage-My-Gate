@@ -4,7 +4,6 @@ import {
   CModalHeader,
   CModalTitle,
   CModalBody,
-  CSpinner,
   CButton,
   CRow,
   CCol,
@@ -17,6 +16,7 @@ import { useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { simulatePayment } from '../../services/paymentApi.js'
 import { fetchMyWallet } from '../../services/walletApi.js'
+import AppLoader from '../../../../components/common/AppLoader'
 
 const MockPaymentModal = memo(
   ({ visible, paymentIntent, onSuccess, onFailure, onClose, draft, amenity }) => {
@@ -98,7 +98,7 @@ const MockPaymentModal = memo(
         <CModalBody className="py-4">
           {isProcessing || isFetchingWallet ? (
             <div className="text-center py-5">
-              <CSpinner color="primary" className="mb-3" />
+              <AppLoader variant="block" />
               <p className="mb-0 text-muted">
                 {isProcessing ? 'Processing your payment...' : 'Fetching wallet details...'}
               </p>

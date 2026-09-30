@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, Image, ActivityIndicator, Platform } from 'react-native';
+import { View, ScrollView, Image, Platform } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import {
@@ -20,6 +20,7 @@ import {
   Lock,
   Percent,
 } from 'lucide-react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 interface ReviewPreviewStepProps {
   formData: CommunityEngagementFormData;
@@ -246,7 +247,7 @@ export const ReviewPreviewStep: React.FC<ReviewPreviewStepProps> = ({
               <Text className="text-xs text-muted-foreground">Eligible Recipients</Text>
             </View>
             {previewLoading ? (
-              <ActivityIndicator size="small" className="text-primary" />
+              <AppLoader variant="inline" />
             ) : (
               <Text className="text-xs font-bold text-foreground">
                 {previewData?.estimatedRecipients !== undefined

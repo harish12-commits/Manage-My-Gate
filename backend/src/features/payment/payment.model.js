@@ -170,6 +170,11 @@ const paymentSchema = new mongoose.Schema({
     type: String,
     index: { unique: true, sparse: true }
   },
+  // Server-derived key that makes concurrent identical order requests collapse into one order.
+  orderDedupeKey: {
+    type: String,
+    index: { unique: true, sparse: true }
+  },
   domain: {
     type: String,
     enum: ['INVOICE', 'AMENITY', 'WALLET', 'OTHER'],

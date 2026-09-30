@@ -69,7 +69,7 @@
     box-shadow: var(--shadow-sm); 
     border: 1px solid var(--border-light); 
     padding: 28px; 
-    transition: all 0.3s ease; 
+    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, max-height 0.3s ease; 
   }
   .card-hover:hover { 
     transform: translateY(-4px); 
@@ -84,7 +84,7 @@
     font-size: 14px; 
     font-weight: 600; 
     cursor: pointer; 
-    transition: all 0.2s; 
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s; 
     border: 1px solid transparent; 
     display: inline-flex; 
     align-items: center; 
@@ -147,7 +147,7 @@
     font-size: 15px; 
     color: var(--text-main); 
     background: var(--surface-bg); 
-    transition: all 0.2s; 
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s; 
     font-weight: 500; 
   }
   .form-control:focus { 

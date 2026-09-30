@@ -1,0 +1,97 @@
+// Theme-aware app loader (see components/common/AppLoader.jsx).
+// Uses CoreUI variables so it follows light/dark automatically.
+
+@keyframes app-loader-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes app-loader-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes app-loader-pulse {
+  0%, 100% { transform: scale(0.7); opacity: 0.6; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+.app-loader {
+  --app-loader-size: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--cui-secondary-color, #6c757d);
+  // Hidden for the first 150ms so quick loads never flash a spinner.
+  opacity: 0;
+  animation: app-loader-fade-in 0.2s ease-out 0.15s forwards;
+
+  &--fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: var(--cui-body-bg, #fff);
+  }
+
+  &--page {
+    width: 100%;
+    min-height: 50vh;
+  }
+
+  &--block {
+    width: 100%;
+    padding: 1.5rem 0;
+  }
+
+  &--inline {
+    --app-loader-size: 20px;
+    display: inline-flex;
+    flex-direction: row;
+    gap: 0;
+    vertical-align: middle;
+  }
+
+  &__spinner {
+    position: relative;
+    width: var(--app-loader-size);
+    height: var(--app-loader-size);
+  }
+
+  &__ring,
+  &__core {
+    position: absolute;
+    border-radius: 50%;
+  }
+
+  &__ring {
+    inset: 0;
+    border: 3px solid var(--cui-border-color, rgba(128, 128, 128, 0.25));
+    border-top-color: var(--cui-primary, #5856d6);
+    animation: app-loader-spin 0.8s linear infinite;
+    will-change: transform;
+  }
+
+  &__core {
+    inset: 30%;
+    background: var(--cui-primary, #5856d6);
+    animation: app-loader-pulse 1.2s ease-in-out infinite;
+  }
+
+  &__label {
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-loader,
+  .app-loader__ring,
+  .app-loader__core {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+  }
+  .app-loader__ring { animation: none; }
+}
+
+// Pre-React boot loader lives in index.html and reuses the same look.

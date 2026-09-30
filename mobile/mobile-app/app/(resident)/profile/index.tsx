@@ -47,6 +47,7 @@ import {
   HOMETOWN_QUICK_SUGGESTIONS,
 } from '@/src/features/profile/data/profileSuggestions';
 import { reverseGeocodeCoords } from '@/src/features/profile/data/locationData';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 interface SelectedAvatarFile {
   uri: string;
@@ -1084,7 +1085,7 @@ export default function ProfileScreen() {
                   className="px-3 py-1.5 rounded-xl border border-blue-500/40 bg-blue-500/10 flex-row items-center gap-1.5 active:opacity-75"
                 >
                   {isDetectingGps ? (
-                    <ActivityIndicator size="small" color="#0284c7" />
+                    <AppLoader variant="inline" />
                   ) : (
                     <LocateFixed size={13} className="text-blue-600 dark:text-blue-400" />
                   )}

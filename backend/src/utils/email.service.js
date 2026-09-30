@@ -1,6 +1,14 @@
 import logger from './logger.utils.js';
 import { getSmtpTransporter } from './email.utils.js';
 
+export const escapeHtml = (value) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 class EmailService {
   async sendWelcomeEmail({ to, organizationName, loginUrl }) {
     const html = `
@@ -126,23 +134,28 @@ class EmailService {
   async sendReportedIssueEmail({ to, report, attachments = [] }) {
     if (!to || !report) return false;
 
-    const reportNumber = report.reportNumber || 'N/A';
-    const title = report.title || 'Untitled Issue';
-    const description = report.description || 'No description provided.';
-    const reportType = report.reportType || 'N/A';
-    const feature = report.feature || 'N/A';
-    const reporterName = report.reporter?.name || 'Anonymous';
-    const reporterEmail = report.reporter?.email || 'N/A';
-    const reporterRole = report.reporter?.role || 'User';
-    const orgName = report.organisation?.name || 'Community';
-    const status = report.status || 'NEW';
-    const source = report.source || 'MOBILE_APP';
+    // Every value below is user-controlled (reporter, community and device text): escape before
+    // interpolating into HTML so a report can never inject markup or links into the admin's inbox.
+    const reportNumber = escapeHtml(report.reportNumber || 'N/A');
+    const rawTitle = String(report.title || 'Untitled Issue');
+    const title = escapeHtml(rawTitle);
+    const description = escapeHtml(report.description || 'No description provided.');
+    const reportType = escapeHtml(report.reportType || 'N/A');
+    const feature = escapeHtml(report.feature || 'N/A');
+    const reporterName = escapeHtml(report.reporter?.name || 'Anonymous');
+    const reporterEmail = escapeHtml(report.reporter?.email || 'N/A');
+    const reporterPhone = escapeHtml(report.reporter?.phone || '');
+    const reporterRole = escapeHtml(report.reporter?.role || 'User');
+    const orgName = escapeHtml(report.organisation?.name || 'Community');
+    const status = escapeHtml(report.status || 'NEW');
+    const source = escapeHtml(report.source || 'MOBILE_APP');
+    const reportId = escapeHtml(report._id || 'N/A');
 
     const techContext = report.technicalContext || {};
-    const platform = techContext.platform || 'N/A';
-    const appVersion = techContext.appVersion || 'N/A';
-    const deviceModel = techContext.deviceModel || 'N/A';
-    const osVersion = techContext.osVersion || 'N/A';
+    const platform = escapeHtml(techContext.platform || 'N/A');
+    const appVersion = escapeHtml(techContext.appVersion || 'N/A');
+    const deviceModel = escapeHtml(techContext.deviceModel || 'N/A');
+    const osVersion = escapeHtml(techContext.osVersion || 'N/A');
 
     const reportedDate = report.createdAt
       ? new Date(report.createdAt).toLocaleString('en-US', {
@@ -169,7 +182,7 @@ class EmailService {
             </tr>
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #4a5568;">Report ID:</td>
-              <td style="padding: 8px 0;"><code>${reportNumber}</code> (ID: ${report._id || 'N/A'})</td>
+              <td style="padding: 8px 0;"><code>${reportNumber}</code> (ID: ${reportId})</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #4a5568;">Status:</td>
@@ -183,6 +196,10 @@ class EmailService {
               <td style="padding: 8px 0; font-weight: bold; color: #4a5568;">Reported By:</td>
               <td style="padding: 8px 0;">${reporterName} (${reporterRole}) &lt;<a href="mailto:${reporterEmail}" style="color: #3182ce;">${reporterEmail}</a>&gt;</td>
             </tr>
+            ${reporterPhone ? `<tr>
+              <td style="padding: 8px 0; font-weight: bold; color: #4a5568;">Phone:</td>
+              <td style="padding: 8px 0;">${reporterPhone}</td>
+            </tr>` : ''}
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #4a5568;">Community / Org:</td>
               <td style="padding: 8px 0;">${orgName}</td>
@@ -221,7 +238,16 @@ class EmailService {
     `;
 
     try {
-      const smtpObj = await getSmtpTransporter();
+      let orgId = null;
+      if (report.organisation) {
+        orgId = report.organisation.organisationId || report.organisation._id || report.organisation;
+      }
+      // Ensure orgId is actually a string or ObjectId, not a plain Object
+      if (typeof orgId === 'object' && orgId !== null && !orgId._bsontype && !orgId.toHexString) {
+        orgId = orgId.toString();
+      }
+      
+      const smtpObj = await getSmtpTransporter(orgId);
       if (!smtpObj) {
         logger.warn(`[EmailService] Cannot send reported issue email to ${to}: SMTP transporter unavailable.`);
         return false;
@@ -231,7 +257,7 @@ class EmailService {
       await transporter.sendMail({
         from,
         to,
-        subject: `[Issue Report #${reportNumber}] ${title}`,
+        subject: `[Issue Report #${report.reportNumber || 'N/A'}] ${rawTitle}`.replace(/[\r\n]+/g, ' ').slice(0, 250),
         html,
         attachments: attachments || [],
       });

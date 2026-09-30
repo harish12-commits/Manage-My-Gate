@@ -22,3 +22,8 @@ export const REPORT_MODULES = Object.freeze({
 });
 
 export const SUPPORTED_PLATFORMS = Object.freeze(['android', 'ios', 'web']);
+
+export const REPORT_SOURCES = Object.freeze(['MOBILE_APP', 'WEB_PORTAL', 'EXTERNAL']);
+
+// Fields clients may sort report listings by.
+export const SORTABLE_FIELDS = Object.freeze(['createdAt', 'reportNumber', 'reportType', 'feature', 'title']);

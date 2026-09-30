@@ -65,7 +65,7 @@ enquiryEvents.on('enquiry_created', async (enquiry) => {
     if (smtpIntegration) {
       const getCred = (key) => {
         const cred = smtpIntegration.credentials.find((c) => c.key === key);
-        return cred ? decrypt(cred.encryptedValue, cred.iv) : null;
+        return cred ? decrypt(cred.encryptedValue, cred.iv, cred.authTag) : null;
       };
 
       const host = getCred('host');
@@ -102,7 +102,7 @@ enquiryEvents.on('enquiry_created', async (enquiry) => {
     if (resendIntegration) {
       const apiKeyCred = resendIntegration.credentials.find((c) => c.key === 'apiKey');
       if (apiKeyCred) {
-        const apiKey = decrypt(apiKeyCred.encryptedValue, apiKeyCred.iv);
+        const apiKey = decrypt(apiKeyCred.encryptedValue, apiKeyCred.iv, apiKeyCred.authTag);
         
         const response = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -144,3 +144,5 @@ enquiryEvents.on('enquiry_created', async (enquiry) => {
     logger.error(`Failed to send Enquiry creation email to ${identifier}:`, error);
   }
 });
+
+

@@ -13,6 +13,13 @@ jest.mock('expo-contacts', () => ({
 
 import { ContactPickerButton } from '../../../components/forms/ContactPickerButton';
 
+/** Shape returned by Contact.presentPicker(): details are read through async getters. */
+const pickedContact = (c: { name: string; phoneNumbers: any[]; emails?: any[] }) => ({
+  getFullName: async () => c.name,
+  getPhones: async () => c.phoneNumbers,
+  getEmails: async () => c.emails ?? [],
+});
+
 describe('ContactPickerButton', () => {
   const originalOS = Platform.OS;
   beforeEach(() => {

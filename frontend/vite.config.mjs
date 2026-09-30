@@ -10,6 +10,23 @@ export default defineConfig(() => {
     base: '/',
     build: {
       outDir: 'build',
+      chunkSizeWarningLimit: 900,
+      rollupOptions: {
+        output: {
+          // Split heavy, rarely-changing vendors so route chunks stay small and cacheable.
+          manualChunks(rawId) {
+            const id = rawId.split(path.sep).join('/')
+            if (!id.includes('/node_modules/')) return undefined
+            if (/\/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) return 'vendor-react'
+            if (/\/node_modules\/@coreui\/(chartjs|react-chartjs)\/|\/node_modules\/chart\.js\//.test(id)) return 'vendor-charts'
+            if (id.includes('/node_modules/@coreui/')) return 'vendor-coreui'
+            if (id.includes('/node_modules/@fullcalendar/')) return 'vendor-calendar'
+            if (/\/node_modules\/(xlsx|file-saver)\//.test(id)) return 'vendor-xlsx'
+            if (/\/node_modules\/(@azure|@react-oauth)\//.test(id)) return 'vendor-auth'
+            return undefined
+          },
+        },
+      },
     },
     css: {
       postcss: {

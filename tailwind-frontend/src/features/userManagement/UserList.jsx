@@ -249,7 +249,7 @@ const UserList = () => {
         title="User Management"
         subtitle="Manage organization users and allocate access roles."
         actionButtons={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               id="configure-invitation-tmpl-btn"
               variant="outline"

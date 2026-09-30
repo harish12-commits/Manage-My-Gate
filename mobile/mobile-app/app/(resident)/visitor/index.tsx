@@ -1,3 +1,4 @@
+import { runSoon } from '@/src/utils/runSoon';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -36,7 +37,10 @@ export default function VisitorDashboardScreen() {
   }, [fetchDashboardData, fetchActiveVisitors]);
 
   useEffect(() => {
-    loadData();
+    const task = runSoon(() => {
+      loadData();
+    });
+    return () => task.cancel();
   }, [loadData]);
 
   const handleRefresh = useCallback(async () => {

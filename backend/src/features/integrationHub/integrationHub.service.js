@@ -31,7 +31,8 @@ export class IntegrationHubService {
 
     // 2. Encrypt all credentials securely using AES-256-GCM for banking/razorpay and CBC for legacy
     const providerLower = provider.toLowerCase();
-    const useGCM = ['banking', 'razorpay'].includes(providerLower);
+    // Authenticated encryption (AES-256-GCM) for every provider; legacy CBC records stay readable.
+    const useGCM = true;
 
     const encryptedCredentials = Object.entries(credentials).map(([key, value]) => {
       if (value === undefined || value === null || value === '') {
@@ -245,7 +246,7 @@ export class IntegrationHubService {
       if (cred.authTag) {
         decryptedCredentials[cred.key] = decryptGCM(cred.encryptedValue, cred.iv, cred.authTag);
       } else {
-        decryptedCredentials[cred.key] = decrypt(cred.encryptedValue, cred.iv);
+        decryptedCredentials[cred.key] = decrypt(cred.encryptedValue, cred.iv, cred.authTag);
       }
     }
 
@@ -291,7 +292,7 @@ export class IntegrationHubService {
         if (cred.authTag) {
           decryptedCredentials[cred.key] = decryptGCM(cred.encryptedValue, cred.iv, cred.authTag);
         } else {
-          decryptedCredentials[cred.key] = decrypt(cred.encryptedValue, cred.iv);
+          decryptedCredentials[cred.key] = decrypt(cred.encryptedValue, cred.iv, cred.authTag);
         }
       }
       const keyId = decryptedCredentials.keyId || decryptedCredentials.key_id;
@@ -342,3 +343,4 @@ export class IntegrationHubService {
 }
 
 export default new IntegrationHubService();
+

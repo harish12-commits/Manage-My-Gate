@@ -12,6 +12,7 @@ import CancelBookingModal from '../components/booking/CancelBookingModal.jsx'
 import { adminCancelBooking } from '../services/amenityBookingApi.js'
 import toast from 'react-hot-toast'
 import '../styles/_amenities.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 const AdminCalendarView = () => {
   const {
@@ -118,7 +119,7 @@ const AdminCalendarView = () => {
 
             {loading && visibleEvents.length === 0 ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-                <CSpinner />
+                <AppLoader variant="block" />
               </div>
             ) : (
               <CalendarGrid

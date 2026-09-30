@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
-  CSpinner,
   CCard,
   CCardBody,
   CContainer,
@@ -22,6 +21,7 @@ import { InviteSignInForm } from '../../../features/auth/components/InviteSignIn
 import { InviteSsoButtons } from '../../../features/auth/components/InviteSsoButtons.jsx'
 import { InviteMobileHandoffCard } from '../../../features/auth/components/InviteMobileHandoffCard.jsx'
 import '../../../features/auth/styles/_auth.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.atominosconsulting.nahom'
 const APP_STORE_URL = 'https://apps.apple.com/app/manage-my-gate/id6746501635'
@@ -390,7 +390,7 @@ const InviteHandlerContent = () => {
       <div className="invite-page-wrapper position-relative">
         {renderThemeToggle()}
         <div className="text-center text-white">
-          <CSpinner color="primary" variant="grow" className="mb-3" />
+          <AppLoader variant="block" />
           <h5 className="fw-semibold">
             {t('auth.invite.validating', 'Validating workspace invitation...')}
           </h5>

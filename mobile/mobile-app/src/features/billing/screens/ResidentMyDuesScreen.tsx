@@ -1,3 +1,4 @@
+import { runSoon } from '@/src/utils/runSoon';
 import React, { useEffect, useCallback, useState } from 'react';
 import { View, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -53,7 +54,10 @@ export function ResidentMyDuesScreen() {
 
   // Load resident dues & wallet balance on screen mount
   useEffect(() => {
-    loadResidentDues();
+    const task = runSoon(() => {
+      loadResidentDues();
+    });
+    return () => task.cancel();
   }, [loadResidentDues]);
 
   const handleRefresh = useCallback(() => {

@@ -113,21 +113,21 @@ export function PollVotersModal({
                       <Text className="text-sm font-semibold text-foreground">
                         {displayName}
                       </Text>
-                      {unit && (
+                      {unit ? (
                         <Text className="text-xs text-muted-foreground">
                           Unit: {unit}
                         </Text>
-                      )}
+                      ) : null}
                     </View>
                   </View>
 
-                  {optionText && (
+                  {optionText ? (
                     <StatusBadge
                       label={optionText}
                       variant="neutral"
                       size="sm"
                     />
-                  )}
+                  ) : null}
                 </View>
               );
             })}

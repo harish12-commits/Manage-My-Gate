@@ -67,6 +67,10 @@ export const updateIssueReportConfig = async (email) => {
   return await apiClient.put('/platform/reports/config', { email })
 }
 
+export const testIssueReportConfigEmail = async (email) => {
+  return await apiClient.post('/platform/reports/config/test-email', { email })
+}
+
 export default {
   fetchPlatformReports,
   fetchPlatformReportById,
@@ -74,4 +78,19 @@ export default {
   fetchCommunityReportById,
   fetchIssueReportConfig,
   updateIssueReportConfig,
+  testIssueReportConfigEmail,
+}
+
+/**
+ * Download a report screenshot through the authenticated attachments endpoint.
+ * Screenshots are private, so they cannot be loaded by a plain <img src> URL.
+ * @param {string} attachmentUrl - Stored attachment url (e.g. /uploads/issueReports/rep-xxx.jpg)
+ * @returns {Promise<Blob>}
+ */
+export const fetchReportAttachmentBlob = async (attachmentUrl) => {
+  const filename = String(attachmentUrl || '').split('/').pop()
+  if (!filename) throw new Error('Invalid attachment')
+  return await apiClient.get(`/support/reports/attachments/${encodeURIComponent(filename)}`, {
+    responseType: 'blob',
+  })
 }

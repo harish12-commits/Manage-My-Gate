@@ -19,7 +19,7 @@
  * )
  */
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 
@@ -44,6 +44,17 @@ import { useAuth } from '../features/auth/hooks/useAuth'
 // sidebar nav config
 import navigation from '../_nav'
 
+// Split nav into portal and super-admin sections
+const EMPTY_LIST = []
+const SUPER_ADMIN_PATHS = new Set([
+  '/super-admin/organizations',
+  '/super-admin/audit-logs',
+  '/super-admin/issue-reports',
+])
+const portalNav = navigation.filter((item) => !SUPER_ADMIN_PATHS.has(item.to))
+const superAdminNav = navigation.filter((item) => SUPER_ADMIN_PATHS.has(item.to))
+
+
 /**
  * AppSidebar functional component
  *
@@ -60,11 +71,12 @@ const AppSidebar = () => {
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.ui.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.ui.sidebarShow)
-  const activeWorkspace = useSelector((state) => state.workspace)
-  const allowedFeatures = useSelector((state) => state.workspace?.allowedFeatures || [])
+  const workspaceModules = useSelector((state) => state.workspace?.modules)
+  const workspaceEnabledModules = useSelector((state) => state.workspace?.workspaceModules)
+  const currentUser = useSelector((state) => state.auth.user)
+  const activeWorkspace = { modules: workspaceModules, workspaceModules: workspaceEnabledModules }
+  const allowedFeatures = useSelector((state) => state.workspace?.allowedFeatures) || EMPTY_LIST
   const isPlatform = useSelector((state) => state.workspace?.isPlatform || false)
-  console.log('[AppSidebar DEBUG] allowedFeatures:', allowedFeatures)
-  console.log('[AppSidebar DEBUG] isPlatform:', isPlatform)
 
   const { checkPermission } = useAuth()
 
@@ -144,7 +156,6 @@ const AppSidebar = () => {
           if (!next.to && !next.items) return false // another title
           return isPermitted(next)
         })
-        console.log(`[AppSidebar DEBUG] Title ${item.name} hasVisible: ${hasVisible}`)
         if (hasVisible) result.push(item)
         continue
       }
@@ -152,13 +163,9 @@ const AppSidebar = () => {
       // Groups: check top-level permission; filter children recursively
       if (item.items) {
         if (!isPermitted(item)) {
-          console.log(`[AppSidebar DEBUG] Group ${item.name} top-level not permitted`)
           continue
         }
         const filteredChildren = item.items.filter(isPermitted)
-        console.log(
-          `[AppSidebar DEBUG] Group ${item.name} filteredChildren count: ${filteredChildren.length}`,
-        )
         if (filteredChildren.length === 0) continue
         result.push({ ...item, items: filteredChildren })
         continue
@@ -170,17 +177,12 @@ const AppSidebar = () => {
     return result
   }
 
-  // Split nav into portal and super-admin sections
-  const SUPER_ADMIN_PATHS = new Set([
-    '/super-admin/organizations',
-    '/super-admin/audit-logs',
-    '/super-admin/issue-reports',
-  ])
-  const portalNav = navigation.filter((item) => !SUPER_ADMIN_PATHS.has(item.to))
-  const superAdminNav = navigation.filter((item) => SUPER_ADMIN_PATHS.has(item.to))
-
-  const baseItems = isPlatform ? [...superAdminNav, ...portalNav] : portalNav
-  const filteredNavigationItems = filterItems(baseItems)
+  // Filtering walks the whole nav tree and runs permission checks; only redo it
+  // when the inputs change, and keep a stable reference so AppSidebarNav can skip renders.
+  const filteredNavigationItems = useMemo(() => {
+    const baseItems = isPlatform ? [...superAdminNav, ...portalNav] : portalNav
+    return filterItems(baseItems)
+  }, [allowedFeatures, workspaceModules, workspaceEnabledModules, isPlatform, currentUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <CSidebar

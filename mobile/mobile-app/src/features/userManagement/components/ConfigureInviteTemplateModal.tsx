@@ -5,7 +5,9 @@ import { TextInput } from '@/components/forms/TextInput';
 import { DropdownSelect } from '@/components/forms/DropdownSelect';
 import { Button } from '@/components/common/Button';
 import { Text } from '@/components/ui/text';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import apiClient from '../../../services/apiClient';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 interface ConfigureInviteTemplateModalProps {
   visible: boolean;
@@ -175,49 +177,47 @@ export const ConfigureInviteTemplateModal: React.FC<ConfigureInviteTemplateModal
             </TouchableOpacity>
           </View>
 
-          {errorMsg ? (
-            <View className="p-3 mb-3 bg-destructive/10 border border-destructive/20 rounded-xl flex-row items-start">
-              <AlertTriangle size={16} color="#ef4444" className="me-2 mt-0.5" />
-              <Text className="text-xs text-destructive font-semibold flex-1 text-start">{errorMsg}</Text>
-            </View>
-          ) : null}
+          {/* Channel Selector */}
+          <View className="mb-3">
+            <Text className="text-xs font-bold text-foreground text-start mb-1">
+              Dispatch Channel (Integration Hub Derived)
+            </Text>
+            <DropdownSelect
+              options={availableTypes}
+              value={type}
+              onValueChange={(val: any) => setType(val)}
+            />
+          </View>
 
-          {successMsg ? (
-            <View className="p-3 mb-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex-row items-center">
-              <CheckCircle2 size={16} color="#10b981" className="me-2" />
-              <Text className="text-xs text-emerald-600 font-semibold flex-1 text-start">{successMsg}</Text>
-            </View>
-          ) : null}
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ flexGrow: 1 }}
-            className="flex-1"
-          >
-            {loading ? (
-              <View className="py-8 items-center justify-center">
-                <ActivityIndicator size="small" color="#6366f1" />
-                <Text className="text-xs text-muted-foreground mt-2">Loading template configuration...</Text>
+          {/* Subject Line (Email Channel) */}
+          {type === 'email' && (
+            <>
+              <View className="mb-3">
+                <Text className="text-xs font-bold text-foreground text-start mb-1">
+                  Email Subject Line *
+                </Text>
+                <TextInput
+                  placeholder="Invitation to join Workspace"
+                  value={subject}
+                  onChangeText={setSubject}
+                />
               </View>
-            ) : (
-              <View className="space-y-3">
-                {/* Template Label */}
-                <View className="mb-3">
+
+              {/* CC / BCC fields */}
+              <View className="flex-row gap-2 mb-3">
+                <View className="flex-1">
                   <Text className="text-xs font-bold text-foreground text-start mb-1">
-                    Template Label *
+                    CC (Optional)
                   </Text>
                   <TextInput
-                    placeholder="e.g. Standard Org Welcome"
-                    value={name}
-                    onChangeText={setName}
+                    placeholder="admin@org.com"
+                    value={cc}
+                    onChangeText={setCc}
                   />
                 </View>
-
-                {/* Channel Selector */}
-                <View className="mb-3">
+                <View className="flex-1">
                   <Text className="text-xs font-bold text-foreground text-start mb-1">
-                    Dispatch Channel (Integration Hub Derived)
+                    BCC (Optional)
                   </Text>
                   <DropdownSelect
                     options={availableTypes}
@@ -285,34 +285,14 @@ export const ConfigureInviteTemplateModal: React.FC<ConfigureInviteTemplateModal
                   </View>
 
                   <TextInput
-                    placeholder="Write your email body template..."
-                    value={body}
-                    onChangeText={setBody}
-                    multiline
-                    numberOfLines={8}
-                    className="font-mono text-xs min-h-[140px]"
+                    placeholder="audit@org.com"
+                    value={bcc}
+                    onChangeText={setBcc}
                   />
-
-                  <View className="mt-2 p-2 rounded-xl bg-muted/40 border border-border/60 flex-row items-center justify-between">
-                    <Text className="text-[11px] text-muted-foreground text-start">
-                      Required token: <Text className="font-mono font-bold text-primary">{'{{invite_link}}'}</Text>
-                    </Text>
-                    {body.includes('{{invite_link}}') ? (
-                      <View className="flex-row items-center">
-                        <CheckCircle2 size={12} color="#10b981" className="me-1" />
-                        <Text className="text-[10px] font-bold text-emerald-600">Present</Text>
-                      </View>
-                    ) : (
-                      <View className="flex-row items-center">
-                        <AlertTriangle size={12} color="#ef4444" className="me-1" />
-                        <Text className="text-[10px] font-bold text-destructive">Missing Token</Text>
-                      </View>
-                    )}
-                  </View>
                 </View>
               </View>
-            )}
-          </ScrollView>
+            </>
+          )}
 
           {/* Footer */}
           <View
@@ -333,9 +313,24 @@ export const ConfigureInviteTemplateModal: React.FC<ConfigureInviteTemplateModal
             </Button>
           </View>
         </View>
+      )}
+
+      {/* Footer */}
+      <View className="flex-row items-center justify-end gap-2 pt-3 border-t border-border mt-2">
+        <Button variant="outline" size="sm" onPress={onClose} disabled={submitting}>
+          Cancel
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onPress={handleSave}
+          loading={submitting}
+          disabled={submitting || loading || !body.includes('{{invite_link}}')}
+        >
+          Save Template
+        </Button>
       </View>
-    </KeyboardAvoidingView>
-  </Modal>
+    </BottomSheet>
   );
 };
 

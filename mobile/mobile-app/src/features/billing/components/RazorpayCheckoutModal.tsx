@@ -1,10 +1,12 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { View, Modal, Platform } from 'react-native';
-import { WebView } from 'react-native-webview';
+import React, { useRef, useCallback, useMemo, useEffect, useState } from 'react';
+import { View, Modal, Platform, NativeModules } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { X, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react-native';
+// @ts-ignore
+import RazorpayCheckout from 'react-native-razorpay';
+import { WebView } from 'react-native-webview';
 
 export const isMockRazorpayKey = (key?: string, orderId?: string): boolean => {
   if (!key) return true;
@@ -57,22 +59,24 @@ export function RazorpayCheckoutModal({
   onDismiss,
   onError,
 }: RazorpayCheckoutModalProps) {
-  const isHandledRef = React.useRef<boolean>(false);
-  const [fallbackToMock, setFallbackToMock] = React.useState<boolean>(false);
+  const isHandledRef = useRef<boolean>(false);
+  const [fallbackToMock, setFallbackToMock] = useState<boolean>(false);
+  const [useWebView, setUseWebView] = useState<boolean>(false);
 
   // Reset handled lock and fallback when modal becomes visible
-  React.useEffect(() => {
+  useEffect(() => {
     if (visible) {
       isHandledRef.current = false;
       setFallbackToMock(false);
+      setUseWebView(false);
     }
   }, [visible]);
 
-  const isMock = React.useMemo(() => {
+  const isMock = useMemo(() => {
     return fallbackToMock || isMockRazorpayKey(options?.razorpayKeyId, options?.orderId);
   }, [options, fallbackToMock]);
 
-  const handleSimulateMockSuccess = React.useCallback(() => {
+  const handleSimulateMockSuccess = useCallback(() => {
     if (isHandledRef.current || !options) return;
     isHandledRef.current = true;
     const mockPaymentId = `pay_mock_${Date.now()}`;
@@ -86,8 +90,97 @@ export function RazorpayCheckoutModal({
     });
   }, [options, onSuccess]);
 
-  // Construct HTML wrapper for Razorpay Checkout
-  const htmlContent = React.useMemo(() => {
+  // Handle Native SDK Checkout
+  useEffect(() => {
+    if (visible && options && Platform.OS !== 'web' && !isMock && !useWebView) {
+      if (!NativeModules.RazorpayCheckout) {
+        console.warn('[RazorpayCheckoutModal] RazorpayCheckout native module is missing (NativeModules). Falling back to WebView.');
+        setUseWebView(true);
+        return;
+      }
+
+      if (!RazorpayCheckout || typeof RazorpayCheckout.open !== 'function') {
+        console.warn('[RazorpayCheckoutModal] RazorpayCheckout SDK is missing. Falling back to WebView.');
+        setUseWebView(true);
+        return;
+      }
+
+      // Small timeout to ensure state settles before popping native intent
+      const timer = setTimeout(() => {
+        if (isHandledRef.current) return;
+
+        const razorpayOptions = {
+          description: options.description || 'Payment Settlement',
+          currency: options.currency || 'INR',
+          key: options.razorpayKeyId,
+          amount: Math.round(options.amount * 100), // SDK expects paise
+          name: options.name || 'Manage My Gate',
+          order_id: options.orderId,
+          theme: { color: options.theme?.color || '#2563eb' },
+          prefill: {
+            email: options.customerEmail || '',
+            contact: options.customerPhone || '',
+            name: options.customerName || '',
+          },
+        };
+
+        try {
+          RazorpayCheckout.open(razorpayOptions)
+            .then((data: any) => {
+              if (!isHandledRef.current) {
+                isHandledRef.current = true;
+                onSuccess({
+                  paymentId: options.paymentId || '',
+                  razorpayPaymentId: data.razorpay_payment_id,
+                  razorpayOrderId: data.razorpay_order_id || options.orderId || '',
+                  razorpaySignature: data.razorpay_signature,
+                });
+              }
+            })
+            .catch((error: any) => {
+              if (!isHandledRef.current) {
+                isHandledRef.current = true;
+                // Check if user cancelled
+                const errDesc = String(error.description || error.message || '').toLowerCase();
+                
+                // Fallback to WebView if Native SDK crashes due to missing underlying native code
+                if (errDesc.includes("read property 'open'") || errDesc.includes("razorpaycheckout is null")) {
+                  console.warn('[RazorpayCheckoutModal] Native SDK crashed missing open property. Falling back to WebView.', error);
+                  isHandledRef.current = false;
+                  setUseWebView(true);
+                  return;
+                }
+
+                if (error.code === 'BAD_REQUEST_ERROR' && errDesc.includes('cancel')) {
+                  onDismiss('User cancelled checkout');
+                } else {
+                  // If it's a key error, fallback to mock (useful for testing without valid keys)
+                  if (errDesc.includes('unauthorized') || errDesc.includes('invalid') || error.code === 2) {
+                    console.warn('[RazorpayCheckoutModal] API error detected natively. Falling back to test mode.');
+                    isHandledRef.current = false; // Reset so mock can handle it
+                    setFallbackToMock(true);
+                    return;
+                  }
+                  
+                  onError({
+                    code: String(error.code || 'PAYMENT_FAILED'),
+                    description: error.description || error.message || 'Razorpay checkout encountered an error',
+                  });
+                }
+              }
+            });
+        } catch (err) {
+          console.warn('[RazorpayCheckoutModal] Error invoking native RazorpayCheckout. Falling back to WebView.', err);
+          setUseWebView(true);
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible, options, isMock, useWebView, onSuccess, onDismiss, onError]);
+
+  // Construct HTML wrapper for Razorpay Web Checkout (Used by web AND native WebView fallback)
+  const htmlContent = useMemo(() => {
     if (!options) return '';
 
     const key = options.razorpayKeyId || '';
@@ -100,7 +193,6 @@ export function RazorpayCheckoutModal({
     const customerPhone = options.customerPhone || '';
     const customerEmail = options.customerEmail || '';
 
-    // Only include order_id in Razorpay options if it matches a valid Razorpay server-created order ID pattern
     const isRealRazorpayOrderId = /^order_[a-zA-Z0-9]{14}$/.test(orderId);
     const orderIdField = isRealRazorpayOrderId ? `order_id: "${orderId}",` : '';
 
@@ -111,113 +203,99 @@ export function RazorpayCheckoutModal({
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
           <style>
             body {
-              margin: 0;
-              padding: 0;
+              margin: 0; padding: 0;
               background-color: hsl(222.2, 84%, 4.9%);
               color: hsl(210, 40%, 98%);
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              height: 100vh;
+              display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;
             }
             .spinner {
               border: 3px solid hsla(217.2, 91.2%, 59.8%, 0.2);
               border-top: 3px solid hsl(217.2, 91.2%, 59.8%);
               border-radius: 50%;
-              width: 36px;
-              height: 36px;
-              animation: spin 1s linear infinite;
-              margin-bottom: 16px;
+              width: 36px; height: 36px;
+              animation: spin 1s linear infinite; margin-bottom: 16px;
             }
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-            .text {
-              font-size: 14px;
-              font-weight: 600;
-              color: hsl(215, 20.2%, 65.1%);
-            }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            .text { font-size: 14px; font-weight: 600; color: hsl(215, 20.2%, 65.1%); }
           </style>
-          <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
         </head>
         <body>
           <div class="spinner"></div>
-          <div class="text">Connecting to Secure Razorpay Gateway...</div>
+          <div class="text" id="statusText">Connecting to Secure Razorpay Gateway...</div>
 
           <script>
-            function sendToRN(type, data) {
+            function sendToParent(type, data) {
               var payload = JSON.stringify({ type, data });
-              if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+              if (window.ReactNativeWebView) {
                 window.ReactNativeWebView.postMessage(payload);
               } else if (window.parent && window.parent !== window) {
                 window.parent.postMessage(payload, '*');
               }
             }
 
-            try {
-              var razorpayOptions = {
-                key: "${key}",
-                amount: "${amountPaise}",
-                currency: "${currency}",
-                name: "${name}",
-                description: "${description}",
-                ${orderIdField}
-                handler: function(response) {
-                  sendToRN('PAYMENT_SUCCESS', {
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_order_id: response.razorpay_order_id || "${orderId}",
-                    razorpay_signature: response.razorpay_signature || ('sig_test_' + Date.now())
+            function initRazorpay() {
+              document.getElementById('statusText').innerText = "Opening Secure Checkout...";
+              try {
+                var razorpayOptions = {
+                  key: "${key}",
+                  amount: "${amountPaise}",
+                  currency: "${currency}",
+                  name: "${name}",
+                  description: "${description}",
+                  ${orderIdField}
+                  handler: function(response) {
+                    sendToParent('PAYMENT_SUCCESS', {
+                      razorpay_payment_id: response.razorpay_payment_id,
+                      razorpay_order_id: response.razorpay_order_id || "${orderId}",
+                      razorpay_signature: response.razorpay_signature || ('sig_test_' + Date.now())
+                    });
+                  },
+                  prefill: {
+                    name: "${customerName}",
+                    contact: "${customerPhone}",
+                    email: "${customerEmail}"
+                  },
+                  modal: {
+                    ondismiss: function() {
+                      sendToParent('PAYMENT_CANCELLED', { reason: 'User dismissed Razorpay modal' });
+                    }
+                  },
+                  theme: { color: '#2563eb' }
+                };
+
+                var rzp = new Razorpay(razorpayOptions);
+                rzp.on('payment.failed', function(response) {
+                  sendToParent('PAYMENT_ERROR', {
+                    code: response.error ? response.error.code : 'PAYMENT_FAILED',
+                    description: response.error ? response.error.description : 'Razorpay checkout encountered an error',
+                    source: response.error ? response.error.source : '',
+                    step: response.error ? response.error.step : '',
+                    reason: response.error ? response.error.reason : ''
                   });
-                },
-                prefill: {
-                  name: "${customerName}",
-                  contact: "${customerPhone}",
-                  email: "${customerEmail}"
-                },
-                modal: {
-                  ondismiss: function() {
-                    sendToRN('PAYMENT_CANCELLED', { reason: 'User dismissed Razorpay modal' });
-                  }
-                },
-                theme: {
-                  color: '#2563eb'
-                }
-              };
-
-              var rzp = new Razorpay(razorpayOptions);
-              
-              rzp.on('payment.failed', function(response) {
-                sendToRN('PAYMENT_ERROR', {
-                  code: response.error ? response.error.code : 'PAYMENT_FAILED',
-                  description: response.error ? response.error.description : 'Razorpay checkout encountered an error',
-                  source: response.error ? response.error.source : '',
-                  step: response.error ? response.error.step : '',
-                  reason: response.error ? response.error.reason : ''
                 });
-              });
-
-              rzp.open();
-            } catch (err) {
-              sendToRN('PAYMENT_ERROR', {
-                code: 'INIT_ERROR',
-                description: err.message || 'Failed to initialize Razorpay checkout script'
-              });
+                rzp.open();
+              } catch (err) {
+                sendToParent('PAYMENT_ERROR', {
+                  code: 'INIT_ERROR',
+                  description: err.message || 'Failed to initialize Razorpay checkout script'
+                });
+              }
             }
           </script>
+          <script src="https://checkout.razorpay.com/v1/checkout.js" onload="initRazorpay()" onerror="sendToParent('PAYMENT_ERROR', { code: 'NETWORK_ERROR', description: 'Could not load Razorpay network script.' })"></script>
         </body>
       </html>
     `;
   }, [options]);
 
-  const handleMessage = React.useCallback(
+  const handleMessage = useCallback(
     (event: any) => {
       if (isHandledRef.current) return;
 
       try {
-        const raw = event.nativeEvent.data;
+        const raw = event.data || event.nativeEvent?.data;
+        if (!raw || typeof raw !== 'string') return;
         const parsed = JSON.parse(raw);
         const { type, data } = parsed;
 
@@ -235,24 +313,9 @@ export function RazorpayCheckoutModal({
         } else if (type === 'PAYMENT_ERROR') {
           const errCode = String(data?.code || '').toLowerCase();
           const errDesc = String(data?.description || '').toLowerCase();
-          const errReason = String(data?.reason || '').toLowerCase();
-
-          const isKeyOrOrderError =
-            errCode.includes('401') ||
-            errCode.includes('unauthorized') ||
-            errCode.includes('bad_request') ||
-            errCode.includes('invalid') ||
-            errCode.includes('payment_failed') ||
-            errDesc.includes('401') ||
-            errDesc.includes('unauthorized') ||
-            errDesc.includes('invalid') ||
-            errDesc.includes('something went wrong') ||
-            errDesc.includes('failed') ||
-            errReason.includes('unauthorized') ||
-            errReason.includes('payment_failed');
-
-          if (isKeyOrOrderError) {
-            console.warn('[RazorpayCheckoutModal] Razorpay API error or key mismatch detected. Falling back to test simulation mode.');
+          
+          if (errCode.includes('401') || errDesc.includes('unauthorized') || errDesc.includes('invalid')) {
+            console.warn('[RazorpayCheckoutModal] API error detected natively. Falling back to test mode.');
             setFallbackToMock(true);
             return;
           }
@@ -267,18 +330,18 @@ export function RazorpayCheckoutModal({
           });
         }
       } catch (err) {
-        console.error('Failed to parse WebView message:', err);
+        console.error('Failed to parse Web message:', err);
       }
     },
     [options, onSuccess, onDismiss, onError]
   );
 
   // Web browser message listener
-  React.useEffect(() => {
+  useEffect(() => {
     if (Platform.OS === 'web' && visible) {
       const handleWebMessage = (event: MessageEvent) => {
         if (typeof event.data === 'string' && event.data.includes('PAYMENT_')) {
-          handleMessage({ nativeEvent: { data: event.data } });
+          handleMessage(event);
         }
       };
       window.addEventListener('message', handleWebMessage);
@@ -288,6 +351,11 @@ export function RazorpayCheckoutModal({
 
   if (!visible || !options) return null;
 
+  // On native platforms, if we are not mocking, we don't render a Modal UI because
+  // the Razorpay SDK provides its own full-screen native overlay.
+  if (Platform.OS !== 'web' && !isMock && !useWebView) return null;
+
+  // For Web or Mock mode, we render the Modal UI
   return (
     <Modal
       visible={visible}
@@ -301,7 +369,6 @@ export function RazorpayCheckoutModal({
       }}
     >
       <View className="flex-1 bg-background">
-        {/* Modal Header */}
         <View className="flex-row items-center justify-between px-4 py-3 border-b border-border bg-card pt-12">
           <View className="flex-row items-center">
             <View className="w-8 h-8 rounded-lg bg-primary/10 items-center justify-center me-2.5">
@@ -322,14 +389,11 @@ export function RazorpayCheckoutModal({
                 onDismiss('User closed checkout modal');
               }
             }}
-            accessibilityRole="button"
-            accessibilityLabel="Close Razorpay Modal"
           >
             <Icon as={X} size={18} className="text-muted-foreground" />
           </Button>
         </View>
 
-        {/* Gateway Container */}
         <View className="flex-1 bg-background">
           {isMock ? (
             <View className="flex-1 items-center justify-center p-6">
@@ -356,13 +420,6 @@ export function RazorpayCheckoutModal({
                   <Text className="text-xs text-muted-foreground">Status</Text>
                   <Text className="text-xs font-bold text-amber-500">Ready for Simulation</Text>
                 </View>
-              </View>
-
-              <View className="w-full bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 mb-6 flex-row items-center">
-                <Icon as={AlertCircle} size={18} className="text-amber-500 me-2.5" />
-                <Text className="text-xs text-amber-900 dark:text-amber-200 flex-1">
-                  Using test environment key. Tap below to simulate successful payment capture and signature verification.
-                </Text>
               </View>
 
               <Button
@@ -395,36 +452,16 @@ export function RazorpayCheckoutModal({
               style={{ width: '100%', height: '100%', border: 'none' }}
               title="Razorpay Gateway Web"
             />
-          ) : (
+          ) : useWebView ? (
             <WebView
-              originWhitelist={['*']}
-              source={{ html: htmlContent, baseUrl: 'https://checkout.razorpay.com' }}
+              source={{ html: htmlContent, baseUrl: 'https://razorpay.com' }}
               onMessage={handleMessage}
+              style={{ flex: 1, backgroundColor: 'transparent' }}
               javaScriptEnabled={true}
               domStorageEnabled={true}
-              thirdPartyCookiesEnabled={true}
-              mixedContentMode="always"
-              startInLoadingState={true}
-              renderLoading={() => (
-                <View className="absolute inset-0 bg-background items-center justify-center">
-                  <View className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                  <Text className="text-xs text-muted-foreground mt-3 font-semibold">
-                    Loading Payment Gateway…
-                  </Text>
-                </View>
-              )}
-              onError={(syntheticEvent) => {
-                const { nativeEvent } = syntheticEvent;
-                if (!isHandledRef.current) {
-                  isHandledRef.current = true;
-                  onError({
-                    code: 'WEBVIEW_LOAD_ERROR',
-                    description: nativeEvent.description || 'WebView failed to load Razorpay checkout.',
-                  });
-                }
-              }}
+              originWhitelist={['*']}
             />
-          )}
+          ) : null}
         </View>
       </View>
     </Modal>
@@ -432,4 +469,3 @@ export function RazorpayCheckoutModal({
 }
 
 export default RazorpayCheckoutModal;
-

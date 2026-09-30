@@ -37,7 +37,7 @@ export const OtpInputField = ({
           key={i}
           className={cn(
             'h-14 w-12 items-center justify-center rounded-xl border border-border bg-card shadow-xs',
-            isCurrentFocus && 'border-primary ring-2 ring-primary/20',
+            isCurrentFocus && 'border-primary shadow-sm bg-primary/5',
             error && 'border-destructive bg-destructive/10'
           )}
         >

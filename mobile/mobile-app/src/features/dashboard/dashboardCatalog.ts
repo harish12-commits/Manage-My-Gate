@@ -71,6 +71,7 @@ export const ALL_AVAILABLE_FEATURES: AppFeatureItem[] = [
 
   // 7. Community & Directory
   { id: 'community_directory', name: 'Directory', subtitle: 'Resident Directory', iconName: 'ContactRound', colorBg: 'bg-blue-50 dark:bg-blue-950/40', colorIcon: '#2563EB', iconShapeClass: 'rounded-[18px]', route: '/(resident)/directory', categoryKey: 'community_directory', categoryName: 'Community' },
+  { id: 'community_notes', name: 'Community Notes', subtitle: 'Public Notes Feed', iconName: 'Sparkles', colorBg: 'bg-pink-50 dark:bg-pink-950/40', colorIcon: '#EC4899', iconShapeClass: 'rounded-[18px]', route: '/(resident)/notes', categoryKey: 'community_directory', categoryName: 'Community' },
 ];
 
 export const REAL_APP_FEATURES = ALL_AVAILABLE_FEATURES;

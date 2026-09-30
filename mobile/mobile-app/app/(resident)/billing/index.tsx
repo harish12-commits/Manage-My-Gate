@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/src/store/store';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export default function BillingEntryGatewayRoute() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function BillingEntryGatewayRoute() {
   return (
     <View className="flex-1 justify-center items-center bg-background">
       <Stack.Screen options={{ headerShown: false }} />
-      <ActivityIndicator size="large" color="#6366f1" />
+      <AppLoader variant="block" />
     </View>
   );
 }

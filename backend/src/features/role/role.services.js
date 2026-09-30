@@ -3,7 +3,25 @@ import roleRepository from './role.repository.js';
 import roleEvents from './role.events.js';
 import HttpError from '../../utils/httpError.utils.js';
 
+// Role names that confer platform-level privileges. Only roles inside the platform organisation may use them.
+export const RESERVED_PLATFORM_ROLE_NAMES = ['super admin', 'superadmin', 'platform admin', 'platform super admin', 'super_admin', 'platform_admin'];
+
 export class RoleService {
+  /**
+   * Reject reserved platform role names for any non-platform organisation, so tenants cannot
+   * mint a role that impersonates a platform administrator.
+   */
+  async assertRoleNameAllowed(name, orgId, session = null) {
+    if (!name || !orgId) return;
+    if (!RESERVED_PLATFORM_ROLE_NAMES.includes(String(name).trim().toLowerCase())) return;
+
+    const organizationService = (await import('../organization/organization.services.js')).default;
+    const org = await organizationService.getOrganizationById(orgId, session);
+    if (!org.isPlatform) {
+      throw new HttpError(403, `'${String(name).trim()}' is a reserved platform role name and cannot be used in a community.`);
+    }
+  }
+
   async getAllRoles(orgId, page = 1, limit = 10) {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -55,6 +73,7 @@ export class RoleService {
       if (!trimmedName) {
         throw new HttpError(400, 'Role name is required.');
       }
+      await this.assertRoleNameAllowed(trimmedName, orgId, currentSession);
       const existingRole = await roleRepository.findByOrgAndName(trimmedName, orgId, currentSession);
       if (existingRole) {
         throw new HttpError(400, `Role with name '${trimmedName}' already exists.`);
@@ -116,7 +135,7 @@ export class RoleService {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-      await this.getRoleById(id, session);
+      const currentRole = await this.getRoleById(id, session);
       const { name, description, permissions, integrationMappings, orgId, isTenantRole } = updateData;
       
       const roleUpdates = { description, integrationMappings };
@@ -125,6 +144,7 @@ export class RoleService {
       }
       if (name) {
         const trimmedName = name.trim();
+        await this.assertRoleNameAllowed(trimmedName, currentRole.orgId || orgId, session);
         const existing = await roleRepository.findByOrgAndName(trimmedName, orgId, session);
         if (existing && existing._id.toString() !== id) {
           throw new HttpError(400, `Role with name '${trimmedName}' already exists.`);

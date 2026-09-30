@@ -7,3 +7,4 @@ export * from './SuccessToast';
 export * from './SkeletonLoader';
 export * from './RealtimeNotificationToast';
 export * from './GlobalNotificationPresenter';
+export * from './AnimatedSplash';

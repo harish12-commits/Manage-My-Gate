@@ -127,7 +127,7 @@ const AmenitiesTopNav = () => {
                   fontWeight: isActive ? '700' : '600',
                   padding: '8px 16px',
                   borderBottom: isActive ? '2px solid var(--primary)' : '2px solid transparent',
-                  transition: 'all 0.2s ease-in-out',
+                  transition: 'color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out, opacity 0.2s ease-in-out, width 0.2s ease-in-out, height 0.2s ease-in-out, max-height 0.2s ease-in-out',
                 }}
               >
                 <CIcon icon={item.icon} size="lg" style={{ marginBottom: '4px' }} />

@@ -2,6 +2,7 @@ import Poll from './poll.model.js';
 import PollVote from './pollVote.model.js';
 import mongoose from 'mongoose';
 import HttpError from '../../utils/httpError.utils.js';
+import { escapeRegex } from '../../utils/regex.utils.js';
 
 export const createPoll = async (pollData, session = null) => {
   if (session && !session._isMockSession) {
@@ -62,7 +63,7 @@ const buildMatchStage = (baseMatch, search, userContext = null, audienceOr = nul
   const conditions = [baseMatch];
 
   if (search) {
-    conditions.push({ question: { $regex: search, $options: 'i' } });
+    conditions.push({ question: { $regex: escapeRegex(search), $options: 'i' } });
   }
 
   if (userContext && !userContext.isCommunityAdmin) {
@@ -245,7 +246,73 @@ export const recordVote = async (
   const existingVote = activeSession ? await existingVoteQuery.session(activeSession) : await existingVoteQuery;
 
   if (existingVote) {
-    throw new HttpError(409, 'You have already voted on this poll. Each user may only vote once.');
+    const oldOptions = existingVote.selectedOptions?.length ? existingVote.selectedOptions : [existingVote.optionIndex];
+    const oldOptionsSorted = [...oldOptions].sort().join(',');
+    const newOptionsSorted = [...optionsToRecord].sort().join(',');
+
+    if (oldOptionsSorted === newOptionsSorted) {
+      // EXACT same options selected: Treat as Unvote (Revoke)
+      const decOps = { totalVotes: -1 };
+      oldOptions.forEach((idx) => {
+        decOps[`options.${idx}.votesCount`] = -1;
+      });
+      
+      const updatedPoll = await Poll.findOneAndUpdate(
+        { _id: pollId, orgId },
+        { $inc: decOps },
+        { new: true, ...(activeSession ? { session: activeSession } : {}) }
+      );
+      
+      if (activeSession) {
+        await PollVote.deleteOne({ _id: existingVote._id }).session(activeSession);
+      } else {
+        await PollVote.deleteOne({ _id: existingVote._id });
+      }
+      
+      return { poll: updatedPoll, action: 'unvoted' };
+    } else {
+      // Change vote
+      const incOps = {};
+      oldOptions.forEach((idx) => {
+        incOps[`options.${idx}.votesCount`] = (incOps[`options.${idx}.votesCount`] || 0) - 1;
+      });
+      optionsToRecord.forEach((idx) => {
+        incOps[`options.${idx}.votesCount`] = (incOps[`options.${idx}.votesCount`] || 0) + 1;
+      });
+      
+      Object.keys(incOps).forEach(key => {
+        if (incOps[key] === 0) delete incOps[key];
+      });
+      
+      const updateQuery = Object.keys(incOps).length > 0 ? { $inc: incOps } : {};
+      
+      let updatedPoll;
+      if (Object.keys(incOps).length > 0) {
+        updatedPoll = await Poll.findOneAndUpdate(
+          { _id: pollId, orgId },
+          updateQuery,
+          { new: true, ...(activeSession ? { session: activeSession } : {}) }
+        );
+      } else {
+        updatedPoll = activeSession 
+          ? await Poll.findOne({ _id: pollId, orgId }).session(activeSession)
+          : await Poll.findOne({ _id: pollId, orgId });
+      }
+      
+      existingVote.selectedOptions = optionsToRecord;
+      existingVote.optionIndex = optionsToRecord[0];
+      if (unitId) {
+        existingVote.unitId = unitId;
+      }
+      
+      if (activeSession) {
+        await existingVote.save({ session: activeSession });
+      } else {
+        await existingVote.save();
+      }
+      
+      return { poll: updatedPoll, action: 'voted' };
+    }
   }
 
   // New vote

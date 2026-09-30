@@ -26,13 +26,38 @@ const schema = yup.object().shape({
   type: yup
     .string()
     .oneOf(
-      ['Studio', 'Apartment', 'Villa', 'Penthouse', 'BHK1', 'BHK2', 'BHK3', 'BHK4', 'Duplex', '1BHA', '2BHA', '3BHA'],
+      [
+        'Studio',
+        'Apartment',
+        'Villa',
+        'Penthouse',
+        'BHK1',
+        'BHK2',
+        'BHK3',
+        'BHK4',
+        'Duplex',
+        '1BHA',
+        '2BHA',
+        '3BHA',
+      ],
       'Invalid type',
     )
     .default('Apartment'),
   status: yup
     .string()
-    .oneOf(['Vacant', 'Occupied', 'Under Maintenance', 'Under Renovation', 'For Sale', 'For Rent', 'Reserved', 'Inactive'], 'Invalid status')
+    .oneOf(
+      [
+        'Vacant',
+        'Occupied',
+        'Under Maintenance',
+        'Under Renovation',
+        'For Sale',
+        'For Rent',
+        'Reserved',
+        'Inactive',
+      ],
+      'Invalid status',
+    )
     .default('Vacant'),
   floorAreaSqFt: yup
     .number()
@@ -62,6 +87,14 @@ export const VillaFormModal = ({ visible, onClose, onSubmit, editingVilla }) => 
     },
   })
 
+  // Map legacy occupancyStatus field to DB status if editing
+  function villaStatusMapBack(status) {
+    if (status === 'Owner Occupied' || status === 'Tenant Occupied') {
+      return 'Occupied'
+    }
+    return status || 'Vacant'
+  }
+
   // Reset form when editing unit changes
   useEffect(() => {
     if (editingVilla) {
@@ -84,14 +117,6 @@ export const VillaFormModal = ({ visible, onClose, onSubmit, editingVilla }) => 
       })
     }
   }, [editingVilla, reset])
-
-  // Map legacy occupancyStatus field to DB status if editing
-  const villaStatusMapBack = (status) => {
-    if (status === 'Owner Occupied' || status === 'Tenant Occupied') {
-      return 'Occupied'
-    }
-    return status || 'Vacant'
-  }
 
   const handleFormSubmit = async (data) => {
     try {

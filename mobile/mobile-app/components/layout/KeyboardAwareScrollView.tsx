@@ -56,6 +56,7 @@ export const KeyboardAwareScrollView = forwardRef<ScrollView, KeyboardAwareScrol
         contentContainerStyle={[
           { flexGrow: 1 },
           contentContainerStyle,
+          { paddingBottom: dynamicBottomPadding },
         ]}
         {...props}
       >

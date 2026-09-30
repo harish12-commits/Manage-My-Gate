@@ -6,6 +6,7 @@ import NoticeBoardTopNav from '../components/NoticeBoardTopNav.jsx'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import '../styles/_noticeBoard.scss'
+import AppLoader from '../../../components/common/AppLoader'
 
 const NoticeBoardDashboardView = () => {
   useNoticeSocket()
@@ -84,7 +85,7 @@ const NoticeBoardDashboardView = () => {
 
         {dashboardLoading && !dashboardStats ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
-            <CSpinner color="primary" />
+            <AppLoader variant="block" />
           </div>
         ) : (
           <div className="view active" id="view-notice-dashboard">

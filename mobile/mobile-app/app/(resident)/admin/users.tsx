@@ -1,5 +1,5 @@
 import React, { useState, useRef, Suspense, lazy } from 'react';
-import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform, ActivityIndicator, Animated, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform, Animated, TouchableWithoutFeedback } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Filter, Users, Mail, Users2, Plus, UserPlus, X } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
@@ -18,6 +18,7 @@ import {
   UserData,
   AssignedUnit,
 } from '@/src/features/userManagement';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 // Lazy Load Heavy Modals for Performance Optimization
 const InviteUserModal = lazy(() => import('@/src/features/userManagement').then(m => ({ default: m.InviteUserModal })));
@@ -89,15 +90,15 @@ export default function UserManagementScreen() {
     outputRange: ['0deg', '45deg']
   });
 
-  // Radial entering pop-out animation (Radius = ~100px)
+  // Elliptical entering pop-out animation to prevent left-aligned text collisions
   const transX1 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, 0] });
-  const transY1 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -100] });
+  const transY1 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -145] });
 
   const transX2 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -75] });
-  const transY2 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -75] });
+  const transY2 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -85] });
 
-  const transX3 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -100] });
-  const transY3 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, 0] });
+  const transX3 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -115] });
+  const transY3 = dialAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -15] });
   
   // Staggered entering pop-out scale animation
   const scale1 = dialAnimation.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.5, 1.1, 1], extrapolate: 'clamp' });
@@ -160,7 +161,7 @@ export default function UserManagementScreen() {
     if (!isLoading || users.length === 0) return null;
     return (
       <View className="mt-3 py-4 items-center justify-center">
-        <ActivityIndicator size="small" color="#6366f1" />
+        <AppLoader variant="inline" />
       </View>
     );
   };
@@ -301,14 +302,24 @@ export default function UserManagementScreen() {
 
       {/* Speed Dial Action 3: Email Template (Left) */}
       <Animated.View 
-        className="items-center justify-center z-[9998]"
+        className="z-[9998]"
         style={{ 
           position: 'absolute', bottom: 135, right: 25,
+          width: 50, height: 50,
+          alignItems: 'center', justifyContent: 'center',
           transform: [{ translateX: transX3 }, { translateY: transY3 }, { scale: scale3 }], 
-          opacity: dialOpacity 
+          opacity: dialOpacity,
+          overflow: 'visible'
         }}
         pointerEvents={isDialOpen ? 'auto' : 'none'}
       >
+        <View style={{ position: 'absolute', right: 55, width: 125, alignItems: 'flex-end', justifyContent: 'center', height: '100%' }}>
+          <View className="bg-card px-3 py-1.5 rounded-lg border border-border/60 shadow-sm" style={{ elevation: 2 }}>
+            <Text className="text-foreground text-[11px] font-bold tracking-tight text-right" numberOfLines={1}>
+              {t('email_template', 'Email Template')}
+            </Text>
+          </View>
+        </View>
         <TouchableOpacity 
           activeOpacity={0.7}
           onPress={() => closeDialAndOpen(setShowTemplateModal)}
@@ -320,14 +331,24 @@ export default function UserManagementScreen() {
 
       {/* Speed Dial Action 2: Bulk Invite (Top-Left) */}
       <Animated.View 
-        className="items-center justify-center z-[9998]"
+        className="z-[9998]"
         style={{ 
           position: 'absolute', bottom: 135, right: 25,
+          width: 50, height: 50,
+          alignItems: 'center', justifyContent: 'center',
           transform: [{ translateX: transX2 }, { translateY: transY2 }, { scale: scale2 }], 
-          opacity: dialOpacity 
+          opacity: dialOpacity,
+          overflow: 'visible'
         }}
         pointerEvents={isDialOpen ? 'auto' : 'none'}
       >
+        <View style={{ position: 'absolute', right: 55, width: 125, alignItems: 'flex-end', justifyContent: 'center', height: '100%' }}>
+          <View className="bg-card px-3 py-1.5 rounded-lg border border-border/60 shadow-sm" style={{ elevation: 2 }}>
+            <Text className="text-foreground text-[11px] font-bold tracking-tight text-right" numberOfLines={1}>
+              {t('bulk_invite', 'Bulk Invite')}
+            </Text>
+          </View>
+        </View>
         <TouchableOpacity 
           activeOpacity={0.7}
           onPress={() => closeDialAndOpen(setShowBulkInviteModal)}
@@ -339,14 +360,24 @@ export default function UserManagementScreen() {
 
       {/* Speed Dial Action 1: Invite User (Top) */}
       <Animated.View 
-        className="items-center justify-center z-[9998]"
+        className="z-[9998]"
         style={{ 
           position: 'absolute', bottom: 135, right: 25,
+          width: 50, height: 50,
+          alignItems: 'center', justifyContent: 'center',
           transform: [{ translateX: transX1 }, { translateY: transY1 }, { scale: scale1 }], 
-          opacity: dialOpacity 
+          opacity: dialOpacity,
+          overflow: 'visible'
         }}
         pointerEvents={isDialOpen ? 'auto' : 'none'}
       >
+        <View style={{ position: 'absolute', right: 55, width: 125, alignItems: 'flex-end', justifyContent: 'center', height: '100%' }}>
+          <View className="bg-card px-3 py-1.5 rounded-lg border border-border/60 shadow-sm" style={{ elevation: 2 }}>
+            <Text className="text-foreground text-[11px] font-bold tracking-tight text-right" numberOfLines={1}>
+              {t('invite_user', 'Invite User')}
+            </Text>
+          </View>
+        </View>
         <TouchableOpacity 
           activeOpacity={0.7}
           onPress={() => closeDialAndOpen(setShowInviteModal)}
@@ -358,13 +389,13 @@ export default function UserManagementScreen() {
 
       {/* Main Animated FAB */}
       <TouchableOpacity
-        className="rounded-full bg-primary items-center justify-center shadow-xl border border-primary/50"
+        className="rounded-full bg-primary/90 items-center justify-center shadow-xl border border-primary/50"
         style={{ position: 'absolute', bottom: 130, right: 20, width: 60, height: 60, elevation: 8, zIndex: 9999 }}
-        activeOpacity={0.9}
+        activeOpacity={0.7}
         onPress={toggleDial}
       >
         <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-          <Plus size={28} className="text-primary-foreground" />
+          <Plus size={28} className="text-white" />
         </Animated.View>
       </TouchableOpacity>
 

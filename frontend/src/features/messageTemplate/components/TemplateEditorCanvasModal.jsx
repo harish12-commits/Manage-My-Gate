@@ -17,21 +17,28 @@ import {
   CCol,
 } from '@coreui/react'
 import useTemplateEditorCanvas from '../hooks/useTemplateEditorCanvas'
+import { PURPOSE_OPTIONS, isBillingPurpose, token } from '../constants/templatePurposes.js'
 import '../styles/_messageTemplate.scss'
 
 /**
  * TemplateEditorCanvasModal Component
  *
- * Canvas editor modal to customize notification templates.
- * Enforces `{{invite_link}}` for invitations.
+ * Canvas editor modal to customize notification templates (invitations and billing emails).
+ * Enforces each purpose's required placeholders (e.g. `{{invite_link}}`, `{{app_link}}`).
  * Scopes channel types dynamically based on active Integration Hub connections.
  */
-export const TemplateEditorCanvasModal = ({ visible, onClose }) => {
+export const TemplateEditorCanvasModal = ({ visible, onClose, initialPurpose }) => {
   const {
     isLoading,
     apiError,
     isHubLoading,
     availableTypes,
+    connectedTypes,
+    templateId,
+    purpose,
+    setPurpose,
+    purposeConfig,
+    insertPlaceholder,
     name,
     setName,
     type,
@@ -47,7 +54,8 @@ export const TemplateEditorCanvasModal = ({ visible, onClose }) => {
     validationError,
     isSubmitting,
     handleSave,
-  } = useTemplateEditorCanvas(visible, onClose)
+  } = useTemplateEditorCanvas(visible, onClose, initialPurpose)
+  const billing = isBillingPurpose(purpose)
 
   return (
     <CModal
@@ -60,7 +68,7 @@ export const TemplateEditorCanvasModal = ({ visible, onClose }) => {
     >
       <CModalHeader>
         <CModalTitle style={{ fontSize: '1rem', fontWeight: 700 }}>
-          ✉️ Configure Invitation Template
+          ✉️ Configure Message Template
         </CModalTitle>
       </CModalHeader>
 
@@ -72,18 +80,48 @@ export const TemplateEditorCanvasModal = ({ visible, onClose }) => {
             </CAlert>
           )}
 
+          <div className="mb-3">
+            <CFormLabel htmlFor="tmpl-purpose-select" className="small fw-bold">
+              Template For
+            </CFormLabel>
+            <CFormSelect
+              id="tmpl-purpose-select"
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+            >
+              {PURPOSE_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </CFormSelect>
+            {billing && !templateId && (
+              <div className="form-text">
+                Residents currently receive the built-in design for this email. Saving here replaces
+                it for your community.
+              </div>
+            )}
+          </div>
+
           {isHubLoading ? (
             <div className="d-flex justify-content-center align-items-center py-4">
               <CSpinner color="primary" size="sm" className="me-2" />
               <span className="text-body-secondary small">Detecting active integrations...</span>
             </div>
+          ) : availableTypes.length === 0 && connectedTypes.length > 0 ? (
+            <CAlert color="warning" className="my-2 small">
+              ⚠️ <strong>Email required:</strong> this template is sent by email only. Connect an
+              SMTP or Resend provider in the <strong>Integration Hub</strong> to customise it.
+            </CAlert>
           ) : availableTypes.length === 0 ? (
             <CAlert color="warning" className="my-2 small">
-              ⚠️ <strong>No Active Integrations:</strong> You have not configured any active SMTP,
+              <strong>No Active Integrations:</strong> You have not configured any active SMTP,
               Resend, or Twilio connections in the <strong>Integration Hub</strong>. Please connect
-              a provider first before writing custom templates.
+              a provider first before sending custom templates.
             </CAlert>
-          ) : (
+          ) : null}
+
+          {!isHubLoading && (
             <>
               {/* Template Name & Channel Selection Row */}
               <CRow className="g-3 mb-3">
@@ -180,24 +218,36 @@ export const TemplateEditorCanvasModal = ({ visible, onClose }) => {
                   required
                 />
 
-                {/* Placeholder variable indicator */}
-                <div className="mt-2 p-2 border rounded bg-body-secondary d-flex align-items-center justify-content-between">
-                  <span className="small text-secondary">
-                    Required placeholder:{' '}
-                    <code className="fw-bold text-primary">{'{{invite_link}}'}</code>
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-xs btn-outline-primary fw-bold"
-                    style={{ fontSize: '0.75rem' }}
-                    onClick={() => {
-                      if (!body.includes('{{invite_link}}')) {
-                        setBody((prev) => prev + '\n{{invite_link}}')
-                      }
-                    }}
-                  >
-                    + Insert invite link
-                  </button>
+                {/* Placeholders: required ones are highlighted; click any to insert */}
+                <div className="mt-2 p-2 border rounded bg-body-secondary">
+                  <div className="small text-secondary mb-1">
+                    {purposeConfig.required.length > 0 ? (
+                      <>
+                        Required:{' '}
+                        {purposeConfig.required.map((k) => (
+                          <code key={k} className="fw-bold text-primary me-1">
+                            {token(k)}
+                          </code>
+                        ))}
+                        · Click a placeholder to insert it:
+                      </>
+                    ) : (
+                      'Click a placeholder to insert it:'
+                    )}
+                  </div>
+                  <div className="d-flex flex-wrap gap-1">
+                    {purposeConfig.placeholders.map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        className={`btn btn-sm ${purposeConfig.required.includes(k) ? 'btn-outline-primary fw-bold' : 'btn-outline-secondary'}`}
+                        style={{ fontSize: '0.72rem', padding: '1px 6px' }}
+                        onClick={() => insertPlaceholder(k)}
+                      >
+                        {token(k)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </>
@@ -213,7 +263,7 @@ export const TemplateEditorCanvasModal = ({ visible, onClose }) => {
             color="primary"
             size="sm"
             style={{ fontWeight: 600 }}
-            disabled={isSubmitting || availableTypes.length === 0}
+            disabled={isSubmitting}
           >
             {isSubmitting ? 'Saving Template...' : 'Save Template'}
           </CButton>
@@ -226,6 +276,13 @@ export const TemplateEditorCanvasModal = ({ visible, onClose }) => {
 TemplateEditorCanvasModal.propTypes = {
   visible: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
+  initialPurpose: PropTypes.string,
+}
+
+TemplateEditorCanvasModal.defaultProps = {
+  initialPurpose: 'user_invitation',
 }
 
 export default TemplateEditorCanvasModal
+
+

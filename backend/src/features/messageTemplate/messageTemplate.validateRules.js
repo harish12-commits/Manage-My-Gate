@@ -62,6 +62,13 @@ export const createTemplateRules = [
       if (req.body.purpose === 'user_invitation' && !value.includes('{{invite_link}}')) {
         throw new Error('For user invitation templates, the body must contain the placeholder "{{invite_link}}"');
       }
+      // Billing emails must keep the way back to the invoice (receipts excepted).
+      if (['invoice_generated', 'invoice_reminder', 'invoice_overdue'].includes(req.body.purpose) && !value.includes('{{app_link}}')) {
+        throw new Error('Billing email templates must contain the placeholder "{{app_link}}"');
+      }
+      if (String(req.body.purpose || '').startsWith('invoice_') && req.body.type && req.body.type !== 'email') {
+        throw new Error('Billing templates are email-only');
+      }
       return true;
     }),
 ];

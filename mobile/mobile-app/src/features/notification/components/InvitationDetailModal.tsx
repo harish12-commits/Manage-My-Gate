@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
 import { NotificationItemData } from '../services/notificationService';
 import authService from '../../auth/services/authService';
 import { useTranslation } from '@/src/utils/i18n';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface InvitationDetailModalProps {
   visible: boolean;
@@ -262,7 +263,7 @@ export const InvitationDetailModal: React.FC<InvitationDetailModalProps> = ({
         {/* Loading Indicator */}
         {loading ? (
           <View className="py-6 items-center justify-center gap-2">
-            <ActivityIndicator size="small" color="#FF6A00" />
+            <AppLoader variant="inline" />
             <Text className="text-xs text-muted-foreground">
               {t('verifying_invitation', 'Verifying invitation status...')}
             </Text>

@@ -303,8 +303,8 @@ export function StaffAssigneeQueueScreen() {
         >
           {/* ALLOCATED WORK NOTIFICATION BANNER (MATCHES WEB Assignee.jsx) */}
           {metrics.pending > 0 && (
-            <View className="mx-4 mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3 flex-row items-center">
-              <Icon as={AlertCircle} size={18} color="#2563eb" style={{ marginRight: 10 }} />
+            <View className="mx-4 mt-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 rounded-xl p-3 flex-row items-center">
+              <Icon as={AlertCircle} size={18} className="text-blue-600 dark:text-blue-400 me-2.5" />
               <View className="flex-1">
                 <Text className="text-xs font-bold text-blue-900">Admin Allocated Work</Text>
                 <Text className="text-[11px] text-blue-700">
@@ -367,19 +367,10 @@ export function StaffAssigneeQueueScreen() {
                             e?.stopPropagation?.();
                             setActionModal({ visible: true, type: 'REJECT', complaint: ticket });
                           }}
-                          style={{
-                            backgroundColor: '#fef2f2',
-                            borderColor: '#fecdd3',
-                            borderWidth: 1,
-                            paddingVertical: 6,
-                            paddingHorizontal: 11,
-                            borderRadius: 10,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                          }}
+                          className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 py-1.5 px-3 rounded-[10px] flex-row items-center"
                         >
-                          <Icon as={XCircle} size={13} color="#e11d48" style={{ marginRight: 4 }} />
-                          <Text style={{ color: '#e11d48', fontWeight: 'bold', fontSize: 11 }}>
+                          <Icon as={XCircle} size={13} className="text-rose-600 dark:text-rose-400 me-1" />
+                          <Text className="text-rose-600 dark:text-rose-400 font-bold text-[11px]">
                             {selectedStatusTab === 'BROADCAST' ? 'Decline' : 'Reject'}
                           </Text>
                         </TouchableOpacity>
@@ -390,17 +381,10 @@ export function StaffAssigneeQueueScreen() {
                             e?.stopPropagation?.();
                             handleAcceptAssignment(ticket._id);
                           }}
-                          style={{
-                            backgroundColor: '#2563eb', // solid blue
-                            paddingVertical: 6,
-                            paddingHorizontal: 12,
-                            borderRadius: 10,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                          }}
+                          className="bg-blue-600 dark:bg-blue-600 py-1.5 px-3 rounded-[10px] flex-row items-center"
                         >
-                          <Icon as={Send} size={13} color="#ffffff" style={{ marginRight: 4 }} />
-                          <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 11 }}>Accept Job</Text>
+                          <Icon as={Send} size={13} className="text-white me-1" />
+                          <Text className="text-white font-bold text-[11px]">Accept Job</Text>
                         </TouchableOpacity>
                       </>
                     )}
@@ -413,17 +397,10 @@ export function StaffAssigneeQueueScreen() {
                           e?.stopPropagation?.();
                           handleStartWork(ticket._id);
                         }}
-                        style={{
-                          backgroundColor: '#059669', // solid green
-                          paddingVertical: 6,
-                          paddingHorizontal: 12,
-                          borderRadius: 10,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                        }}
+                        className="bg-emerald-600 dark:bg-emerald-600 py-1.5 px-3 rounded-[10px] flex-row items-center"
                       >
-                        <Icon as={Play} size={13} color="#ffffff" style={{ marginRight: 4 }} />
-                        <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 11 }}>Start Work</Text>
+                        <Icon as={Play} size={13} className="text-white me-1" />
+                        <Text className="text-white font-bold text-[11px]">Start Work</Text>
                       </TouchableOpacity>
                     )}
 
@@ -436,19 +413,10 @@ export function StaffAssigneeQueueScreen() {
                             e?.stopPropagation?.();
                             setActionModal({ visible: true, type: 'PAUSE', complaint: ticket });
                           }}
-                          style={{
-                            backgroundColor: '#fffbeb',
-                            borderColor: '#fde68a',
-                            borderWidth: 1,
-                            paddingVertical: 6,
-                            paddingHorizontal: 9,
-                            borderRadius: 10,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                          }}
+                          className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 py-1.5 px-2.5 rounded-[10px] flex-row items-center"
                         >
-                          <Icon as={Pause} size={12} color="#d97706" style={{ marginRight: 4 }} />
-                          <Text style={{ color: '#d97706', fontWeight: 'bold', fontSize: 11 }}>Pause</Text>
+                          <Icon as={Pause} size={12} className="text-amber-600 dark:text-amber-500 me-1" />
+                          <Text className="text-amber-600 dark:text-amber-500 font-bold text-[11px]">Pause</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -457,19 +425,10 @@ export function StaffAssigneeQueueScreen() {
                             e?.stopPropagation?.();
                             setActionModal({ visible: true, type: 'NOTES', complaint: ticket });
                           }}
-                          style={{
-                            backgroundColor: '#f8fafc',
-                            borderColor: '#cbd5e1',
-                            borderWidth: 1,
-                            paddingVertical: 6,
-                            paddingHorizontal: 9,
-                            borderRadius: 10,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                          }}
+                          className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 py-1.5 px-2.5 rounded-[10px] flex-row items-center"
                         >
-                          <Icon as={FileText} size={12} color="#475569" style={{ marginRight: 4 }} />
-                          <Text style={{ color: '#475569', fontWeight: 'bold', fontSize: 11 }}>Notes</Text>
+                          <Icon as={FileText} size={12} className="text-slate-600 dark:text-slate-300 me-1" />
+                          <Text className="text-slate-600 dark:text-slate-300 font-bold text-[11px]">Notes</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -478,17 +437,10 @@ export function StaffAssigneeQueueScreen() {
                             e?.stopPropagation?.();
                             setCompletingComplaint(ticket);
                           }}
-                          style={{
-                            backgroundColor: '#059669', // solid green
-                            paddingVertical: 6,
-                            paddingHorizontal: 11,
-                            borderRadius: 10,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                          }}
+                          className="bg-emerald-600 dark:bg-emerald-600 py-1.5 px-3 rounded-[10px] flex-row items-center"
                         >
-                          <Icon as={CheckSquare} size={13} color="#ffffff" style={{ marginRight: 4 }} />
-                          <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 11 }}>Complete</Text>
+                          <Icon as={CheckSquare} size={13} className="text-white me-1" />
+                          <Text className="text-white font-bold text-[11px]">Complete</Text>
                         </TouchableOpacity>
                       </>
                     )}
@@ -501,17 +453,10 @@ export function StaffAssigneeQueueScreen() {
                           e?.stopPropagation?.();
                           handleResumeWork(ticket._id);
                         }}
-                        style={{
-                          backgroundColor: '#2563eb', // solid blue
-                          paddingVertical: 6,
-                          paddingHorizontal: 12,
-                          borderRadius: 10,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                        }}
+                        className="bg-blue-600 dark:bg-blue-600 py-1.5 px-3 rounded-[10px] flex-row items-center"
                       >
-                        <Icon as={Play} size={13} color="#ffffff" style={{ marginRight: 4 }} />
-                        <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 11 }}>Resume Work</Text>
+                        <Icon as={Play} size={13} className="text-white me-1" />
+                        <Text className="text-white font-bold text-[11px]">Resume Work</Text>
                       </TouchableOpacity>
                     )}
                   </>

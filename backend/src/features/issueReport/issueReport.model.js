@@ -27,7 +27,8 @@ const reporterSnapshotSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, trim: true },
+    email: { type: String, trim: true, default: '' },
+    phone: { type: String, trim: true, default: '' },
     role: { type: String, required: true, trim: true },
   },
   { _id: false }
@@ -99,8 +100,6 @@ const issueReportSchema = new Schema(
     },
     clientRequestId: {
       type: String,
-      sparse: true,
-      index: true,
     },
     isDeleted: {
       type: Boolean,
@@ -123,6 +122,12 @@ issueReportSchema.index({ 'organisation.organisationId': 1, createdAt: -1 });
 issueReportSchema.index({ 'reporter.userId': 1, createdAt: -1 });
 issueReportSchema.index({ reportType: 1, feature: 1, createdAt: -1 });
 issueReportSchema.index({ createdAt: -1 });
+// Idempotency keys are only unique per reporter, so one user can never collide with another's key.
+issueReportSchema.index(
+  { 'reporter.userId': 1, clientRequestId: 1 },
+  { unique: true, partialFilterExpression: { clientRequestId: { $type: 'string' } }, name: 'uniq_reporter_clientRequestId' }
+);
+issueReportSchema.index({ 'attachments.url': 1 });
 issueReportSchema.index(
   {
     title: 'text',

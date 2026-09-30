@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { View, ActivityIndicator, Linking } from 'react-native';
+import { View, Linking } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export default function AppInviteTokenRedirectScreen() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function AppInviteTokenRedirectScreen() {
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF8EF' }}>
-      <ActivityIndicator size="large" color="#F45A0A" />
+      <AppLoader variant="block" />
     </View>
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { Controller } from 'react-hook-form';
 import { Building2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react-native';
 import { Text } from '@/components/ui/text';
@@ -8,6 +8,7 @@ import { Button } from '@/components/common/Button';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { useTranslation } from '../../../utils/i18n';
 import { useCreateOrganization, UseCreateOrganizationOptions } from '../hooks/useCreateOrganization';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface CreateOrganizationFormProps {
   options?: UseCreateOrganizationOptions;
@@ -76,7 +77,7 @@ export const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
               <View className="mt-1 ms-1 flex-row items-center flex-wrap gap-1.5">
                 {availability === 'checking' && (
                   <View className="flex-row items-center gap-2">
-                    <ActivityIndicator size="small" color="#03A9F4" />
+                    <AppLoader variant="inline" />
                     <Text className="text-xs text-muted-foreground font-medium">
                       {availabilityMessage || t('checking_availability', 'Checking availability...')}
                     </Text>

@@ -6,8 +6,8 @@ import {
   COffcanvasTitle,
   COffcanvasBody,
   CCloseButton,
-  CSpinner,
-} from '@coreui/react'
+  } from '@coreui/react'
+import AppLoader from '../../../components/common/AppLoader'
 
 /**
  * User Detail Drawer — Offcanvas with aligned drawer styling.
@@ -52,7 +52,7 @@ export const UserDetailDrawer = ({ visible, onClose, user, loading, organization
       <COffcanvasBody>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '60px', gap: '12px', color: '#768192' }}>
-            <CSpinner color="primary" />
+            <AppLoader variant="block" />
             <span>{t('superAdmin.orgDetails.loadingUserDetail', { defaultValue: 'Loading user details...' })}</span>
           </div>
         ) : !user ? (

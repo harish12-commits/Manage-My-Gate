@@ -24,7 +24,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { useColorScheme } from 'nativewind';
 
-import { InteractionManager } from 'react-native';
 
 export default function AllFeaturesScreen() {
   const router = useRouter();
@@ -34,7 +33,13 @@ export default function AllFeaturesScreen() {
   const { scrollHandlerProps } = useBottomNavScroll();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(params.category || 'visitor_management');
+  
+  // Handle Expo Router stringified params safely
+  const initialCategory = params.category && params.category !== 'null' && params.category !== 'undefined' 
+    ? params.category 
+    : 'visitor_management';
+    
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(initialCategory);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   
   const { user } = useAuth();
@@ -43,11 +48,20 @@ export default function AllFeaturesScreen() {
   // Lazy loading state to prevent navigation stutter
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
-      setIsReady(true);
-    });
-    return () => task.cancel();
+    // Tab screens have no transition animation, so just wait one frame (header + nav paint first)
+    const id = requestAnimationFrame(() => setIsReady(true));
+    return () => cancelAnimationFrame(id);
   }, []);
+
+  // Sync selected category with active workspace modules (Responsiveness)
+  useEffect(() => {
+    if (featureCatalog && featureCatalog.length > 0) {
+      const categoryExists = featureCatalog.some(cat => cat.categoryKey === selectedCategoryKey);
+      if (!categoryExists && selectedCategoryKey !== null) {
+        setSelectedCategoryKey(featureCatalog[0].categoryKey);
+      }
+    }
+  }, [featureCatalog, selectedCategoryKey]);
 
   // Standard Back Button Handler: Navigates back to previous page
   const handleBackPress = useCallback(() => {
@@ -133,6 +147,7 @@ export default function AllFeaturesScreen() {
       showBackButton={true}
       onBackPress={handleBackPress}
       loading={!isReady}
+      disableInteractionDeferral
     >
       {isReady ? (
         <ScrollView

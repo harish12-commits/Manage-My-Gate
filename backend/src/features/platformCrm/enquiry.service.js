@@ -237,8 +237,9 @@ class EnquiryService {
       const hashedPassword = await cryptoUtils.hashPassword(generatedPassword);
 
       if (user) {
+        // Never overwrite an existing account's password: that would let anyone who submits an
+        // enquiry with a victim's email take over the account.
         user.status = 'Active';
-        user.password = hashedPassword;
         if (normalizedPhone && !user.phone) {
           user.phone = normalizedPhone;
         }
@@ -254,7 +255,7 @@ class EnquiryService {
       }
       
       // Simulate Email (In real system, send email via service)
-      if (xRequestId) console.log(`[${xRequestId}] ✉️ SIMULATED EMAIL to ${enquiry.email}: Your account is activated. Password: ${generatedPassword}`);
+      if (xRequestId) console.log(`[${xRequestId}] ✉️ SIMULATED EMAIL to ${enquiry.email}: Your account is activated.`);
 
       // 3. Create Default Role (if not statically defined, or assign to membership)
       const Role = mongoose.model('Role');

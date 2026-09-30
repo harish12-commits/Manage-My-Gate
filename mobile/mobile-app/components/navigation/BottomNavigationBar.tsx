@@ -76,17 +76,20 @@ interface AndroidTabButtonProps {
   onPressIn?: () => void;
   isDark: boolean;
   isCompact?: boolean;
+  isPending?: boolean;
 }
 
+import { AppLoader } from '../ui/AppLoader';
 import { useTranslation } from '../../src/utils/i18n';
 
-const AndroidTabButton: React.FC<AndroidTabButtonProps> = ({
+const AndroidTabButton = React.memo(function AndroidTabButton({
   item,
   isActive,
   onPress,
   onPressIn,
   isDark,
-}) => {
+  isPending,
+}: AndroidTabButtonProps) {
   const { t, language } = useTranslation();
   const IconComponent = item.icon;
   const activeScale = useSharedValue(1);
@@ -106,6 +109,7 @@ const AndroidTabButton: React.FC<AndroidTabButtonProps> = ({
   const activeAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: activeScale.value }],
   }));
+  const handlePress = useCallback(() => onPress?.(item), [onPress, item]);
 
   return (
     <Pressable
@@ -136,11 +140,17 @@ const AndroidTabButton: React.FC<AndroidTabButtonProps> = ({
           marginBottom: 3,
         }]}
       >
-        <IconComponent
-          size={22}
-          color={iconColor}
-          strokeWidth={isActive ? 2.4 : 1.8}
-        />
+        {isPending ? (
+          <View style={{ width: 22, height: 22 }} className="items-center justify-center">
+            <AppLoader variant="inline" />
+          </View>
+        ) : (
+          <IconComponent
+            size={22}
+            color={iconColor}
+            strokeWidth={isActive ? 2.4 : 1.8}
+          />
+        )}
       </Animated.View>
 
       <Text
@@ -158,7 +168,7 @@ const AndroidTabButton: React.FC<AndroidTabButtonProps> = ({
       </Text>
     </Pressable>
   );
-};
+});
 
 interface InsetTabButtonProps {
   item: TabItem;
@@ -168,7 +178,7 @@ interface InsetTabButtonProps {
   isDark: boolean;
 }
 
-const InsetTabButton: React.FC<InsetTabButtonProps> = ({
+const InsetTabButton = React.memo(function InsetTabButton({
   item,
   isActive,
   onPress,
@@ -197,6 +207,8 @@ const InsetTabButton: React.FC<InsetTabButtonProps> = ({
   const labelColor = isActive ? activeColor : (isDark ? '#94A3B8' : '#64748B');
   const translatedLabel = t(item.key === 'dashboard' ? 'home' : item.key, item.label);
 
+  const handlePress = useCallback(() => onPress?.(item), [onPress, item]);
+
   return (
     <Pressable
       onPress={onPress}
@@ -209,11 +221,17 @@ const InsetTabButton: React.FC<InsetTabButtonProps> = ({
       <View className="items-center justify-center py-0.5 relative">
         {/* Icon: Visibly bigger than label text */}
         <Animated.View style={animatedIconStyle} className="items-center justify-center">
-          <IconComponent
-            size={21}
-            color={iconColor}
-            strokeWidth={isActive ? 2.4 : 1.9}
-          />
+          {isPending ? (
+            <View style={{ width: 21, height: 21 }} className="items-center justify-center">
+              <AppLoader variant="inline" />
+            </View>
+          ) : (
+            <IconComponent
+              size={21}
+              color={iconColor}
+              strokeWidth={isActive ? 2.4 : 1.9}
+            />
+          )}
         </Animated.View>
 
         {/* Icon Name: Standard font size underneath */}
@@ -237,7 +255,7 @@ const InsetTabButton: React.FC<InsetTabButtonProps> = ({
       </View>
     </Pressable>
   );
-};
+});
 
 export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   scrollY,
@@ -324,14 +342,9 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
     };
   });
 
-  const androidBarAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      width: androidBreadth.value,
-      height: 58, // Constant height — no height transition
-      borderRadius: isCompact ? 28 : 0,
-      transform: [{ translateY: navTranslateY.value }],
-    };
-  });
+  const navTranslateStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: navTranslateY.value }],
+  }));
 
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -380,7 +393,15 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
 
   const handleTabPress = useCallback((item: TabItem) => {
     if (isDraggingShared.value) return;
-    if (item.key === selectedTabKey) return;
+    
+    // If the tab is already selected visually, ensure we actually navigate to it
+    // if the user is deep inside a sub-route
+    if (item.key === selectedTabKey) {
+      if (pathname !== item.route) {
+        navigateToTab(item);
+      }
+      return;
+    }
 
     const targetIdx = TAB_ITEMS.findIndex((t) => t.key === item.key);
     if (targetIdx >= 0) {

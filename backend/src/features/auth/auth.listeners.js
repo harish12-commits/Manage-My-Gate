@@ -1,6 +1,6 @@
 import authEvents from './auth.events.js';
 import IntegrationHub from '../integrationHub/integrationHub.model.js';
-import { decrypt } from '../integrationHub/utils/crypto.util.js';
+import { decryptCredential } from '../integrationHub/utils/crypto.util.js';
 import logger from '../../utils/logger.utils.js';
 import { maskPhone, maskEmail } from '../../utils/phone.utils.js';
 import nodemailer from 'nodemailer';
@@ -22,7 +22,7 @@ authEvents.on('OTP_SENT', async ({ identifier, code, type }) => {
         try {
           const getCred = (key) => {
             const cred = smtpIntegration.credentials.find((c) => c.key === key);
-            return cred ? decrypt(cred.encryptedValue, cred.iv) : null;
+            return cred ? decryptCredential(cred) : null;
           };
 
           const host = getCred('host');
@@ -62,7 +62,7 @@ authEvents.on('OTP_SENT', async ({ identifier, code, type }) => {
       if (resendIntegration) {
         const apiKeyCred = resendIntegration.credentials.find((c) => c.key === 'apiKey');
         if (apiKeyCred) {
-          const apiKey = decrypt(apiKeyCred.encryptedValue, apiKeyCred.iv);
+          const apiKey = decryptCredential(apiKeyCred);
           
           const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
@@ -126,7 +126,7 @@ authEvents.on('OTP_SENT', async ({ identifier, code, type }) => {
       if (twilioIntegration) {
         const getCred = (key) => {
           const cred = twilioIntegration.credentials.find((c) => c.key === key);
-          return cred ? decrypt(cred.encryptedValue, cred.iv) : null;
+          return cred ? decryptCredential(cred) : null;
         };
         const accountSid = getCred('accountSid');
         const authToken = getCred('authToken');
@@ -161,7 +161,7 @@ authEvents.on('OTP_SENT', async ({ identifier, code, type }) => {
       if (mcIntegration) {
         const getCred = (key) => {
           const cred = mcIntegration.credentials.find((c) => c.key === key);
-          return cred ? decrypt(cred.encryptedValue, cred.iv) : null;
+          return cred ? decryptCredential(cred) : null;
         };
         const customerId = getCred('customerId')?.trim();
         const authToken = getCred('authToken')?.trim();

@@ -13,6 +13,8 @@ import { pageNotFound, errorHandler } from './src/middlewares/error.middleware.j
 import responseHandler from './src/middlewares/responseHandler.middleware.js';
 import correlationIdMiddleware from './src/middlewares/correlationId.middleware.js';
 import httpLoggerMiddleware from './src/middlewares/httpLogger.middleware.js';
+import sanitizeRequest from './src/middlewares/sanitize.middleware.js';
+import { apiLimiter } from './src/middlewares/rateLimiter.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -69,14 +71,13 @@ app.use(cors((req, callback) => {
       if (!origin) return cb(null, true);
       
       // In development mode, allow any localhost, 127.0.0.1, [::1], or private IP subnet origins
-      const isDev = config.nodeEnv === 'development';
-      const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/i.test(origin);
+      // Local/private-network origins are only trusted outside production.
+      const isDev = config.nodeEnv !== 'production';
+      const isLocal = isDev && /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/i.test(origin);
       
       if (
         isLocal ||
-        (isDev && isLocal) ||
-        config.cors.allowedOrigins.indexOf(origin) !== -1 ||
-        config.cors.allowedOrigins.includes('*')
+        config.cors.allowedOrigins.indexOf(origin) !== -1
       ) {
         cb(null, true);
       } else {
@@ -109,6 +110,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Cookie parser
 app.use(cookieParser());
 
+// Strip Mongo operator keys ($where, $ne, ...) from untrusted input to block NoSQL injection
+app.use(sanitizeRequest);
+
 // Attach standard response helper
 app.use(responseHandler);
 
@@ -121,6 +125,11 @@ const staticOptions = {
 };
 
 app.use('/.well-known', express.static(path.join(__dirname, 'public', '.well-known')));
+// Issue report screenshots are private: never served statically. Community/platform admins fetch
+// them through the authenticated GET /api/v1/support/reports/attachments/:filename endpoint.
+app.use(['/uploads/issueReports', '/public/uploads/issueReports'], (req, res) => {
+  res.status(404).json({ success: false, message: 'Not found' });
+});
 app.use('/public/uploads', express.static(path.join(__dirname, 'uploads'), staticOptions));
 app.use('/public', express.static(path.join(__dirname, 'public'), staticOptions));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), staticOptions));
@@ -133,6 +142,11 @@ app.use(['/api', '/api/v1', '/api/v2'], (req, res, next) => {
   res.set('Expires', '0');
   next();
 });
+
+// Global per-IP throttle (webhooks are signature-verified and excluded)
+app.use(['/api', '/api/v1'], (req, res, next) => (
+  /^\/(v1\/)?(webhooks?|payments\/webhook)/.test(req.path) ? next() : apiLimiter(req, res, next)
+));
 
 // Mount API routes at /api and /api/v1
 app.use('/api', apiRouter);
@@ -160,8 +174,10 @@ app.get('/privacy-policy', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'privacy-policy.html'));
 });
 
-// Mount Swagger UI at root
-app.use('/', swaggerRouter);
+// API docs expose the full attack surface, so they are not served in production
+if (config.nodeEnv !== 'production') {
+  app.use('/', swaggerRouter);
+}
 
 // Error handling middlewares
 app.use(pageNotFound);

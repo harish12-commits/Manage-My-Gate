@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator, Switch, TouchableOpacity } from 'react-native';
+import { View, Switch, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useWorkspace } from '../hooks/useWorkspace';
 import { useAuth } from '@/src/features/auth/hooks/useAuth';
 import FeatureIcon from '@/components/ui/FeatureIcon';
 import { WorkspaceModule } from '../store/workspaceSlice';
 import { ALL_AVAILABLE_FEATURES } from '../../dashboard/dashboardCatalog';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export const WorkspaceModulesForm = () => {
   const { loadWorkspaceModules, toggleModuleStatus, allModules, loading } = useWorkspace();
@@ -27,7 +28,7 @@ export const WorkspaceModulesForm = () => {
   if (loading && allModules.length === 0) {
     return (
       <View className="p-4 items-center justify-center min-h-[200px]">
-        <ActivityIndicator size="small" color="#03A9F4" />
+        <AppLoader variant="inline" />
         <Text className="text-muted-foreground mt-3 font-sans">Loading modules...</Text>
       </View>
     );

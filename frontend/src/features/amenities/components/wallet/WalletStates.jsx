@@ -1,10 +1,11 @@
 import React, { memo } from 'react'
-import { CCard, CCardBody, CSpinner } from '@coreui/react'
+import { CCard, CCardBody } from '@coreui/react'
+import AppLoader from '../../../../components/common/AppLoader'
 
 export const WalletLoading = memo(() => (
   <CCard className="border-0 shadow-sm text-center bg-body-secondary">
     <CCardBody className="p-5">
-      <CSpinner color="primary" className="mb-3" />
+      <AppLoader variant="block" />
       <p className="text-muted mb-0">Loading your digital wallet...</p>
     </CCardBody>
   </CCard>

@@ -1,3 +1,4 @@
+import { runSoon } from '@/src/utils/runSoon';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
@@ -49,7 +50,12 @@ export const GuardWalkInStatusView: React.FC = () => {
   }, [loadBoard]);
 
   useEffect(() => {
-    loadBoard();
+    const task = runSoon(() => {
+        loadBoard();
+      });
+    return () => {
+      task.cancel();
+    };
   }, [loadBoard]);
 
   // Loaded board, then live pending requests, then live outcomes: later sources win per request.

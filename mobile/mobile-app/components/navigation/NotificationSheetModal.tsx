@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Modal, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'expo-router';
@@ -21,6 +21,7 @@ import { NotificationItemData } from '@/src/features/notification/services/notif
 import { mapActionUrlToMobileRoute } from '@/src/features/notification/utils/notificationNavigation';
 import { getStatusTabStyle } from '@/components/ui/statusTabColors';
 import { useTranslation } from '@/src/utils/i18n';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 interface NotificationSheetModalProps {
   visible: boolean;
@@ -172,7 +173,7 @@ export const NotificationSheetModal: React.FC<NotificationSheetModalProps> = ({
           <ScrollView className="flex-1 px-4 py-2" showsVerticalScrollIndicator={false}>
             {loading && items.length === 0 ? (
               <View className="py-12 items-center justify-center">
-                <ActivityIndicator size="small" color="#03A9F4" />
+                <AppLoader variant="inline" />
                 <Text className="text-xs text-muted-foreground mt-2">{t('loading_notifications', 'Loading notifications...')}</Text>
               </View>
             ) : filteredItems.length > 0 ? (

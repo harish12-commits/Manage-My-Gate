@@ -20,11 +20,12 @@ import { useSelector } from 'react-redux'
 import { Toaster } from 'react-hot-toast'
 import AuthGuard from './features/auth/components/AuthGuard'
 
-import { CSpinner, useColorModes } from '@coreui/react'
+import { useColorModes } from '@coreui/react'
 import './scss/style.scss'
 
 // We use those styles to show code examples, you should remove them in your application.
 import './scss/examples.scss'
+import AppLoader from './components/common/AppLoader'
 
 // Containers
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
@@ -97,13 +98,7 @@ const App = () => {
     <>
       <Toaster position="top-right" reverseOrder={false} />
       <BrowserRouter>
-        <Suspense
-          fallback={
-            <div className="pt-3 text-center">
-              <CSpinner color="primary" variant="grow" />
-            </div>
-          }
-        >
+        <Suspense fallback={<AppLoader variant="fullscreen" />}>
           <Routes>
             <Route
               exact

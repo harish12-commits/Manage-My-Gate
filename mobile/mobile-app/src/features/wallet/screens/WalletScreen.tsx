@@ -1,3 +1,4 @@
+import { runSoon } from '@/src/utils/runSoon';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, RefreshControl, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -58,7 +59,12 @@ export function WalletScreen() {
   }, [dispatch]);
 
   useEffect(() => {
-    loadWallet();
+    const task = runSoon(() => {
+        loadWallet();
+      });
+    return () => {
+      task.cancel();
+    };
   }, [loadWallet]);
 
   const handleRefresh = useCallback(() => {

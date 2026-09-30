@@ -63,10 +63,7 @@ export const isPermissionSelected = (perm, selectedIds = []) => {
       : permValue.includes('.')
       ? permValue.split('.')[1]
       : permValue
-
-    if (selectedIds.includes(action)) return true
-
-    if (
+if (
       (action === 'active_board' || permValue === 'notices:active_board') &&
       (selectedIds.includes('notices:read') || selectedIds.includes('notices.read'))
     ) {
@@ -404,3 +401,4 @@ PermissionMatrix.propTypes = {
 }
 
 export default PermissionMatrix
+

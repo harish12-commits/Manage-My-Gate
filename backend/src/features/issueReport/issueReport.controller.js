@@ -60,7 +60,7 @@ export class IssueReportController {
    */
   async getCommunityReports(req, res, next) {
     try {
-      const orgId = req.tenant?.orgId || req.orgId || req.headers['x-organization-id'] || req.user?.orgId;
+      const orgId = req.tenant?.orgId;
       const result = await issueReportService.getCommunityReports(orgId, req.query);
       res.success(result, 'Community reports retrieved successfully', 200);
     } catch (error) {
@@ -73,9 +73,27 @@ export class IssueReportController {
    */
   async getCommunityReportById(req, res, next) {
     try {
-      const orgId = req.tenant?.orgId || req.orgId || req.headers['x-organization-id'] || req.user?.orgId;
+      const orgId = req.tenant?.orgId;
       const report = await issueReportService.getCommunityReportById(req.params.id, orgId);
       res.success(report, 'Community report retrieved successfully', 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Stream an attachment to an authorized viewer (GET /api/v1/support/reports/attachments/:filename)
+   */
+  async getAttachment(req, res, next) {
+    try {
+      const { filePath, mimeType } = await issueReportService.getAttachmentFile(req.params.filename, req.tenant);
+      res.setHeader('Content-Type', mimeType || 'application/octet-stream');
+      res.setHeader('Content-Disposition', 'inline');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Cache-Control', 'private, max-age=300');
+      res.sendFile(filePath, (err) => {
+        if (err && !res.headersSent) next(err);
+      });
     } catch (error) {
       next(error);
     }

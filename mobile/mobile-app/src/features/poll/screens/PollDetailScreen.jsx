@@ -241,7 +241,7 @@ export default function PollDetailScreen() {
         />
 
         {/* Voting Section (Shown only if Active and not yet voted) */}
-        {poll.status === 'Active' && !hasVoted && (
+        {poll.status === 'Active' && (
           <PollVotingSection
             poll={poll}
             onVote={handleVote}
@@ -378,3 +378,4 @@ export default function PollDetailScreen() {
     </ScreenShell>
   );
 }
+

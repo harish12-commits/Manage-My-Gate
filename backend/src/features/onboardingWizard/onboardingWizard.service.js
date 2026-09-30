@@ -1,10 +1,53 @@
 import mongoose from 'mongoose';
-import XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { Readable } from 'stream';
 import villaService from '../villa/villa.services.js';
 import userService from '../user/user.services.js';
 import onboardingWizardEvents from './onboardingWizard.events.js';
 import HttpError from '../../utils/httpError.utils.js';
 import logger, { loggerStorage } from '../../utils/logger.utils.js';
+
+const MAX_IMPORT_ROWS = 5000;
+
+const cellToValue = (cell) => {
+  if (cell === null || cell === undefined) return '';
+  if (typeof cell === 'object') {
+    if (cell instanceof Date) return cell.toISOString();
+    if (cell.text !== undefined) return cell.text;
+    if (cell.result !== undefined) return cell.result;
+    if (Array.isArray(cell.richText)) return cell.richText.map((t) => t.text).join('');
+    return '';
+  }
+  return cell;
+};
+
+/** Parses an .xlsx (zip magic "PK") or CSV buffer into header-keyed row objects. */
+const parseSpreadsheet = async (buffer) => {
+  const workbook = new ExcelJS.Workbook();
+  if (buffer.length > 1 && buffer[0] === 0x50 && buffer[1] === 0x4b) {
+    await workbook.xlsx.load(buffer);
+  } else {
+    await workbook.csv.read(Readable.from(buffer), { map: (value) => value });
+  }
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return null;
+  const rows = [];
+  let headers = null;
+  sheet.eachRow({ includeEmpty: false }, (row) => {
+    const values = row.values.slice(1).map(cellToValue);
+    if (!headers) {
+      headers = values.map((h) => String(h).trim());
+      return;
+    }
+    if (rows.length >= MAX_IMPORT_ROWS) return;
+    const obj = {};
+    headers.forEach((h, idx) => {
+      if (h && h !== '__proto__' && h !== 'constructor' && h !== 'prototype') obj[h] = values[idx] ?? '';
+    });
+    rows.push(obj);
+  });
+  return rows;
+};
 
 export class OnboardingWizardService {
   /**
@@ -24,21 +67,17 @@ export class OnboardingWizardService {
       throw new HttpError(400, 'Invalid or missing file buffer.');
     }
 
-    let workbook;
+    let rows;
     try {
-      workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+      rows = await parseSpreadsheet(fileBuffer);
     } catch (parseError) {
-      logger.error('Failed to parse file with XLSX', { error: parseError.message, correlationId });
+      logger.error('Failed to parse spreadsheet', { error: parseError.message, correlationId });
       throw new HttpError(400, 'Failed to parse file. Please ensure it is a valid .csv or .xlsx file.');
     }
 
-    if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+    if (!rows) {
       throw new HttpError(400, 'Uploaded spreadsheet file is empty or invalid.');
     }
-
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
-    const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
     const totalRows = rows.length;
     const validRows = [];

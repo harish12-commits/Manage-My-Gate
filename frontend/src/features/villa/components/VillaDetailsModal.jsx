@@ -11,7 +11,6 @@ import {
   CRow,
   CCol,
   CBadge,
-  CSpinner,
   CForm,
   CFormLabel,
   CFormInput,
@@ -32,6 +31,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '../../../services/apiClient'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
+import AppLoader from '../../../components/common/AppLoader'
 
 export const VillaDetailsModal = ({ visible, onClose, villaId, onEdit }) => {
   const { t } = useTranslation()
@@ -130,7 +130,9 @@ export const VillaDetailsModal = ({ visible, onClose, villaId, onEdit }) => {
     setInviteError(null)
 
     if (invitePhone && invitePhone.length < expectedPhoneLength) {
-      setInviteError(t('villas.details.phoneInvalid', 'Invalid phone number length for this country.'))
+      setInviteError(
+        t('villas.details.phoneInvalid', 'Invalid phone number length for this country.'),
+      )
       setInviting(false)
       return
     }
@@ -229,7 +231,7 @@ export const VillaDetailsModal = ({ visible, onClose, villaId, onEdit }) => {
     >
       {selectedVillaLoading || !selectedVilla ? (
         <CModalBody className="text-center py-5">
-          <CSpinner color="primary" className="mb-2" />
+          <AppLoader variant="block" />
           <div>{t('villas.details.loading', 'Loading unit details...')}</div>
         </CModalBody>
       ) : (
@@ -495,7 +497,12 @@ export const VillaDetailsModal = ({ visible, onClose, villaId, onEdit }) => {
                               {t('villas.details.chooseUser', 'Choose a user...')}
                             </option>
                             {workspaceUsers
-                              .filter((u) => !selectedVilla.residents.some((r) => (r._id || r.id) === (u._id || u.id)))
+                              .filter(
+                                (u) =>
+                                  !selectedVilla.residents.some(
+                                    (r) => (r._id || r.id) === (u._id || u.id),
+                                  ),
+                              )
                               .map((u) => (
                                 <option key={u._id || u.id} value={u._id || u.id}>
                                   {u.name || u.email} ({u.email})

@@ -5,7 +5,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  ActivityIndicator,
   TextInput as RNTextInput,
   Platform,
   KeyboardAvoidingView,
@@ -34,6 +33,7 @@ import {
   CountryData,
   StateData,
 } from '../data/locationData';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface LocationPickerModalProps {
   visible: boolean;
@@ -310,7 +310,7 @@ export function LocationPickerModal({
               <View className="flex-row items-center gap-2.5 flex-1 me-2">
                 <View className="size-9 rounded-xl bg-primary/20 items-center justify-center border border-primary/30">
                   {isDetectingLocation ? (
-                    <ActivityIndicator size="small" color="#EA580C" />
+                    <AppLoader variant="inline" />
                   ) : (
                     <LocateFixed size={18} className="text-primary" />
                   )}

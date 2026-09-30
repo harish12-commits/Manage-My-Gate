@@ -3,6 +3,7 @@
 );
 @use "@coreui/chartjs/scss/coreui-chartjs";
 @use "vendors/simplebar";
+@use "loader";
 @use "../features/userManagement/styles/userManagement";
 @use "../features/integrationHub/styles/integrationHub";
 @use "../features/villa/styles/villa";

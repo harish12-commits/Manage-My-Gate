@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Modal, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
 } from '../../src/features/dashboard/dashboardSlice';
 import { useTranslation } from '@/src/utils/i18n';
 import authService from '../../src/features/auth/services/authService';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 interface RoleSwitchModalProps {
   visible: boolean;
@@ -239,7 +240,7 @@ export const RoleSwitchModal: React.FC<RoleSwitchModalProps> = ({ visible, onClo
                 <View className="gap-2.5">
                   {isLoadingContext && roles.length === 0 ? (
                     <View className="py-8 items-center justify-center gap-2">
-                      <ActivityIndicator size="small" color="#03A9F4" />
+                      <AppLoader variant="inline" />
                       <Text className="text-xs text-muted-foreground">
                         {t('loading_roles', 'Loading assigned roles...')}
                       </Text>

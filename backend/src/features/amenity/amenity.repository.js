@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Amenity from './amenity.model.js';
+import { escapeRegex } from '../../utils/regex.utils.js';
 
 export class AmenityRepository {
   async findAllByOrg(orgId, filter = {}) {
@@ -76,7 +77,7 @@ export class AmenityRepository {
 
   async findByName(name, orgId) {
     // case-insensitive exact match
-    return await Amenity.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') }, orgId, isDeleted: false });
+    return await Amenity.findOne({ name: { $regex: new RegExp(`^${escapeRegex(name, 200)}$`, 'i') }, orgId, isDeleted: false });
   }
 
   async create(amenityData) {

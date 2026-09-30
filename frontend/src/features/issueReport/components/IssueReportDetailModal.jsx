@@ -24,7 +24,8 @@ import {
   FEATURE_MODULES,
   SOURCES,
 } from '../constants/issueReport.constants.js'
-import { getImageUrl } from '../../../utils/imageUrl.js'
+import { useProtectedAttachment } from '../hooks/useProtectedAttachment.js'
+import AppLoader from '../../../components/common/AppLoader'
 
 export const IssueReportDetailModal = ({
   visible,
@@ -70,7 +71,7 @@ export const IssueReportDetailModal = ({
       ? report.attachments[0]
       : null
 
-  const screenshotUrl = screenshot ? getImageUrl(screenshot.url) : null
+  const { src: screenshotUrl, failed: screenshotFailed } = useProtectedAttachment(screenshot?.url)
 
   return (
     <>
@@ -97,7 +98,7 @@ export const IssueReportDetailModal = ({
         <CModalBody>
           {loading && !report && (
             <div className="text-center py-5">
-              <CSpinner color="primary" className="me-2" />
+              <AppLoader variant="block" />
               <span>{t('issueReport.loadingDetails', { defaultValue: 'Loading report details...' })}</span>
             </div>
           )}
@@ -210,6 +211,13 @@ export const IssueReportDetailModal = ({
                         <span className="text-dark">{report.reporter?.email || '—'}</span>
                       </div>
 
+                      <div className="mb-2">
+                        <span className="text-muted small d-block">
+                          {t('issueReport.reporterPhone', { defaultValue: 'Phone' })}
+                        </span>
+                        <span className="text-dark">{report.reporter?.phone || '—'}</span>
+                      </div>
+
                       <div className="mb-3">
                         <span className="text-muted small d-block">
                           {t('issueReport.reporterRole', { defaultValue: 'Role' })}
@@ -288,14 +296,14 @@ export const IssueReportDetailModal = ({
                   {t('issueReport.attachment', { defaultValue: 'Screenshot Attachment' })}
                 </label>
 
-                {screenshot && screenshotUrl ? (
+                {screenshot ? (
                   <div className="p-3 bg-light rounded border">
                     <div className="d-flex align-items-center justify-content-between mb-2">
                       <span className="fw-semibold text-dark small">{screenshot.fileName}</span>
                       <span className="text-muted small">{formatSize(screenshot.size)}</span>
                     </div>
 
-                    {!imageError ? (
+                    {screenshotUrl && !imageError && !screenshotFailed ? (
                       <div
                         className="screenshot-preview-container text-center rounded border overflow-hidden position-relative bg-white"
                         role="button"
@@ -321,18 +329,15 @@ export const IssueReportDetailModal = ({
                           </CButton>
                         </div>
                       </div>
-                    ) : (
+                    ) : imageError || screenshotFailed ? (
                       <div className="p-4 text-center text-muted border rounded bg-white">
                         <CIcon icon={cilImage} size="xl" className="mb-2" />
                         <div>{t('issueReport.imageLoadError', { defaultValue: 'Screenshot preview unavailable.' })}</div>
-                        <a
-                          href={screenshotUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="btn btn-sm btn-outline-primary mt-2"
-                        >
-                          {t('issueReport.openDirectly', { defaultValue: 'Open in new tab' })}
-                        </a>
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center text-muted border rounded bg-white">
+                        <CSpinner size="sm" className="me-2" />
+                        {t('issueReport.loadingScreenshot', { defaultValue: 'Loading screenshot...' })}
                       </div>
                     )}
                   </div>

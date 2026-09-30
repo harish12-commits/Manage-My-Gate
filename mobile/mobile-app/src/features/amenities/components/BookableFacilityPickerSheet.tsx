@@ -3,13 +3,14 @@
  */
 
 import React from 'react';
-import { View, ScrollView, ActivityIndicator } from 'react-native';
+import { View, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ListCard } from '@/components/ui/ListCard';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { useTranslation } from '@/src/utils/i18n';
 import { AmenityFacility } from '../types/amenityDomain.types';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface BookableFacilityPickerSheetProps {
   visible: boolean;

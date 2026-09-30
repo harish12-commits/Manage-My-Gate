@@ -1,5 +1,6 @@
 import AmenityBooking from './amenityBooking.model.js';
 import mongoose from 'mongoose';
+import { escapeRegex } from '../../utils/regex.utils.js';
 import '../amenity/amenity.model.js';
 import '../user/user.model.js';
 
@@ -784,7 +785,7 @@ export class AmenityBookingRepository {
     const monthStr = `${year}-${String(month).padStart(2, '0')}`;
     const bookingDates = await AmenityBooking.distinct('bookingDate', {
       orgId: new mongoose.Types.ObjectId(orgId),
-      bookingDate: { $regex: `^${monthStr}` },
+      bookingDate: { $regex: `^${escapeRegex(monthStr)}` },
       status: { $in: ['pending', 'approved', 'confirmed', 'checked-in'] }
     });
 

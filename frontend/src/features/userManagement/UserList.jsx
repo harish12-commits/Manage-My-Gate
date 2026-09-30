@@ -427,7 +427,7 @@ const UserList = () => {
         title={t('userManagement.title', 'User Management')}
         subtitle={t('userManagement.subtitle', 'Manage organization users and allocate access roles.')}
         actionButtons={
-          <div className="d-flex gap-2">
+          <div className="d-flex flex-wrap gap-2">
             <CButton
               id="view-invitations-btn"
               color="info"

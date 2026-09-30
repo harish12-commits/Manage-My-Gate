@@ -40,17 +40,19 @@ export const ContactPickerButton: React.FC<ContactPickerButtonProps> = ({ onPick
 
   return (
     <>
-      <TouchableOpacity
-        onPress={handlePress}
-        className="h-9 w-9 rounded-xl bg-primary/10 items-center justify-center"
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel="Choose from contacts"
-        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-        testID={testID || 'contact-picker-button'}
-      >
-        <BookUser size={18} className="text-primary" />
-      </TouchableOpacity>
+      <View style={{ justifyContent: 'center', alignItems: 'center', zIndex: 10, elevation: 10, marginLeft: 8 }}>
+        <TouchableOpacity
+          onPress={handlePress}
+          className="h-9 w-9 rounded-xl bg-primary/10 items-center justify-center"
+          activeOpacity={0.6}
+          accessibilityRole="button"
+          accessibilityLabel="Choose from contacts"
+          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+          testID={testID || 'contact-picker-button'}
+        >
+          <BookUser size={18} className="text-primary" />
+        </TouchableOpacity>
+      </View>
 
       <Modal visible={!!pending} transparent statusBarTranslucent animationType="fade" onRequestClose={() => setPending(null)}>
         <Pressable className="flex-1 bg-black/50 justify-center items-center p-4" onPress={() => setPending(null)}>

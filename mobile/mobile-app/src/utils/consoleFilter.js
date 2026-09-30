@@ -9,7 +9,8 @@ const IGNORED_WARNINGS = [
   'Animated: `useNativeDriver` is not supported',
   'Reduced motion setting is enabled on this device',
   '[Reanimated] Reading from `value` during component render',
-  '[Reanimated] Writing to `value` during component render'
+  '[Reanimated] Writing to `value` during component render',
+  'Password field is not contained in a form'
 ];
 
 LogBox.ignoreLogs(IGNORED_WARNINGS);
@@ -25,3 +26,5 @@ console.error = (...args) => {
   if (args[0] && typeof args[0] === 'string' && IGNORED_WARNINGS.some(w => args[0].includes(w))) return;
   originalConsoleError(...args);
 };
+
+

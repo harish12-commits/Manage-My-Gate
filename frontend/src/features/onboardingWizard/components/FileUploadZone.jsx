@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react'
 import PropTypes from 'prop-types'
-import { CAlert, CSpinner, CButton } from '@coreui/react'
+import { CAlert, CButton } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilCloudUpload, cilFile } from '@coreui/icons'
+import AppLoader from '../../../components/common/AppLoader'
 
 const FileUploadZone = ({ handleFileUpload, loading, error }) => {
   const [isDragActive, setIsDragActive] = useState(false)
@@ -69,7 +70,7 @@ const FileUploadZone = ({ handleFileUpload, loading, error }) => {
       >
         {loading ? (
           <div className="d-flex flex-column align-items-center">
-            <CSpinner color="primary" variant="grow" className="mb-3" />
+            <AppLoader variant="block" />
             <span className="fw-bold text-primary">Parsing & Validating File...</span>
             <small className="text-secondary mt-1">
               Please wait while rows are checked for format and DB duplicates.

@@ -1,10 +1,11 @@
 import React, { memo } from 'react'
-import { CCard, CCardBody, CSpinner } from '@coreui/react'
+import { CCard, CCardBody } from '@coreui/react'
+import AppLoader from '../../../../components/common/AppLoader'
 
 export const ScannerLoading = memo(() => (
   <CCard className="border-0 shadow-sm text-center bg-body-secondary h-100 d-flex flex-column justify-content-center">
     <CCardBody className="p-5 d-flex flex-column align-items-center justify-content-center">
-      <CSpinner color="primary" className="mb-3" style={{ width: '3rem', height: '3rem' }} />
+      <AppLoader variant="block" />
       <h5 className="fw-bold mb-1">Verifying Pass...</h5>
       <p className="text-muted mb-0 small">
         Please hold while we check this booking with the server.

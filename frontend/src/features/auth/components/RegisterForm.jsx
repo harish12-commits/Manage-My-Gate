@@ -740,7 +740,7 @@ const styles = {
     fontWeight: '600',
     borderRadius: '8px',
     boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)',
-    transition: 'all 0.2s',
+    transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
   },
   toggleLink: {
     color: '#2563eb',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import {
   Sparkles,
   DoorOpen,
 } from 'lucide-react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 
 export interface FacilityMaintenanceDetailSheetProps {
   visible: boolean;
@@ -176,7 +177,7 @@ export const FacilityMaintenanceDetailSheet: React.FC<FacilityMaintenanceDetailS
           {/* Loading State */}
           {loading && (
             <View className="p-6 rounded-2xl bg-card border border-border/60 items-center justify-center gap-2">
-              <ActivityIndicator size="small" color="#2563eb" />
+              <AppLoader variant="inline" />
               <Text className="text-xs font-medium text-muted-foreground">
                 Loading maintenance...
               </Text>
