@@ -9,10 +9,9 @@ import { View } from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { SearchFilterBar, SortOption } from '@/components/ui/SearchFilterBar';
-import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
 import {
   useResidentReservations,
   ReservationFilterTab,
@@ -83,7 +82,7 @@ export default function MyBookingsScreen() {
   );
 
   const handleCardPress = (reservation: AmenityReservation) => {
-    router.push(`/(resident)/amenities/reservations/${reservation._id}` as any);
+    router.navigate(`/(resident)/amenities/reservations/${reservation._id}` as any);
   };
 
   const handleConfirmCancel = async (reason?: string) => {
@@ -148,17 +147,13 @@ export default function MyBookingsScreen() {
       error={error?.message || null}
       onRetry={refresh}
       headerRight={
-        <Button
-          variant="default"
-          size="sm"
-          onPress={() => router.push('/(resident)/amenities/discover' as any)}
-          className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
+        <HeaderActionButton
+          onPress={() => router.navigate('/(resident)/amenities/discover' as any)}
+          icon={Plus}
+          label={t('book_amenity', 'Book Amenity')}
           accessibilityRole="button"
           accessibilityLabel="Book Amenity"
-        >
-          <Plus size={15} color="#ffffff" />
-          <Text className="text-xs font-bold text-primary-foreground">{t('book_amenity', 'Book Amenity')}</Text>
-        </Button>
+        />
       }
     >
       <View className="flex-1 bg-background">

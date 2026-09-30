@@ -3,9 +3,7 @@ import {
   Modal,
   TouchableOpacity,
   Pressable,
-  ScrollView,
-  Dimensions,
-  KeyboardAvoidingView,
+  useWindowDimensions,
   Platform,
   Keyboard,
 } from 'react-native';
@@ -43,9 +41,9 @@ function BottomSheet({
   children,
   contentContainerStyle,
 }: AppBottomSheetProps) {
+  const { height: screenHeight } = useWindowDimensions();
   if (!visible) return null;
 
-  const screenHeight = Dimensions.get('window').height;
   const sheetMaxHeight = Platform.OS === 'web'
     ? Math.min(Math.round(screenHeight * 0.85), 680)
     : Math.round(screenHeight * 0.88);
@@ -67,9 +65,7 @@ function BottomSheet({
       animationType="slide"
       onRequestClose={handleClose}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
+      <View
         style={{ flex: 1 }}
         className="flex-1 justify-end items-center"
       >
@@ -81,7 +77,7 @@ function BottomSheet({
         
         {/* Content Box */}
         <View
-          style={{ maxHeight: sheetMaxHeight, maxWidth: '100%' }}
+          style={{ height: sheetMaxHeight, maxWidth: '100%' }}
           className="bg-card border-t border-border/80 rounded-t-3xl sm:rounded-3xl sm:border sm:mb-4 shadow-2xl overflow-hidden flex-col w-full max-w-md mx-auto"
         >
           {/* Top grab handle */}
@@ -106,6 +102,7 @@ function BottomSheet({
 
           {/* Scrollable Body Content */}
           <KeyboardAwareScrollView
+            style={{ flex: 1 }}
             extraScrollHeight={48}
             contentContainerStyle={[
               { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 48, flexGrow: 1 },
@@ -122,7 +119,7 @@ function BottomSheet({
             {children}
           </KeyboardAwareScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

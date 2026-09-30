@@ -183,14 +183,14 @@ function ManageNoticesContent() {
   }, [changePinStatus, handleRefresh]);
 
   const handleEditPress = useCallback((id) => {
-    router.push({
+    router.navigate({
       pathname: '/(resident)/notices/create',
       params: { id },
     });
   }, [router]);
 
   const handleCardPress = useCallback((notice) => {
-    router.push({
+    router.navigate({
       pathname: '/(resident)/notices/[id]',
       params: { id: notice._id },
     });
@@ -307,7 +307,7 @@ function ManageNoticesContent() {
         canCreate ? (
           <Button
             size="sm"
-            onPress={() => router.push('/(resident)/notices/create')}
+            onPress={() => router.navigate('/(resident)/notices/create')}
             className="bg-emerald-600 active:bg-emerald-700 flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
             accessibilityRole="button"
             accessibilityLabel="Create New Community Notice"
@@ -367,7 +367,7 @@ function ManageNoticesContent() {
           visible={typeSheetOpen}
           onClose={() => setTypeSheetOpen(false)}
           onSelectType={(type) => {
-            router.push(`/(resident)/community-engagement/create?type=${type}`);
+            router.navigate(`/(resident)/community-engagement/create?type=${type}`);
           }}
         />
 

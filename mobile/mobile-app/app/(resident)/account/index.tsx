@@ -196,7 +196,7 @@ export default function AccountScreen() {
         <View className="gap-2 max-w-md mx-auto w-full pt-2">
           {/* 1. User Profile Header Hero Card */}
           <TouchableOpacity
-            onPress={() => router.push('/(resident)/profile' as any)}
+            onPress={() => router.navigate('/(resident)/profile' as any)}
             activeOpacity={0.82}
             className="items-center bg-card border border-border rounded-3xl p-5 gap-2 shadow-xs active:bg-secondary/40 relative overflow-hidden"
             accessibilityRole="button"
@@ -311,7 +311,7 @@ export default function AccountScreen() {
               iconBgColor="rgba(14, 165, 233, 0.12)"
               title={t('community_directory', 'Community Directory')}
               subtitle={t('find_residents_security', 'Find residents, security & staff')}
-              onPress={() => router.push('/(resident)/directory' as any)}
+              onPress={() => router.navigate('/(resident)/directory' as any)}
             />
             <SettingsRow
               icon={Sparkles}
@@ -319,7 +319,7 @@ export default function AccountScreen() {
               iconBgColor="rgba(236, 72, 153, 0.12)"
               title={t('all_community_notes', 'All Community Notes')}
               subtitle={t('view_24h_notes', 'View 24h status notes & publish')}
-              onPress={() => router.push('/(resident)/notes' as any)}
+              onPress={() => router.navigate('/(resident)/notes' as any)}
               isLast={true}
             />
           </SettingsCard>
@@ -333,7 +333,7 @@ export default function AccountScreen() {
               icon={Settings}
               title={t('app_settings', 'App Settings')}
               subtitle={t('notifications_lang_security', 'Notifications, language & security')}
-              onPress={() => router.push('/(resident)/settings' as any)}
+              onPress={() => router.navigate('/(resident)/settings' as any)}
               isLast={true}
             />
           </SettingsCard>

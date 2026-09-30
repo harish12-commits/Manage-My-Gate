@@ -169,7 +169,7 @@ export function NoticeDetailsModal({
                 size="sm"
                 onPress={() => {
                   onClose();
-                  router.push({
+                  router.navigate({
                     pathname: '/(resident)/notices/create',
                     params: { id: notice._id },
                   });
@@ -255,7 +255,7 @@ export function NoticeDetailsModal({
             size="md"
             onPress={() => {
               onClose();
-              router.push({
+              router.navigate({
                 pathname: '/(resident)/notices/[id]',
                 params: { id: notice._id },
               });

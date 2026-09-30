@@ -84,7 +84,7 @@ export function GoogleSignInButton({ inviteToken, onSuccess, onError }: GoogleSi
           }
           if (res?.payload?.isNewUser) {
             const googleData = res.payload.googleData || {};
-            router.push({
+            router.navigate({
               pathname: '/(auth)/register',
               params: {
                 email: googleData.email || '',

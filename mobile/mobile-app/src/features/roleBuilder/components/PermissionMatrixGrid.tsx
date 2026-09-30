@@ -64,6 +64,29 @@ export const isPermissionSelected = (perm: PermissionItem | string, selectedIds:
   if (typeof perm === 'object' && perm?._id && selectedIds.includes(String(perm._id))) return true;
 
   if (typeof permValue === 'string') {
+    const normalizedPerm = permValue.toLowerCase().replace(/\./g, ':');
+    const normalizedSelected = new Set(selectedIds.map((id) => String(id).toLowerCase().replace(/\./g, ':')));
+    const noticeAliases: Record<string, string[]> = {
+      'notices:active_board': ['notices:active_board', 'notices:read'],
+      'notices:polls': ['notices:polls', 'polls:read', 'polls:vote'],
+      'notices:manage_notices': [
+        'notices:manage_notices',
+        'notices:dashboard',
+        'notices:create',
+        'notices:update',
+        'notices:delete',
+        'notices:publish',
+        'polls:create',
+        'polls:update',
+        'polls:delete',
+        'polls:publish',
+        'polls:close',
+      ],
+    };
+    if (noticeAliases[normalizedPerm]?.some((alias) => normalizedSelected.has(alias))) {
+      return true;
+    }
+
     const dot = permValue.replace(/:/g, '.');
     const colon = permValue.replace(/\./g, ':');
     if (selectedIds.includes(dot) || selectedIds.includes(colon)) return true;
@@ -100,7 +123,7 @@ const getCategoryDisplayName = (category: string): string => {
     billing: 'Billing & Invoices',
     villas: 'Unit Management',
     users: 'User Management',
-    notices: 'Notices Board',
+    notices: 'Notice Board & Polls',
     integrations: 'Integrations Hub',
     complaints: 'Complaints & Maintenance',
   };
@@ -224,10 +247,28 @@ export const PermissionMatrixGrid: React.FC<PermissionMatrixGridProps> = ({
           ...(result['digital_wallet'] || []),
           ...(perms || []),
         ];
+      } else if (
+        lowerKey === 'notices' ||
+        lowerKey === 'noticeboard' ||
+        lowerKey === 'notices board' ||
+        lowerKey === 'polls' ||
+        lowerKey === 'community_engagement'
+      ) {
+        result.notices = [...(result.notices || []), ...(perms || [])];
       } else {
         result[lowerKey] = perms;
       }
     });
+
+    if (result.notices) {
+      const seen = new Set<string>();
+      result.notices = result.notices.filter((permission) => {
+        const key = String(permission.name || permission.code || permission._id || '').toLowerCase();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
 
     return result;
   }, [groupedPermissions]);
@@ -433,10 +474,9 @@ export const PermissionMatrixGrid: React.FC<PermissionMatrixGridProps> = ({
                         ) : null}
                       </View>
 
-                      <Checkbox
-                        checked={isChecked}
-                        onCheckedChange={(val) => onTogglePermission(permValue, !!val)}
-                      />
+                      <View pointerEvents="none">
+                        <Checkbox checked={isChecked} onCheckedChange={() => {}} />
+                      </View>
                     </TouchableOpacity>
                   );
                 })}

@@ -6,7 +6,7 @@ const mockPicker = jest.fn();
 const mockGetPerms = jest.fn();
 const mockRequestPerms = jest.fn();
 jest.mock('expo-contacts', () => ({
-  presentContactPickerAsync: () => mockPicker(),
+  Contact: { presentPicker: () => mockPicker() },
   getPermissionsAsync: () => mockGetPerms(),
   requestPermissionsAsync: () => mockRequestPerms(),
 }));
@@ -24,9 +24,9 @@ describe('ContactPickerButton', () => {
 
   it('fills name and an E.164 phone from a single-number contact', async () => {
     mockPicker.mockResolvedValue({
-      name: 'Aisha Khan',
-      phoneNumbers: [{ number: '+971 50 123 4567', label: 'mobile' }],
-      emails: [{ email: 'aisha@example.com' }],
+      getFullName: async () => 'Aisha Khan',
+      getPhones: async () => [{ number: '+971 50 123 4567', label: 'mobile' }],
+      getEmails: async () => [{ address: 'aisha@example.com' }],
     });
     const onPick = jest.fn();
     await render(<ContactPickerButton onPick={onPick} />);
@@ -37,7 +37,11 @@ describe('ContactPickerButton', () => {
   });
 
   it('reads bare local numbers using the contact country code', async () => {
-    mockPicker.mockResolvedValue({ name: 'Ravi', phoneNumbers: [{ number: '098765 43210', countryCode: 'in' }] });
+    mockPicker.mockResolvedValue({
+      getFullName: async () => 'Ravi',
+      getPhones: async () => [{ number: '+91 98765 43210' }],
+      getEmails: async () => [],
+    });
     const onPick = jest.fn();
     await render(<ContactPickerButton onPick={onPick} />);
     fireEvent.press(screen.getByTestId('contact-picker-button'));
@@ -46,11 +50,12 @@ describe('ContactPickerButton', () => {
 
   it('asks which number to use when the contact has several', async () => {
     mockPicker.mockResolvedValue({
-      name: 'Sam',
-      phoneNumbers: [
+      getFullName: async () => 'Sam',
+      getPhones: async () => [
         { number: '+44 7400 123456', label: 'mobile' },
         { number: '+1 415 555 2671', label: 'work' },
       ],
+      getEmails: async () => [],
     });
     const onPick = jest.fn();
     await render(<ContactPickerButton onPick={onPick} />);

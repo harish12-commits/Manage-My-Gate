@@ -424,13 +424,14 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
                   <View className="flex-row items-center gap-3 pt-2">
                     <Button
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 bg-white border-neutral-300"
+                      textClassName="text-black font-bold"
                       onPress={resetForm}
                     >
                       {t('invite_another', 'Invite Another')}
                     </Button>
                     <Button
-                      variant="default"
+                      variant="outline"
                       className="flex-1"
                       onPress={onClose}
                     >
@@ -539,6 +540,8 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
                       onPress={handleSubmit}
                       loading={submitting}
                       disabled={submitting || isEmailChecking}
+                      className="bg-white border-neutral-300"
+                      textClassName="text-black font-bold"
                     >
                       {t('send_invitation', 'Send Invitation')}
                     </Button>

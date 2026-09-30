@@ -10,6 +10,8 @@ import { ArrowLeft, X, Shield } from 'lucide-react-native';
 import { AmenityArchetype } from '../../types/amenityDomain.types';
 import { getArchetypeMeta } from '../../utils/amenityPresentation';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 export interface AmenityBookingFlowHeaderProps {
   archetype: AmenityArchetype;
   stepTitle: string;
@@ -28,9 +30,13 @@ export const AmenityBookingFlowHeader: React.FC<AmenityBookingFlowHeaderProps> =
   canGoBack = true,
 }) => {
   const archetypeMeta = getArchetypeMeta(archetype);
+  const insets = useSafeAreaInsets();
 
   return (
-    <View className="bg-card border-b border-border px-4 pt-3 pb-3 gap-2">
+    <View 
+      className="bg-card border-b border-border px-4 pb-3 gap-2"
+      style={{ paddingTop: Math.max(insets.top, 12) }}
+    >
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
           {canGoBack && onBack ? (

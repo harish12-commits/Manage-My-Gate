@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { ArrowLeft, X } from 'lucide-react-native';
@@ -30,8 +31,11 @@ export const AmenityCreationFlowHeader: React.FC<AmenityCreationFlowHeaderProps>
   const currentMeta = ARCHETYPE_CATALOG_OPTIONS.find((o) => o.archetype === archetype) || ARCHETYPE_CATALOG_OPTIONS[0];
   const IconComp = currentMeta.icon;
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View className="bg-card border-b border-border px-4 pt-3 pb-3 gap-2">
+    <View className="bg-card border-b border-border px-4 pb-3 gap-2"
+      style={{ paddingTop: Math.max(insets.top, 12) }}>
       {/* Top action row */}
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2 flex-1">

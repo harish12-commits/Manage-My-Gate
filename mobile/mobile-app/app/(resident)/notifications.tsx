@@ -292,7 +292,7 @@ export default function NotificationsScreen() {
         notification.type,
         notification
       );
-      router.push(route as any);
+      router.navigate(route as any);
     }
   };
 

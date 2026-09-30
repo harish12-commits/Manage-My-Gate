@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { BottomSheet } from '../../../../components/ui/BottomSheet';
 import { Button } from '../../../../components/ui/button';
 import { Icon } from '../../../../components/ui/icon';
@@ -164,7 +164,7 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
           </View>
 
           {/* Native Action CTAs */}
-          <View className="flex-row items-center gap-3 mt-2 pt-3 border-t border-border">
+          <View className="flex-row flex-wrap items-center gap-3 mt-2 pt-3 border-t border-border">
             <Button variant="outline" onPress={onClose} className="flex-1 rounded-xl h-11">
               <Text className="font-bold text-xs text-foreground">Cancel</Text>
             </Button>
@@ -172,9 +172,9 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
               variant="default"
               loading={isSubmitting}
               onPress={handleSubmit}
-              className="flex-1 rounded-xl h-11"
+              className="flex-1 min-w-[140px] rounded-xl h-11 bg-white border border-neutral-300"
             >
-              <Text className="font-bold text-xs text-white">
+              <Text className="font-bold text-xs text-black">
                 {role ? 'Save Changes' : 'Create Role'}
               </Text>
             </Button>

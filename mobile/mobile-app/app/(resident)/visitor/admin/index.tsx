@@ -2,13 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenShell } from '@/components/ui/ScreenShell';
-import { Text } from '@/components/ui/text';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { KPIDashboardStrip } from '@/components/ui/KPIDashboardStrip';
 import { type KPICardProps } from '@/components/ui/KPICard';
 import { ActionGrid, type ActionGridItem } from '@/components/ui/ActionGrid';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { EmptyState } from '@/components/feedback/EmptyState';
-import { Button } from '@/components/ui/button';
 import { FAB } from '@/components/ui/FAB';
 import { VisitorPassCard } from '@/src/features/visitor/components/VisitorPassCard';
 import { VisitorLogDetailsModal } from '@/src/features/visitor/components/history/VisitorLogDetailsModal';
@@ -125,17 +124,13 @@ export default function AdminVisitorDashboardScreen() {
       error={error}
       onRetry={loadData}
       headerRight={
-        <Button
-          variant="default"
-          size="sm"
-          onPress={() => router.push('/(resident)/visitor/admin/create-pass' as any)}
-          className="flex-row items-center gap-1 px-3 rounded-full bg-emerald-600 active:bg-emerald-700 border-0"
+        <HeaderActionButton
+          onPress={() => router.navigate('/(resident)/visitor/admin/create-pass' as any)}
+          icon={Plus}
+          label={t('create_pass', 'Create Pass')}
           accessibilityRole="button"
           accessibilityLabel={t('create_pass', 'Create Pass')}
-        >
-          <Plus size={14} color="#ffffff" />
-          <Text className="text-xs font-bold text-white">{t('create_pass', 'Create Pass')}</Text>
-        </Button>
+        />
       }
     >
       <ScrollView
@@ -153,7 +148,7 @@ export default function AdminVisitorDashboardScreen() {
         <SectionHeader
           title="Recent Activity"
           actionLabel="View All"
-          onAction={() => router.push('/(resident)/visitor/admin/community-passes' as any)}
+          onAction={() => router.navigate('/(resident)/visitor/admin/community-passes' as any)}
           className="px-0 bg-transparent dark:bg-transparent"
         />
 
@@ -164,7 +159,7 @@ export default function AdminVisitorDashboardScreen() {
             title="No Community Passes Recorded"
             description="No entry or exit logs have been recorded today."
             actionLabel="Create Pass"
-            onAction={() => router.push('/(resident)/visitor/admin/create-pass' as any)}
+            onAction={() => router.navigate('/(resident)/visitor/admin/create-pass' as any)}
           />
         ) : (
           <View className="gap-2.5">

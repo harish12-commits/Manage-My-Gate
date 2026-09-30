@@ -187,14 +187,12 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
                 </View>
 
                 {/* Search Bar inside Customise Modal */}
-                <View className="bg-card rounded-xl shadow-sm border border-border/40 overflow-hidden">
-                  <SearchFilterBar
-                    searchValue={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    searchPlaceholder={t('search_features', 'Search actions...')}
-                    className="px-0 py-0 h-[42px]"
-                  />
-                </View>
+                <SearchFilterBar
+                  searchValue={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  searchPlaceholder={t('search_features', 'Search actions...')}
+                  className="px-0 py-0"
+                />
               </View>
             </View>
 

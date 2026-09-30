@@ -141,9 +141,10 @@ export default function RegisterOtpScreen() {
               )}
 
               <Button
+                variant="continue"
                 onPress={handleSubmit(onSubmit)}
                 loading={loading}
-                textClassName="font-bold text-base"
+                textClassName="font-extrabold text-base"
                 className="mt-2 h-12"
               >
                 {t('verify_and_continue', 'Verify & Continue')}

@@ -1,21 +1,16 @@
 import React from 'react';
-import { View, Platform } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { PaginatedList } from '@/components/ui/PaginatedList';
-import { Text } from '@/components/ui/text';
-import { Button } from '@/components/ui/button';
 import { DirectorySearch } from '../components/DirectorySearch';
 import { DirectoryCategoryTabs } from '../components/DirectoryCategoryTabs';
 import { DirectoryContactCard } from '../components/DirectoryContactCard';
-import { DirectoryQuickMessageSheet } from '../components/DirectoryQuickMessageSheet';
 import { useDirectory } from '../hooks/useDirectory';
-import { useDirectoryMessaging } from '../hooks/useDirectoryMessaging';
 import { useDirectorySocket } from '../hooks/useDirectorySocket';
 import { useAuth } from '@/src/features/auth/hooks/useAuth';
 import { useTranslation } from '@/src/utils/i18n';
 import { DirectoryMember } from '../types/directoryTypes';
-import { Sparkles } from 'lucide-react-native';
 
 export function DirectoryScreen() {
   const router = useRouter();
@@ -39,16 +34,7 @@ export function DirectoryScreen() {
     onRefresh,
     onLoadMore,
     onCall,
-    onIntercom,
   } = useDirectory();
-
-  const {
-    quickSheetOpen,
-    setQuickSheetOpen,
-    selectedMember,
-    onOpenQuickMessage,
-    onOpenConversation,
-  } = useDirectoryMessaging();
 
   const handleBack = () => {
     router.replace({ pathname: '/(resident)/dashboard', params: { openProfile: 'true' } } as any);
@@ -85,9 +71,6 @@ export function DirectoryScreen() {
               member={member}
               currentUserId={currentUserId}
               onCall={onCall}
-              onIntercom={onIntercom}
-              onQuickMessage={onOpenQuickMessage}
-              onOpenConversation={onOpenConversation}
             />
           )}
           keyExtractor={(member) => member.id || member.userId}
@@ -103,13 +86,6 @@ export function DirectoryScreen() {
           contentContainerClassName="px-4 pt-3 pb-28"
         />
       </View>
-
-      {/* Quick Message Bottom Sheet */}
-      <DirectoryQuickMessageSheet
-        visible={quickSheetOpen}
-        onClose={() => setQuickSheetOpen(false)}
-        member={selectedMember}
-      />
     </ScreenShell>
   );
 }

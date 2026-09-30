@@ -102,7 +102,7 @@ export function MicrosoftSignInButton({ inviteToken, onSuccess, onError }: Micro
                     }
                     if (res?.payload?.isNewUser) {
                       const msData = res.payload.googleData || {};
-                      router.push({
+                      router.navigate({
                         pathname: '/(auth)/register',
                         params: {
                           email: msData.email || '',

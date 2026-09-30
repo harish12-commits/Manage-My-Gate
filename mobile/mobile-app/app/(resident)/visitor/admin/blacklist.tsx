@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
-import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { BlacklistEntryCard, BlacklistEntry } from '@/src/features/visitor/components/admin/BlacklistEntryCard';
@@ -84,17 +83,13 @@ export default function AdminBlacklistScreen() {
       title={t('community_visitor_blacklist', 'Community Visitor Blacklist')}
       subtitle={t('restricted_visitors_security_breach_registry', 'Restricted visitors & security breach registry')}
       headerRight={
-        <Button
-          variant="destructive"
-          size="sm"
+        <HeaderActionButton
           onPress={() => setModalOpen(true)}
+          icon={Plus}
+          label={t('add_entry', 'Add Entry')}
           accessibilityRole="button"
           accessibilityLabel="Add Entry"
-          className="flex-row items-center gap-1 px-3 rounded-full bg-red-600 active:bg-red-700 border-0"
-        >
-          <Plus size={14} color="#ffffff" />
-          <Text className="text-xs font-bold text-white">{t('add_entry', 'Add Entry')}</Text>
-        </Button>
+        />
       }
     >
       <View className="flex-1 bg-background">

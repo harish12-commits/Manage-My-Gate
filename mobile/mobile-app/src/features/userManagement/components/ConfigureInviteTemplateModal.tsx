@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, ScrollView, Modal, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { View, ScrollView, Modal, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, useWindowDimensions } from 'react-native';
 import { X, Mail, Sparkles, CheckCircle2, AlertTriangle, Plus } from 'lucide-react-native';
 import { TextInput } from '@/components/forms/TextInput';
 import { DropdownSelect } from '@/components/forms/DropdownSelect';
@@ -26,6 +26,9 @@ export const ConfigureInviteTemplateModal: React.FC<ConfigureInviteTemplateModal
   visible,
   onClose,
 }) => {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const isNarrowPhone = windowWidth < 390;
+  const sheetHeight = Math.min(Math.round(windowHeight * 0.92), Platform.OS === 'web' ? 720 : windowHeight);
   const [connections, setConnections] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -152,16 +155,19 @@ export const ConfigureInviteTemplateModal: React.FC<ConfigureInviteTemplateModal
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        <View className="flex-1 justify-end bg-black/50">
-          <Pressable className="flex-1" onPress={onClose} />
-          <View className="bg-card rounded-t-3xl p-5 border-t border-border max-h-[85%] flex-col">
+        <View className="flex-1 justify-end items-center bg-black/50">
+          <Pressable className="absolute inset-0" onPress={onClose} />
+          <View
+            style={{ height: sheetHeight, width: '100%', maxWidth: 560 }}
+            className="bg-card rounded-t-3xl px-4 pt-4 pb-3 sm:px-5 sm:pt-5 border-t sm:border border-border flex-col sm:rounded-3xl sm:mb-4"
+          >
           {/* Header */}
           <View className="flex-row items-center justify-between pb-3 border-b border-border mb-3">
-            <View className="flex-row items-center">
+            <View className="flex-row items-center flex-1 min-w-0 pe-2">
               <Mail size={20} color="#6366f1" className="me-2" />
-              <View>
-                <Text className="text-lg font-bold text-foreground text-start">Configure Invitation Mail</Text>
-                <Text className="text-[11px] text-muted-foreground text-start">Customize invitation email & SMS template</Text>
+              <View className="flex-1 min-w-0">
+                <Text className="text-lg font-bold text-foreground text-start" numberOfLines={1}>Configure Invitation Mail</Text>
+                <Text className="text-[11px] text-muted-foreground text-start" numberOfLines={2}>Customize invitation email & SMS template</Text>
               </View>
             </View>
             <TouchableOpacity onPress={onClose} className="p-1 rounded-full bg-muted">
@@ -235,7 +241,10 @@ export const ConfigureInviteTemplateModal: React.FC<ConfigureInviteTemplateModal
                     </View>
 
                     {/* CC / BCC fields */}
-                    <View className="flex-row gap-2 mb-3">
+                    <View
+                      style={{ flexDirection: isNarrowPhone ? 'column' : 'row' }}
+                      className="gap-2 mb-3"
+                    >
                       <View className="flex-1">
                         <Text className="text-xs font-bold text-foreground text-start mb-1">
                           CC (Optional)
@@ -306,7 +315,10 @@ export const ConfigureInviteTemplateModal: React.FC<ConfigureInviteTemplateModal
           </ScrollView>
 
           {/* Footer */}
-          <View className="flex-row items-center justify-end gap-2 pt-3 border-t border-border mt-2">
+          <View
+            style={{ flexDirection: isNarrowPhone ? 'column-reverse' : 'row', alignItems: isNarrowPhone ? 'stretch' : 'center' }}
+            className="justify-end gap-2 pt-3 border-t border-border mt-2"
+          >
             <Button variant="outline" size="sm" onPress={onClose} disabled={submitting}>
               Cancel
             </Button>

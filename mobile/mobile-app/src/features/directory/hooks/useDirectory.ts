@@ -1,5 +1,6 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useFocusEffect } from 'expo-router';
 import { RootState, AppDispatch } from '@/src/store/store';
 import {
   fetchDirectory,
@@ -79,13 +80,16 @@ export const useDirectory = () => {
     [dispatch, activeTab, searchQuery]
   );
 
-  useEffect(() => {
-    // Debounced search / tab change trigger
-    const timer = setTimeout(() => {
-      loadData(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [loadData]);
+  useFocusEffect(
+    useCallback(() => {
+      // Refresh on focus so role assignments saved on another screen appear
+      // immediately. The short delay also debounces search and tab changes.
+      const timer = setTimeout(() => {
+        loadData(1);
+      }, 300);
+      return () => clearTimeout(timer);
+    }, [loadData])
+  );
 
   const handleRefresh = useCallback(() => {
     loadData(1, true);

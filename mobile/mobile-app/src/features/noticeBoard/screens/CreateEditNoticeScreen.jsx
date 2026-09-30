@@ -215,7 +215,7 @@ export default function CreateEditNoticeScreen() {
     if (success === 'createSuccess' || success === 'updateSuccess') {
       clearNoticeSuccess();
       resetFilters();
-      router.push('/(resident)/notices/manage');
+      router.navigate('/(resident)/notices/manage');
     }
   }, [success, clearNoticeSuccess, resetFilters, router]);
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Linking, Platform } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { Text } from '@/components/ui/text';
@@ -9,14 +9,12 @@ import { StatusBadge, StatusVariant } from '@/components/ui/StatusBadge';
 import { SegmentedControl } from '@/components/common/SegmentedControl';
 import { getLocalizedPresetNotes } from '../types/communityNoteTypes';
 import { useCommunityNote, formatExpirationCountdown } from '../hooks/useCommunityNote';
-import { useDirectoryMessaging } from '../hooks/useDirectoryMessaging';
 import { DirectoryQuickMessageSheet } from '../components/DirectoryQuickMessageSheet';
 import { useTranslation } from '@/src/utils/i18n';
-import { Sparkles, Send, Trash2, ThumbsUp, MessageSquare, Phone, Clock } from 'lucide-react-native';
+import { Sparkles, Send, Trash2, ThumbsUp, Phone, Clock } from 'lucide-react-native';
 
 export function AllNotesScreen() {
   const [currentTab, setCurrentTab] = useState<'feed' | 'compose'>('feed');
-  const { onOpenConversation } = useDirectoryMessaging();
   const { t, tRole } = useTranslation();
 
   const {
@@ -33,6 +31,7 @@ export function AllNotesScreen() {
 
   const [quickSheetOpen, setQuickSheetOpen] = useState(false);
   const [selectedMemberForMsg, setSelectedMemberForMsg] = useState<any>(null);
+  const [interestedNoteIds, setInterestedNoteIds] = useState<Set<string>>(new Set());
 
   const charCount = noteText.length;
   const isOverLimit = charCount > 80;
@@ -49,9 +48,15 @@ export function AllNotesScreen() {
     setCurrentTab('feed');
   };
 
-  const handleInterested = async (targetMember: any) => {
+  const handleInterested = (targetMember: any, noteId: string) => {
+    setInterestedNoteIds((current) => new Set(current).add(noteId));
     setSelectedMemberForMsg(targetMember);
     setQuickSheetOpen(true);
+  };
+
+  const handleCall = (phone: string) => {
+    const dialNumber = phone.replace(/[^\d+]/g, '');
+    if (dialNumber) Linking.openURL(`tel:${dialNumber}`).catch(() => {});
   };
 
   const router = useRouter();
@@ -199,6 +204,7 @@ export function AllNotesScreen() {
                 const intercomNum = note.intercomNumber || note.memberData?.intercomNumber;
 
                 const targetUserId = typeof note.userId === 'string' ? note.userId : (note.userId as any)?._id || note._id;
+                const noteId = note._id || note.id || targetUserId;
 
                 const targetMember = note.memberData || {
                   id: targetUserId,
@@ -251,30 +257,21 @@ export function AllNotesScreen() {
                       <Button
                         variant="default"
                         size="sm"
-                        onPress={() => handleInterested(targetMember)}
+                        onPress={() => handleInterested(targetMember, noteId)}
                         leftIcon={ThumbsUp}
                         className="flex-1 h-9.5 rounded-xl bg-primary border border-primary"
                         textClassName="text-xs font-bold text-primary-foreground"
                       >
-                        {t('btn_interested', 'Interested')}
-                      </Button>
-
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onPress={() => onOpenConversation(targetMember as any)}
-                        leftIcon={MessageSquare}
-                        className="flex-1 h-9.5 rounded-xl bg-primary/10 border border-primary/20"
-                        textClassName="text-xs font-bold text-primary"
-                      >
-                        {t('btn_message', 'Message')}
+                        {interestedNoteIds.has(noteId)
+                          ? t('btn_interested_selected', 'Interested ✓')
+                          : t('btn_interested', 'Interested')}
                       </Button>
 
                       {phoneNum ? (
                         <Button
                           variant="outline"
                           size="sm"
-                          onPress={() => Linking.openURL(`tel:${phoneNum}`)}
+                          onPress={() => handleCall(phoneNum)}
                           leftIcon={Phone}
                           className="h-9.5 rounded-xl border-border bg-muted/30 px-3.5"
                           textClassName="text-xs font-semibold text-foreground"

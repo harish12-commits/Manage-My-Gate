@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { TextInput } from '@/components/forms/TextInput';
+import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { StatusVariant } from '@/components/ui/StatusBadge';
 import { ListCard } from '@/components/ui/ListCard';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -39,13 +39,12 @@ export function FullActivityLogsModal({
     <BottomSheet visible={visible} onClose={onClose} title="Full Live Activity Logs">
       <View className="py-2 flex-1 max-h-[80vh]">
         {/* Search Bar */}
-        <View className="mb-3">
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search activity by name, unit, facility..."
-          />
-        </View>
+        <SearchFilterBar
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search activity by name, unit, facility..."
+          className="px-0 py-0 mb-3"
+        />
 
         {/* Header subtitle */}
         <View className="flex-row items-center justify-between mb-3 px-1">

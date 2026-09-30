@@ -274,7 +274,7 @@ export function OfflineSettleSheet({
   const handleDone = () => {
     onClose();
     if (invoice._id) {
-      router.push(`/(resident)/billing/invoice/${invoice._id}` as any);
+      router.navigate(`/(resident)/billing/invoice/${invoice._id}` as any);
     }
   };
 

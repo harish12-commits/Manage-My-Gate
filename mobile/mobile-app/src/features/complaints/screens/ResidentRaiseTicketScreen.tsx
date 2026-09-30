@@ -20,7 +20,6 @@ import {
   Sparkles,
   CheckCircle2,
   AlertTriangle,
-  ArrowLeft,
   X
 } from 'lucide-react-native';
 import { useComplaints } from '../hooks/useComplaints';
@@ -550,38 +549,11 @@ export function ResidentRaiseTicketScreen() {
 
   return (
     <ScreenShell
-      title={t('raise_maintenance_ticket', 'Raise Maintenance Ticket')}
+      title={t('raise_ticket', 'Raise Ticket')}
       subtitle={t('raise_maintenance_ticket_subtitle', 'Report plumbing, electrical, carpentry or common area issues')}
       iconName="PlusCircle"
     >
       <View className="flex-1 bg-background">
-        {/* TOP SUB-HEADER BAR WITH ALIGNED BACK, BADGE & CLOSE */}
-        <View className="flex-row items-center justify-between px-4 py-3 bg-card border-b border-border/60">
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={step > 1 ? handlePrevStep : () => router.back()}
-            className="w-9 h-9 rounded-full bg-muted/60 items-center justify-center"
-            accessibilityRole="button"
-            accessibilityLabel={t('go_back', 'Go back')}
-          >
-            <Icon as={ArrowLeft} size={18} className="text-foreground" />
-          </TouchableOpacity>
-
-          <View className="bg-primary/10 px-3.5 py-1.5 rounded-full border border-primary/20">
-            <Text className="text-xs font-bold text-primary">{t('maintenance_ticket', 'Maintenance Ticket')}</Text>
-          </View>
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => router.back()}
-            className="w-9 h-9 rounded-full bg-muted/60 items-center justify-center"
-            accessibilityRole="button"
-            accessibilityLabel={t('close', 'Close')}
-          >
-            <Icon as={X} size={18} className="text-foreground" />
-          </TouchableOpacity>
-        </View>
-
         {/* 3-STEP PROGRESS BAR (WITHOUT PERCENTAGE TEXT) */}
         <View className="px-4 pt-3 pb-3 bg-card border-b border-border/60">
           <View className="mb-2">
@@ -858,7 +830,7 @@ export function ResidentRaiseTicketScreen() {
                       variant="outline"
                       size="sm"
                       className="flex-1 bg-card border-border"
-                      onPress={() => router.push('/(resident)/complaints/my-tickets' as any)}
+                      onPress={() => router.navigate('/(resident)/complaints/my-tickets' as any)}
                     >
                       View Existing
                     </Button>

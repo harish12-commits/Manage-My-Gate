@@ -3,6 +3,7 @@ import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity, Ale
 import { useRouter } from 'expo-router';
 import { Filter, Users, Mail, Users2, Plus, UserPlus, X } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -174,20 +175,24 @@ export default function UserManagementScreen() {
       loading={false}
       error={error}
       onRetry={refreshUsers}
+      headerRight={
+        <HeaderActionButton
+          onPress={() => setShowInviteModal(true)}
+          icon={UserPlus}
+          label={t('invite_user', 'Invite')}
+          accessibilityRole="button"
+          accessibilityLabel={t('invite_user', 'Invite User')}
+        />
+      }
     >
       <View className="flex-1 bg-background">
-        {/* Search Bar - Premium Float */}
-        <View className="px-4 pt-4 pb-2">
-          <View className="bg-card rounded-2xl shadow-sm border border-border/40 overflow-hidden">
-            <SearchFilterBar
-              searchValue={searchQuery}
-              onSearchChange={setSearchQuery}
-              searchPlaceholder={t('search_users_placeholder', 'Search users, email, unit...')}
-              onFilterPress={() => setShowFilterSheet(true)}
-              activeFilterCount={activeFilterCount}
-            />
-          </View>
-        </View>
+        <SearchFilterBar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder={t('search_users_placeholder', 'Search users, email, unit...')}
+          onFilterPress={() => setShowFilterSheet(true)}
+          activeFilterCount={activeFilterCount}
+        />
 
         {/* Premium Pill Tabs */}
         <View className="pb-3 border-b border-border/30">

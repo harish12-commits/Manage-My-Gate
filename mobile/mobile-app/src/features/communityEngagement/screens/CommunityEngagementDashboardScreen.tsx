@@ -12,7 +12,7 @@ import {
   Plus,
 } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
-import { Button } from '@/components/ui/button';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { Text } from '@/components/ui/text';
 import { KPIDashboardStrip } from '@/components/ui/KPIDashboardStrip';
 import { type KPICardProps } from '@/components/ui/KPICard';
@@ -34,7 +34,7 @@ export function CommunityEngagementDashboardScreen() {
 
   const handleSelectType = (type: EngagementContentType) => {
     setTypeSheetVisible(false);
-    router.push({
+    router.navigate({
       pathname: '/(resident)/community-engagement/create' as any,
       params: { type },
     });
@@ -49,7 +49,7 @@ export function CommunityEngagementDashboardScreen() {
         iconName: 'CheckCircle',
         subtitle: t('live_circulars'),
         onPress: () =>
-          router.push({
+          router.navigate({
             pathname: '/(resident)/community-engagement/ledger' as any,
             params: { tab: 'NOTICES', status: 'Published' },
           }),
@@ -61,7 +61,7 @@ export function CommunityEngagementDashboardScreen() {
         iconName: 'BarChart3',
         subtitle: t('open_for_vote'),
         onPress: () =>
-          router.push({
+          router.navigate({
             pathname: '/(resident)/community-engagement/ledger' as any,
             params: { tab: 'POLLS', status: 'Active' },
           }),
@@ -73,7 +73,7 @@ export function CommunityEngagementDashboardScreen() {
         iconName: 'PenTool',
         subtitle: t('unpublished_drafts'),
         onPress: () =>
-          router.push({
+          router.navigate({
             pathname: '/(resident)/community-engagement/ledger' as any,
             params: { tab: 'NOTICES', status: 'Draft' },
           }),
@@ -85,7 +85,7 @@ export function CommunityEngagementDashboardScreen() {
         iconName: 'AlertTriangle',
         subtitle: t('high_critical_priority'),
         onPress: () =>
-          router.push({
+          router.navigate({
             pathname: '/(resident)/community-engagement/ledger' as any,
             params: { tab: 'NOTICES', priority: 'Critical' },
           }),
@@ -110,16 +110,12 @@ export function CommunityEngagementDashboardScreen() {
       iconName="Megaphone"
       showBackButton={true}
       headerRight={
-        <Button
-          size="sm"
+        <HeaderActionButton
+          icon={Plus}
+          label={t('create_engagement', 'Create Engagement')}
           onPress={() => setTypeSheetVisible(true)}
-          className="bg-emerald-600 active:bg-emerald-700 flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-xl shadow-2xs"
-          accessibilityRole="button"
           accessibilityLabel={t('create_engagement')}
-        >
-          <Plus size={14} color="#ffffff" strokeWidth={2.5} />
-          <Text className="text-xs font-bold text-white">{t('create_engagement', 'Create')}</Text>
-        </Button>
+        />
       }
       loading={loading && !isRefreshing}
       error={error}
@@ -145,7 +141,7 @@ export function CommunityEngagementDashboardScreen() {
         {/* 2. Quick Actions Row */}
         <View className="flex-row gap-3">
           <Pressable
-            onPress={() => router.push('/(resident)/community-engagement/ledger' as any)}
+            onPress={() => router.navigate('/(resident)/community-engagement/ledger' as any)}
             className="flex-1 bg-card border border-border/80 p-3.5 rounded-2xl active:opacity-75 shadow-2xs justify-between min-h-[112px]"
             accessibilityRole="button"
             accessibilityLabel={t('manage_engagements')}
@@ -164,7 +160,7 @@ export function CommunityEngagementDashboardScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => router.push('/(resident)/notices/active-board' as any)}
+            onPress={() => router.navigate('/(resident)/notices/active-board' as any)}
             className="flex-1 bg-card border border-border/80 p-3.5 rounded-2xl active:opacity-75 shadow-2xs justify-between min-h-[112px]"
             accessibilityRole="button"
             accessibilityLabel={t('resident_view')}
@@ -188,7 +184,7 @@ export function CommunityEngagementDashboardScreen() {
           <SectionHeader
             title={t('recent_activity')}
             actionLabel={t('see_all')}
-            onAction={() => router.push('/(resident)/community-engagement/ledger' as any)}
+            onAction={() => router.navigate('/(resident)/community-engagement/ledger' as any)}
           />
 
           {recentEngagements.length === 0 && !loading ? (
@@ -232,7 +228,7 @@ export function CommunityEngagementDashboardScreen() {
                     }}
                     timestamp={item.createdAt}
                     showChevron={true}
-                    onPress={() => router.push(item.route as any)}
+                    onPress={() => router.navigate(item.route as any)}
                   />
                 );
               })}

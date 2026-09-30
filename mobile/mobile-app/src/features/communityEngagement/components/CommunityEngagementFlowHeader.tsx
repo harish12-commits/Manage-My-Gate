@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { ArrowLeft, Bell, BarChart3 } from 'lucide-react-native';
@@ -27,8 +28,11 @@ export const CommunityEngagementFlowHeader: React.FC<CommunityEngagementFlowHead
   const IconComp = isNotice ? Bell : BarChart3;
   const typeLabel = isNotice ? 'Notice' : 'Poll';
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View className="bg-card border-b border-border px-4 pt-3 pb-3 gap-2">
+    <View className="bg-card border-b border-border px-4 pb-3 gap-2"
+      style={{ paddingTop: Math.max(insets.top, 12) }}>
       {/* Top action row */}
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2 flex-1">

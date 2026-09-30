@@ -84,7 +84,7 @@ export function ComplaintLiveActivityWidget({ complaints = [], maintenanceNotice
           </Text>
         </View>
         <Pressable
-          onPress={() => router.push('/(resident)/complaints/my-tickets' as any)}
+          onPress={() => router.navigate('/(resident)/complaints/my-tickets' as any)}
           className="flex-row items-center active:opacity-70"
         >
           <Text className="text-xs font-bold text-primary me-1">View All</Text>

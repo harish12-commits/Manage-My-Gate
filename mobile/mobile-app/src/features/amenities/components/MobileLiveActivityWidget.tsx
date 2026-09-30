@@ -182,7 +182,7 @@ export function MobileLiveActivityWidget() {
       <SectionHeader
         title="Recent Activity"
         actionLabel="View All"
-        onAction={() => router.push('/(resident)/amenities/security-logs' as any)}
+        onAction={() => router.navigate('/(resident)/amenities/security-logs' as any)}
         className="px-0 bg-transparent dark:bg-transparent"
       />
       {activeLogs.length === 0 ? (
@@ -191,7 +191,7 @@ export function MobileLiveActivityWidget() {
           title="No Recent Activity"
           description="Facility entry scans and bookings will appear here."
           actionLabel="View Logs"
-          onAction={() => router.push('/(resident)/amenities/security-logs' as any)}
+          onAction={() => router.navigate('/(resident)/amenities/security-logs' as any)}
         />
       ) : (
         <View className="bg-card p-4 rounded-2xl border border-border/70 shadow-xs">

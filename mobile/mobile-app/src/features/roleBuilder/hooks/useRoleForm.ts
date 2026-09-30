@@ -49,6 +49,20 @@ export const NOTICE_ACTION_GROUPS: Record<string, string[]> = {
     'notices.delete',
     'notices.publish',
     'notices.acknowledge',
+    'polls:create',
+    'polls:update',
+    'polls:delete',
+    'polls:publish',
+    'polls:close',
+    'polls:export',
+    'polls:view_voters',
+    'polls.create',
+    'polls.update',
+    'polls.delete',
+    'polls.publish',
+    'polls.close',
+    'polls.export',
+    'polls.view_voters',
     'manage_notices',
     'dashboard',
     'create',
@@ -68,7 +82,12 @@ export const NOTICE_ACTION_GROUPS: Record<string, string[]> = {
   'notices:polls': [
     'notices:polls',
     'notices.polls',
+    'polls:read',
+    'polls.read',
+    'polls:vote',
+    'polls.vote',
     'polls',
+    'vote_polls',
   ],
 };
 
@@ -77,6 +96,9 @@ export const ALL_NOTICE_ACTIONS: string[] = [
   ...NOTICE_ACTION_GROUPS['notices:active_board'],
   ...NOTICE_ACTION_GROUPS['notices:polls'],
 ];
+
+const normalizePermission = (permission: unknown): string =>
+  String(permission || '').trim().toLowerCase().replace(/\./g, ':');
 
 export const detectInitialAmenityTier = (permissions: string[] = []): string => {
   const amenityPerms = (permissions || []).filter((p) => String(p).toLowerCase().startsWith('amenities:'));
@@ -153,32 +175,6 @@ export const useRoleForm = ({ role, visible, onSave }: UseRoleFormProps) => {
     }
   }, [role, visible, reset]);
 
-const NOTICE_ACTION_GROUPS: Record<string, string[]> = {
-  active_board: ['active_board', 'resident_feed', 'read'],
-  resident_feed: ['active_board', 'resident_feed', 'read'],
-  polls: ['polls', 'community_engagement'],
-  community_engagement: ['polls', 'community_engagement'],
-  manage_notices: ['manage_notices', 'manage_engagement', 'dashboard', 'create', 'update', 'delete', 'publish', 'acknowledge'],
-  manage_engagement: ['manage_notices', 'manage_engagement', 'dashboard', 'create', 'update', 'delete', 'publish', 'acknowledge'],
-  dashboard: ['manage_notices', 'manage_engagement', 'dashboard', 'create', 'update', 'delete', 'publish', 'acknowledge'],
-};
-
-const ALL_NOTICE_ACTIONS = [
-  'active_board',
-  'resident_feed',
-  'polls',
-  'community_engagement',
-  'manage_notices',
-  'manage_engagement',
-  'dashboard',
-  'create',
-  'update',
-  'delete',
-  'publish',
-  'acknowledge',
-  'read',
-];
-
 const getPermAction = (p: any): string => {
   const str = typeof p === 'object' ? String(p.name || p._id || '') : String(p);
   return (str.includes(':') ? str.split(':')[1] : str).toLowerCase().trim();
@@ -191,12 +187,15 @@ const getPermAction = (p: any): string => {
     if (checked) {
       newValue = Array.from(new Set([...currentPermissions, ...groupCodes]));
     } else {
-      const toRemove = new Set(groupCodes);
-      const hasNoticeCodes = groupCodes.some((c) => String(c).toLowerCase().startsWith('notices'));
+      const toRemove = new Set(groupCodes.map(normalizePermission));
+      const hasNoticeCodes = groupCodes.some((c) => {
+        const normalized = normalizePermission(c);
+        return normalized.startsWith('notices:') || normalized.startsWith('polls:');
+      });
       if (hasNoticeCodes) {
-        ALL_NOTICE_ACTIONS.forEach((a) => toRemove.add(a));
+        ALL_NOTICE_ACTIONS.forEach((a) => toRemove.add(normalizePermission(a)));
       }
-      newValue = currentPermissions.filter((code) => !toRemove.has(code));
+      newValue = currentPermissions.filter((code) => !toRemove.has(normalizePermission(code)));
     }
 
     setValue('permissions', newValue, { shouldDirty: true, shouldValidate: true });
@@ -235,24 +234,26 @@ const getPermAction = (p: any): string => {
         normalizedValue === 'notices.manage_notices' ||
         normalizedValue === 'manage_notices'
       ) {
-        const purgeSet = new Set(NOTICE_ACTION_GROUPS['notices:manage_notices']);
-        newValue = currentPermissions.filter((p) => !purgeSet.has(p));
+        const purgeSet = new Set(NOTICE_ACTION_GROUPS['notices:manage_notices'].map(normalizePermission));
+        newValue = currentPermissions.filter((p) => !purgeSet.has(normalizePermission(p)));
       } else if (
         normalizedValue === 'notices:active_board' ||
         normalizedValue === 'notices.active_board' ||
         normalizedValue === 'active_board'
       ) {
-        const purgeSet = new Set(NOTICE_ACTION_GROUPS['notices:active_board']);
-        newValue = currentPermissions.filter((p) => !purgeSet.has(p));
+        const purgeSet = new Set(NOTICE_ACTION_GROUPS['notices:active_board'].map(normalizePermission));
+        newValue = currentPermissions.filter((p) => !purgeSet.has(normalizePermission(p)));
       } else if (
         normalizedValue === 'notices:polls' ||
         normalizedValue === 'notices.polls' ||
         normalizedValue === 'polls'
       ) {
-        const purgeSet = new Set(NOTICE_ACTION_GROUPS['notices:polls']);
-        newValue = currentPermissions.filter((p) => !purgeSet.has(p));
+        const purgeSet = new Set(NOTICE_ACTION_GROUPS['notices:polls'].map(normalizePermission));
+        newValue = currentPermissions.filter((p) => !purgeSet.has(normalizePermission(p)));
       } else {
-        newValue = currentPermissions.filter((p) => p !== permValue);
+        newValue = currentPermissions.filter(
+          (p) => normalizePermission(p) !== normalizePermission(permValue)
+        );
       }
     }
 

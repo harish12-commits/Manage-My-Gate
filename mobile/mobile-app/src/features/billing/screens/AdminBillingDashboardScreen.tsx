@@ -13,7 +13,6 @@ import { SectionHeader } from '@/components/common/SectionHeader';
 import { ListItem } from '@/components/common/ListItem';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { FAB } from '@/components/ui/FAB';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import {
   Clock,
@@ -110,7 +109,7 @@ export function AdminBillingDashboardScreen() {
       iconName: 'AlertCircle',
       variant: 'destructive',
       onPress: () =>
-        router.push({
+        router.navigate({
           pathname: '/(resident)/admin/billing/ledger',
           params: { status: 'UNPAID' },
         } as any),
@@ -122,7 +121,7 @@ export function AdminBillingDashboardScreen() {
       iconName: 'Clock',
       variant: 'warning',
       onPress: () =>
-        router.push({
+        router.navigate({
           pathname: '/(resident)/admin/billing/ledger',
           params: { status: 'VERIFICATION_PENDING' },
         } as any),
@@ -197,7 +196,7 @@ export function AdminBillingDashboardScreen() {
           <Button
             variant="default"
             size="lg"
-            onPress={() => router.push('/(resident)/billing/my-dues' as any)}
+            onPress={() => router.navigate('/(resident)/billing/my-dues' as any)}
             accessibilityRole="button"
             accessibilityLabel="Return to My Dues"
           >
@@ -264,7 +263,7 @@ export function AdminBillingDashboardScreen() {
                 size="sm"
                 className="bg-amber-500/20 border-amber-500/40"
                 onPress={() =>
-                  router.push({
+                  router.navigate({
                     pathname: '/(resident)/admin/billing/ledger',
                     params: { status: 'VERIFICATION_PENDING' },
                   } as any)
@@ -285,7 +284,7 @@ export function AdminBillingDashboardScreen() {
             <SectionHeader
               title="Recent Invoices"
               actionLabel="View All"
-              onAction={() => router.push('/(resident)/admin/billing/ledger' as any)}
+              onAction={() => router.navigate('/(resident)/admin/billing/ledger' as any)}
             />
             {recentTransactions.length === 0 ? (
               <Card className="bg-card border border-border rounded-xl p-4 items-center justify-center mt-2">
@@ -301,7 +300,7 @@ export function AdminBillingDashboardScreen() {
                     title={`${tx.unitNumber || 'Unit'} • ${tx.targetUser || 'Resident'}`}
                     subtitle={`Inv #${tx.invoiceNumber || '—'} • ${tx.status || 'UNPAID'} • ₹${(tx.totalDue || tx.totalAmount || tx.amount || 0).toLocaleString('en-IN')}`}
                     leftIcon={FileText}
-                    onPress={() => router.push('/(resident)/admin/billing/ledger' as any)}
+                    onPress={() => router.navigate('/(resident)/admin/billing/ledger' as any)}
                   />
                 ))}
               </View>
@@ -310,19 +309,6 @@ export function AdminBillingDashboardScreen() {
         </ScrollView>
       )}
 
-      {/* Primary Action: New Assessment Wizard FAB */}
-      {hasDashboardPermission && (
-        <FAB
-          iconName="Plus"
-          label="New Assessment"
-          onPress={() =>
-            router.push({
-              pathname: '/(resident)/admin/billing/assessments',
-              params: { create: 'true' },
-            } as any)
-          }
-        />
-      )}
     </ScreenShell>
   );
 }

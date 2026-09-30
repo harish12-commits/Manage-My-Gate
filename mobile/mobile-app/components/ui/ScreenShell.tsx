@@ -227,10 +227,8 @@ export function ScreenShell({
                 accessibilityHint="Double tap header title to switch active Role or Villa Unit"
               >
                 <Text
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
                   numberOfLines={subtitle ? 1 : 2}
-                  className="text-foreground text-[23px] sm:text-[25px] font-extrabold font-bold tracking-tight leading-tight shrink"
+                  className="text-foreground text-[22px] sm:text-[24px] font-extrabold tracking-tight leading-tight shrink"
                   style={{ fontWeight: 'bold' }}
                 >
                   {translateText(title)}

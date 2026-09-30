@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { Text } from '@/components/ui/text';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { PaginatedList } from '@/components/ui/PaginatedList';
@@ -152,7 +153,7 @@ export default function AdminCommunityPassesScreen() {
       {/* Pending Walk-In Approval Alert Banner */}
       {pendingWalkInCount > 0 && (
         <TouchableOpacity
-          onPress={() => router.push('/(resident)/visitor/admin/walk-in-console' as any)}
+          onPress={() => router.navigate('/(resident)/visitor/admin/walk-in-console' as any)}
           activeOpacity={0.8}
           className="bg-status-warning/15 border border-status-warning/30 p-3 rounded-2xl flex-row items-center justify-between"
           accessibilityRole="button"
@@ -195,17 +196,13 @@ export default function AdminCommunityPassesScreen() {
       title={t('all_community_passes', 'All Community Passes')}
       subtitle={t('master_pass_registry_villa_level_securit', 'Master pass registry & villa-level security filters')}
       headerRight={
-        <Button
-          variant="default"
-          size="sm"
+        <HeaderActionButton
           onPress={() => setTypeSheetOpen(true)}
-          className="flex-row items-center gap-1 px-3 rounded-full bg-emerald-600 active:bg-emerald-700 border-0"
+          icon={Plus}
+          label={t('new_pass', 'New Pass')}
           accessibilityRole="button"
           accessibilityLabel={t('new_pass', 'New Pass')}
-        >
-          <Plus size={14} color="#ffffff" />
-          <Text className="text-xs font-bold text-white">{t('new_pass', 'New Pass')}</Text>
-        </Button>
+        />
       }
     >
       <View className="flex-1 bg-background">
@@ -258,7 +255,7 @@ export default function AdminCommunityPassesScreen() {
           onClose={() => setTypeSheetOpen(false)}
           onSelectType={(type: PassTypeKey) => {
             setTypeSheetOpen(false);
-            router.push({
+            router.navigate({
               pathname: '/(resident)/visitor/admin/create-pass' as any,
               params: { type },
             });

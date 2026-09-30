@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { ChevronDown, Check, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { ChevronDown, Check, CheckCircle2, AlertCircle, Search } from 'lucide-react-native';
 import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
 import { cn } from '../../lib/utils';
 import {
@@ -44,6 +44,10 @@ export interface PhoneInputProps {
   showCount?: boolean;
   helperContainerClassName?: string;
   helperClassName?: string;
+  feedbackContainerClassName?: string;
+  errorClassName?: string;
+  onFocus?: () => void;
+  onBlur?: () => void;
   style?: any;
   helperText?: string;
   /** ISO country used for bare numbers; defaults to community → device → IN. */
@@ -79,6 +83,10 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   showCount = false,
   helperContainerClassName,
   helperClassName,
+  feedbackContainerClassName,
+  errorClassName,
+  onFocus,
+  onBlur,
   style,
   helperText,
   defaultCountry,
@@ -251,10 +259,16 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
               placeholder={placeholder || (typeof examplePhone === 'function' ? examplePhone(selectedCountry.code) : undefined) || '99887 76655'}
               placeholderTextColor={placeholderTextColor || '#737c88'}
               value={nationalNumber}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
+              onFocus={() => {
+                setIsFocused(true);
+                onFocus?.();
+              }}
+              onBlur={() => {
+                setIsFocused(false);
+                onBlur?.();
+              }}
               onChangeText={handleNumberChange}
-              maxLength={selectedCountry.digitsLength}
+              maxLength={maxDigits + 1}
               accessibilityLabel={label}
               testID={testID}
             />
@@ -268,16 +282,16 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
       </View>
 
       {Boolean(error) && (
-        <View className="flex-row items-center mt-1 ms-1 gap-1">
+        <View className={cn('flex-row items-center mt-1 ms-1 gap-1', feedbackContainerClassName)}>
           <AlertCircle size={12} className="text-destructive shrink-0" />
-          <Text className="text-xs text-destructive font-semibold">{error}</Text>
+          <Text className={cn('text-xs text-destructive font-semibold', errorClassName)}>{error}</Text>
         </View>
       )}
 
       {!error && isIncomplete && (
         <View className={cn('flex-row items-center mt-1.5 ms-1 gap-1', helperContainerClassName)}>
           <Text className={cn('text-[11px] text-amber-600 dark:text-amber-400 font-medium', helperClassName)}>
-            Enter {selectedCountry.digitsLength - currentLength} more digit{selectedCountry.digitsLength - currentLength > 1 ? 's' : ''} to complete.
+            Enter {Math.max(0, maxDigits - currentLength)} more digit{Math.max(0, maxDigits - currentLength) !== 1 ? 's' : ''} to complete.
           </Text>
         </View>
       )}
@@ -311,15 +325,20 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
             >
               <Text className="text-base font-bold text-foreground mb-2 px-1">Select Country</Text>
 
-              <RNTextInput
-                className="bg-background border border-border rounded-xl px-3 py-2 text-sm text-foreground mb-3"
-                style={{ outlineStyle: 'none', includeFontPadding: false, textAlignVertical: 'center' } as any}
-                placeholder="Search country or code..."
-                placeholderTextColor="#737c88"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                autoCapitalize="none"
-              />
+              <View className="mb-3 rounded-2xl border border-border/40 bg-card p-2 shadow-sm">
+                <View className="h-11 flex-row items-center rounded-xl border border-border/80 bg-background/70 px-3.5 shadow-2xs">
+                  <Search size={18} className="text-muted-foreground me-2.5" />
+                  <RNTextInput
+                    className="h-full min-w-0 flex-1 p-0 font-sans text-[13px] font-medium text-foreground"
+                    style={{ outlineStyle: 'none', includeFontPadding: false, textAlignVertical: 'center' } as any}
+                    placeholder="Search country or code..."
+                    placeholderTextColor="#737c88"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    autoCapitalize="none"
+                  />
+                </View>
+              </View>
 
               <FlatList
                 data={filteredCountries}

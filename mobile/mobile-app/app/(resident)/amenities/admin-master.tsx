@@ -2,10 +2,9 @@ import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
-import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 import { AmenityMasterCard } from '@/src/features/amenities/components/AmenityMasterCard';
@@ -114,15 +113,12 @@ export default function AdminAmenityMasterScreen() {
       error={error}
       onRetry={loadData}
       headerRight={
-        <Button
-          size="sm"
+        <HeaderActionButton
           onPress={handleOpenCreateModal}
-          className="flex-row items-center gap-1 rounded-full px-3 h-8 bg-emerald-600 active:bg-emerald-700"
+          icon={Plus}
+          label="Add Facility"
           accessibilityLabel="Add New Amenity Facility"
-        >
-          <Plus size={14} color="#ffffff" />
-          <Text className="text-white font-bold text-xs">Add Facility</Text>
-        </Button>
+        />
       }
     >
       <View className="flex-1 bg-background">
@@ -188,7 +184,7 @@ export default function AdminAmenityMasterScreen() {
         onClose={() => setSelectedAmenityDetail(null)}
         amenity={selectedAmenityDetail}
         onEditClick={handleOpenEditModal}
-        onScheduleMaintenanceClick={() => router.push('/(resident)/amenities/maintenance' as any)}
+        onScheduleMaintenanceClick={() => router.navigate('/(resident)/amenities/maintenance' as any)}
       />
 
       {/* Status Toggle Confirmation Modal */}

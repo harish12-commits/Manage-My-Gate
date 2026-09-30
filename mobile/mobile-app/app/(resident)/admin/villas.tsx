@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, ScrollView, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { KPICard } from '@/components/ui/KPICard';
 import { Text } from '@/components/ui/text';
@@ -148,15 +149,13 @@ export default function VillaManagementScreen() {
         fetchStats();
       }}
       headerRight={
-        <TouchableOpacity
+        <HeaderActionButton
           onPress={handleOpenCreateForm}
-          className="flex-row items-center gap-1 bg-emerald-600 active:bg-emerald-700 px-3 py-1.5 rounded-full"
+          icon={Plus}
+          label={t('create_unit', 'Add Unit')}
           accessibilityRole="button"
           accessibilityLabel="Add Unit"
-        >
-          <Plus size={14} color="#ffffff" />
-          <Text className="text-xs font-bold text-white">{t('create_unit', 'Add Unit')}</Text>
-        </TouchableOpacity>
+        />
       }
     >
       <View className="flex-1 bg-background relative">

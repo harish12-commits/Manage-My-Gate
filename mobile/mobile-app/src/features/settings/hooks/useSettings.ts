@@ -58,13 +58,13 @@ export const useSettings = () => {
         } else if (savedTheme === 'system') {
           globalThemeMode = 'system';
           setThemeModeState('system');
-          setColorScheme(systemRNTheme === 'dark' ? 'dark' : 'light');
+          setColorScheme('system');
         } else {
-          // Default to Light (White) theme on fresh install
-          globalThemeMode = 'light';
-          setThemeModeState('light');
-          setColorScheme('light');
-          await storage.setItem('theme_preference', 'light');
+          // Default to system theme on fresh install
+          globalThemeMode = 'system';
+          setThemeModeState('system');
+          setColorScheme('system');
+          await storage.setItem('theme_preference', 'system');
         }
 
         await i18n.initLanguage();
@@ -82,12 +82,7 @@ export const useSettings = () => {
       setThemeModeState(nextMode);
       themeListeners.forEach((fn) => fn(nextMode));
 
-      if (nextMode === 'system') {
-        const effectiveTheme = systemRNTheme === 'dark' ? 'dark' : 'light';
-        setColorScheme(effectiveTheme);
-      } else {
-        setColorScheme(nextMode);
-      }
+      setColorScheme(nextMode);
       try {
         await storage.setItem('theme_preference', nextMode);
       } catch (err) {

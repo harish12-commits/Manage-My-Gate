@@ -82,7 +82,7 @@ export default function AmenityExecutiveDashboardScreen() {
       subtitle: t('amenity_dash_month_sub', 'Wallet, online & cash'),
       iconName: 'IndianRupee',
       variant: 'default',
-      onPress: () => router.push('/(resident)/amenities/ledgers' as any),
+      onPress: () => router.navigate('/(resident)/amenities/ledgers' as any),
     },
     {
       title: t('amenity_dash_today', 'Collected today'),
@@ -96,7 +96,7 @@ export default function AmenityExecutiveDashboardScreen() {
       subtitle: t('amenity_admin_kpi_approvals_sub', 'Approve or reject'),
       iconName: 'Hourglass',
       variant: 'warning',
-      onPress: () => router.push('/(resident)/amenities/admin-bookings' as any),
+      onPress: () => router.navigate('/(resident)/amenities/admin-bookings' as any),
     },
     {
       title: t('amenity_admin_kpi_review', 'Needs decision'),
@@ -104,7 +104,7 @@ export default function AmenityExecutiveDashboardScreen() {
       subtitle: t('amenity_admin_kpi_review_sub', 'No-shows, unpaid, returns'),
       iconName: 'ShieldAlert',
       variant: 'destructive',
-      onPress: () => router.push('/(resident)/amenities/admin-bookings' as any),
+      onPress: () => router.navigate('/(resident)/amenities/admin-bookings' as any),
     },
     {
       title: t('under_maintenance', 'Maintenance'),
@@ -112,7 +112,7 @@ export default function AmenityExecutiveDashboardScreen() {
       subtitle: t('upkeep_tasks', 'Upkeep & Tasks'),
       iconName: 'Wrench',
       variant: 'warning',
-      onPress: () => router.push('/(resident)/amenities/maintenance' as any),
+      onPress: () => router.navigate('/(resident)/amenities/maintenance' as any),
     },
     {
       title: t('amenities_facilities', 'Facilities'),
@@ -120,7 +120,7 @@ export default function AmenityExecutiveDashboardScreen() {
       subtitle: t('open_for_booking', 'Open for booking'),
       iconName: 'Building2',
       variant: 'info',
-      onPress: () => router.push('/(resident)/amenities/admin-master' as any),
+      onPress: () => router.navigate('/(resident)/amenities/admin-master' as any),
     },
   ];
 
@@ -137,7 +137,7 @@ export default function AmenityExecutiveDashboardScreen() {
         <Button
           variant="default"
           size="sm"
-          onPress={() => router.push('/(resident)/amenities/discover' as any)}
+          onPress={() => router.navigate('/(resident)/amenities/discover' as any)}
           className="flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full shadow-2xs"
           accessibilityRole="button"
           accessibilityLabel="Discover Amenities"

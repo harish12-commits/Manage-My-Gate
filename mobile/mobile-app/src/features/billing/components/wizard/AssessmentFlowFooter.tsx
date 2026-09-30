@@ -40,9 +40,10 @@ export const AssessmentFlowFooter: React.FC<AssessmentFlowFooterProps> = ({
       )}
 
       <Button
-        variant="default"
+        variant={isLastStep ? 'default' : 'continue'}
         size="lg"
-        className={`flex-1 bg-primary ${isFirstStep ? 'w-full' : ''}`}
+        className={`flex-1 ${isFirstStep ? 'w-full' : ''}`}
+        textClassName={isLastStep ? undefined : 'text-foreground font-extrabold'}
         onPress={onNext}
         loading={loading}
         disabled={loading}

@@ -385,7 +385,7 @@ export default function NoticeDetailScreen() {
             <Button
               variant="outline"
               size="sm"
-              onPress={() => router.push({
+              onPress={() => router.navigate({
                 pathname: '/(resident)/notices/create',
                 params: { id }
               })}

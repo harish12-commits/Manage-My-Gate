@@ -43,20 +43,20 @@ export const MaintenanceFlowFooter: React.FC<MaintenanceFlowFooterProps> = ({
         ) : null}
 
         <Button
-          variant="default"
+          variant={labelText === 'Continue' ? 'continue' : 'default'}
           onPress={onNext}
           disabled={disabled || loading}
           loading={loading}
-          className="flex-1 h-12 rounded-xl flex-row items-center justify-center gap-2 bg-primary"
+          className="flex-1 h-12 rounded-xl flex-row items-center justify-center gap-2"
           accessibilityLabel={labelText}
         >
-          <Text className="font-bold text-white text-base">
+          <Text className={`font-extrabold text-base ${labelText === 'Continue' ? 'text-foreground' : 'text-white'}`}>
             {labelText}
           </Text>
           {isLastStep ? (
-            <CheckCircle2 size={18} color="#FFFFFF" />
+            <CheckCircle2 size={18} className={labelText === 'Continue' ? 'text-foreground' : 'text-white'} />
           ) : (
-            <ArrowRight size={18} color="#FFFFFF" />
+            <ArrowRight size={18} className={labelText === 'Continue' ? 'text-foreground' : 'text-white'} />
           )}
         </Button>
       </View>

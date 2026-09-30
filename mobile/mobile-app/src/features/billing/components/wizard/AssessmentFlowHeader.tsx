@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -19,6 +20,8 @@ export const AssessmentFlowHeader: React.FC<AssessmentFlowHeaderProps> = ({
   onBack,
   onCancel,
 }) => {
+  const insets = useSafeAreaInsets();
+
   return (
     <View className="flex-row items-center justify-between px-5 py-4 border-b border-border bg-card">
       <View className="flex-row items-center">

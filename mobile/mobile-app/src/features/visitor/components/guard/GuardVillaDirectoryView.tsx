@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Linking, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
-import { TextInput } from '@/components/forms/TextInput';
+import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { ListCard } from '@/components/ui/ListCard';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useVilla } from '@/src/features/villa/hooks/useVilla';
 import { Villa } from '@/src/features/villa/store/villaSlice';
-import { Phone, Search, Building2, User, Home } from 'lucide-react-native';
+import { Phone, Building2, User, Home } from 'lucide-react-native';
 import { useTranslation } from '@/src/utils/i18n';
 
 export const GuardVillaDirectoryView: React.FC = () => {
@@ -89,13 +89,11 @@ export const GuardVillaDirectoryView: React.FC = () => {
 
   const renderHeader = () => (
     <View className="gap-3 mb-3">
-      {/* Search Input */}
-      <TextInput
-        value={search}
-        onChangeText={setSearch}
-        placeholder={t('search_villa_block_or_resident_name', 'Search villa, block, or resident name...')}
-        leftIcon={<Search size={16} className="text-muted-foreground" />}
-        inputClassName="text-xs"
+      <SearchFilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('search_villa_block_or_resident_name', 'Search villa, block, or resident name...')}
+        className="px-0 py-0"
       />
 
       {/* Filter Chips */}

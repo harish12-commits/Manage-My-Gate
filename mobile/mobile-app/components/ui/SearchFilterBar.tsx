@@ -23,7 +23,7 @@ export interface SortOption {
   icon?: any;
 }
 
-const searchFilterBarVariants = cva('w-full flex-col px-4 py-2', {
+const searchFilterBarVariants = cva('w-full flex-col px-4 pt-4 pb-2', {
   variants: {
     variant: {
       default: '',
@@ -139,10 +139,10 @@ export const SearchFilterBar = React.forwardRef<View, SearchFilterBarProps>(
         className={cn(searchFilterBarVariants({ variant }), className)}
         {...props}
       >
-        {/* Single Clean Row: Search Input + Filter Icon Button */}
-        <View className="flex-row items-center gap-2">
+        {/* Shared premium search surface used by every searchable list. */}
+        <View className="flex-row items-center gap-2 rounded-2xl border border-border/40 bg-card p-2 shadow-sm">
           {/* Search input container */}
-          <View className="flex-1 flex-row items-center bg-card border border-border/80 rounded-2xl px-3.5 h-11 text-foreground shadow-2xs">
+          <View className="h-11 flex-1 flex-row items-center rounded-xl border border-border/80 bg-background/70 px-3.5 text-foreground shadow-2xs">
             <Icon
               as={Search}
               size={18}
@@ -156,7 +156,7 @@ export const SearchFilterBar = React.forwardRef<View, SearchFilterBarProps>(
               className={cn(
                 // Search prompts can be much longer than the available phone width.
                 // A compact type scale keeps the full prompt useful instead of clipping it.
-                'flex-1 min-w-0 text-foreground text-[12px] font-sans p-0 bg-transparent h-full',
+                'h-full min-w-0 flex-1 bg-transparent p-0 font-sans text-[13px] font-medium text-foreground',
                 Platform.select({
                   web: 'outline-none',
                 })

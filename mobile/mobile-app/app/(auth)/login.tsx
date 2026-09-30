@@ -1164,13 +1164,13 @@ export default function LoginScreen() {
               <View className="flex-row items-center gap-3.5 w-full">
                 <SocialAuthButton
                   provider="google"
-                  variant="default"
+                  variant="glass"
                   onPress={handleGoogleSignIn}
                   loading={googleLoading}
                   disabled={isSubmittingBasic || isSubmittingPhone}
                 />
                 <AppleSignInButton
-                  variant="default"
+                  variant="glass"
                   disabled={isSubmittingBasic || isSubmittingPhone || googleLoading}
                 />
               </View>
@@ -1210,4 +1210,3 @@ export default function LoginScreen() {
 function cnText(...classes: (string | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }
-

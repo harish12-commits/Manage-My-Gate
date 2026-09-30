@@ -7,7 +7,9 @@ import {
   LayoutChangeEvent,
   Keyboard,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
@@ -21,10 +23,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
-  withSequence,
-  interpolate,
-  Extrapolation,
   runOnJS,
   Easing,
   type SharedValue,
@@ -75,6 +73,7 @@ interface AndroidTabButtonProps {
   item: TabItem;
   isActive: boolean;
   onPress?: () => void;
+  onPressIn?: () => void;
   isDark: boolean;
   isCompact?: boolean;
 }
@@ -85,12 +84,12 @@ const AndroidTabButton: React.FC<AndroidTabButtonProps> = ({
   item,
   isActive,
   onPress,
+  onPressIn,
   isDark,
 }) => {
   const { t, language } = useTranslation();
   const IconComponent = item.icon;
-  const viewAllScale = useSharedValue(1);
-  const isViewAll = item.key === 'view_all';
+  const activeScale = useSharedValue(1);
   const activeColor = isDark ? THEME_ACTIVE_DARK : THEME_ACTIVE_LIGHT;
   const iconColor = isActive ? activeColor : (isDark ? '#94A3B8' : '#64748B');
   const labelColor = isActive ? activeColor : (isDark ? '#94A3B8' : '#64748B');
@@ -100,23 +99,18 @@ const AndroidTabButton: React.FC<AndroidTabButtonProps> = ({
   const tabLineHeight = isNarrowScreen ? 16 : isArabic ? 19 : 17;
   const translatedLabel = t(item.key === 'dashboard' ? 'home' : item.key, item.label);
 
-  // Give the feature catalogue entry a clear, modern response when selected.
   useEffect(() => {
-    viewAllScale.value = isViewAll && isActive
-      ? withSequence(
-          withTiming(1.18, { duration: 110, easing: Easing.out(Easing.quad) }),
-          withSpring(1.05, { damping: 12, stiffness: 260 })
-        )
-      : withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) });
-  }, [isActive, isViewAll, viewAllScale]);
+    activeScale.value = withTiming(isActive ? 1.06 : 1, { duration: 60 });
+  }, [activeScale, isActive]);
 
-  const viewAllAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: viewAllScale.value }],
+  const activeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: activeScale.value }],
   }));
 
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={onPressIn}
       android_ripple={{
         color: isDark ? 'rgba(255, 106, 0, 0.2)' : 'rgba(0, 0, 0, 0.08)',
         borderless: true,
@@ -129,13 +123,14 @@ const AndroidTabButton: React.FC<AndroidTabButtonProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 4,
+        zIndex: 1,
       }}
       accessibilityRole="tab"
       accessibilityState={{ selected: isActive }}
       accessibilityLabel={translatedLabel}
     >
       <Animated.View
-        style={[viewAllAnimatedStyle, {
+        style={[activeAnimatedStyle, {
           alignItems: 'center',
           justifyContent: 'center',
           marginBottom: 3,
@@ -169,70 +164,32 @@ interface InsetTabButtonProps {
   item: TabItem;
   isActive: boolean;
   onPress?: () => void;
+  onPressIn?: () => void;
   isDark: boolean;
-  isCompact: boolean;
 }
 
 const InsetTabButton: React.FC<InsetTabButtonProps> = ({
   item,
   isActive,
   onPress,
+  onPressIn,
   isDark,
-  isCompact,
 }) => {
   const { t, language } = useTranslation();
   const IconComponent = item.icon;
   const pressScale = useSharedValue(1.0);
-  const pressBlur = useSharedValue(0);
-  const labelOpacity = useSharedValue(1.0);
-  const isViewAll = item.key === 'view_all';
   const isArabic = language === 'ar';
   const isNarrowScreen = Dimensions.get('window').width <= 350;
   const tabFontSize = isNarrowScreen ? 12 : isArabic ? 14.5 : 13.5;
   const tabLineHeight = isNarrowScreen ? 16 : isArabic ? 19 : 17;
-  const animatedLabelHeight = isNarrowScreen ? 17 : isArabic ? 20 : 18;
-  const labelHeight = useSharedValue(animatedLabelHeight);
-
-  // Height is constant; no vertical collapsing
-  useEffect(() => {
-    labelOpacity.value = 1.0;
-    labelHeight.value = animatedLabelHeight;
-  }, [animatedLabelHeight, labelHeight, labelOpacity]);
-
-  // Zooming & motion-blur opacity effect on touch
   const animatedIconStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pressScale.value }],
-    opacity: interpolate(pressBlur.value, [0, 1], [isActive ? 1.0 : 0.72, 0.88]),
+    opacity: isActive ? 1 : 0.82,
   }));
 
-  // Animated blur/glow halo behind icon on touch
-  const animatedHaloStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(pressBlur.value, [0, 1], [0, isDark ? 0.70 : 0.45]),
-    transform: [{ scale: interpolate(pressBlur.value, [0, 1], [0.6, 1.4]) }],
-  }));
-
-  const animatedLabelStyle = useAnimatedStyle(() => ({
-    opacity: labelOpacity.value,
-    height: labelHeight.value,
-    marginTop: labelOpacity.value > 0.1 ? 2 : 0,
-    overflow: 'hidden',
-  }));
-
-  // Active state drives zoom and blur glow (for both tap and slide)
   useEffect(() => {
-    if (isActive) {
-      pressScale.value = isViewAll
-        ? withSequence(
-            withTiming(1.34, { duration: 110, easing: Easing.out(Easing.quad) }),
-            withSpring(1.18, { damping: 13, stiffness: 320 })
-          )
-        : withSpring(1.22, { damping: 13, stiffness: 320 });
-      pressBlur.value = withTiming(1, { duration: 100, easing: Easing.out(Easing.quad) });
-    } else {
-      pressScale.value = withSpring(1.0, { damping: 15, stiffness: 280 });
-      pressBlur.value = withTiming(0, { duration: 140, easing: Easing.out(Easing.quad) });
-    }
-  }, [isActive, isViewAll, pressScale, pressBlur]);
+    pressScale.value = withTiming(isActive ? 1.08 : 1, { duration: 60 });
+  }, [isActive, pressScale]);
 
   // Icons & labels: Active uses theme active color; inactive uses clear readable neutral
   const activeColor = isDark ? THEME_ACTIVE_DARK : THEME_ACTIVE_LIGHT;
@@ -243,7 +200,7 @@ const InsetTabButton: React.FC<InsetTabButtonProps> = ({
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={onPress}
+      onPressIn={onPressIn}
       className="flex-1 items-center justify-center h-full select-none z-10"
       accessibilityRole="tab"
       accessibilityState={{ selected: isActive }}
@@ -260,7 +217,7 @@ const InsetTabButton: React.FC<InsetTabButtonProps> = ({
         </Animated.View>
 
         {/* Icon Name: Standard font size underneath */}
-        <Animated.View style={animatedLabelStyle} className="items-center justify-center">
+        <View className="items-center justify-center mt-0.5">
           <Text
             style={{
               color: labelColor,
@@ -276,7 +233,7 @@ const InsetTabButton: React.FC<InsetTabButtonProps> = ({
           >
             {translatedLabel}
           </Text>
-        </Animated.View>
+        </View>
       </View>
     </Pressable>
   );
@@ -295,8 +252,8 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   const { isCompact } = useBottomNavScroll();
 
   // Breadth (width) transition dimensions — height remains constant
-  const FULL_BREADTH = Math.min(SCREEN_WIDTH - 32, 410);
-  const COMPACT_BREADTH = Math.min(SCREEN_WIDTH - 32, 410) * 0.82;
+  const FULL_BREADTH = 230;
+  const COMPACT_BREADTH = 230;
 
   const containerBreadth = useSharedValue(isCompact ? COMPACT_BREADTH : FULL_BREADTH);
 
@@ -361,7 +318,8 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   const barAnimatedStyle = useAnimatedStyle(() => {
     return {
       width: containerBreadth.value,
-      height: 64, // Constant height — no height transition
+      
+                
       transform: [{ translateY: navTranslateY.value }],
     };
   });
@@ -390,26 +348,13 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   const pillScaleX = useSharedValue(1.0);
   const dragStartRatio = useSharedValue(activeIndex);
   const isDraggingShared = useSharedValue(false);
-
-  const FAST_SPRING = useMemo(
-    () => ({
-      damping: 26,
-      stiffness: 420,
-      mass: 0.45,
-    }),
-    []
-  );
-
   // Sync ratio when activeIndex changes
   useEffect(() => {
     if (!isDraggingShared.value) {
-      activeTabRatio.value = withSpring(activeIndex, FAST_SPRING);
-      pillScaleX.value = withSequence(
-        withTiming(1.06, { duration: 50 }),
-        withSpring(1.0, { damping: 16, stiffness: 350 })
-      );
+      activeTabRatio.value = withTiming(activeIndex, { duration: 70 });
+      pillScaleX.value = withTiming(1, { duration: 50 });
     }
-  }, [activeIndex, FAST_SPRING, isDraggingShared, activeTabRatio, pillScaleX]);
+  }, [activeIndex, isDraggingShared, activeTabRatio, pillScaleX]);
 
   const slidingPillStyle = useAnimatedStyle(() => {
     const currentTabW = (containerBreadth.value - horizontalPadding * 2) / TAB_ITEMS.length;
@@ -422,12 +367,15 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
     };
   });
 
+  const androidSlidingPillStyle = useAnimatedStyle(() => {
+    const androidTabWidth = (SCREEN_WIDTH - 8) / TAB_ITEMS.length;
+    return {
+      transform: [{ translateX: activeTabRatio.value * androidTabWidth }],
+    };
+  });
+
   const navigateToTab = useCallback((item: TabItem) => {
-    try {
-      router.navigate(item.route as any);
-    } catch {
-      router.push(item.route as any);
-    }
+    router.replace(item.route as any);
   }, [router]);
 
   const handleTabPress = useCallback((item: TabItem) => {
@@ -436,31 +384,20 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
 
     const targetIdx = TAB_ITEMS.findIndex((t) => t.key === item.key);
     if (targetIdx >= 0) {
-      activeTabRatio.value = withSpring(targetIdx, FAST_SPRING);
-      pillScaleX.value = withSequence(
-        withTiming(1.06, { duration: 50 }),
-        withSpring(1.0, { damping: 16, stiffness: 350 })
-      );
+      activeTabRatio.value = withTiming(targetIdx, { duration: 60 });
     }
 
     setSelectedTabKey(item.key);
     navigateToTab(item);
-  }, [isDraggingShared, selectedTabKey, activeTabRatio, pillScaleX, FAST_SPRING, navigateToTab]);
+  }, [isDraggingShared, selectedTabKey, activeTabRatio, navigateToTab]);
 
   const onDragEnd = useCallback((targetIndex: number) => {
     const item = TAB_ITEMS[targetIndex];
-    if (item) {
+    if (item && item.key !== selectedTabKey) {
       setSelectedTabKey(item.key);
       navigateToTab(item);
     }
-  }, [navigateToTab]);
-
-  const onHoverTab = useCallback((hoveredIndex: number) => {
-    const item = TAB_ITEMS[hoveredIndex];
-    if (item) {
-      setSelectedTabKey(item.key);
-    }
-  }, []);
+  }, [navigateToTab, selectedTabKey]);
 
   const panGesture = useMemo(() => {
     return Gesture.Pan()
@@ -470,7 +407,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
         'worklet';
         isDraggingShared.value = true;
         dragStartRatio.value = activeTabRatio.value;
-        pillScaleX.value = withTiming(1.10, { duration: 40 });
+        pillScaleX.value = withTiming(1.04, { duration: 40 });
       })
       .onUpdate((event) => {
         'worklet';
@@ -479,25 +416,19 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
         const deltaRatio = event.translationX / activeTabW;
         const nextRatio = Math.min(Math.max(dragStartRatio.value + deltaRatio, 0), TAB_ITEMS.length - 1);
         activeTabRatio.value = nextRatio;
-
-        const currentHovered = Math.min(
-          Math.max(Math.round(nextRatio), 0),
-          TAB_ITEMS.length - 1
-        );
-        runOnJS(onHoverTab)(currentHovered);
       })
       .onEnd(() => {
         'worklet';
         isDraggingShared.value = false;
-        pillScaleX.value = withSpring(1.0, { damping: 16, stiffness: 350 });
+        pillScaleX.value = withTiming(1, { duration: 50 });
         const targetIndex = Math.min(
           Math.max(Math.round(activeTabRatio.value), 0),
           TAB_ITEMS.length - 1
         );
-        activeTabRatio.value = withSpring(targetIndex, FAST_SPRING);
+        activeTabRatio.value = withTiming(targetIndex, { duration: 60 });
         runOnJS(onDragEnd)(targetIndex);
       });
-  }, [activeTabRatio, pillScaleX, containerBreadth, dragStartRatio, isDraggingShared, onDragEnd, onHoverTab, FAST_SPRING]);
+  }, [activeTabRatio, pillScaleX, containerBreadth, dragStartRatio, isDraggingShared, onDragEnd]);
 
   const handleLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
@@ -523,86 +454,32 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   const activeCapsuleBg = isDark ? 'rgba(48, 50, 56, 0.92)' : 'rgba(255, 106, 0, 0.12)';
   const activeCapsuleBorder = isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(255, 106, 0, 0.22)';
 
-  // Native Android Navigation Bar (Material 3 dock)
-  // Space below for Android phone default nav buttons (3-button navigation: Back, Home, Recent Apps or gesture bar)
-  // Fits all Android devices (Vivo, Oppo, Samsung, Xiaomi, Motorola, etc.)
-  if (!isIOS) {
-    const androidNavButtonSpace = Math.max(insets.bottom, 8);
-    const androidBarBg = isDark ? '#121316' : '#FFFFFF';
-    const androidBorderTop = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
-
-    return (
-      <Animated.View
-        style={[
-          {
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            width: '100%',
-            backgroundColor: androidBarBg,
-            borderTopWidth: 1,
-            borderTopColor: androidBorderTop,
-            paddingBottom: androidNavButtonSpace,
-            elevation: 8,
-            shadowColor: '#000000',
-            shadowOffset: { width: 0, height: -2 },
-            shadowOpacity: isDark ? 0.35 : 0.06,
-            shadowRadius: 6,
-            zIndex: 50,
-            pointerEvents: isKeyboardVisible ? 'none' : 'box-none',
-          },
-          { transform: [{ translateY: navTranslateY }] }
-        ]}
-      >
-        <View
-          style={{
-            height: 56,
-            width: '100%',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-around',
-            paddingHorizontal: 4,
-          }}
-        >
-          {TAB_ITEMS.map((item) => (
-            <AndroidTabButton
-              key={item.key}
-              item={item}
-              isActive={selectedTabKey === item.key}
-              onPress={() => handleTabPress(item)}
-              isDark={isDark}
-            />
-          ))}
-        </View>
-      </Animated.View>
-    );
-  }
 
   // iOS UI: Preserved untouched floating pill design
   return (
     <View
       style={{
         bottom: bottomInset,
-        width: '100%',
+        
         pointerEvents: isKeyboardVisible ? 'none' : 'box-none',
       }}
-      className="absolute left-0 right-0 items-center justify-center px-4 z-50"
+      className="absolute left-0 right-0 items-center justify-center z-50"
     >
-      <View style={{ width: '100%', maxWidth: 410, alignItems: 'center' }}>
+      <View style={{ width: 230, alignItems: 'center' }}>
         <GestureDetector gesture={panGesture}>
           <Animated.View
             onLayout={handleLayout}
             style={[
               {
-                height: 64,
+                
+                height: 56,
                 overflow: 'hidden',
-                backgroundColor: containerBg,
+                backgroundColor: isDark ? 'rgba(16, 17, 20, 0.65)' : 'rgba(255, 255, 255, 0.75)',
                 borderColor: containerBorder,
                 borderTopColor: containerBorderTop,
                 borderBottomColor: containerBorderBottom,
                 borderWidth: 1.2,
-                borderRadius: 36,
+                borderRadius: 28,
                 elevation: isDark ? 12 : 8,
                 shadowColor: '#000000',
                 shadowOffset: { width: 0, height: 6 },
@@ -611,8 +488,31 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
               },
               barAnimatedStyle,
             ]}
-            className="px-1.5 flex-row items-center justify-between relative overflow-hidden bg-white dark:bg-[#101114]"
+            className="px-1.5 flex-row items-center justify-between relative overflow-hidden"
           >
+            <BlurView
+              intensity={isDark ? 60 : 80}
+              tint={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFillObject}
+            />
+            {containerWidth > 0 && (
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  {
+                    position: 'absolute',
+                    left: horizontalPadding,
+                    top: 4,
+                    bottom: 4,
+                    borderRadius: 24,
+                    backgroundColor: activeCapsuleBg,
+                    borderColor: activeCapsuleBorder,
+                    borderWidth: 1,
+                  },
+                  slidingPillStyle,
+                ]}
+              />
+            )}
             {/* Subtle Specular Top Highlight Line (Dark mode only) */}
             {isDark && (
               <View
@@ -636,8 +536,8 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
                 item={item}
                 isActive={selectedTabKey === item.key}
                 onPress={() => handleTabPress(item)}
+                onPressIn={() => router.prefetch(item.route as any)}
                 isDark={isDark}
-                isCompact={isCompact}
               />
             ))}
           </Animated.View>

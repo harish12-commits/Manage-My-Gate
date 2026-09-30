@@ -8,10 +8,10 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { InviteStaffVendorSheet } from '../components/InviteStaffVendorSheet';
 import { Users, Phone, MessageSquare, Edit3, Trash2, UserPlus, Shield, Wrench } from 'lucide-react-native';
 import { technicianService, TechnicianData } from '../services/technicianService';
-import { Button } from '@/components/ui/button';
 import { getStatusTabStyle } from '@/components/ui/statusTabColors';
 
 const DEFAULT_DIRECTORY: TechnicianData[] = [
@@ -183,19 +183,15 @@ export function StaffVendorDirectoryScreen() {
       iconName="Users"
       loading={isLoading && technicians.length === 0}
       headerRight={
-        <Button
-          size="sm"
+        <HeaderActionButton
+          icon={UserPlus}
+          label="Add Staff"
           onPress={() => {
             setEditingTechnician(null);
             setShowInviteSheet(true);
           }}
-          className="bg-emerald-600 active:bg-emerald-700 flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
-          accessibilityRole="button"
           accessibilityLabel="Add Staff"
-        >
-          <Icon as={UserPlus} size={14} className="text-white" />
-          <Text className="text-xs font-bold text-white">Add Staff</Text>
-        </Button>
+        />
       }
     >
       <View className="flex-1 bg-background">

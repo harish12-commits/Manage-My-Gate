@@ -107,7 +107,7 @@ export function ComplaintQuickNavHub({ searchQuery = '', onFeedbackPress }: Comp
             return (
               <Pressable
                 key={item.id}
-                onPress={() => router.push(item.route as any)}
+                onPress={() => router.navigate(item.route as any)}
                 className="w-[31%] bg-card p-3 rounded-2xl border border-border items-center justify-center active:opacity-75 shadow-xs relative"
               >
                 <View className={`w-11 h-11 rounded-2xl ${item.colorBg} items-center justify-center mb-2`}>

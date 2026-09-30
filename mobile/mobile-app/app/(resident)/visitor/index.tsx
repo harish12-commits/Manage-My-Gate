@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenShell } from '@/components/ui/ScreenShell';
-import { Text } from '@/components/ui/text';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { KPIDashboardStrip } from '@/components/ui/KPIDashboardStrip';
 import { type KPICardProps } from '@/components/ui/KPICard';
 import { ActionGrid, type ActionGridItem } from '@/components/ui/ActionGrid';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { EmptyState } from '@/components/feedback/EmptyState';
-import { Button } from '@/components/ui/button';
 import { FAB } from '@/components/ui/FAB';
 import { VisitorPassCard } from '@/src/features/visitor/components/VisitorPassCard';
 import { VisitorInvitationTypeSheet } from '@/src/features/visitor/components/shared/VisitorInvitationTypeSheet';
@@ -48,7 +47,7 @@ export default function VisitorDashboardScreen() {
 
   const handleSelectType = (type: PassTypeKey) => {
     setInviteSheetOpen(false);
-    router.push({ pathname: '/(resident)/visitor/invite' as any, params: { type } });
+    router.navigate({ pathname: '/(resident)/visitor/invite' as any, params: { type } });
   };
 
   const mappedRecentPasses = useMemo(() => {
@@ -138,17 +137,13 @@ export default function VisitorDashboardScreen() {
       error={dashboard?.status === 'failed' ? (dashboard?.error || 'Failed to load dashboard data.') : null}
       onRetry={loadData}
       headerRight={
-        <Button
-          variant="default"
-          size="sm"
+        <HeaderActionButton
           onPress={() => setInviteSheetOpen(true)}
-          className="flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full shadow-2xs bg-emerald-600 active:bg-emerald-700 border-0"
+          icon={Plus}
+          label={t('invite_visitor', 'Invite')}
           accessibilityRole="button"
           accessibilityLabel="Invite Visitor"
-        >
-          <Plus size={14} color="#ffffff" strokeWidth={2.4} />
-          <Text className="text-xs font-bold text-white">{t('invite_visitor', 'Invite')}</Text>
-        </Button>
+        />
       }
     >
       <ScrollView
@@ -167,7 +162,7 @@ export default function VisitorDashboardScreen() {
         <SectionHeader
           title={t('recent_activity', 'Recent Activity')}
           actionLabel={t('view_all', 'View All')}
-          onAction={() => router.push('/(resident)/visitor/history' as any)}
+          onAction={() => router.navigate('/(resident)/visitor/history' as any)}
           className="px-0 bg-transparent dark:bg-transparent"
         />
 

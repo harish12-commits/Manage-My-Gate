@@ -290,7 +290,7 @@ export function BillingLedgerScreen() {
           <Button
             variant="default"
             size="lg"
-            onPress={() => router.push('/(resident)/billing/my-dues' as any)}
+            onPress={() => router.navigate('/(resident)/billing/my-dues' as any)}
             accessibilityRole="button"
             accessibilityLabel="Return to My Dues"
           >

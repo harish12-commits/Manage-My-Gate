@@ -508,7 +508,13 @@ export default function ProfileScreen() {
           setPendingNewEmail('');
           setEmailOtpError(null);
         }
-        setTimeout(() => setProfileSuccess(null), 3500);
+        
+        // Strictly move to main dashboard after a short delay to show success toast
+        setTimeout(() => {
+          setProfileSuccess(null);
+          router.replace('/(resident)/dashboard' as any);
+        }, 800);
+        
         return true;
       } else {
         const parsed = parseBackendError(res.payload, t('failed_to_update_profile', 'Failed to update profile'));
@@ -655,16 +661,6 @@ export default function ProfileScreen() {
       scrollable={false}
       showBackButton={true}
       onBackPress={handleBack}
-      headerRight={
-        <Pressable
-          onPress={() => router.push('/(resident)/settings' as any)}
-          className="size-10 rounded-full bg-secondary/80 dark:bg-secondary/60 border border-border/70 items-center justify-center active:bg-secondary shadow-2xs"
-          accessibilityRole="button"
-          accessibilityLabel={t('app_settings', 'Settings')}
-        >
-          <Settings size={17} className="text-foreground" strokeWidth={2.2} />
-        </Pressable>
-      }
     >
       <ScrollView
         className="flex-1"
@@ -686,8 +682,6 @@ export default function ProfileScreen() {
           isAvatarLoading={avatarUploading}
           onAvatarPress={() => setShowPhotoOptions(true)}
           onUnitPress={isResidentRole ? () => setVillaModalOpen(true) : undefined}
-          allowCalls={allowCalls}
-          onAllowCallsChange={setAllowCalls}
         />
 
         {/* Section: Organisation, Role & Villa Switching */}
@@ -1214,12 +1208,12 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
 
-                {/* Compact Category Tabs: Sports, Tech, Arts, Food, Lifestyle */}
+                {/* Category Tabs: Sports, Tech, Arts, Food, Lifestyle */}
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  contentContainerClassName="pe-2 gap-1.5"
-                  className="flex-row pb-0.5"
+                  contentContainerClassName="pe-4 gap-2"
+                  className="flex-row pb-2"
                 >
                   {INTEREST_CATEGORIES.map((cat) => {
                     const isActive = activeInterestCategory === cat.id;
@@ -1227,13 +1221,13 @@ export default function ProfileScreen() {
                       <Pressable
                         key={cat.id}
                         onPress={() => setActiveInterestCategory(cat.id)}
-                        className={`px-2.5 py-1 rounded-lg border me-1 ${
+                        className={`px-4 py-1.5 rounded-xl border me-1 ${
                           isActive
                             ? 'bg-primary border-primary'
                             : 'bg-card border-border/80 active:bg-secondary/60'
                         }`}
                       >
-                        <Text className={`text-[11px] font-bold ${isActive ? 'text-white' : 'text-foreground'}`}>
+                        <Text className={`text-sm font-bold ${isActive ? 'text-white' : 'text-foreground'}`}>
                           {cat.name}
                         </Text>
                       </Pressable>
@@ -1241,8 +1235,8 @@ export default function ProfileScreen() {
                   })}
                 </ScrollView>
 
-                {/* Compact Items in Active Category */}
-                <View className="flex-row flex-wrap gap-1.5 pt-0.5">
+                {/* Items in Active Category */}
+                <View className="flex-row flex-wrap gap-2 pt-1">
                   {activeCategoryItems.map((item) => {
                     const isSelected = currentInterests.some(
                       (ci) => ci.toLowerCase() === item.toLowerCase()
@@ -1251,18 +1245,18 @@ export default function ProfileScreen() {
                       <Pressable
                         key={item}
                         onPress={() => handleToggleInterest(item)}
-                        className={`flex-row items-center px-2 py-1 rounded-lg border active:opacity-80 shadow-2xs ${
+                        className={`flex-row items-center px-3 py-1.5 rounded-xl border active:opacity-80 shadow-2xs ${
                           isSelected
                             ? 'bg-primary border-primary'
                             : 'bg-card border-border/70 active:bg-secondary/60'
                         }`}
                       >
                         {isSelected ? (
-                          <Check size={11} className="text-white me-1" />
+                          <Check size={14} className="text-white me-1.5" />
                         ) : (
-                          <Plus size={11} className="text-muted-foreground me-1" />
+                          <Plus size={14} className="text-muted-foreground me-1.5" />
                         )}
-                        <Text className={`text-[11px] ${isSelected ? 'text-white font-semibold' : 'text-foreground font-medium'}`}>
+                        <Text className={`text-[13px] ${isSelected ? 'text-white font-semibold' : 'text-foreground font-medium'}`}>
                           {item}
                         </Text>
                       </Pressable>

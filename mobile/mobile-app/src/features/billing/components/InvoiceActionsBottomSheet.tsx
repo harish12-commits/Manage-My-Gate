@@ -438,7 +438,7 @@ export function InvoiceActionsBottomSheet({
               leftIcon={FileText}
               onPress={() => {
                 onClose();
-                router.push(`/(resident)/billing/invoice/${invoice._id || invoice.invoiceNumber}` as any);
+                router.navigate(`/(resident)/billing/invoice/${invoice._id || invoice.invoiceNumber}` as any);
               }}
               accessibilityRole="button"
               accessibilityLabel="View Full Invoice Statement and Itemized Breakdown"

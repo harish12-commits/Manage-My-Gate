@@ -154,23 +154,27 @@ export function AdminComplaintManagementScreen() {
           </View>
 
           {/* VIEW FEEDBACK & APP ISSUES BUTTON BAR */}
-          <View className="px-4 py-1 flex-row items-center justify-end gap-2">
+          <View className="px-4 py-2 flex-row items-stretch gap-2">
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => router.push('/(resident)/complaints/issue-reports' as any)}
-              className="bg-rose-500/10 border border-rose-500/30 px-3 py-2 rounded-xl flex-row items-center justify-center gap-1.5"
+              onPress={() => router.navigate('/(resident)/complaints/issue-reports' as any)}
+              className="flex-1 min-w-0 min-h-11 bg-rose-500/10 border border-rose-500/30 px-2 py-2 rounded-xl flex-row items-center justify-center gap-1.5"
             >
-              <Icon as={AlertCircle} size={15} className="text-rose-500" />
-              <Text className="text-xs font-bold text-rose-600 dark:text-rose-400 font-sans">App Issues</Text>
+              <Icon as={AlertCircle} size={16} className="text-rose-500 shrink-0" />
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} className="text-xs font-bold text-rose-600 dark:text-rose-400 font-sans text-center">
+                App Issues
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setShowRatingsSheet(true)}
-              className="bg-amber-500/10 border border-amber-500/30 px-3 py-2 rounded-xl flex-row items-center justify-center gap-1.5"
+              className="flex-1 min-w-0 min-h-11 bg-amber-500/10 border border-amber-500/30 px-2 py-2 rounded-xl flex-row items-center justify-center gap-1.5"
             >
-              <Icon as={Star} size={15} className="text-amber-500" />
-              <Text className="text-xs font-bold text-amber-600 dark:text-amber-400 font-sans">Ratings & Feedback</Text>
+              <Icon as={Star} size={16} className="text-amber-500 shrink-0" />
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} className="text-xs font-bold text-amber-600 dark:text-amber-400 font-sans text-center">
+                Ratings & Feedback
+              </Text>
             </TouchableOpacity>
           </View>
 

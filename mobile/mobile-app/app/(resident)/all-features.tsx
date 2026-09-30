@@ -107,7 +107,7 @@ export default function AllFeaturesScreen() {
     
     if (feature && feature.route) {
       const targetRoute = feature.route.endsWith('/resident-passes') ? '/(resident)/visitor' : feature.route;
-      router.push(targetRoute as any);
+      router.navigate(targetRoute as any);
     }
   };
 
@@ -145,14 +145,12 @@ export default function AllFeaturesScreen() {
       >
         <View className="gap-4 pb-8 max-w-md mx-auto w-full">
           {/* Search All Features Bar */}
-          <View className="bg-card rounded-2xl shadow-sm border border-border/40 overflow-hidden">
-            <SearchFilterBar
-              searchValue={searchQuery}
-              onSearchChange={setSearchQuery}
-              searchPlaceholder={t('search_all_features', 'Search all features...')}
-              className="px-0 py-0 h-12"
-            />
-          </View>
+          <SearchFilterBar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder={t('search_all_features', 'Search all features...')}
+            className="px-0 py-0"
+          />
 
           {/* Filter Pills */}
           {featureCatalog && featureCatalog.length > 0 && (

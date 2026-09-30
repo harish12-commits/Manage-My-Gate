@@ -70,22 +70,22 @@ export const AmenityBookingFlowFooter: React.FC<AmenityBookingFlowFooterProps> =
         ) : null}
 
         <Button
-          variant="default"
+          variant={labelText === 'Continue' ? "continue" : "default"}
           onPress={onNext}
           disabled={disabled || loading}
           loading={loading}
           className="flex-1 h-12 rounded-xl flex-row items-center justify-center gap-2"
           accessibilityLabel={labelText}
         >
-          <Text className="font-bold text-primary-foreground text-base">
+          <Text className={`font-extrabold text-base ${labelText === 'Continue' ? 'text-foreground' : 'text-primary-foreground'}`}>
             {labelText}
           </Text>
           {isHoldStep ? (
-            <Lock size={16} className="text-primary-foreground" />
+            <Lock size={16} className={labelText === 'Continue' ? 'text-foreground' : 'text-primary-foreground'} />
           ) : isLastStep ? (
-            <CheckCircle2 size={18} className="text-primary-foreground" />
+            <CheckCircle2 size={18} className={labelText === 'Continue' ? 'text-foreground' : 'text-primary-foreground'} />
           ) : (
-            <ArrowRight size={18} className="text-primary-foreground" />
+            <ArrowRight size={18} className={labelText === 'Continue' ? 'text-foreground' : 'text-primary-foreground'} />
           )}
         </Button>
       </View>

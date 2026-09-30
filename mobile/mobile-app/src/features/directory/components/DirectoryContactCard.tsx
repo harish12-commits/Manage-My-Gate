@@ -1,21 +1,17 @@
 import React from 'react';
-import { View, Linking } from 'react-native';
+import { View, Linking, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
-import { Button } from '@/components/ui/button';
 import { ListCard } from '@/components/ui/ListCard';
 import { StatusVariant } from '@/components/ui/StatusBadge';
 import { useTranslation, i18n } from '@/src/utils/i18n';
 import { DirectoryMember } from '../types/directoryTypes';
-import { Phone, MessageSquare, Send, Mail } from 'lucide-react-native';
+import { Phone, Mail } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 
 export interface DirectoryContactCardProps {
   member: DirectoryMember;
   currentUserId?: string;
   onCall?: (phone: string) => void;
-  onIntercom?: (intercom: string) => void;
-  onQuickMessage?: (member: DirectoryMember) => void;
-  onOpenConversation?: (member: DirectoryMember) => void;
   className?: string;
 }
 
@@ -23,9 +19,6 @@ export const DirectoryContactCard = ({
   member,
   currentUserId,
   onCall,
-  onIntercom,
-  onQuickMessage,
-  onOpenConversation,
   className,
 }: DirectoryContactCardProps) => {
   const { t } = useTranslation();
@@ -51,13 +44,7 @@ export const DirectoryContactCard = ({
     if (onCall && member.phone) {
       onCall(member.phone);
     } else if (member.phone) {
-      Linking.openURL(`tel:${member.phone}`);
-    }
-  };
-
-  const handleIntercomPress = () => {
-    if (onIntercom && member.intercomNumber) {
-      onIntercom(member.intercomNumber);
+      Linking.openURL(`tel:${member.phone.replace(/[^\d+]/g, '')}`).catch(() => {});
     }
   };
 
@@ -71,11 +58,6 @@ export const DirectoryContactCard = ({
       ? `${member.unitNumber} • ${cleanDesignation}`
       : member.unitNumber
     : cleanDesignation;
-
-  const canMessage = member.allowDirectoryMessages !== false;
-  const canCall = Boolean(member.phone);
-  const intercomUnit = member.intercomNumber || (hasUnit ? member.unitNumber!.replace(/[^0-9]/g, '') : '');
-  const canIntercom = Boolean(intercomUnit);
 
   return (
     <ListCard
@@ -96,9 +78,23 @@ export const DirectoryContactCard = ({
       {(member.phone || member.email) && (
         <View className="gap-1.5 pt-2.5 mt-2.5 border-t border-border/30">
           {member.phone ? (
-            <View className="flex-row items-center gap-2">
-              <Phone size={13} className="text-muted-foreground shrink-0" />
-              <Text className="text-xs font-semibold text-foreground tracking-wide">{member.phone}</Text>
+            <View className="flex-row items-center justify-between gap-3">
+              <View className="flex-row items-center gap-2 flex-1 min-w-0">
+                <Phone size={13} className="text-muted-foreground shrink-0" />
+                <Text className="text-xs font-semibold text-foreground tracking-wide" numberOfLines={1}>
+                  {member.phone}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={handlePhonePress}
+                activeOpacity={0.75}
+                className="h-9 px-3 rounded-xl border border-primary/30 bg-primary/10 flex-row items-center justify-center gap-1.5"
+                accessibilityRole="button"
+                accessibilityLabel={`${t('action_call', 'Call')} ${member.name}`}
+              >
+                <Phone size={14} className="text-primary" />
+                <Text className="text-xs font-bold text-primary">{t('action_call', 'Call')}</Text>
+              </TouchableOpacity>
             </View>
           ) : null}
 
@@ -113,38 +109,6 @@ export const DirectoryContactCard = ({
         </View>
       )}
 
-      {/* Action Row */}
-      {(canCall || canIntercom) && (
-        <View className="flex-row items-center gap-2 pt-3 mt-2.5 border-t border-border/40 w-full">
-          {/* Call CTA */}
-          {canCall && (
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={handlePhonePress}
-              leftIcon={Phone}
-              className="flex-1 h-9.5 rounded-xl border-border bg-muted/30 px-2"
-              textClassName="text-xs font-semibold text-foreground"
-            >
-              {t('action_call', 'Call')}
-            </Button>
-          )}
-
-          {/* Intercom CTA */}
-          {canIntercom && (
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={() => (onIntercom ? onIntercom(intercomUnit) : handleIntercomPress())}
-              leftIcon={MessageSquare}
-              className="flex-1 h-9.5 rounded-xl border-border bg-muted/30 px-2"
-              textClassName="text-xs font-semibold text-foreground"
-            >
-              #{intercomUnit}
-            </Button>
-          )}
-        </View>
-      )}
     </ListCard>
   );
 };

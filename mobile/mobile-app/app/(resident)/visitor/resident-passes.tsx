@@ -128,7 +128,7 @@ export default function ResidentPassesScreen() {
 
   const handleSelectType = (type: PassTypeKey) => {
     setInviteSheetOpen(false);
-    router.push({ pathname: '/(resident)/visitor/invite' as any, params: { type } });
+    router.navigate({ pathname: '/(resident)/visitor/invite' as any, params: { type } });
   };
 
 
@@ -211,7 +211,7 @@ export default function ResidentPassesScreen() {
       {/* Pending Walk-In Approval Alert Banner */}
       {pendingWalkInCount > 0 ? (
         <TouchableOpacity
-          onPress={() => router.push('/(resident)/visitor/walk-ins' as any)}
+          onPress={() => router.navigate('/(resident)/visitor/walk-ins' as any)}
           activeOpacity={0.8}
           className="bg-status-warning/15 border border-status-warning/30 p-3 rounded-2xl flex-row items-center justify-between"
           accessibilityRole="button"

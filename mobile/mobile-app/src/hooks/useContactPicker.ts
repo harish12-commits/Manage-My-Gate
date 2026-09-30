@@ -49,27 +49,33 @@ export const useContactPicker = () => {
     if (!isContactPickerSupported) return null;
     try {
       if (!(await ensurePermission())) return null;
-      const contact = await loadContacts().presentContactPickerAsync();
+      const Contacts = loadContacts();
+      const contact = await Contacts.Contact.presentPicker();
       if (!contact) return null;
+
+      const [fullName, contactPhones, contactEmails] = await Promise.all([
+        contact.getFullName(),
+        contact.getPhones(),
+        contact.getEmails(),
+      ]);
 
       const seen = new Set<string>();
       const phones: ContactPhoneOption[] = [];
-      for (const pn of contact.phoneNumbers || []) {
-        const raw = pn.number || pn.digits || '';
+      for (const pn of contactPhones || []) {
+        const raw = pn.number || '';
         if (!raw.trim()) continue;
-        const parsed = parsePhone(raw, pn.countryCode?.toUpperCase());
+        const parsed = parsePhone(raw);
         const phone = parsed.e164 || raw.replace(/[^\d+]/g, '');
         if (seen.has(phone)) continue;
         seen.add(phone);
         phones.push({ phone, display: parsed.e164 ? formatPhoneDisplay(parsed.e164) : raw, label: pn.label });
       }
 
-      const name =
-        contact.name?.trim() ||
-        [contact.firstName, contact.middleName, contact.lastName].filter(Boolean).join(' ').trim() ||
-        contact.company?.trim() ||
-        '';
-      return { name, email: contact.emails?.[0]?.email, phones };
+      return {
+        name: fullName?.trim() || '',
+        email: contactEmails?.[0]?.address,
+        phones,
+      };
     } catch (err) {
       Alert.alert('Could not open contacts', 'Please type the details manually.');
       return null;
