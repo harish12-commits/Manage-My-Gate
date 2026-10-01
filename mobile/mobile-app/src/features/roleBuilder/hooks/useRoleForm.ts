@@ -111,7 +111,12 @@ export const useRoleForm = ({ role, visible, onSave }: UseRoleFormProps) => {
   };
 
   const onSubmit = async (data: RoleData) => {
-    await onSave(data);
+    const finalData = {
+      ...data,
+      permissions: getValues('permissions') || [],
+      integrationMappings: getValues('integrationMappings') || {},
+    };
+    await onSave(finalData);
   };
 
   return {

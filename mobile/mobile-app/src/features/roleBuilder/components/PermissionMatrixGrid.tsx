@@ -132,30 +132,9 @@ const PermissionMatrixGrid = ({
       {categories.map((category) => {
         let perms = [...(normalizedGroupedPermissions[category] || [])];
 
-        if (category === 'complaints') {
-          const allowed = ['dashboard', 'raise_ticket', 'complaint_management', 'track_requests', 'staff'];
-          perms = perms.filter((p) => {
-            const permName = p.name || p.code || p._id || '';
-            const action = permName.includes(':') ? permName.split(':')[1] : permName.includes('.') ? permName.split('.')[1] : permName;
-            return allowed.includes(action.toLowerCase());
-          });
-        }
 
-        if (category === 'notices') {
-          const allowed = ['active_board', 'polls', 'manage_notices'];
-          perms = perms.filter((p) => {
-            const permName = p.name || p.code || p._id || '';
-            const action = permName.includes(':') ? permName.split(':')[1] : permName.includes('.') ? permName.split('.')[1] : permName;
-            return allowed.includes(action.toLowerCase());
-          });
-          const existingActions = perms.map((p) => {
-            const name = p.name || p.code || p._id || '';
-            return name.includes(':') ? name.split(':')[1] : (name.includes('.') ? name.split('.')[1] : name);
-          });
-          if (!existingActions.includes('active_board')) perms.push({ name: 'notices:active_board' });
-          if (!existingActions.includes('polls')) perms.push({ name: 'notices:polls' });
-          if (!existingActions.includes('manage_notices')) perms.push({ name: 'notices:manage_notices' });
-        }
+
+
 
         const groupCodes = perms.map((p) => p.name || p.code || p._id || '');
         const selectedGroupCount = perms.filter((p) => isPermissionSelected(p, selectedIds)).length;

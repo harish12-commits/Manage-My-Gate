@@ -170,16 +170,9 @@ export const useQuickActions = () => {
         // top-up is always a valid resident & admin feature.
         'digital_wallet': ['billing', 'amenities', 'wallet'],
         'financial_billing': ['billing'],
-        'administration_security': ['administration_security'],
       };
       
-      const itemToModuleMap: Record<string, string[]> = {
-        'admin_users': ['administration_security', 'users'],
-        'admin_villas': ['administration_security', 'villas'],
-        'admin_role_builder': ['administration_security', 'roles'],
-        'admin_integrations': ['administration_security', 'integrations'],
-        'admin_audit_logs': ['administration_security']
-      };
+      const itemToModuleMap: Record<string, string[]> = {};
       
       baseCatalog = baseCatalog.map(category => {
         let requiredCategoryModules: string[] | undefined = categoryToModuleMap[category.categoryKey];
