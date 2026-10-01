@@ -11,6 +11,7 @@ import Animated, {
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { SearchFilterBar } from '../ui/SearchFilterBar';
 import CustomiseAvailableZone from './CustomiseAvailableZone';
 import { useAuth } from '../../src/features/auth/hooks/useAuth';
 import { isFeatureAllowedForUser, getDefaultQuickActionsForUser } from '../../src/utils/rbac';
@@ -49,11 +50,21 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const availableFeaturesForUser = useMemo(() => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const rawAvailableFeaturesForUser = useMemo(() => {
     return (availableFeatures || ALL_AVAILABLE_FEATURES).filter((item: any) =>
       isFeatureAllowedForUser(item, user)
     );
   }, [availableFeatures, user]);
+
+  const availableFeaturesForUser = useMemo(() => {
+    if (!searchQuery) return rawAvailableFeaturesForUser;
+    const lowerQ = searchQuery.toLowerCase();
+    return rawAvailableFeaturesForUser.filter((f) => 
+      f.name.toLowerCase().includes(lowerQ) || (f.subtitle && f.subtitle.toLowerCase().includes(lowerQ))
+    );
+  }, [rawAvailableFeaturesForUser, searchQuery]);
 
   const defaultRoleQuickActions = useMemo(() => {
     return getDefaultQuickActionsForUser(user).slice(0, MAX_QUICK_ACTIONS);
@@ -159,23 +170,29 @@ export const CustomiseSheetModal: React.FC<CustomiseSheetModalProps> = ({
                 </View>
               </GestureDetector>
 
-              <View className="px-5 pt-2 pb-4 border-b border-border">
-                <Pressable
-                  onPress={handleClose}
-                  className="absolute right-4 top-2 size-10 rounded-full items-center justify-center active:bg-secondary"
-                  style={{ zIndex: 50, elevation: 50 }}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('close', 'Close')}
-                  hitSlop={12}
-                >
-                  <X size={26} className="text-foreground" strokeWidth={2.5} />
-                </Pressable>
-                <Text className="px-12 text-center text-[23px] leading-7 font-extrabold text-foreground tracking-tight">
-                  {t('customise_quick_actions', 'Customise Quick Actions')}
-                </Text>
-                <Text className="mt-2 px-10 text-center text-base leading-6 text-muted-foreground">
-                  {t('quick_actions_reorder_hint', 'Press and hold to arrange your first 7 actions')}
-                </Text>
+              <View className="px-5 pt-3 pb-3 border-b border-border gap-3">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-[20px] leading-7 font-extrabold text-foreground tracking-tight">
+                    {t('customise_quick_actions', 'Customise Quick Actions')}
+                  </Text>
+                  <Pressable
+                    onPress={handleClose}
+                    className="size-9 rounded-full bg-secondary/80 items-center justify-center active:bg-secondary border border-border/60"
+                    accessibilityRole="button"
+                    accessibilityLabel={t('close', 'Close')}
+                    hitSlop={12}
+                  >
+                    <X size={20} className="text-foreground" strokeWidth={2.5} />
+                  </Pressable>
+                </View>
+
+                {/* Search Bar inside Customise Modal */}
+                <SearchFilterBar
+                  searchValue={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  searchPlaceholder={t('search_features', 'Search actions...')}
+                  className="px-0 py-0"
+                />
               </View>
             </View>
 

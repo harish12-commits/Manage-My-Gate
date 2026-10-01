@@ -61,19 +61,55 @@ export const directoryRepository = {
         },
       },
 
-      // Lookup Role
+      // Resolve every supported role source. Current memberships store roleIds,
+      // while older records may only have roleId or the legacy user.roles cache.
       {
         $lookup: {
           from: 'roles',
-          localField: 'roleId',
-          foreignField: '_id',
-          as: 'role',
+          let: {
+            assignedRoleIds: {
+              $setUnion: [
+                {
+                  $cond: [
+                    { $ne: [{ $ifNull: ['$roleId', null] }, null] },
+                    ['$roleId'],
+                    [],
+                  ],
+                },
+                { $ifNull: ['$roleIds', []] },
+                { $ifNull: ['$user.roles', []] },
+              ],
+            },
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $in: ['$_id', '$$assignedRoleIds'] },
+              },
+            },
+          ],
+          as: 'resolvedRoles',
         },
       },
       {
-        $unwind: {
-          path: '$role',
-          preserveNullAndEmptyArrays: true,
+        $set: {
+          role: {
+            $ifNull: [
+              {
+                $arrayElemAt: [
+                  {
+                    $filter: {
+                      input: '$resolvedRoles',
+                      as: 'candidateRole',
+                      cond: { $eq: ['$$candidateRole._id', '$roleId'] },
+                    },
+                  },
+                  0,
+                ],
+              },
+              { $arrayElemAt: ['$resolvedRoles', 0] },
+            ],
+          },
         },
       },
 

@@ -5,7 +5,7 @@ import { Plus } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { SearchFilterBar, SortOption } from '@/components/ui/SearchFilterBar';
 import { PaginatedList } from '@/components/ui/PaginatedList';
-import { Button } from '@/components/ui/button';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { Text } from '@/components/ui/text';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { CommunityEngagementTypeSheet } from '../components/CommunityEngagementTypeSheet';
@@ -365,7 +365,7 @@ export function CommunityEngagementLedgerScreen() {
 
   const handleSelectType = (type: EngagementContentType) => {
     setTypeSheetVisible(false);
-    router.push({
+    router.navigate({
       pathname: '/(resident)/community-engagement/create' as any,
       params: { type },
     });
@@ -391,16 +391,12 @@ export function CommunityEngagementLedgerScreen() {
       showIconWithBackButton={false}
       loading={loading && combinedRawItems.length === 0}
       headerRight={
-        <Button
-          size="sm"
+        <HeaderActionButton
+          icon={Plus}
+          label={t('create_engagement', 'Create Engagement')}
           onPress={() => setTypeSheetVisible(true)}
-          className="bg-emerald-600 active:bg-emerald-700 flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl shadow-2xs"
-          accessibilityRole="button"
           accessibilityLabel={t('create_engagement')}
-        >
-          <Plus size={14} color="#ffffff" strokeWidth={2.5} />
-          <Text className="text-xs font-bold text-white">{t('create_engagement', 'Create')}</Text>
-        </Button>
+        />
       }
     >
       <View className="flex-1 bg-background">

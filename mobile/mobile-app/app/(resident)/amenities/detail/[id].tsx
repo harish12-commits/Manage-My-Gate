@@ -32,7 +32,7 @@ export default function AmenityDetailScreen() {
   }, [id, selectFacility, clearError]);
 
   const navigateToBooking = (facilityId: string) => {
-    router.push({
+    router.navigate({
       pathname: '/(resident)/amenities/booking/[id]' as any,
       params: { id: facilityId },
     });

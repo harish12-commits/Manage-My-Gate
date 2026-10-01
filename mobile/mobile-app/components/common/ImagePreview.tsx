@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, Image, ImageSourcePropType } from 'react-native';
+import { View, Image, ImageSourcePropType } from 'react-native';
 import { Image as ImageIcon } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
+import { Text } from '../ui/text';
 
 export interface ImagePreviewProps {
   source?: ImageSourcePropType | null | any;

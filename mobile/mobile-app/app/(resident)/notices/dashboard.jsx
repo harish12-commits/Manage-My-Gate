@@ -89,7 +89,7 @@ export default function NoticeDashboardScreen() {
       colorIcon: '#6366f1',
       onPress: () => {
         setFilters({});
-        router.push('/(resident)/notices/manage');
+        router.navigate('/(resident)/notices/manage');
       },
     },
     {
@@ -118,7 +118,7 @@ export default function NoticeDashboardScreen() {
             size="sm"
             onPress={() => {
               setFilters({});
-              router.push('/(resident)/notices/manage');
+              router.navigate('/(resident)/notices/manage');
             }}
             className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
             accessibilityRole="button"
@@ -129,7 +129,7 @@ export default function NoticeDashboardScreen() {
           </Button>
           <Button
             size="sm"
-            onPress={() => router.push('/(resident)/notices/create')}
+            onPress={() => router.navigate('/(resident)/notices/create')}
             className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 active:bg-emerald-700"
             accessibilityRole="button"
             accessibilityLabel="Create New Notice"
@@ -158,7 +158,7 @@ export default function NoticeDashboardScreen() {
           <SectionHeader
             title="Recent Activity"
             actionLabel="View All"
-            onAction={() => router.push('/(resident)/notices')}
+            onAction={() => router.navigate('/(resident)/notices')}
             className="px-0 bg-transparent dark:bg-transparent"
           />
           {recentActivity.length > 0 ? (
@@ -172,7 +172,7 @@ export default function NoticeDashboardScreen() {
                   status={activity.status || 'Active'}
                   createdAt={activity.createdAt || activity.date}
                   variant="card"
-                  onPress={() => router.push({
+                  onPress={() => router.navigate({
                     pathname: '/(resident)/notices/[id]',
                     params: { id: activity.id || activity._id }
                   })}
@@ -184,8 +184,6 @@ export default function NoticeDashboardScreen() {
               icon={Bell}
               title="No Recent Activity"
               description="No recent notices or broadcast updates to display."
-              actionLabel="New Notice"
-              onAction={() => router.push('/(resident)/notices/create')}
             />
           )}
         </View>

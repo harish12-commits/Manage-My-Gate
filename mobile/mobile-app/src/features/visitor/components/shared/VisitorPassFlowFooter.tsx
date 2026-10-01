@@ -55,7 +55,7 @@ export const VisitorPassFlowFooter: React.FC<VisitorPassFlowFooterProps> = ({
       ) : null}
 
       <Button
-        variant="default"
+        variant={isLastStep ? "default" : "continue"}
         onPress={onNext}
         disabled={disabled || loading}
         loading={loading}
@@ -65,14 +65,14 @@ export const VisitorPassFlowFooter: React.FC<VisitorPassFlowFooterProps> = ({
           adjustsFontSizeToFit
           minimumFontScale={0.75}
           numberOfLines={1}
-          className="font-bold text-primary-foreground text-sm sm:text-base flex-1 text-center"
+          className={`font-extrabold text-sm sm:text-base flex-1 text-center ${isLastStep ? 'text-primary-foreground' : 'text-foreground'}`}
         >
           {labelText}
         </Text>
         {isLastStep ? (
           <CheckCircle2 size={16} className="text-primary-foreground shrink-0" />
         ) : (
-          <ArrowRight size={16} className="text-primary-foreground shrink-0" />
+          <ArrowRight size={16} className="text-foreground shrink-0" />
         )}
       </Button>
     </View>

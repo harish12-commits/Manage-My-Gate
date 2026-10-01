@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, ScrollView, Pressable } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { Terminal, Copy } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
 

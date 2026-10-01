@@ -62,7 +62,7 @@ export const useResidentWallet = () => {
 
   // Set up socket listener for real-time updates
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5006';
     // Using a generic connection for demo, in real app use the central socket context if available
     const socket = io(backendUrl, {
       auth: { token }

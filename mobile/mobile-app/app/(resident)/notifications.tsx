@@ -303,7 +303,7 @@ export default function NotificationsScreen() {
         notification.type,
         notification
       );
-      router.push(route as any);
+      router.navigate(route as any);
     }
   };
 
@@ -642,7 +642,9 @@ export default function NotificationsScreen() {
                     if (selectedIds.size === 0) return;
                     const ids = Array.from(selectedIds);
                     ids.forEach(id => markAsRead(id));
-                    setSuccessToastMessage(t('notifications_marked_read', `${ids.length} marked as read.`));
+                    setSuccessToastMessage(
+                      t('notifications_marked_read', '{count} marked as read.', { count: ids.length })
+                    );
                     setTimeout(() => setSuccessToastMessage(null), 3000);
                     setIsSelectionMode(false);
                     setSelectedIds(new Set());
@@ -675,7 +677,9 @@ export default function NotificationsScreen() {
                       }
                     }
                     if (successCount > 0) {
-                      setSuccessToastMessage(t('notifications_deleted', `${successCount} notifications deleted.`));
+                      setSuccessToastMessage(
+                        t('notifications_deleted', '{count} notifications deleted.', { count: successCount })
+                      );
                       setTimeout(() => setSuccessToastMessage(null), 3000);
                     }
                     setIsSelectionMode(false);

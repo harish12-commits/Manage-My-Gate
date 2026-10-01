@@ -40,6 +40,29 @@ export const isPermissionSelected = (perm: any, selectedIds: string[] = []) => {
   if (perm?._id && selectedIds.includes(String(perm._id))) return true;
 
   if (typeof permValue === 'string') {
+    const normalizedPerm = permValue.toLowerCase().replace(/\./g, ':');
+    const normalizedSelected = new Set(selectedIds.map((id) => String(id).toLowerCase().replace(/\./g, ':')));
+    const noticeAliases: Record<string, string[]> = {
+      'notices:active_board': ['notices:active_board', 'notices:read'],
+      'notices:polls': ['notices:polls', 'polls:read', 'polls:vote'],
+      'notices:manage_notices': [
+        'notices:manage_notices',
+        'notices:dashboard',
+        'notices:create',
+        'notices:update',
+        'notices:delete',
+        'notices:publish',
+        'polls:create',
+        'polls:update',
+        'polls:delete',
+        'polls:publish',
+        'polls:close',
+      ],
+    };
+    if (noticeAliases[normalizedPerm]?.some((alias) => normalizedSelected.has(alias))) {
+      return true;
+    }
+
     const dot = permValue.replace(/:/g, '.');
     const colon = permValue.replace(/\./g, ':');
     if (selectedIds.includes(dot) || selectedIds.includes(colon)) return true;
@@ -110,7 +133,10 @@ const PermissionMatrixGrid = ({
     const result: Record<string, any[]> = {};
     Object.entries(groupedPermissions).forEach(([categoryKey, perms]) => {
       const lowerKey = categoryKey.toLowerCase();
-      if (lowerKey === 'polls') return; // Merged into notices
+      if (lowerKey === 'polls') {
+        result.notices = [...(result.notices || []), ...(perms || [])];
+        return;
+      }
       result[lowerKey] = perms || [];
     });
     return result;

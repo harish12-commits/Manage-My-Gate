@@ -2,11 +2,11 @@ import React, { useState, useMemo } from 'react';
 import {
   FlatList,
   RefreshControl,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { Search, X, Sparkles, SlidersHorizontal, Building2 } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -14,6 +14,7 @@ import { AmenityCard } from '../components/AmenityCard';
 import { FilterPills } from '../components/FilterPills';
 import { MOCK_AMENITIES, MOCK_CATEGORIES } from '../data/mockAmenitiesData';
 import { Amenity } from '../models/amenity.model';
+import { useTranslation } from '@/src/utils/i18n';
 
 export interface DiscoverAmenitiesProps {
   onSelectAmenity?: (amenity: Amenity) => void;
@@ -24,6 +25,7 @@ export const DiscoverAmenities: React.FC<DiscoverAmenitiesProps> = ({
   onSelectAmenity,
   navigation,
 }) => {
+  const { translateText } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [refreshing, setRefreshing] = useState(false);
@@ -79,7 +81,7 @@ export const DiscoverAmenities: React.FC<DiscoverAmenitiesProps> = ({
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholder="Search gym, pool, tennis, clubhouse..."
+                placeholder={translateText('Search gym, pool, tennis, clubhouse...')}
                 placeholderTextColor="#94a3b8"
                 className="flex-1 text-sm font-medium text-foreground py-2 text-start"
                 autoCapitalize="none"

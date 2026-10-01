@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { io } from 'socket.io-client';
 import { fetchStaffVendorsAnalytics } from '../store/complaintSlice';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5006';
 
 /**
  * Hook to listen for real‑time technician/technician‑analytics events.

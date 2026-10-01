@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, FlatList, RefreshControl, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { ChevronLeft, ChevronRight, Plus, Hash, X, ShieldCheck } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { FAB } from '@/components/ui/FAB';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
@@ -156,15 +157,13 @@ export default function RoleBuilderScreen() {
       error={error}
       onRetry={handleRefresh}
       headerRight={
-        <TouchableOpacity
+        <HeaderActionButton
           onPress={openCreateModal}
-          className="flex-row items-center gap-1.5 bg-emerald-600 active:bg-emerald-700 px-3 py-1.5 rounded-full"
+          icon={Plus}
+          label={t('create_role', 'Create Role')}
           accessibilityRole="button"
           accessibilityLabel="Create Role"
-        >
-          <Plus size={14} color="#ffffff" />
-          <Text className="text-xs font-bold text-white">{t('create_role', 'Create Role')}</Text>
-        </TouchableOpacity>
+        />
       }
     >
       <View className="flex-1">

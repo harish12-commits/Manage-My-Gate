@@ -13,6 +13,7 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { SlidersHorizontal, Play, Send, ShieldAlert, Landmark, Calendar, Layers, CheckCircle2, Clock, Plus, Trash2, Pencil, Filter, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useBilling } from '../hooks/useBilling';
 import { useBillingSocket } from '../hooks/useBillingSocket';
@@ -284,7 +285,7 @@ export function AssessmentManagementScreen() {
           'Billing Run Completed!',
           `Successfully generated ${createdCount} invoice${createdCount > 1 ? 's' : ''} for period ${period}.${skippedCount > 0 ? ` (${skippedCount} units were already invoiced and skipped)` : ''} Invoices have been dispatched to residents.`,
           [
-            { text: 'View Ledger', onPress: () => router.push('/(resident)/admin/billing/ledger' as any) },
+            { text: 'View Ledger', onPress: () => router.navigate('/(resident)/admin/billing/ledger' as any) },
             { text: 'OK', style: 'cancel' },
           ]
         );
@@ -293,7 +294,7 @@ export function AssessmentManagementScreen() {
           'Cycle Already Invoiced',
           `All ${skippedCount > 0 ? skippedCount : 'targeted'} homes have already been billed for period ${period}. No duplicate invoices were created.`,
           [
-            { text: 'View Ledger', onPress: () => router.push('/(resident)/admin/billing/ledger' as any) },
+            { text: 'View Ledger', onPress: () => router.navigate('/(resident)/admin/billing/ledger' as any) },
             { text: 'OK', style: 'cancel' },
           ]
         );
@@ -338,20 +339,15 @@ export function AssessmentManagementScreen() {
         loading={hasAssessmentPermission && isLoading && assessments.length === 0}
         headerRight={
           !hasAssessmentPermission ? undefined : (
-            <TouchableOpacity
-              activeOpacity={0.8}
+            <HeaderActionButton
+              icon={Plus}
+              label="Create Rule"
               onPress={() => {
                 setAssessmentToEdit(null);
                 setShowCreateModal(true);
               }}
-              className="h-9 px-3 rounded-xl bg-emerald-600 active:bg-emerald-700 flex-row items-center justify-center gap-1.5 shadow-sm"
-              accessibilityRole="button"
               accessibilityLabel="Create New Assessment Rule"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Plus size={15} color="#ffffff" strokeWidth={2.5} />
-              <Text className="text-xs font-bold text-white">Create Rule</Text>
-            </TouchableOpacity>
+            />
           )
         }
       >
@@ -367,7 +363,7 @@ export function AssessmentManagementScreen() {
             <Button
               variant="default"
               size="lg"
-              onPress={() => router.push('/(resident)/billing/my-dues' as any)}
+              onPress={() => router.navigate('/(resident)/billing/my-dues' as any)}
               accessibilityRole="button"
               accessibilityLabel="Return to My Dues"
             >
@@ -439,21 +435,7 @@ export function AssessmentManagementScreen() {
                 >
                   Reset Search & Filters
                 </Button>
-              ) : (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    setAssessmentToEdit(null);
-                    setShowCreateModal(true);
-                  }}
-                  className="bg-emerald-600 active:bg-emerald-700 px-4 py-2.5 rounded-xl flex-row items-center gap-2 shadow-sm"
-                  accessibilityRole="button"
-                  accessibilityLabel="Create First Assessment Rule"
-                >
-                  <Plus size={16} color="#ffffff" strokeWidth={2.5} />
-                  <Text className="text-xs font-bold text-white">Create First Assessment Rule</Text>
-                </TouchableOpacity>
-              )}
+              ) : null}
             </View>
           ) : (
             filteredAssessments.map((rule) => {
@@ -503,7 +485,7 @@ export function AssessmentManagementScreen() {
           setAssessmentToDelete(r);
           setShowDeleteConfirmModal(true);
         }}
-        onViewLedger={() => router.push('/(resident)/admin/billing/ledger' as any)}
+        onViewLedger={() => router.navigate('/(resident)/admin/billing/ledger' as any)}
       />
 
       {/* 5-Step Assessment Wizard Modal */}

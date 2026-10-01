@@ -39,6 +39,7 @@ import {
   NahomEmblem,
   NahomWordmark,
 } from '@/components/auth/NahomBrandLogo';
+import { AuthMethodSelector } from '@/components/auth/AuthMethodSelector';
 import { SocialAuthButton } from '@/components/auth/SocialAuthButton';
 import { TextInput } from '@/components/forms/TextInput';
 import { PasswordInput } from '@/components/forms/PasswordInput';
@@ -73,7 +74,7 @@ const phoneSchema = yup.object().shape({
     .required('Phone number is required')
     .test('valid-phone', 'Please enter a valid mobile number with country code', (value) => {
       if (!value) return false;
-      return /^\+[1-9]\d{7,14}$/.test(value.trim());
+      return /^\+[1-9]\d{10,14}$/.test(value.trim());
     }),
 });
 
@@ -539,6 +540,12 @@ export default function LoginScreen() {
     }
   }, [otpSent, submittedPhone]);
 
+  const handleKeepSignedInChange = (checked: boolean) => {
+    setKeepSignedIn(checked);
+    // Persist immediately so social sign-in uses the same preference.
+    void storage.setItem('keep_signed_in', checked ? 'true' : 'false');
+  };
+
   const savePreferences = async () => {
     try {
       await storage.setItem('keep_signed_in', keepSignedIn ? 'true' : 'false');
@@ -622,62 +629,84 @@ export default function LoginScreen() {
             resizeMode="cover"
           />
         </Animated.View>
-        <View className="absolute inset-0 bg-black/20 dark:bg-black/45" pointerEvents="none" />
+        <View className="absolute inset-0 bg-black/40 dark:bg-black/60" pointerEvents="none" />
 
-        <KeyboardAvoidingView
-          // On iOS, padding pushes the form up. On Android, adjustResize automatically handles it,
-          // so behavior should be undefined to avoid native conflicts that squash the UI.
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={0}
-          style={{ flex: 1 }}
+        {/* Fixed Brand Identity Section (Stays put when keyboard opens) */}
+        <View 
+          className="items-center justify-center z-10 w-full"
+          style={{ paddingTop: Math.max(insets.top, 24) + 12, paddingBottom: 8 }}
+          pointerEvents="box-none"
         >
-          <KeyboardAwareScrollView
+          {/* Step 1: Logo Emblem with Luxury Reveal & Weightless Float */}
+          <Animated.View
+            style={{
+              opacity: logoOpacity,
+              transform: [
+                { scale: logoScale },
+                { translateY: Animated.add(logoTranslateY, emblemFloat) },
+              ],
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            pointerEvents="none"
+          >
+            <NahomEmblem size={120} />
+          </Animated.View>
+
+          {/* Step 2 & 3: NAHOM Wordmark Reveal */}
+          <Animated.View
+            style={{
+              opacity: wordmarkOpacity,
+              transform: [
+                { translateY: wordmarkTranslateY },
+              ],
+              width: '100%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginTop: -2,
+            }}
+            pointerEvents="none"
+          >
+            <NahomWordmark />
+          </Animated.View>
+
+          {/* Step 4: Login Method Selection (Moved out of ScrollView so it doesn't hide!) */}
+          <Animated.View
+            style={{
+              opacity: cardOpacity,
+              transform: [
+                { scale: cardScale },
+                { translateY: cardTranslateY },
+              ],
+            }}
+            className="w-full px-5 mt-5 max-w-sm mx-auto"
+          >
+            <AuthMethodSelector
+              value={authMode}
+              onChange={(mode) => { Keyboard.dismiss(); setAuthMode(mode); }}
+              emailLabel={t('email_password', 'Email / Password')}
+              otpLabel={t('sign_in_with_otp', 'Sign in with OTP')}
+              reduceMotion={reduceMotion}
+              disabled={isSubmittingBasic || isSubmittingPhone || googleLoading}
+            />
+          </Animated.View>
+        </View>
+
+        {/* Removed redundant KeyboardAvoidingView as KeyboardAwareScrollView natively handles keyboard padding */}
+        <KeyboardAwareScrollView
             extraScrollHeight={56}
+            enableAutoScroll={Platform.OS !== 'ios'}
             contentContainerStyle={{
               flexGrow: 1,
-              paddingTop: Math.max(insets.top, 24) + 12,
               paddingBottom: Math.max(insets.bottom, 20) + 24,
             }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
-            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
             className="px-5"
           >
             <View className="max-w-sm mx-auto w-full gap-3.5">
-            {/* Step 1, 2, 3: Top Brand Identity Section (Logo → App Name → Nexus Around Home → Slogan) */}
-            <View className="items-center justify-center">
-              {/* Step 1: Logo Emblem with Luxury Reveal & Weightless Float */}
-              <Animated.View
-                style={{
-                  opacity: logoOpacity,
-                  transform: [
-                    { scale: logoScale },
-                    { translateY: Animated.add(logoTranslateY, emblemFloat) },
-                  ],
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <NahomEmblem size={106} />
-              </Animated.View>
 
-              {/* Step 2 & 3: NAHOM Wordmark Reveal */}
-              <Animated.View
-                style={{
-                  opacity: wordmarkOpacity,
-                  transform: [
-                    { translateY: wordmarkTranslateY },
-                  ],
-                  width: '100%',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginTop: -2,
-                }}
-              >
-                <NahomWordmark />
-              </Animated.View>
-            </View>
 
             {/* Section 6: Luxury Floating Login Card Entrance */}
             <Animated.View
@@ -690,78 +719,16 @@ export default function LoginScreen() {
               }}
               className="gap-3.5 w-full"
             >
-              {/* Step 4: Login Method Selection (Frosted Glass Segmented Pill Buttons) */}
-              <View className="bg-white/20 dark:bg-black/25 backdrop-blur-md p-1 rounded-full flex-row border border-white/35 shadow-xs">
-                <TouchableOpacity
-                  onPress={() => setAuthMode('basic')}
-                  activeOpacity={0.85}
-                  style={
-                    authMode === 'basic'
-                      ? {
-                          backgroundColor: '#FFFFFF',
-                          shadowColor: '#000000',
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.1,
-                          shadowRadius: 6,
-                          elevation: 2,
-                        }
-                      : {
-                          backgroundColor: 'transparent',
-                        }
-                  }
-                  className="flex-1 py-2.5 rounded-full flex-row items-center justify-center gap-2"
-                >
-                  <User
-                    size={16}
-                    color={authMode === 'basic' ? '#EA580C' : 'rgba(255, 255, 255, 0.85)'}
-                    strokeWidth={2.4}
-                  />
-                  <Text
-                    style={{ color: authMode === 'basic' ? '#EA580C' : 'rgba(255, 255, 255, 0.85)' }}
-                    className={`text-xs ${authMode === 'basic' ? 'font-bold' : 'font-medium'}`}
-                  >
-                    {t('email_password', 'Email / Password')}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setAuthMode('phone')}
-                  activeOpacity={0.85}
-                  style={
-                    authMode === 'phone'
-                      ? {
-                          backgroundColor: '#FFFFFF',
-                          shadowColor: '#000000',
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.1,
-                          shadowRadius: 6,
-                          elevation: 2,
-                        }
-                      : {
-                          backgroundColor: 'transparent',
-                        }
-                  }
-                  className="flex-1 py-2.5 rounded-full flex-row items-center justify-center gap-2"
-                >
-                  <Smartphone
-                    size={16}
-                    color={authMode === 'phone' ? '#EA580C' : 'rgba(255, 255, 255, 0.85)'}
-                    strokeWidth={2.4}
-                  />
-                  <Text
-                    style={{ color: authMode === 'phone' ? '#EA580C' : 'rgba(255, 255, 255, 0.85)' }}
-                    className={`text-xs ${authMode === 'phone' ? 'font-bold' : 'font-medium'}`}
-                  >
-                    {t('sign_in_with_otp', 'Sign in with OTP')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Form Container (Translucent Glass layout with Welcome Back Header) */}
-              <View className="w-full gap-3.5 mt-1">
+              {/* Form Container */}
+              <View className="w-full gap-3.5 mt-2">
                 {/* Welcome Back Header Section */}
-                <Text className="text-xl sm:text-2xl font-bold text-white text-center pb-0.5 font-sans">
+                <Text className="text-[26px] font-bold text-white text-center font-sans tracking-tight"
+                      style={{ textShadowColor: 'rgba(0,0,0,0.85)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 }}>
                   {t('welcome_back', 'Welcome Back')}
+                </Text>
+                <Text className="text-[14px] font-bold text-white text-center mb-1 -mt-2"
+                      style={{ textShadowColor: 'rgba(0,0,0,0.85)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }}>
+                  {t('sign_in_to_continue', 'Sign in to continue to NAHOM')}
                 </Text>
 
                 {/* Context Switch Auth Requirement Banner */}
@@ -830,19 +797,23 @@ export default function LoginScreen() {
                               onBlur();
                             }}
                             placeholder={t('enter_email_or_username', 'Enter your email or username')}
-                            placeholderTextColor="rgba(255, 255, 255, 0.65)"
+                            placeholderTextColor="#9CA3AF"
                             autoCapitalize="none"
                             autoCorrect={false}
                             keyboardType="email-address"
-                            className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] py-0 shadow-none backdrop-blur-md"
-                            inputClassName="text-white text-[16px] font-bold"
-                            style={{ fontSize: 16, fontWeight: '700', fontFamily: 'HankenGrotesk_700Bold', color: '#FFFFFF' }}
+                            className="bg-white rounded-full h-[48px] py-0 shadow-sm border-0"
+                            inputClassName="text-slate-900 text-[15px] font-medium"
+                            style={{ fontSize: 15, fontWeight: '500', color: '#0F172A' }}
+                            selectionColor="#EA580C"
+                            cursorColor="#EA580C"
                             leftIcon={
                               <Animated.View style={{ transform: [{ scale: loginIconScale }] }}>
-                                <Mail size={18} color="rgba(255, 255, 255, 0.85)" />
+                                <Mail size={18} color="#64748B" />
                               </Animated.View>
                             }
                             error={basicForm.formState.errors.login?.message}
+                            feedbackContainerClassName="bg-black/60 border border-red-500/30 px-2 py-0.5 rounded-md self-start mt-1.5 backdrop-blur-md"
+                            errorClassName="text-[11.5px] font-bold text-red-400"
                             returnKeyType="next"
                             onSubmitEditing={() => passwordInputRef.current?.focus()}
                             blurOnSubmit={false}
@@ -862,7 +833,7 @@ export default function LoginScreen() {
                           activeOpacity={0.8}
                           hitSlop={8}
                         >
-                          <Text className="text-xs font-bold text-[#FF6A00]">
+                          <Text className="text-[13px] font-bold text-white" style={{ textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
                             {t('forgot_password', 'Forgot?')}
                           </Text>
                         </TouchableOpacity>
@@ -881,17 +852,21 @@ export default function LoginScreen() {
                               onBlur();
                             }}
                             placeholder={t('enter_password', 'Enter your password')}
-                            placeholderTextColor="rgba(255, 255, 255, 0.65)"
-                            className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] py-0 shadow-none backdrop-blur-md"
-                            inputClassName="text-white text-[16px] font-bold"
-                            style={{ fontSize: 16, fontWeight: '700', fontFamily: 'HankenGrotesk_700Bold', color: '#FFFFFF' }}
+                            placeholderTextColor="#9CA3AF"
+                            className="bg-white rounded-full h-[48px] py-0 shadow-sm border-0"
+                            inputClassName="text-slate-900 text-[15px] font-medium"
+                            style={{ fontSize: 15, fontWeight: '500', color: '#0F172A' }}
+                            selectionColor="#EA580C"
+                            cursorColor="#EA580C"
                             leftIcon={
                               <Animated.View style={{ transform: [{ scale: passwordIconScale }] }}>
-                                <Lock size={18} color="rgba(255, 255, 255, 0.85)" />
+                                <Lock size={18} color="#64748B" />
                               </Animated.View>
                             }
-                            rightIconColor="rgba(255, 255, 255, 0.85)"
+                            rightIconColor="#64748B"
                             error={basicForm.formState.errors.password?.message}
+                            feedbackContainerClassName="bg-black/60 border border-red-500/30 px-2 py-0.5 rounded-md self-start mt-1.5 backdrop-blur-md"
+                            errorClassName="text-[11.5px] font-bold text-red-400"
                             returnKeyType="go"
                             onSubmitEditing={handleBasicSignIn}
                           />
@@ -903,9 +878,9 @@ export default function LoginScreen() {
                     <View className="flex-row items-center pt-0.5">
                       <Checkbox
                         checked={keepSignedIn}
-                        onCheckedChange={setKeepSignedIn}
+                        onCheckedChange={handleKeepSignedInChange}
                         label={t('stay_signed_in', 'Stay signed in')}
-                        labelClassName="text-xs text-white font-medium"
+                        labelClassName="text-[13px] text-white font-medium shadow-sm"
                         className="items-center"
                       />
                     </View>
@@ -952,7 +927,7 @@ export default function LoginScreen() {
                           shadowRadius: 14,
                           elevation: 4,
                         }}
-                        className="mt-1 h-[50px] rounded-2xl flex-row items-center justify-center gap-2 overflow-hidden relative"
+                        className="mt-1 h-[48px] rounded-full flex-row items-center justify-center gap-2 overflow-hidden relative"
                       >
                         <View className="absolute inset-0">
                           <Svg width="100%" height="100%" preserveAspectRatio="none">
@@ -1012,20 +987,22 @@ export default function LoginScreen() {
                           variant="glass"
                           label={t('phone_number', 'Mobile Number')}
                           placeholder="98765 43210"
-                          placeholderTextColor="rgba(255, 255, 255, 0.65)"
+                          placeholderTextColor="#9CA3AF"
                           labelClassName="text-xs font-semibold text-white mb-1.5"
-                          className="bg-white/20 dark:bg-black/25 border-white/35 rounded-2xl h-[50px] py-0 shadow-none backdrop-blur-md"
-                          inputClassName="text-white text-[16px] font-bold"
-                          codeClassName="text-white font-bold"
-                          dividerClassName="border-white/30"
-                          chevronColor="rgba(255, 255, 255, 0.85)"
+                          className="bg-white rounded-full h-[48px] py-0 shadow-sm border-0"
+                          inputClassName="text-slate-900 text-[15px] font-medium"
+                          codeClassName="text-slate-900 font-bold"
+                          dividerClassName="border-slate-300"
+                          chevronColor="#64748B"
                           showCount={false}
                           helperContainerClassName="bg-black/40 border border-white/25 px-2.5 py-1 rounded-lg self-start mt-1.5 backdrop-blur-md"
                           helperClassName="text-xs font-bold text-white"
-                          style={{ fontSize: 16, fontWeight: '700', fontFamily: 'HankenGrotesk_700Bold', color: '#FFFFFF' }}
+                          style={{ fontSize: 15, fontWeight: '500', color: '#0F172A' }}
                           value={value}
                           onChangeText={onChange}
                           error={phoneForm.formState.errors.phone?.message}
+                          feedbackContainerClassName="bg-black/60 border border-red-500/30 px-2 py-0.5 rounded-md self-start mt-1.5 backdrop-blur-md"
+                          errorClassName="text-[11.5px] font-bold text-red-400"
                         />
                       )}
                     />
@@ -1034,9 +1011,9 @@ export default function LoginScreen() {
                     <View className="flex-row items-center pt-0.5">
                       <Checkbox
                         checked={keepSignedIn}
-                        onCheckedChange={setKeepSignedIn}
+                        onCheckedChange={handleKeepSignedInChange}
                         label={t('stay_signed_in', 'Stay signed in')}
-                        labelClassName="text-xs text-white font-medium"
+                        labelClassName="text-[13px] text-white font-medium shadow-sm"
                         className="items-center"
                       />
                     </View>
@@ -1063,7 +1040,7 @@ export default function LoginScreen() {
                           shadowRadius: 14,
                           elevation: 4,
                         }}
-                        className="mt-1 h-[50px] rounded-2xl flex-row items-center justify-center gap-2 overflow-hidden relative"
+                        className="mt-1 h-[48px] rounded-full flex-row items-center justify-center gap-2 overflow-hidden relative"
                       >
                         <View className="absolute inset-0">
                           <Svg width="100%" height="100%" preserveAspectRatio="none">
@@ -1117,11 +1094,11 @@ export default function LoginScreen() {
 
               {/* OR CONTINUE WITH Divider */}
               <View className="flex-row items-center my-3 gap-3">
-                <View className="flex-1 h-[1px] bg-white/30" />
-                <Text className="text-[10.5px] font-bold text-white/80 tracking-widest uppercase font-sans">
+                <View className="flex-1 h-[1px] bg-white/40" />
+                <Text className="text-[10.5px] font-bold text-white tracking-widest uppercase font-sans" style={{ textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
                   {t('or_continue_with', 'Or Continue With')}
                 </Text>
-                <View className="flex-1 h-[1px] bg-white/30" />
+                <View className="flex-1 h-[1px] bg-white/40" />
               </View>
 
               {/* Social Authentication: Google ID & Apple ID */}
@@ -1143,7 +1120,7 @@ export default function LoginScreen() {
               <View className="items-center justify-center pt-2.5 pb-2">
                 <Animated.View style={{ transform: [{ scale: createAccountPressScale }] }}>
                   <View className="bg-transparent flex-row items-center justify-center">
-                    <Text className="text-xs text-white font-medium">
+                    <Text className="text-[12.5px] text-white font-bold" style={{ textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
                       {t('dont_have_organisation', "Don't have an Organisation?")}{' '}
                     </Text>
                     <TouchableOpacity
@@ -1154,7 +1131,7 @@ export default function LoginScreen() {
                       accessibilityRole="button"
                       accessibilityLabel="Create Organisation"
                     >
-                      <Text className="text-xs font-bold text-[#FF6A00]">
+                      <Text className="text-[12.5px] font-bold text-[#FF6A00]" style={{ textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
                         {t('create_organisation', 'Create Organisation')}
                       </Text>
                     </TouchableOpacity>
@@ -1165,7 +1142,6 @@ export default function LoginScreen() {
             </Animated.View>
           </View>
           </KeyboardAwareScrollView>
-    </KeyboardAvoidingView>
     </View>
     </>
   );
@@ -1175,4 +1151,3 @@ export default function LoginScreen() {
 function cnText(...classes: (string | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }
-

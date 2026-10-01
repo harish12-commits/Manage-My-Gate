@@ -29,7 +29,7 @@ export const useResidentHistory = () => {
 
   // Set up socket listener for real-time updates
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5006';
     const socket = io(backendUrl, {
       auth: { token }
     });

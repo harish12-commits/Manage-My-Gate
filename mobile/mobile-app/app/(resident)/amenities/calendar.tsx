@@ -78,7 +78,7 @@ export default function ResidentAmenityCalendarScreen() {
   const handleSlotBook = (slot: AmenitySlot) => {
     handleSlotSelect(slot);
     if (selectedAmenityId) {
-      router.push({
+      router.navigate({
         pathname: '/(resident)/amenities/booking/[id]',
         params: { id: selectedAmenityId },
       });

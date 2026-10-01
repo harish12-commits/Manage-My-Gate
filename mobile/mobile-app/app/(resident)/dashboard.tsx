@@ -98,23 +98,23 @@ export default function DashboardScreen() {
     
     if (feature && feature.route) {
       const targetRoute = feature.route.endsWith('/resident-passes') ? '/(resident)/visitor' : feature.route;
-      router.push(targetRoute as any);
+      router.navigate(targetRoute as any);
     }
   };
 
   const handleBannerPress = (banner: any) => {
     switch (banner.id) {
       case '1':
-        router.push('/(resident)/all-features' as any);
+        router.navigate('/(resident)/all-features' as any);
         break;
       case '2':
-        router.push('/(resident)/visitor' as any);
+        router.navigate('/(resident)/visitor' as any);
         break;
       case '3':
-        router.push('/(resident)/amenities/discover' as any);
+        router.navigate('/(resident)/amenities/discover' as any);
         break;
       case '4':
-        router.push('/(resident)/billing' as any);
+        router.navigate('/(resident)/billing' as any);
         break;
       default:
         break;

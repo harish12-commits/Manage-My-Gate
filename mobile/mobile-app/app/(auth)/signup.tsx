@@ -28,6 +28,7 @@ import { useForm, Controller } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useAuth } from '../../src/features/auth/hooks/useAuth';
+import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScrollView';
 import { useGoogleAuthSession } from '../../src/features/auth/hooks/useGoogleAuthSession';
 import { AppleSignInButton } from '../../src/features/auth/components/AppleSignInButton';
 import {
@@ -60,7 +61,7 @@ const signupSchema = yup.object().shape({
       }
       if (value.startsWith('+966')) { const n = value.slice(4); if (n.length !== 9) return this.createError({ message: 'Saudi mobile number must be exactly 9 digits' }); return true; }
       if (value.startsWith('+971')) { const n = value.slice(4); if (n.length !== 9) return this.createError({ message: 'UAE mobile number must be exactly 9 digits' }); return true; }
-      return /^\+[1-9]\d{7,14}$/.test(value);
+      return /^\+[1-9]\d{10,14}$/.test(value);
     }),
   unitNumber: yup.string().optional(),
   password: yup.string().required('Password is required').min(6, 'Password must be at least 6 characters'),
@@ -80,7 +81,7 @@ const phoneSignInSchema = yup.object().shape({
     .required('Phone number is required')
     .test('valid-phone', 'Please enter a valid phone number with country code', (value) => {
       if (!value) return false;
-      return /^\+[1-9]\d{7,14}$/.test(value.trim());
+      return /^\+[1-9]\d{10,14}$/.test(value.trim());
     }),
 });
 
@@ -291,8 +292,8 @@ export default function SignupScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <ImageBackground source={require('../../assets/images/auth-bg.jpg')} style={{ flex: 1 }} blurRadius={Platform.OS === 'ios' ? 3 : 2} resizeMode="cover">
         <View className="absolute inset-0 bg-white/40 dark:bg-[#0B0E14]/55" />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-          <ScrollView
+        <KeyboardAwareScrollView
+            extraScrollHeight={56}
             contentContainerStyle={{
               flexGrow: 1,
               paddingTop: Math.max(insets.top, 24) + 16,
@@ -796,8 +797,7 @@ export default function SignupScreen() {
                 </View>
               </Animated.View>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
       </ImageBackground>
     </>
   );

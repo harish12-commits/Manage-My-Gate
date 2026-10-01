@@ -91,9 +91,6 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({
           const meta = ALL_AVAILABLE_FEATURES.find((f) => f.id === tile.id);
           const iconName = meta?.iconName || tile.iconName;
           const colorIcon = meta?.colorIcon || tile.colorIcon || '#EA580C';
-          const badge = meta?.badge || tile.badge;
-          const badgeColor = meta?.badgeColor || tile.badgeColor;
-
           return (
             <ActionTile
               key={tile.id}
@@ -102,8 +99,6 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({
               label={tFeatureName(tile.id, meta?.name || tile.name)}
               subtitle={tFeatureSubtitle(tile.id, meta?.subtitle || tile.subtitle)}
               metaValue={tFeatureSubtitle(tile.id, meta?.subtitle || tile.subtitle)}
-              badge={badge}
-              badgeColor={badgeColor}
               onPress={() => onTilePress && onTilePress(tile.id)}
             />
           );

@@ -37,7 +37,6 @@ export interface GlobalNavItem {
   route: string;
   icon: any;
   color: string;
-  badge?: string;
   permission?: string;
 }
 
@@ -70,9 +69,9 @@ export const GlobalNavModal: React.FC<GlobalNavModalProps> = ({ visible, onClose
       titleKey: 'nav_community_directory',
       defaultTitle: 'COMMUNITY & DIRECTORY',
       items: [
-        { id: 'cd-engagement', labelKey: 'community_engagement', defaultLabel: 'Community Engagement', route: '/(resident)/community-engagement', icon: Megaphone, color: '#6366f1', badge: 'NEW', permission: 'notices:polls' },
+        { id: 'cd-engagement', labelKey: 'community_engagement', defaultLabel: 'Community Engagement', route: '/(resident)/community-engagement', icon: Megaphone, color: '#6366f1', permission: 'notices:polls' },
         { id: 'cd-directory', labelKey: 'community_directory', defaultLabel: 'Community Directory', route: '/(resident)/directory/index', icon: Users, color: '#10b981' },
-        { id: 'cd-notes', labelKey: 'all_community_notes', defaultLabel: 'All Community Notes', route: '/(resident)/notes/index', icon: Sparkles, color: '#ec4899', badge: '24h' },
+        { id: 'cd-notes', labelKey: 'all_community_notes', defaultLabel: 'All Community Notes', route: '/(resident)/notes/index', icon: Sparkles, color: '#ec4899' },
       ],
     },
     {
@@ -220,12 +219,6 @@ export const GlobalNavModal: React.FC<GlobalNavModalProps> = ({ visible, onClose
                         onPress={() => handleNavigate(item.route)}
                         className="w-[48.5%] bg-card p-3 rounded-2xl border border-border/80 flex-row items-center justify-between active:bg-secondary/50 shadow-xs relative"
                       >
-                        {item.badge ? (
-                          <View className="absolute -top-1.5 -right-1.5 px-1.5 py-0.2 bg-primary rounded-full z-10">
-                            <Text className="text-[9px] font-bold text-primary-foreground">{item.badge}</Text>
-                          </View>
-                        ) : null}
-
                         <View className="flex-row items-center flex-1 me-1">
                           <View className="w-8 h-8 rounded-xl bg-secondary border border-border/50 items-center justify-center me-2.5 shrink-0">
                             <Icon as={item.icon} size={16} color={item.color} />

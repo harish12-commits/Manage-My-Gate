@@ -75,15 +75,15 @@ export function ResidentMyDuesScreen() {
 
   const handleViewInvoiceDetails = (invoiceId: string) => {
     if (!invoiceId) return;
-    router.push(`/(resident)/billing/invoice/${invoiceId}` as any);
+    router.navigate(`/(resident)/billing/invoice/${invoiceId}` as any);
   };
 
   const handleOpenWalletScreen = () => {
-    router.push('/(resident)/billing/wallet' as any);
+    router.navigate('/(resident)/billing/wallet' as any);
   };
 
   const handleOpenPaymentHistory = () => {
-    router.push('/(resident)/billing/history' as any);
+    router.navigate('/(resident)/billing/history' as any);
   };
 
   const findFirstUnpaidInvoice = (): Invoice | null => {

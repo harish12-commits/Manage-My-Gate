@@ -9,8 +9,9 @@ import { SegmentedControl } from '@/components/common/SegmentedControl';
 import { getLocalizedPresetNotes } from '../types/communityNoteTypes';
 import { useCommunityNote, formatExpirationCountdown } from '../hooks/useCommunityNote';
 import { useDirectoryMessaging } from '../hooks/useDirectoryMessaging';
+import { DirectoryQuickMessageSheet } from './DirectoryQuickMessageSheet';
 import { useTranslation } from '@/src/utils/i18n';
-import { Sparkles, Send, Trash2, ThumbsUp, MessageSquare, Phone } from 'lucide-react-native';
+import { Sparkles, Send, Trash2, ThumbsUp, Phone } from 'lucide-react-native';
 
 export interface DirectoryNoteComposerProps {
   visible: boolean;
@@ -24,7 +25,12 @@ export const DirectoryNoteComposer = ({
   initialTab = 'compose',
 }: DirectoryNoteComposerProps) => {
   const [currentTab, setCurrentTab] = useState<'compose' | 'feed'>(initialTab);
-  const { onOpenQuickMessage: onInterestedInNote, onOpenConversation } = useDirectoryMessaging();
+  const {
+    quickSheetOpen,
+    setQuickSheetOpen,
+    selectedMember,
+    onOpenQuickMessage: onInterestedInNote,
+  } = useDirectoryMessaging();
   const { t, tRole } = useTranslation();
 
   const {
@@ -60,7 +66,8 @@ export const DirectoryNoteComposer = ({
   };
 
   return (
-    <BottomSheet
+    <>
+      <BottomSheet
       visible={visible}
       onClose={onClose}
       title={currentTab === 'compose' ? (myActiveNote ? t('manage_active_note', 'Manage Active Note') : t('whats_happening', "What's happening?")) : t('community_notes_feed', 'Community Notes Feed')}
@@ -202,7 +209,6 @@ export const DirectoryNoteComposer = ({
                     : 'success';
 
                   const phoneNum = note.phone || note.memberData?.phone;
-                  const intercomNum = note.intercomNumber || note.memberData?.intercomNumber;
                   const interests = note.interests || note.memberData?.interests || [];
 
                   const targetUserId = typeof note.userId === 'string' ? note.userId : note.userId?._id || note._id;
@@ -214,7 +220,6 @@ export const DirectoryNoteComposer = ({
                     unitNumber: authorUnit,
                     role: String(rawRole).toLowerCase(),
                     phone: phoneNum,
-                    intercomNumber: intercomNum,
                   };
 
                   return (
@@ -266,7 +271,6 @@ export const DirectoryNoteComposer = ({
                           size="sm"
                           onPress={() => {
                             onInterestedInNote(targetMember as any);
-                            onClose();
                           }}
                           leftIcon={ThumbsUp}
                           className="h-7.5 rounded-xl bg-primary px-2.5"
@@ -279,7 +283,7 @@ export const DirectoryNoteComposer = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            onPress={() => Linking.openURL(`tel:${phoneNum}`)}
+                            onPress={() => Linking.openURL(`tel:${phoneNum.replace(/[^\d+]/g, '')}`).catch(() => {})}
                             leftIcon={Phone}
                             className="h-7.5 rounded-xl border-border bg-background px-2"
                             textClassName="text-[11px] font-semibold text-foreground"
@@ -287,6 +291,7 @@ export const DirectoryNoteComposer = ({
                             {t('btn_call', 'Call')}
                           </Button>
                         ) : null}
+
                       </View>
                     </View>
                   );
@@ -302,11 +307,12 @@ export const DirectoryNoteComposer = ({
                   {t('no_active_notes_sub', "Be the first to share what's happening in your community.")}
                 </Text>
                 <Button
-                  variant="default"
+                  variant="outline"
                   size="sm"
                   onPress={() => setCurrentTab('compose')}
                   leftIcon={Sparkles}
-                  className="rounded-xl mt-2 px-4"
+                  className="rounded-xl mt-2 px-4 bg-white border-neutral-300"
+                  textClassName="text-black font-bold"
                 >
                   {t('add_note_btn', 'Add Note')}
                 </Button>
@@ -315,7 +321,13 @@ export const DirectoryNoteComposer = ({
           </ScrollView>
         )}
       </View>
-    </BottomSheet>
+      </BottomSheet>
+      <DirectoryQuickMessageSheet
+        visible={quickSheetOpen}
+        onClose={() => setQuickSheetOpen(false)}
+        member={selectedMember}
+      />
+    </>
   );
 };
 

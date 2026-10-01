@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   Animated,
   Easing,
   Dimensions,
   StyleSheet,
   StatusBar,
 } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { NahomEmblem } from './NahomBrandLogo';
 import { Sparkles, ShieldCheck } from 'lucide-react-native';
 

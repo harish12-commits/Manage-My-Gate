@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Modal, Pressable, ScrollView, Image, Alert, Linking, KeyboardAvoidingView, Platform } from 'react-native';
-import { X, Users, Search, User as UserIcon, MessageCircle, Send, Phone, MessageSquare } from 'lucide-react-native';
+import { X, Users, User as UserIcon, MessageCircle, Send, Phone, MessageSquare } from 'lucide-react-native';
 import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
+import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { Button } from '@/components/ui/button';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SheetGrabHandle } from '@/components/ui/SheetGrabHandle';
@@ -176,22 +177,12 @@ export const ResidentDirectoryModal = ({
           <View className="flex-1">
             {/* Search */}
             <View className="px-4 pt-3 pb-2">
-              <View className="relative">
-                <Input
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholder="Search name, villa, or activity…"
-                  className="h-10 bg-muted/30 border-border text-foreground text-xs ps-9 rounded-xl"
-                />
-                <View className="absolute left-3 top-2.5">
-                  <Search size={14} className="text-muted-foreground" />
-                </View>
-                {searchQuery ? (
-                  <Pressable onPress={() => setSearchQuery('')} className="absolute right-3 top-2.5">
-                    <X size={14} className="text-muted-foreground" />
-                  </Pressable>
-                ) : null}
-              </View>
+              <SearchFilterBar
+                searchValue={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchPlaceholder="Search name, villa, or activity…"
+                className="px-0 py-0"
+              />
             </View>
 
             {/* Tabs */}

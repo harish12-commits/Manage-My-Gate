@@ -44,7 +44,7 @@ export function NoticeBoardTopNav() {
           return (
             <TouchableOpacity
               key={item.id}
-              onPress={() => router.push(item.route)}
+              onPress={() => router.navigate(item.route)}
               className={`px-4 py-3 me-2 border-b-2 ${isActive ? 'border-primary' : 'border-transparent'}`}
               accessibilityRole="tab"
               accessibilityState={{ selected: isActive }}

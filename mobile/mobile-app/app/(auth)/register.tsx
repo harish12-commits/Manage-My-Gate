@@ -37,7 +37,7 @@ const registerSchema = yup.object().shape({
         }
         return true;
       }
-      return /^\+[1-9]\d{7,14}$/.test(value);
+      return /^\+[1-9]\d{10,14}$/.test(value);
     }),
   password: yup
     .string()
@@ -328,9 +328,11 @@ export default function RegisterScreen() {
                 <View className="flex-1">
                   <GoogleSignInButton />
                 </View>
-                <View className="flex-1">
-                  <AppleSignInButton />
-                </View>
+                {Platform.OS === 'ios' ? (
+                  <View className="flex-1">
+                    <AppleSignInButton />
+                  </View>
+                ) : null}
               </View>
 
               {/* Login Link */}

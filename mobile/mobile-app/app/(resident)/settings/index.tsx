@@ -78,7 +78,6 @@ export default function SettingsScreen() {
   const [createPulseOpen, setCreatePulseOpen] = useState(false);
   const [interestsOpen, setInterestsOpen] = useState(false);
   const [directoryOpen, setDirectoryOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [villaModalVisible, setVillaModalVisible] = useState(false);
   const [orgModalVisible, setOrgModalVisible] = useState(false);
@@ -161,30 +160,47 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    try {
-      setIsDeleting(true);
-      const result = await deleteAccount();
-      if (result?.meta?.requestStatus === 'rejected') {
-        const msg = (result as any)?.payload || t('error', 'Failed to delete account. Please try again.');
+  const triggerDeleteAccount = () => {
+    const doDelete = async () => {
+      try {
+        setIsDeleting(true);
+        const result = await deleteAccount();
+        if (result?.meta?.requestStatus === 'rejected') {
+          const msg = (result as any)?.payload || t('error', 'Failed to delete account. Please try again.');
+          if (Platform.OS === 'web') {
+            window.alert(msg);
+          } else {
+            Alert.alert(t('error', 'Error'), String(msg));
+          }
+          return;
+        }
+        router.replace('/(auth)/login');
+      } catch (e: any) {
+        const msg = e?.message || t('error', 'Failed to delete account. Please try again.');
         if (Platform.OS === 'web') {
           window.alert(msg);
         } else {
-          Alert.alert(t('error', 'Error'), String(msg));
+          Alert.alert(t('error', 'Error'), msg);
         }
-        return;
+      } finally {
+        setIsDeleting(false);
       }
-      setDeleteModalOpen(false);
-      router.replace('/(auth)/login');
-    } catch (e: any) {
-      const msg = e?.message || t('error', 'Failed to delete account. Please try again.');
-      if (Platform.OS === 'web') {
-        window.alert(msg);
-      } else {
-        Alert.alert(t('error', 'Error'), msg);
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(t('confirm_delete_account_message', 'Are you sure you want to delete your account? This action cannot be undone.'));
+      if (confirmed) {
+        doDelete();
       }
-    } finally {
-      setIsDeleting(false);
+    } else {
+      Alert.alert(
+        t('confirm_delete_account_title', 'Delete Account?'),
+        t('confirm_delete_account_message', 'Are you sure you want to delete your account? This action cannot be undone.'),
+        [
+          { text: t('cancel', 'Cancel'), style: 'cancel' },
+          { text: t('confirm_delete_account_action', 'Delete Permanently'), style: 'destructive', onPress: doDelete },
+        ]
+      );
     }
   };
 
@@ -302,8 +318,8 @@ export default function SettingsScreen() {
           roleLabel={tRole(dynamicRole, dynamicRole)}
           avatarUrl={resolvedAvatarUrl}
           avatarLetter={avatarLetter}
-          onPressProfile={() => router.push('/(resident)/profile' as any)}
-          onPressQr={() => router.push('/(resident)/visitor' as any)}
+          onPressProfile={() => router.navigate('/(resident)/profile' as any)}
+          onPressQr={() => router.navigate('/(resident)/visitor' as any)}
         />
 
         {/* 3. Nudge Row */}
@@ -312,7 +328,7 @@ export default function SettingsScreen() {
           percentage={85}
           description={t('profile_nudge_desc', 'Complete emergency contacts & vehicle info.')}
           actionLabel={t('update_details', 'Update')}
-          onActionPress={() => router.push('/(resident)/profile' as any)}
+          onActionPress={() => router.navigate('/(resident)/profile' as any)}
         />
 
         {/* 4. Update / CTA Row */}
@@ -353,16 +369,7 @@ export default function SettingsScreen() {
             iconBgColor="rgba(14, 165, 233, 0.12)"
             title={t('community_directory', 'Community Directory')}
             subtitle={t('find_residents_security', 'Find residents, security & staff')}
-            onPress={() => router.push('/(resident)/directory' as any)}
-            isLast={false}
-          />
-          <SettingsRow
-            icon={Sparkles}
-            iconColor="#ec4899"
-            iconBgColor="rgba(236, 72, 153, 0.12)"
-            title={t('all_community_notes', 'All Community Notes')}
-            subtitle={t('community_notes_desc', 'Public notes, statuses and pulses')}
-            onPress={() => router.push('/(resident)/notes' as any)}
+            onPress={() => router.navigate('/(resident)/directory' as any)}
             isLast={true}
           />
         </SettingsCard>
@@ -399,7 +406,7 @@ export default function SettingsScreen() {
             iconBgColor="rgba(245, 158, 11, 0.12)"
             title={t('report_an_issue', 'Contact Support')}
             subtitle={t('report_an_issue_desc', 'Report a problem or suggest an improvement')}
-            onPress={() => router.push('/(resident)/settings/report-issue' as any)}
+            onPress={() => router.navigate('/(resident)/settings/report-issue' as any)}
             isLast={true}
           />
         </SettingsCard>
@@ -433,7 +440,7 @@ export default function SettingsScreen() {
             subtitle={t('delete_account_desc', 'Permanently delete your account & data')}
             isDestructive={true}
             showChevron={false}
-            onPress={() => setDeleteModalOpen(true)}
+            onPress={triggerDeleteAccount}
             isLast={true}
           />
         </SettingsCard>
@@ -563,22 +570,6 @@ export default function SettingsScreen() {
           }
         />
       ) : null}
-
-      {/* Account Deletion Confirmation Modal */}
-      <ConfirmationModal
-        visible={deleteModalOpen}
-        variant="danger"
-        title={t('confirm_delete_account_title', 'Delete Account?')}
-        message={t(
-          'confirm_delete_account_message',
-          'Are you sure you want to delete your account? This action cannot be undone.'
-        )}
-        confirmLabel={t('confirm_delete_account_action', 'Delete Permanently')}
-        cancelLabel={t('cancel', 'Cancel')}
-        loading={isDeleting}
-        onConfirm={handleDeleteAccount}
-        onCancel={() => setDeleteModalOpen(false)}
-      />
 
       <BottomNavigationBar />
     </View>

@@ -50,11 +50,11 @@ export function FinancialHistoryDetailModal({
   const handleNavigateToDomain = () => {
     onClose();
     if (item.type === 'INVOICE') {
-      router.push(`/(resident)/billing/invoice/${item.invoiceId}` as any);
+      router.navigate(`/(resident)/billing/invoice/${item.invoiceId}` as any);
     } else if (item.type === 'AMENITY') {
-      router.push('/(resident)/amenities/my-bookings' as any);
+      router.navigate('/(resident)/amenities/my-bookings' as any);
     } else if (item.type === 'WALLET_TRANSACTION' || item.type === 'REFUND') {
-      router.push('/(resident)/billing/wallet' as any);
+      router.navigate('/(resident)/billing/wallet' as any);
     }
   };
 

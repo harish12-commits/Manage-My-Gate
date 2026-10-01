@@ -67,7 +67,12 @@ const TextClassContext = React.createContext<string | undefined>(undefined);
 
 function translateChildren(node: React.ReactNode): React.ReactNode {
   if (typeof node === 'string') {
-    return i18n.translateText(node);
+    const translated = i18n.translateText(node);
+    if (translated === node) return node;
+
+    const leadingWhitespace = node.match(/^\s*/)?.[0] || '';
+    const trailingWhitespace = node.match(/\s*$/)?.[0] || '';
+    return `${leadingWhitespace}${translated.trim()}${trailingWhitespace}`;
   }
   if (Array.isArray(node)) {
     return React.Children.map(node, (child) => translateChildren(child));

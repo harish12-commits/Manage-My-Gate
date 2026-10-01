@@ -118,7 +118,7 @@ export default function PollDashboardScreen() {
   const handleCardPress = (poll) => {
     if (!poll || !poll._id) return;
     selectCurrentPoll(poll);
-    router.push(`/(resident)/polls/${poll._id}`);
+    router.navigate(`/(resident)/polls/${poll._id}`);
   };
 
   const handleDirectVote = async (poll, optionIndex) => {
@@ -307,7 +307,7 @@ export default function PollDashboardScreen() {
           <Button
             variant="default"
             size="sm"
-            onPress={() => router.push('/(resident)/community-engagement/create?type=POLL')}
+            onPress={() => router.navigate('/(resident)/community-engagement/create?type=POLL')}
             className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
             accessibilityRole="button"
             accessibilityLabel="Create Poll"

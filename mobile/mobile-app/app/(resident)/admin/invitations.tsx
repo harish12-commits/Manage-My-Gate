@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, Alert, TouchableOpacity } from 'react-native';
+import { View, FlatList, RefreshControl, Alert, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Mail, Send, Ban, Calendar, User, Clock, Shield } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
@@ -16,6 +16,7 @@ import {
   InvitationItem,
 } from '@/src/features/userManagement/services/userService';
 import { useTranslation } from '@/src/utils/i18n';
+import { Text } from '@/components/ui/text';
 
 const STATUS_FILTERS = ['ALL', 'PENDING', 'ACCEPTED', 'EXPIRED', 'REVOKED'];
 

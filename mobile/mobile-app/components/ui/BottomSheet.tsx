@@ -3,9 +3,7 @@ import {
   Modal,
   TouchableOpacity,
   Pressable,
-  ScrollView,
-  Dimensions,
-  KeyboardAvoidingView,
+  useWindowDimensions,
   Platform,
   Keyboard,
 } from 'react-native';
@@ -22,6 +20,7 @@ export interface AppBottomSheetProps {
   title?: string;
   snapPoints?: (string | number)[];
   children: React.ReactNode;
+  footer?: React.ReactNode;
   enableDynamicSizing?: boolean;
   contentContainerStyle?: any;
 }
@@ -42,10 +41,11 @@ function BottomSheet({
   title,
   children,
   contentContainerStyle,
+  footer,
 }: AppBottomSheetProps) {
+  const { height: screenHeight } = useWindowDimensions();
   if (!visible) return null;
 
-  const screenHeight = Dimensions.get('window').height;
   const sheetMaxHeight = Platform.OS === 'web'
     ? Math.min(Math.round(screenHeight * 0.85), 680)
     : Math.round(screenHeight * 0.88);
@@ -67,12 +67,7 @@ function BottomSheet({
       animationType="slide"
       onRequestClose={handleClose}
     >
-      <KeyboardAvoidingView
-        // IMPORTANT: On Android, `adjustResize` fails completely inside a Modal with `transparent={true}`.
-        // Therefore, we MUST use behavior="padding" on Android as well to prevent the keyboard from
-        // covering the bottom sheet.
-        behavior="padding"
-        keyboardVerticalOffset={0}
+      <View
         style={{ flex: 1 }}
         className="flex-1 justify-end items-center"
       >
@@ -84,7 +79,7 @@ function BottomSheet({
         
         {/* Content Box */}
         <View
-          style={{ maxHeight: sheetMaxHeight, maxWidth: '100%' }}
+          style={{ height: sheetMaxHeight, maxWidth: '100%' }}
           className="bg-card border-t border-border/80 rounded-t-3xl sm:rounded-3xl sm:border sm:mb-4 shadow-2xl overflow-hidden flex-col w-full max-w-md mx-auto"
         >
           {/* Top grab handle */}
@@ -109,6 +104,7 @@ function BottomSheet({
 
           {/* Scrollable Body Content */}
           <KeyboardAwareScrollView
+            style={{ flex: 1 }}
             extraScrollHeight={48}
             contentContainerStyle={[
               { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 48, flexGrow: 1 },
@@ -124,8 +120,13 @@ function BottomSheet({
           >
             {children}
           </KeyboardAwareScrollView>
+          {footer && (
+            <View className="pb-8 pt-3 px-4 border-t border-border/80 bg-card">
+              {footer}
+            </View>
+          )}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

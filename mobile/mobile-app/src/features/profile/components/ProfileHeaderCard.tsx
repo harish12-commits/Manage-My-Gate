@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, ActivityIndicator, Switch } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator, Switch, Image } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Avatar } from '@/components/common/Avatar';
 import { useTranslation } from '@/src/utils/i18n';
@@ -15,15 +15,15 @@ export interface ProfileHeaderCardProps {
   roleName?: string;
   communityName?: string;
   avatarUrl?: string | null;
+  bannerUrl?: string | null;
   avatarFallback?: string;
   status?: string;
   className?: string;
   onAvatarPress?: () => void;
+  onBannerPress?: () => void;
   onUnitPress?: () => void;
   showCameraBadge?: boolean;
   isAvatarLoading?: boolean;
-  allowCalls?: boolean;
-  onAllowCallsChange?: (value: boolean) => void;
 }
 
 /** A compact, editable profile hero which leaves the account fields below it. */
@@ -32,35 +32,41 @@ export const ProfileHeaderCard = ({
   unitName,
   roleName = 'Resident',
   avatarUrl,
+  bannerUrl,
   avatarFallback,
   className,
   onAvatarPress,
+  onBannerPress,
   onUnitPress,
   showCameraBadge = false,
   isAvatarLoading = false,
-  allowCalls = false,
-  onAllowCallsChange,
 }: ProfileHeaderCardProps) => {
   const { t, tRole } = useTranslation();
   const initialLetter = avatarFallback || (name ? name.charAt(0).toUpperCase() : 'U');
   const resolvedAvatarUrl = avatarUrl ? getImageUrl(avatarUrl) : null;
+  const resolvedBannerUrl = bannerUrl 
+    ? getImageUrl(bannerUrl) 
+    : 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=1000&auto=format&fit=crop'; // Default aesthetic placeholder
 
   return (
     <View className={cn('relative pb-2', className)}>
-      <View className="h-36 rounded-[28px] bg-rose-300 overflow-hidden">
-        <View className="absolute -right-10 -top-14 size-48 rounded-full bg-orange-200/50" />
-        <View className="absolute -left-12 -bottom-16 size-44 rounded-full bg-rose-400/35" />
-        <TouchableOpacity
-          onPress={onAvatarPress}
-          disabled={!onAvatarPress || isAvatarLoading}
-          activeOpacity={0.85}
-          className="absolute right-4 top-4 size-12 rounded-full bg-card/90 items-center justify-center shadow-sm"
-          accessibilityRole={onAvatarPress ? 'button' : 'none'}
-          accessibilityLabel={t('change_profile_photo', 'Change profile photo')}
-        >
-          <Camera size={22} className="text-foreground" strokeWidth={2.1} />
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity 
+        activeOpacity={0.9} 
+        disabled={!onBannerPress}
+        onPress={onBannerPress}
+        className="h-36 rounded-[28px] overflow-hidden bg-muted relative"
+      >
+        <Image
+          source={{ uri: resolvedBannerUrl }}
+          className="absolute inset-0 w-full h-full"
+          resizeMode="cover"
+        />
+        {onBannerPress && (
+          <View className="absolute right-4 top-4 size-10 rounded-full bg-black/40 items-center justify-center backdrop-blur-md border border-white/20">
+            <Camera size={18} className="text-white" strokeWidth={2.1} />
+          </View>
+        )}
+      </TouchableOpacity>
 
       <TouchableOpacity
         onPress={onAvatarPress}
@@ -98,19 +104,6 @@ export const ProfileHeaderCard = ({
           >
             {name}
           </Text>
-          <View className="flex-row items-center gap-2">
-            <Text className="text-sm font-bold text-foreground">
-              {t('enable_calling', 'Enable calling')}
-            </Text>
-            <Switch
-              value={allowCalls}
-              onValueChange={onAllowCallsChange}
-              disabled={!onAllowCallsChange}
-              trackColor={{ false: '#D6D3D1', true: '#0F4C5C' }}
-              thumbColor="#FFFFFF"
-              accessibilityLabel={t('enable_calling', 'Enable calling')}
-            />
-          </View>
         </View>
 
         <View className="flex-row flex-wrap gap-x-5 gap-y-2">

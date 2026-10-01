@@ -213,11 +213,14 @@ export function ScreenShell({
       {/* Global Luxury Warm Peach-to-Ivory Background Layer */}
       <AppBackground />
 
-      {/* Top Status Bar Safe Area Spacer */}
-      <View
-        style={{ height: topInsetPadding }}
-        className="bg-transparent z-30"
-      />
+      {/* Standard screens own this inset. Full-screen flows render a custom
+          header which already includes the device safe area. */}
+      {!hideHeader && (
+        <View
+          style={{ height: topInsetPadding }}
+          className="bg-transparent z-30"
+        />
+      )}
 
       {/* Header row (seamless transparent header showing warm peach gradient) */}
       {!hideHeader && (
@@ -259,10 +262,8 @@ export function ScreenShell({
                 accessibilityHint="Double tap header title to switch active Role or Villa Unit"
               >
                 <Text
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
                   numberOfLines={subtitle ? 1 : 2}
-                  className="text-foreground text-[23px] sm:text-[25px] font-extrabold font-bold tracking-tight leading-tight shrink"
+                  className="text-foreground text-[22px] sm:text-[24px] font-extrabold tracking-tight leading-tight shrink"
                   style={{ fontWeight: 'bold' }}
                 >
                   {translateText(title)}
@@ -337,43 +338,37 @@ export function ScreenShell({
       ) : null}
 
       {/* Main content area */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        // This view begins below the app header, so an extra offset leaves the
-        // focused field partially behind the keyboard on iOS.
-        keyboardVerticalOffset={0}
-        className="flex-1 bg-transparent"
-      >
-        {!interactionsComplete || (loading && !hasChildren) ? (
-          loaderVariant === 'spinner' ? (
-            <ProgressLoader message={t('common_loading', 'Loading...')} className="flex-1 mt-10" />
-          ) : loaderVariant === 'skeleton' ? (
-            <Skeleton variant="listItem" count={5} />
-          ) : (
-            <View className="flex-1 bg-transparent" />
-          )
-        ) : scrollable ? (
-          <KeyboardAwareScrollView 
-            extraScrollHeight={48}
-            className="flex-1 bg-transparent"
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            alwaysBounceVertical={true}
-            {...scrollHandlerProps}
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingBottom: shouldShowBottomNav ? Math.max(insets.bottom + 70, 84) : Math.max(insets.bottom, 24),
-            }}
-          >
-            {children}
-          </KeyboardAwareScrollView>
-        ) : (
+      {loading && !hasChildren ? (
+        <View className="flex-1 bg-transparent px-4 py-2">
+          <Skeleton variant="listItem" count={5} />
+        </View>
+      ) : scrollable ? (
+        <KeyboardAwareScrollView 
+          extraScrollHeight={48}
+          className="flex-1 bg-transparent"
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          alwaysBounceVertical={true}
+          {...scrollHandlerProps}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: shouldShowBottomNav ? Math.max(insets.bottom + 70, 84) : Math.max(insets.bottom, 24),
+          }}
+        >
+          {children}
+        </KeyboardAwareScrollView>
+      ) : (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={0}
+          className="flex-1 bg-transparent"
+        >
           <View className="flex-1 bg-transparent">
             {children}
           </View>
-        )}
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      )}
 
       {/* Global Easy Navigation Modal (Triggered from Compass Icon Button) */}
       {showGlobalNavModal && (

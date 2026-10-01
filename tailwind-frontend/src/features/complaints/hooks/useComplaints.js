@@ -45,7 +45,7 @@ export const useComplaints = (filters = {}, options = {}) => {
   useEffect(() => {
     // Socket initialization for real-time updates
     const token = localStorage.getItem('token');
-    socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+    socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5006', {
       auth: { token }
     });
 

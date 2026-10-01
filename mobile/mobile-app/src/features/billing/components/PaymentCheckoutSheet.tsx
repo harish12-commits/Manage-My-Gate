@@ -111,7 +111,7 @@ export function PaymentCheckoutSheet({
 
   const handleOpenWalletRecharge = () => {
     onClose();
-    router.push('/(resident)/billing/wallet' as any);
+    router.navigate('/(resident)/billing/wallet' as any);
   };
 
   const handleInitiatePayment = () => {
@@ -179,7 +179,7 @@ export function PaymentCheckoutSheet({
       if (onPaymentSuccess) {
         onPaymentSuccess(updatedReceiptData, amountToPay, 'Digital Wallet');
       } else {
-        router.push(`/(resident)/billing/invoice/${invoice._id}` as any);
+        router.navigate(`/(resident)/billing/invoice/${invoice._id}` as any);
         Alert.alert('Payment Successful!', `Settled ₹${amountToPay.toLocaleString('en-IN')} via Digital Wallet for Invoice #${invNo}.`);
       }
       onClose();
@@ -234,7 +234,7 @@ export function PaymentCheckoutSheet({
       // Handle ambiguous verification (network timeout or offline state during verification)
       if (verifyResult?.isChecking || verifyResult?.status === 'CHECKING') {
         onClose();
-        router.push(
+        router.navigate(
           `/(resident)/billing/payment-result?invoiceId=${invoice._id}&status=CHECKING&paymentMethod=Razorpay Online&amount=${amountToPay}` as any
         );
         return;
@@ -269,7 +269,7 @@ export function PaymentCheckoutSheet({
       if (onPaymentSuccess) {
         onPaymentSuccess(updatedReceiptData, amountToPay, 'Online Payment');
       } else {
-        router.push(`/(resident)/billing/invoice/${invoice._id}` as any);
+        router.navigate(`/(resident)/billing/invoice/${invoice._id}` as any);
         Alert.alert('Razorpay Payment Confirmed!', `Verified & settled ₹${amountToPay.toLocaleString('en-IN')} for Invoice #${invNo}.`);
       }
       onClose();

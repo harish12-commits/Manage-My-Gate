@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Platform, Modal, TouchableOpacity } from 'react-native';
+import { View, Pressable, Platform, Modal, TouchableOpacity } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { Clock, X } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
 

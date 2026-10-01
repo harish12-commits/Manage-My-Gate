@@ -11,7 +11,7 @@ export const useVillaSocket = (orgId) => {
   useEffect(() => {
     if (!orgId) return;
 
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5006';
     logger.info(`Initializing real-time villa socket connection for org room: org:${orgId}`);
     
     socketRef.current = io(socketUrl, {

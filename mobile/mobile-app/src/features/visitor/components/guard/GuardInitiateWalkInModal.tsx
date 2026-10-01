@@ -91,7 +91,7 @@ export const GuardInitiateWalkInModal: React.FC<GuardInitiateWalkInModalProps> =
       <BottomSheet
         visible={visible}
         onClose={onClose}
-        title="Initiate Gate Walk-In"
+        title="Walk in Invite"
       >
         <View className="gap-3.5 pb-4">
           {error && (
@@ -162,18 +162,12 @@ export const GuardInitiateWalkInModal: React.FC<GuardInitiateWalkInModalProps> =
           />
 
           {/* Action Buttons */}
-          <View className="flex-row gap-2 pt-2 border-t border-border">
-            <Button variant="outline" className="flex-1 h-11 rounded-xl" onPress={onClose} disabled={loading}>
-              <Text className="text-xs font-semibold text-foreground">Cancel</Text>
+          <View className="flex-row gap-3 pt-4">
+            <Button variant="outline" className="flex-1 h-12 rounded-xl border border-border bg-background" onPress={onClose} disabled={loading}>
+              <Text className="text-sm font-bold text-foreground">Cancel</Text>
             </Button>
-            <Button
-              variant="default"
-              className="flex-1 h-11 rounded-xl"
-              onPress={handleSubmit}
-              disabled={loading}
-              loading={loading}
-            >
-              <Text className="text-xs font-bold text-primary-foreground">Send Resident Request</Text>
+            <Button variant="default" className="flex-1 h-12 rounded-xl bg-primary shadow-sm shadow-orange-500/20" onPress={handleSubmit} disabled={loading} loading={loading}>
+              <Text className="text-sm font-bold text-white">Continue</Text>
             </Button>
           </View>
         </View>

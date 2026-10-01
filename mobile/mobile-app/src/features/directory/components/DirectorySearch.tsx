@@ -17,6 +17,7 @@ export const DirectorySearch = ({
       searchValue={value}
       onSearchChange={onChangeText}
       searchPlaceholder={placeholder}
+      className="px-0 py-0"
     />
   );
 };

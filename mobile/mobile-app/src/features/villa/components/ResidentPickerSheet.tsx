@@ -60,7 +60,7 @@ export function ResidentPickerSheet({ visible, onClose, onSelect, title }: Resid
           searchPlaceholder={t('resident_picker_search', 'Search name, villa or phone')}
           variant="bordered"
         />
-        <ScrollView className="max-h-[55vh]" contentContainerClassName="gap-2 pb-2" showsVerticalScrollIndicator={false}>
+        <View className="gap-2 pb-2">
           {rows.slice(0, MAX_ROWS).map((r) => (
             <ListCard
               key={`${r.villaId}-${r.id}`}
@@ -83,7 +83,7 @@ export function ResidentPickerSheet({ visible, onClose, onSelect, title }: Resid
               description={t('resident_picker_empty_sub', 'Try another name or villa number.')}
             />
           ) : null}
-        </ScrollView>
+        </View>
       </View>
     </BottomSheet>
   );

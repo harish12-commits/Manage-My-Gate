@@ -19,6 +19,10 @@ const buttonVariants = cva(
           'bg-primary active:opacity-90 shadow-2xs',
           Platform.OS === 'web' ? 'hover:opacity-90' : ''
         ),
+        continue: cn(
+          'bg-white dark:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-700 rounded-xl',
+          Platform.OS === 'web' ? 'hover:bg-gray-50 dark:hover:bg-slate-700' : ''
+        ),
         primary: cn(
           'bg-primary active:opacity-90 shadow-2xs',
           Platform.OS === 'web' ? 'hover:opacity-90' : ''
@@ -114,6 +118,7 @@ const buttonTextVariants = cva(
     variants: {
       variant: {
         default: 'text-primary-foreground font-bold',
+        continue: 'text-black dark:text-white font-extrabold',
         primary: 'text-primary-foreground font-bold',
         destructive: 'text-white font-bold',
         'destructive-outline': 'text-rose-600 dark:text-rose-400 font-bold',
@@ -151,6 +156,7 @@ const buttonTextVariants = cva(
 
 const SOLID_LOADING_VARIANTS = new Set([
   'default',
+  'continue',
   'primary',
   'destructive',
   'stop',
@@ -165,6 +171,7 @@ export interface ButtonProps
   extends React.ComponentPropsWithoutRef<typeof Pressable> {
   variant?: 
     | 'default' 
+    | 'continue'
     | 'primary' 
     | 'destructive' 
     | 'destructive-outline'
@@ -210,7 +217,7 @@ const Button = React.forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>
     const loading = loadingProp || isLoading || false;
     const isDisabled = disabled || loading;
     const iconSize = size === 'sm' ? 16 : size === 'lg' ? 20 : 18;
-    const loadingColor = SOLID_LOADING_VARIANTS.has(variant || 'default') ? '#FFFFFF' : '#F45A0A';
+    const loadingColor = variant === 'continue' ? '#000000' : SOLID_LOADING_VARIANTS.has(variant || 'default') ? '#FFFFFF' : '#F45A0A';
     const minimumTouchTarget = variant === 'link'
       ? ''
       : size === 'icon'

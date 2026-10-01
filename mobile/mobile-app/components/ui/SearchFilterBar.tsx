@@ -139,10 +139,10 @@ export const SearchFilterBar = React.forwardRef<View, SearchFilterBarProps>(
         className={cn(searchFilterBarVariants({ variant }), className)}
         {...props}
       >
-        {/* Premium Float Card Wrapper */}
-        <View className="bg-card rounded-2xl shadow-sm border border-border/40 overflow-hidden p-1.5 flex-row items-center gap-2">
+        {/* Shared premium search surface used by every searchable list. */}
+        <View className="flex-row items-center gap-2 rounded-2xl border border-border/40 bg-card p-2 shadow-sm">
           {/* Search input container */}
-          <View className="flex-1 flex-row items-center bg-muted/40 rounded-xl px-3 h-10 text-foreground">
+          <View className="h-11 flex-1 flex-row items-center rounded-xl border border-border/80 bg-background/70 px-3.5 text-foreground shadow-2xs">
             <Icon
               as={Search}
               size={18}
@@ -156,7 +156,7 @@ export const SearchFilterBar = React.forwardRef<View, SearchFilterBarProps>(
               className={cn(
                 // Search prompts can be much longer than the available phone width.
                 // A compact type scale keeps the full prompt useful instead of clipping it.
-                'flex-1 min-w-0 text-foreground text-[12px] font-sans p-0 bg-transparent h-full',
+                'h-full min-w-0 flex-1 bg-transparent p-0 font-sans text-[13px] font-medium text-foreground',
                 Platform.select({
                   web: 'outline-none',
                 })

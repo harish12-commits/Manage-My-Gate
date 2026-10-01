@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { BottomSheet } from '../../../../components/ui/BottomSheet';
 import { Button } from '../../../../components/ui/button';
 import { Icon } from '../../../../components/ui/icon';
@@ -59,6 +60,27 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
       visible={visible}
       onClose={onClose}
       title={role ? `Edit ${role.name}` : 'New Security Role'}
+      footer={
+        <View className="flex-row gap-3 pt-1">
+          <Button
+            variant="outline"
+            onPress={onClose}
+            className="flex-1 h-12 rounded-xl border border-border bg-background"
+            disabled={isSubmitting}
+          >
+            <Text className="text-sm font-bold text-foreground">Cancel</Text>
+          </Button>
+          <Button
+            variant="default"
+            onPress={handleSubmit}
+            className="flex-1 h-12 rounded-xl bg-primary shadow-sm shadow-orange-500/20"
+            disabled={isSubmitting}
+            loading={isSubmitting}
+          >
+            <Text className="text-sm font-bold text-white">Save Changes</Text>
+          </Button>
+        </View>
+      }
     >
       <View className="gap-3.5 pb-6">
         {/* Role Name */}
@@ -162,22 +184,10 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
             )}
           </View>
 
-          {/* Native Action CTAs */}
-          <View className="flex-row items-center gap-3 mt-2 pt-3 border-t border-border">
-            <Button variant="outline" onPress={onClose} className="flex-1 rounded-xl h-11">
-              <Text className="font-bold text-xs text-foreground">Cancel</Text>
-            </Button>
-            <Button
-              variant="default"
-              loading={isSubmitting}
-              onPress={handleSubmit}
-              className="flex-1 rounded-xl h-11"
-            >
-              <Text className="font-bold text-xs text-white">
-                {role ? 'Save Changes' : 'Create Role'}
-              </Text>
-            </Button>
-          </View>
+
+
+
+
         </View>
     </BottomSheet>
   );

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Plug, Check } from 'lucide-react-native';
 import { ProviderCatalogItem } from '../services/integrationHubApi';
+import { Text } from '@/components/ui/text';
 
 interface ProviderCardProps {
   provider: ProviderCatalogItem;

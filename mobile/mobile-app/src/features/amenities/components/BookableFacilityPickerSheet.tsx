@@ -41,7 +41,7 @@ export function BookableFacilityPickerSheet({
           </Text>
         ) : null}
         {loading && facilities.length === 0 ? <AppLoader variant="inline" /> : null}
-        <ScrollView className="max-h-[55vh]" contentContainerClassName="gap-2 pb-2" showsVerticalScrollIndicator={false}>
+        <View className="gap-2 pb-2">
           {facilities.map((f) => (
             <ListCard
               key={f._id}
@@ -59,7 +59,7 @@ export function BookableFacilityPickerSheet({
               description={t('amenity_staff_no_facilities_sub', 'Publish a facility in the amenity catalog first.')}
             />
           ) : null}
-        </ScrollView>
+        </View>
       </View>
     </BottomSheet>
   );

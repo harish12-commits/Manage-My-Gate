@@ -3,7 +3,8 @@ import * as React from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { Button } from '@/components/ui/button';
-import { Text, View, Alert, Platform } from 'react-native';
+import { View, Alert, Platform } from 'react-native';
+import { Text } from '@/components/ui/text';
 import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '../hooks/useAuth';
 import { router } from 'expo-router';
@@ -84,7 +85,7 @@ export function GoogleSignInButton({ inviteToken, onSuccess, onError }: GoogleSi
           }
           if (res?.payload?.isNewUser) {
             const googleData = res.payload.googleData || {};
-            router.push({
+            router.navigate({
               pathname: '/(auth)/register',
               params: {
                 email: googleData.email || '',

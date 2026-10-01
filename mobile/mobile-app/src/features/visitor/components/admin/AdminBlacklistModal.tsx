@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Modal, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
+import { View, Modal, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { TextInput } from '@/components/forms/TextInput';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ export const AdminBlacklistModal: React.FC<AdminBlacklistModalProps> = ({
   onSubmit,
 }) => {
   const { t } = useTranslation();
+  const { height: windowHeight } = useWindowDimensions();
   const [visitorName, setVisitorName] = useState('');
   const [phone, setPhone] = useState('');
   const [idProofNumber, setIdProofNumber] = useState('');
@@ -92,12 +93,12 @@ export const AdminBlacklistModal: React.FC<AdminBlacklistModalProps> = ({
 
             <ScrollView
               ref={formScrollRef}
-              className="flex-1"
+              style={{ maxHeight: Math.max(300, Math.min(480, windowHeight * 0.56)) }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
               automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-              contentContainerStyle={{ paddingBottom: 24 }}
+              contentContainerStyle={{ paddingBottom: 12 }}
             >
               {error && (
                 <View className="p-2.5 bg-destructive/10 border border-destructive/20 rounded-xl mb-2">

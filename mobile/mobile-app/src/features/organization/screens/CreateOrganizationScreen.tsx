@@ -29,7 +29,7 @@ export const CreateOrganizationScreen: React.FC<CreateOrganizationScreenProps> =
       } catch (e) {}
     }
     sessionStore.setItem('mobile_auth_intent', 'create-org');
-    router.push({ pathname: '/(auth)/login', params: { intent: 'create-org' } });
+    router.navigate({ pathname: '/(auth)/login', params: { intent: 'create-org' } });
   };
 
   return (

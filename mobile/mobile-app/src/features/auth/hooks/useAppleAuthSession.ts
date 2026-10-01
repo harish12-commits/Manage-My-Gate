@@ -27,7 +27,7 @@ const formatFullName = (fullName: AppleAuthentication.AppleAuthenticationFullNam
     .join(' ')
     .trim();
 
-/** Native Sign in with Apple flow for iOS, with an explicit Android/web setup notice. */
+/** Native Sign in with Apple flow for iOS, with an unsupported-platform notice. */
 export function useAppleAuthSession(options: UseAppleAuthSessionOptions = {}) {
   const { inviteToken, onSuccess, onError } = options;
   const { loginWithApple, acceptSsoInvite } = useAuth();
@@ -66,9 +66,14 @@ export function useAppleAuthSession(options: UseAppleAuthSessionOptions = {}) {
 
   const handleAppleSignIn = React.useCallback(async () => {
     if (Platform.OS !== 'ios') {
-      reportError(
-        'Apple Sign-In on Android and web needs an Apple Services ID, verified domain, and secure return URL. The button is ready, but that Apple Developer configuration has not been added to this build yet.'
-      );
+      const message = Platform.OS === 'android'
+        ? 'Sorry, Android users cannot use Sign in with Apple. Please sign in using Google, email, or phone OTP.'
+        : 'Sign in with Apple is available in the iOS app. Please sign in using Google, email, or phone OTP here.';
+      if (Platform.OS === 'web') {
+        window.alert(message);
+      } else {
+        Alert.alert('Sign in with Apple', message, [{ text: 'OK' }]);
+      }
       return;
     }
 

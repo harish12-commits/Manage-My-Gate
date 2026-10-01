@@ -253,7 +253,7 @@ export const CreatePulseBottomSheet = ({
             </View>
 
             {mode === 'presets' ? (
-              <ScrollView className="max-h-[420px]" showsVerticalScrollIndicator={false}>
+              <View className="flex-1">
                 <View className="gap-3 pt-1">
                   {/* Presets Chips Grid */}
                   <View className="flex-row flex-wrap gap-2">
@@ -380,7 +380,7 @@ export const CreatePulseBottomSheet = ({
                     </View>
                   ) : null}
                 </View>
-              </ScrollView>
+              </View>
             ) : (
               <View className="gap-3 pt-1">
                 {/* Category Switcher for Custom Mode */}

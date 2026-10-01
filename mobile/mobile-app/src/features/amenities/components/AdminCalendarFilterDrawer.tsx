@@ -189,20 +189,22 @@ export function AdminCalendarFilterDrawer({
   const renderFacilitySection = () => (
     <View className="gap-3 pt-1">
       {/* Search Input for Facilities */}
-      <View className="flex-row items-center bg-card border border-border/80 rounded-xl px-2.5 h-10">
-        <Icon as={Search} size={14} className="text-muted-foreground me-2 shrink-0" />
-        <RNTextInput
-          value={facilitySearch}
-          onChangeText={setFacilitySearch}
-          placeholder={t('search_facility_or_feature', 'Search facility or feature...')}
-          placeholderTextColor="#9ca3af"
-          className="flex-1 text-xs text-foreground font-sans p-0"
-        />
-        {facilitySearch ? (
-          <Pressable onPress={() => setFacilitySearch('')} hitSlop={6}>
-            <Icon as={X} size={14} className="text-muted-foreground" />
-          </Pressable>
-        ) : null}
+      <View className="rounded-2xl border border-border/40 bg-card p-2 shadow-sm">
+        <View className="h-11 flex-row items-center rounded-xl border border-border/80 bg-background/70 px-3.5 shadow-2xs">
+          <Icon as={Search} size={18} className="text-muted-foreground me-2.5 shrink-0" />
+          <RNTextInput
+            value={facilitySearch}
+            onChangeText={setFacilitySearch}
+            placeholder={t('search_facility_or_feature', 'Search facility or feature...')}
+            placeholderTextColor="#9ca3af"
+            className="h-full min-w-0 flex-1 p-0 font-sans text-[13px] font-medium text-foreground"
+          />
+          {facilitySearch ? (
+            <Pressable onPress={() => setFacilitySearch('')} hitSlop={6} className="rounded-full p-1 active:bg-secondary">
+              <Icon as={X} size={16} className="text-muted-foreground" />
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       {/* Quick All Chip */}

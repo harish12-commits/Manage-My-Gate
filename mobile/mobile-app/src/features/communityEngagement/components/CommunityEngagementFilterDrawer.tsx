@@ -264,15 +264,17 @@ export const CommunityEngagementFilterDrawer: React.FC<CommunityEngagementFilter
 
       {audienceScope === 'SPECIFIC_ROLE' && (
         <View className="pt-2 border-t border-border/40 gap-2">
-          <View className="flex-row items-center bg-card border border-border/80 rounded-xl px-2.5 h-9">
-            <Icon as={Search} size={13} className="text-muted-foreground me-2 shrink-0" />
-            <RNTextInput
-              value={roleSearch}
-              onChangeText={setRoleSearch}
-              placeholder={t('search_roles')}
-              placeholderTextColor="#9ca3af"
-              className="flex-1 text-xs text-foreground font-sans p-0"
-            />
+          <View className="rounded-2xl border border-border/40 bg-card p-2 shadow-sm">
+            <View className="h-11 flex-row items-center rounded-xl border border-border/80 bg-background/70 px-3.5 shadow-2xs">
+              <Icon as={Search} size={18} className="text-muted-foreground me-2.5 shrink-0" />
+              <RNTextInput
+                value={roleSearch}
+                onChangeText={setRoleSearch}
+                placeholder={t('search_roles')}
+                placeholderTextColor="#9ca3af"
+                className="h-full min-w-0 flex-1 p-0 font-sans text-[13px] font-medium text-foreground"
+              />
+            </View>
           </View>
           <View className="flex-row flex-wrap gap-1.5 max-h-40">
             {availableRoles

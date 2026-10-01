@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, TouchableOpacity, ScrollView } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { Button } from '../../../../components/ui/button';
 import { Icon } from '../../../../components/ui/icon';
 import { Plug } from 'lucide-react-native';

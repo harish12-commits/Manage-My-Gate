@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, ScrollView } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { Zap, ArrowRight } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
 

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, TouchableOpacity, View } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { Clock, Users, Star, ChevronRight } from 'lucide-react-native';
 import { Amenity } from '../models/amenity.model';
 import { StatusBadge } from '@/components/ui/StatusBadge';

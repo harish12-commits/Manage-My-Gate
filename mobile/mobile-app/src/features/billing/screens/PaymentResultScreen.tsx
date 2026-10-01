@@ -300,7 +300,7 @@ export function PaymentResultScreen() {
               variant="outline"
               size="lg"
               className="w-full"
-              onPress={() => router.push(`/(resident)/billing/invoice/${invoiceId}` as any)}
+              onPress={() => router.navigate(`/(resident)/billing/invoice/${invoiceId}` as any)}
               accessibilityRole="button"
               accessibilityLabel="View Invoice Details"
             >
@@ -312,7 +312,7 @@ export function PaymentResultScreen() {
             variant="secondary"
             size="lg"
             className="w-full"
-            onPress={() => router.push('/(resident)/billing/my-dues' as any)}
+            onPress={() => router.navigate('/(resident)/billing/my-dues' as any)}
             accessibilityRole="button"
             accessibilityLabel="Return to My Dues Overview"
           >

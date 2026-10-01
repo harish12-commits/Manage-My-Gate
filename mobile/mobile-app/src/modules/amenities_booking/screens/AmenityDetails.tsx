@@ -3,7 +3,6 @@ import {
   Alert,
   Image,
   ScrollView,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -25,6 +24,7 @@ import { TimeSlotPicker } from '../components/TimeSlotPicker';
 import { StickyBottomCTA } from '../components/StickyBottomCTA';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { Text } from '@/components/ui/text';
 
 export interface AmenityDetailsProps {
   amenity: Amenity;

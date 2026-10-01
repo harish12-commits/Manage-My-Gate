@@ -75,7 +75,7 @@ export const CommunityEngagementFlowFooter: React.FC<CommunityEngagementFlowFoot
 
       {/* Next / Publish CTA */}
       <Button
-        variant="default"
+        variant={isLastStep ? "default" : "continue"}
         onPress={onNext}
         disabled={loading || savingDraft || disabled}
         className="flex-1 min-w-0 h-12 px-2 rounded-2xl flex-row items-center justify-center gap-1 shadow-sm"
@@ -105,8 +105,8 @@ export const CommunityEngagementFlowFooter: React.FC<CommunityEngagementFlowFoot
           </>
         ) : (
           <>
-            <Text numberOfLines={1} className="font-bold text-primary-foreground text-xs">{t('continue', 'Continue')}</Text>
-            {!isCompactWidth && <ArrowRight size={15} className="text-primary-foreground shrink-0" />}
+            <Text numberOfLines={1} className="font-extrabold text-foreground text-xs">{t('continue', 'Continue')}</Text>
+            {!isCompactWidth && <ArrowRight size={15} className="text-foreground shrink-0" />}
           </>
         )}
       </Button>

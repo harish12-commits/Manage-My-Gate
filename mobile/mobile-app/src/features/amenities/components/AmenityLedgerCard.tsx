@@ -8,7 +8,7 @@ import { View } from 'react-native';
 import { CalendarClock, Users, Wallet, ChevronRight } from 'lucide-react-native';
 import { ListCard } from '@/components/ui/ListCard';
 import type { StatusVariant } from '@/components/ui/StatusBadge';
-import { Button } from '@/components/ui/button';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/src/utils/i18n';
@@ -129,16 +129,12 @@ export function AmenityLedgerCard({ booking, onPress, className }: AmenityLedger
 
         {/* Action */}
         <View className="flex-row items-center justify-end pt-1">
-          <Button
-            variant="outline"
-            size="sm"
+          <HeaderActionButton
+            icon={ChevronRight}
+            label={t('amenity_ledger_view', 'View details')}
             onPress={() => onPress(booking)}
-            className="h-8 px-3 rounded-lg flex-row items-center gap-1"
             accessibilityLabel={t('amenity_ledger_view', 'View details')}
-          >
-            <Text className="text-xs font-semibold text-foreground">{t('amenity_ledger_view', 'View details')}</Text>
-            <ChevronRight size={13} className="text-muted-foreground" />
-          </Button>
+          />
         </View>
       </View>
     </ListCard>

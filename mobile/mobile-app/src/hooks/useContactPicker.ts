@@ -15,10 +15,11 @@ export interface PickedContact {
   phones: ContactPhoneOption[];
 }
 
-import * as Contacts from 'expo-contacts';
-
 /** The native contact picker exists only on iOS/Android builds. */
 export const isContactPickerSupported = Platform.OS === 'ios' || Platform.OS === 'android';
+
+// Lazy require keeps the native-only contact module out of web and unit-test initialization.
+const loadContacts = () => require('expo-contacts') as typeof import('expo-contacts');
 
 /**
  * Opens the system contact picker for one contact. Only the chosen contact is
@@ -28,6 +29,7 @@ export const isContactPickerSupported = Platform.OS === 'ios' || Platform.OS ===
 export const useContactPicker = () => {
   const ensurePermission = useCallback(async (): Promise<boolean> => {
     if (Platform.OS !== 'android') return true;
+    const Contacts = loadContacts();
     const current = await Contacts.getPermissionsAsync();
     if (current.granted) return true;
     const requested = current.canAskAgain ? await Contacts.requestPermissionsAsync() : current;
@@ -47,43 +49,35 @@ export const useContactPicker = () => {
     if (!isContactPickerSupported) return null;
     try {
       if (!(await ensurePermission())) return null;
+      const Contacts = loadContacts();
       const contact = await Contacts.Contact.presentPicker();
-      if (!contact) {
-        // Did not pick a contact, or picking failed silently
-        Alert.alert('Contact Picker', 'No contact selected or the contact picker could not be opened on your device.');
-        return null;
-      }
+      if (!contact) return null;
 
-
-      // In SDK 52, the Contact class uses async getters for details
-      const [rawPhones, rawEmails, fullName] = await Promise.all([
+      const [fullName, contactPhones, contactEmails] = await Promise.all([
+        contact.getFullName(),
         contact.getPhones(),
         contact.getEmails(),
-        contact.getFullName()
       ]);
 
       const seen = new Set<string>();
       const phones: ContactPhoneOption[] = [];
-      for (const pn of rawPhones || []) {
-        const raw = pn.number || (pn as any).digits || '';
+      for (const pn of contactPhones || []) {
+        const raw = pn.number || '';
         if (!raw.trim()) continue;
-        const parsed = parsePhone(raw, (pn as any).countryCode?.toUpperCase());
+        const parsed = parsePhone(raw);
         const phone = parsed.e164 || raw.replace(/[^\d+]/g, '');
         if (seen.has(phone)) continue;
         seen.add(phone);
         phones.push({ phone, display: parsed.e164 ? formatPhoneDisplay(parsed.e164) : raw, label: pn.label });
       }
 
-      if (phones.length === 0) {
-        Alert.alert('No Number Found', 'The selected contact does not have a valid phone number.');
-        return null;
-      }
-
-      const name = fullName?.trim() || '';
-      const email = rawEmails?.[0]?.address || (rawEmails?.[0] as any)?.email;
-      return { name, email, phones };
-    } catch (err: any) {
-      Alert.alert('Could not open contacts', err?.message || 'Please type the details manually.');
+      return {
+        name: fullName?.trim() || '',
+        email: contactEmails?.[0]?.address,
+        phones,
+      };
+    } catch (err) {
+      Alert.alert('Could not open contacts', 'Please type the details manually.');
       return null;
     }
   }, [ensurePermission]);

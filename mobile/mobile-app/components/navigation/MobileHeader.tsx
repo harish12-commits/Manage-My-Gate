@@ -110,7 +110,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
       try {
         router.setParams({ openProfile: undefined });
       } catch (e) {}
-      router.push('/(resident)/account' as any);
+      router.navigate('/(resident)/account' as any);
     }
   }, [params?.openProfile, router]);
 
@@ -201,7 +201,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
     if (onNotificationPress) {
       onNotificationPress();
     } else {
-      router.push('/(resident)/notifications' as any);
+      router.navigate('/(resident)/notifications' as any);
     }
   };
 
@@ -329,7 +329,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           <TouchableOpacity
             onPress={() => {
               blurActiveElement();
-              router.push('/(resident)/profile' as any);
+              router.navigate('/(resident)/profile' as any);
             }}
             activeOpacity={0.7}
             className="size-11 rounded-full bg-secondary/80 dark:bg-secondary/60 border border-border/70 items-center justify-center overflow-hidden active:bg-secondary shadow-2xs"

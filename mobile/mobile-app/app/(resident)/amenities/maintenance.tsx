@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { PaginatedList } from '@/components/ui/PaginatedList';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
-import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Plus, RotateCcw } from 'lucide-react-native';
@@ -261,15 +261,12 @@ export default function AmenityMaintenanceScheduleScreen() {
       error={error}
       onRetry={loadData}
       headerRight={
-        <Button
-          size="sm"
+        <HeaderActionButton
           onPress={() => handleOpenCreateModal()}
-          className="flex-row items-center gap-1 rounded-full px-2.5 h-8 bg-emerald-600 active:bg-emerald-700"
+          icon={Plus}
+          label="Schedule"
           accessibilityLabel="Schedule Task"
-        >
-          <Plus size={14} color="#FFFFFF" />
-          <Text className="text-white font-bold text-xs">Schedule</Text>
-        </Button>
+        />
       }
     >
       <View className="flex-1 bg-background">

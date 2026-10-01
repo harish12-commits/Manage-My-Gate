@@ -1,10 +1,54 @@
 import { Alert, Platform } from 'react-native';
+import { translateText } from './i18n';
 
 export interface AlertButtonOption {
   text: string;
   onPress?: () => void;
   style?: 'default' | 'cancel' | 'destructive';
 }
+
+type LocalizedAlertState = {
+  installed: boolean;
+  originalAlert: typeof Alert.alert;
+  translate: typeof translateText;
+};
+
+const ALERT_STATE_KEY = Symbol.for('nahom.localizedAlert');
+const alertGlobal = globalThis as typeof globalThis & {
+  [ALERT_STATE_KEY]?: LocalizedAlertState;
+};
+
+/**
+ * Localizes React Native alerts created anywhere in the app, including older
+ * screens that call Alert.alert directly.
+ */
+export const installLocalizedAlertTranslation = () => {
+  const existingState = alertGlobal[ALERT_STATE_KEY];
+  if (existingState) {
+    existingState.translate = translateText;
+    return;
+  }
+
+  const state: LocalizedAlertState = {
+    installed: true,
+    originalAlert: Alert.alert.bind(Alert),
+    translate: translateText,
+  };
+  alertGlobal[ALERT_STATE_KEY] = state;
+
+  Alert.alert = ((title, message, buttons, options) => {
+    const localizedButtons = buttons?.map((button) => ({
+      ...button,
+      text: state.translate(button.text),
+    }));
+    state.originalAlert(
+      state.translate(title),
+      message ? state.translate(message) : message,
+      localizedButtons,
+      options
+    );
+  }) as typeof Alert.alert;
+};
 
 /**
  * Cross-platform alert utility.
@@ -17,13 +61,19 @@ export const showCrossPlatformAlert = (
   message?: string,
   buttons?: AlertButtonOption[]
 ) => {
-  const combinedText = [title, message].filter(Boolean).join('\n\n');
+  const localizedTitle = translateText(title);
+  const localizedMessage = message ? translateText(message) : message;
+  const localizedButtons = buttons?.map((button) => ({
+    ...button,
+    text: translateText(button.text),
+  }));
+  const combinedText = [localizedTitle, localizedMessage].filter(Boolean).join('\n\n');
 
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    if (!buttons || buttons.length <= 1) {
+    if (!localizedButtons || localizedButtons.length <= 1) {
       window.alert(combinedText);
-      if (buttons && buttons.length === 1 && buttons[0].onPress) {
-        buttons[0].onPress();
+      if (localizedButtons && localizedButtons.length === 1 && localizedButtons[0].onPress) {
+        localizedButtons[0].onPress();
       }
       return;
     }
@@ -31,16 +81,16 @@ export const showCrossPlatformAlert = (
     // Multiple buttons on Web -> use window.confirm
     const confirmed = window.confirm(combinedText);
     if (confirmed) {
-      const confirmBtn = buttons.find((b) => b.style !== 'cancel') || buttons[0];
+      const confirmBtn = localizedButtons.find((b) => b.style !== 'cancel') || localizedButtons[0];
       if (confirmBtn?.onPress) confirmBtn.onPress();
     } else {
-      const cancelBtn = buttons.find((b) => b.style === 'cancel');
+      const cancelBtn = localizedButtons.find((b) => b.style === 'cancel');
       if (cancelBtn?.onPress) cancelBtn.onPress();
     }
     return;
   }
 
-  Alert.alert(title, message, buttons as any);
+  Alert.alert(localizedTitle, localizedMessage, localizedButtons as any);
 };
 
 export default showCrossPlatformAlert;

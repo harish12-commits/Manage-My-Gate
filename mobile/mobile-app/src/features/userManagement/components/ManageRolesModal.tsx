@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Modal, TouchableOpacity, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { View, ScrollView, Modal, TouchableOpacity, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { X, Key, Check } from 'lucide-react-native';
 import { Button } from '@/components/common/Button';
 import { UserData } from '../services/userService';
+import { Text } from '@/components/ui/text';
 
 interface ManageRolesModalProps {
   visible: boolean;

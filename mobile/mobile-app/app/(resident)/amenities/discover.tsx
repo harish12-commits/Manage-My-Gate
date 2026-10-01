@@ -102,7 +102,7 @@ export default function DiscoverAmenitiesScreen() {
 
   const navigateToBooking = (facilityId: string) => {
     setPreviewFacility(null);
-    router.push({
+    router.navigate({
       pathname: '/(resident)/amenities/booking/[id]' as any,
       params: { id: facilityId },
     });
@@ -170,7 +170,7 @@ export default function DiscoverAmenitiesScreen() {
         <Button
           variant="outline"
           size="sm"
-          onPress={() => router.push('/(resident)/amenities/my-bookings' as any)}
+          onPress={() => router.navigate('/(resident)/amenities/my-bookings' as any)}
           className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
           accessibilityRole="button"
           accessibilityLabel={t('my_bookings', 'My Bookings')}

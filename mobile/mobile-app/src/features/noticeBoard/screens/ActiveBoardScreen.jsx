@@ -136,7 +136,7 @@ export default function ActiveBoardScreen() {
         if (!notice.isReadByUser) {
           readNotice(notice._id);
         }
-        router.push({
+        router.navigate({
           pathname: '/(resident)/notices/[id]',
           params: { id: notice._id },
         });
@@ -187,7 +187,7 @@ export default function ActiveBoardScreen() {
       if (!notice.isReadByUser) {
         readNotice(notice._id);
       }
-      router.push({
+      router.navigate({
         pathname: '/(resident)/notices/[id]',
         params: { id: notice._id },
       });
@@ -200,7 +200,7 @@ export default function ActiveBoardScreen() {
       if (poll) {
         selectCurrentPoll(poll);
       }
-      router.push({
+      router.navigate({
         pathname: '/(resident)/polls/[id]',
         params: { id: poll._id || poll.id },
       });
@@ -221,7 +221,7 @@ export default function ActiveBoardScreen() {
         await acknowledgeNotice(id, '');
         handleRefresh();
       } catch {
-        router.push({
+        router.navigate({
           pathname: '/(resident)/notices/[id]',
           params: { id },
         });

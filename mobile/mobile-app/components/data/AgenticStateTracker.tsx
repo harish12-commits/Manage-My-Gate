@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { Activity, CheckCircle, Clock, XCircle } from 'lucide-react-native';
 import { cn } from '../../lib/utils';
 

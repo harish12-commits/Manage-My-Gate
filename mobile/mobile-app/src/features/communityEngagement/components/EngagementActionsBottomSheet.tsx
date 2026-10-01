@@ -228,7 +228,7 @@ export const EngagementActionsBottomSheet: React.FC<EngagementActionsBottomSheet
   // 7b. Edit Content via Wizard
   const handleEdit = () => {
     onClose();
-    router.push({
+    router.navigate({
       pathname: '/(resident)/community-engagement/edit' as any,
       params: {
         mode: 'edit',
@@ -241,7 +241,7 @@ export const EngagementActionsBottomSheet: React.FC<EngagementActionsBottomSheet
   // 8. Full Details Navigation
   const handleViewFullDetails = () => {
     onClose();
-    router.push(item.route as any);
+    router.navigate(item.route as any);
   };
 
   return (

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { View, Modal, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { X, User as UserIcon, Phone, Mail } from 'lucide-react-native';
 import { UserData } from '../services/userService';
 import { TextInput } from '@/components/forms/TextInput';
 import { Button } from '@/components/common/Button';
 import { useTranslation } from '@/src/utils/i18n';
+import { Text } from '@/components/ui/text';
 
 interface EditUserModalProps {
   visible: boolean;

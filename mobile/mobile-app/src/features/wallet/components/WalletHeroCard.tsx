@@ -58,35 +58,35 @@ export function WalletHeroCard({
         {formattedBalance}
       </Text>
 
-      {/* Wallet actions use the app's orange and dark-navy controls. */}
+      {/* High-contrast wallet actions make top-ups and refunds easy to distinguish. */}
       {onTopUpPress || onRefundPress ? (
         <View className="flex-row gap-3">
           {onTopUpPress ? (
             <Button
-              variant="default"
+              variant="success"
               size="lg"
-              className="flex-1"
+              className="flex-1 bg-emerald-600 active:bg-emerald-700"
               onPress={onTopUpPress}
               loading={loading}
               leftIcon={Plus}
               accessibilityRole="button"
               accessibilityLabel={topUpLabel}
             >
-              <Text className="font-bold text-base text-primary-foreground">{topUpLabel}</Text>
+              <Text className="font-extrabold text-base text-white">{topUpLabel}</Text>
             </Button>
           ) : null}
           {onRefundPress ? (
             <Button
-              variant="navy"
+              variant="destructive"
               size="lg"
-              className="flex-1"
+              className="flex-1 bg-red-600 active:bg-red-700"
               onPress={onRefundPress}
               disabled={refundDisabled || loading}
               leftIcon={RotateCcw}
               accessibilityRole="button"
               accessibilityLabel={refundLabel}
             >
-              <Text className="font-bold text-base text-white">{refundLabel}</Text>
+              <Text className="font-extrabold text-base text-white">{refundLabel}</Text>
             </Button>
           ) : null}
         </View>

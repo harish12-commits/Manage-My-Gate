@@ -4,9 +4,28 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { X, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react-native';
-// @ts-ignore
-import RazorpayCheckout from 'react-native-razorpay';
 import { WebView } from 'react-native-webview';
+
+type NativeRazorpayCheckout = {
+  open: (options: Record<string, unknown>) => Promise<any>;
+};
+
+/**
+ * Expo Go does not contain Razorpay's native module. Load the JS wrapper only
+ * when a development or production native build has linked that module.
+ */
+const getNativeRazorpayCheckout = (): NativeRazorpayCheckout | null => {
+  const linkedModule = NativeModules.RNRazorpayCheckout || NativeModules.RazorpayCheckout;
+  if (!linkedModule) return null;
+
+  try {
+    const razorpayPackage = require('react-native-razorpay');
+    return (razorpayPackage.default || razorpayPackage) as NativeRazorpayCheckout;
+  } catch (error) {
+    console.warn('[RazorpayCheckoutModal] Unable to load the linked Razorpay SDK.', error);
+    return null;
+  }
+};
 
 export const isMockRazorpayKey = (key?: string, orderId?: string): boolean => {
   if (!key) return true;
@@ -93,13 +112,8 @@ export function RazorpayCheckoutModal({
   // Handle Native SDK Checkout
   useEffect(() => {
     if (visible && options && Platform.OS !== 'web' && !isMock && !useWebView) {
-      if (!NativeModules.RazorpayCheckout) {
-        console.warn('[RazorpayCheckoutModal] RazorpayCheckout native module is missing (NativeModules). Falling back to WebView.');
-        setUseWebView(true);
-        return;
-      }
-
-      if (!RazorpayCheckout || typeof RazorpayCheckout.open !== 'function') {
+      const nativeRazorpayCheckout = getNativeRazorpayCheckout();
+      if (!nativeRazorpayCheckout || typeof nativeRazorpayCheckout.open !== 'function') {
         console.warn('[RazorpayCheckoutModal] RazorpayCheckout SDK is missing. Falling back to WebView.');
         setUseWebView(true);
         return;
@@ -125,7 +139,7 @@ export function RazorpayCheckoutModal({
         };
 
         try {
-          RazorpayCheckout.open(razorpayOptions)
+          nativeRazorpayCheckout.open(razorpayOptions)
             .then((data: any) => {
               if (!isHandledRef.current) {
                 isHandledRef.current = true;

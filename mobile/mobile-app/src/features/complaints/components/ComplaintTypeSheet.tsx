@@ -132,61 +132,59 @@ export const ComplaintTypeSheet: React.FC<ComplaintTypeSheetProps> = ({
       onClose={onClose}
       title={t('select_issue_category', 'Select Issue Category')}
     >
-      <ScrollView className="max-h-[520px] px-1 py-2" showsVerticalScrollIndicator={false}>
-        <View className="gap-3 pb-6">
-          <Text variant="muted" className="text-xs px-1">
-            {t(
-              'select_issue_category_desc',
-              'Choose an issue category to launch the guided ticket creation wizard.'
-            )}
-          </Text>
+      <View className="gap-3 pb-6 px-1 py-2">
+        <Text variant="muted" className="text-xs px-1">
+          {t(
+            'select_issue_category_desc',
+            'Choose an issue category to launch the guided ticket creation wizard.'
+          )}
+        </Text>
 
-          {COMPLAINT_CATEGORY_OPTIONS.map((option) => {
-            const IconComp = option.icon;
-            return (
-              <TouchableOpacity
-                key={option.id}
-                onPress={() => {
-                  onSelectCategory(option.id);
-                  onClose();
-                }}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel={option.title}
-                className="flex-row items-center bg-card border border-border rounded-2xl p-3.5 gap-3.5 active:bg-muted/40"
+        {COMPLAINT_CATEGORY_OPTIONS.map((option) => {
+          const IconComp = option.icon;
+          return (
+            <TouchableOpacity
+              key={option.id}
+              onPress={() => {
+                onSelectCategory(option.id);
+                onClose();
+              }}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={option.title}
+              className="flex-row items-center bg-card border border-border rounded-2xl p-3.5 gap-3.5 active:bg-muted/40"
+            >
+              <View
+                className={`w-11 h-11 rounded-xl ${
+                  option.iconBg || 'bg-primary/10'
+                } items-center justify-center`}
               >
-                <View
-                  className={`w-11 h-11 rounded-xl ${
-                    option.iconBg || 'bg-primary/10'
-                  } items-center justify-center`}
-                >
-                  <IconComp size={22} color={option.iconColor || 'hsl(var(--primary))'} />
-                </View>
+                <IconComp size={22} color={option.iconColor || 'hsl(var(--primary))'} />
+              </View>
 
-                <View className="flex-1 gap-0.5">
-                  <View className="flex-row items-center gap-2">
-                    <Text className="text-base font-bold text-foreground">
-                      {translateText(option.title)}
-                    </Text>
-                    {option.badge ? (
-                      <View className="bg-secondary px-2 py-0.5 rounded-full border border-border">
-                        <Text className="text-[10px] font-semibold text-secondary-foreground">
-                          {translateText(option.badge)}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text variant="muted" className="text-xs leading-4">
-                    {translateText(option.description)}
+              <View className="flex-1 gap-0.5">
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-base font-bold text-foreground">
+                    {translateText(option.title)}
                   </Text>
+                  {option.badge ? (
+                    <View className="bg-secondary px-2 py-0.5 rounded-full border border-border">
+                      <Text className="text-[10px] font-semibold text-secondary-foreground">
+                        {translateText(option.badge)}
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
+                <Text variant="muted" className="text-xs leading-4">
+                  {translateText(option.description)}
+                </Text>
+              </View>
 
-                <ChevronRight size={18} className="text-muted-foreground" />
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </ScrollView>
+              <ChevronRight size={18} className="text-muted-foreground" />
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </BottomSheet>
   );
 };

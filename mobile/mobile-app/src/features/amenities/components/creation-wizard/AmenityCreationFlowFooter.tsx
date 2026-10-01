@@ -73,7 +73,7 @@ export const AmenityCreationFlowFooter: React.FC<AmenityCreationFlowFooterProps>
 
       {/* Next / Submit CTA */}
       <Button
-        variant="default"
+        variant={isLastStep ? "default" : "continue"}
         onPress={onNext}
         disabled={loading || savingDraft || disabled}
         className="flex-1 min-w-0 h-12 px-2 rounded-2xl flex-row items-center justify-center gap-1 shadow-sm"
@@ -99,8 +99,8 @@ export const AmenityCreationFlowFooter: React.FC<AmenityCreationFlowFooterProps>
           </>
         ) : (
           <>
-            <Text numberOfLines={1} className="font-bold text-primary-foreground text-xs">Continue</Text>
-            {!isCompactWidth && <ArrowRight size={15} className="text-primary-foreground" />}
+            <Text numberOfLines={1} className="font-extrabold text-foreground text-xs">Continue</Text>
+            {!isCompactWidth && <ArrowRight size={15} className="text-foreground" />}
           </>
         )}
       </Button>

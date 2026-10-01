@@ -1,8 +1,10 @@
 import * as React from 'react';
-import { TextInput, View, Text, TouchableOpacity, TextInputProps } from 'react-native';
+import { TextInput, View, TouchableOpacity, TextInputProps } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { cn } from '../../lib/utils';
+import { useTranslation } from '../../src/utils/i18n';
+import { Text } from './text';
 
 export interface InputProps extends TextInputProps {
   label?: string;
@@ -15,6 +17,7 @@ export const Input = React.forwardRef<TextInput, InputProps>(
   ({ label, error, isPassword = false, leftIcon, className = '', ...props }, ref) => {
     const [secureTextEntry, setSecureTextEntry] = React.useState(isPassword);
     const { colorScheme } = useColorScheme();
+    const { translateText } = useTranslation();
     const isDark = colorScheme === 'dark';
     const iconColor = isDark ? '#9ca3af' : '#6b7280';
 
@@ -41,6 +44,7 @@ export const Input = React.forwardRef<TextInput, InputProps>(
               props.style,
             ]}
             {...props}
+            placeholder={props.placeholder ? translateText(props.placeholder) : undefined}
           />
 
           {isPassword && (

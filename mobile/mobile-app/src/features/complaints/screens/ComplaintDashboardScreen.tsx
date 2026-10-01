@@ -9,6 +9,7 @@ import { ActionGrid, type ActionGridItem } from '@/components/ui/ActionGrid';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { Button } from '@/components/ui/button';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { SearchBar } from '@/components/forms/SearchBar';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { TextInput } from '@/components/forms/TextInput';
@@ -103,7 +104,7 @@ export function ComplaintDashboardScreen() {
 
   const handleSelectCategory = (category: string) => {
     setTypeSheetOpen(false);
-    router.push({
+    router.navigate({
       pathname: '/(resident)/complaints/raise-ticket' as any,
       params: { category },
     });
@@ -238,14 +239,6 @@ export function ComplaintDashboardScreen() {
   // Universal Quick Action Grid Items
   const complaintActions: ActionGridItem[] = [
     {
-      id: 'raise_ticket',
-      name: t('raise_ticket', 'Raise Ticket'),
-      iconName: 'PlusCircle',
-      colorBg: 'bg-blue-500/10',
-      colorIcon: '#3b82f6',
-      onPress: () => setTypeSheetOpen(true),
-    },
-    {
       id: 'my_tickets',
       name: t('my_tickets', 'My Tickets'),
       iconName: 'ClipboardList',
@@ -324,19 +317,12 @@ export function ComplaintDashboardScreen() {
       error={error}
       onRetry={loadData}
       headerRight={
-        <Button
-          variant="default"
-          size="sm"
+        <HeaderActionButton
+          icon={Plus}
+          label={t('raise_ticket', 'Raise Ticket')}
           onPress={() => setTypeSheetOpen(true)}
-          className="flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 active:bg-emerald-700 border-0 shadow-2xs"
-          accessibilityRole="button"
-          accessibilityLabel="Raise Complaint"
-        >
-          <Plus size={14} color="#ffffff" strokeWidth={2.4} />
-          <Text className="text-xs font-bold text-white">
-            {t('raise_complaint', 'Raise Complaint')}
-          </Text>
-        </Button>
+          accessibilityLabel={t('raise_ticket', 'Raise Ticket')}
+        />
       }
     >
       <ScrollView
@@ -422,7 +408,7 @@ export function ComplaintDashboardScreen() {
         <SectionHeader
           title={t('recent_activity', 'Recent Activity')}
           actionLabel={t('view_all', 'View All')}
-          onAction={() => router.push('/(resident)/complaints/my-tickets' as any)}
+          onAction={() => router.navigate('/(resident)/complaints/my-tickets' as any)}
           className="px-0 bg-transparent dark:bg-transparent"
         />
 
@@ -435,8 +421,6 @@ export function ComplaintDashboardScreen() {
               'no_recent_tickets_desc',
               'Report a maintenance issue or breakdown to get quick assistance.'
             )}
-            actionLabel={t('raise_ticket', 'Raise Ticket')}
-            onAction={() => setTypeSheetOpen(true)}
           />
         ) : (
           <View className="gap-2.5">

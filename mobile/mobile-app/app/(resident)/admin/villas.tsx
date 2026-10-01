@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, FlatList, RefreshControl, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Animated, TouchableWithoutFeedback } from 'react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { Text } from '@/components/ui/text';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -116,6 +117,11 @@ export default function VillaManagementScreen() {
     fetchVillas({ search: '', status: '', blockOrBuilding: '', page: 1 });
   };
 
+  const handleOpenCreateForm = () => {
+    setEditingVilla(null);
+    setFormModalVisible(true);
+  };
+
   const activeFilterCount = (filters.status ? 1 : 0) + (filters.blockOrBuilding ? 1 : 0);
 
   const availableStatuses = ['Vacant', 'Occupied', 'Under Maintenance', 'For Sale', 'For Rent'];
@@ -123,11 +129,24 @@ export default function VillaManagementScreen() {
 
   return (
     <ScreenShell
-      title={t('unit_management_title', 'Unit Management')}
-      subtitle={t('unit_management_subtitle', 'Properties & Occupancies')}
-      showBackButton
-      loading={loading && villas.length === 0}
-      loaderVariant="skeleton"
+      title={t('unit_villa_management', 'Unit & Villa Management')}
+      subtitle={t('unit_villa_management_sub', 'Configure community blocks, unit statuses, and occupants')}
+      iconName="Home"
+      permission="villas:read"
+      error={error}
+      onRetry={() => {
+        fetchVillas();
+        fetchStats();
+      }}
+      headerRight={
+        <HeaderActionButton
+          onPress={handleOpenCreateForm}
+          icon={Plus}
+          label={t('create_unit', 'Add Unit')}
+          accessibilityRole="button"
+          accessibilityLabel="Add Unit"
+        />
+      }
     >
       <View className="flex-1 bg-background">
         {/* Premium Search Filter Bar */}

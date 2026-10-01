@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Linking, Platform } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { Text } from '@/components/ui/text';
@@ -9,17 +9,12 @@ import { StatusBadge, StatusVariant } from '@/components/ui/StatusBadge';
 import { SegmentedControl } from '@/components/common/SegmentedControl';
 import { getLocalizedPresetNotes } from '../types/communityNoteTypes';
 import { useCommunityNote, formatExpirationCountdown } from '../hooks/useCommunityNote';
-import { useDirectoryMessaging } from '../hooks/useDirectoryMessaging';
 import { DirectoryQuickMessageSheet } from '../components/DirectoryQuickMessageSheet';
 import { useTranslation } from '@/src/utils/i18n';
-import { useAuth } from '@/src/features/auth/hooks/useAuth';
-import { Sparkles, Send, Trash2, ThumbsUp, MessageSquare, Phone, Clock } from 'lucide-react-native';
+import { Sparkles, Send, Trash2, ThumbsUp, Phone, Clock } from 'lucide-react-native';
 
 export function AllNotesScreen() {
   const [currentTab, setCurrentTab] = useState<'feed' | 'compose'>('feed');
-  const { onOpenConversation } = useDirectoryMessaging();
-  const { user } = useAuth();
-  const currentUserId = (user as any)?.id || (user as any)?._id || (user as any)?.userId;
   const { t, tRole } = useTranslation();
 
   const {
@@ -36,6 +31,7 @@ export function AllNotesScreen() {
 
   const [quickSheetOpen, setQuickSheetOpen] = useState(false);
   const [selectedMemberForMsg, setSelectedMemberForMsg] = useState<any>(null);
+  const [interestedNoteIds, setInterestedNoteIds] = useState<Set<string>>(new Set());
 
   const charCount = noteText.length;
   const isOverLimit = charCount > 80;
@@ -52,19 +48,31 @@ export function AllNotesScreen() {
     setCurrentTab('feed');
   };
 
-  const handleInterested = async (targetMember: any) => {
+  const handleInterested = (targetMember: any, noteId: string) => {
+    setInterestedNoteIds((current) => new Set(current).add(noteId));
     setSelectedMemberForMsg(targetMember);
     setQuickSheetOpen(true);
   };
 
+  const handleCall = (phone: string) => {
+    const dialNumber = phone.replace(/[^\d+]/g, '');
+    if (dialNumber) Linking.openURL(`tel:${dialNumber}`).catch(() => {});
+  };
+
   const router = useRouter();
-return (
+
+  const handleBack = () => {
+    router.replace({ pathname: '/(resident)/dashboard', params: { openProfile: 'true' } } as any);
+  };
+
+  return (
     <ScreenShell
       title={t('all_community_notes', 'All Community Notes')}
       subtitle={t('community_notes_sub', 'Discover 24-hour neighbor notes & publish your status')}
       iconName="Sparkles"
       showBackButton={true}
->
+      onBackPress={handleBack}
+    >
       <View className="flex-1 bg-background px-4 pt-3 pb-6 gap-3.5">
         {/* Navigation Segmented Control */}
         <SegmentedControl
@@ -195,9 +203,20 @@ return (
                 const phoneNum = note.phone || note.memberData?.phone;
                 const intercomNum = note.intercomNumber || note.memberData?.intercomNumber;
 
-                const targetUserId = typeof note.userId === 'string' ? note.userId : (note.userId as any)?._id || note.authorId || null;
+                const targetUserId = typeof note.userId === 'string' ? note.userId : (note.userId as any)?._id || note._id;
+                const noteId = note._id || note.id || targetUserId;
 
-                const targetMember = note.memberData || { id: targetUserId, userId: targetUserId, name: authorName, unitNumber: authorUnit, role: String(rawRole).toLowerCase(), phone: phoneNum, intercomNumber: intercomNum }; const isMyOwnNote = targetUserId && String(targetUserId) === String(currentUserId); return (
+                const targetMember = note.memberData || {
+                  id: targetUserId,
+                  userId: targetUserId,
+                  name: authorName,
+                  unitNumber: authorUnit,
+                  role: String(rawRole).toLowerCase(),
+                  phone: phoneNum,
+                  intercomNumber: intercomNum,
+                };
+
+                return (
                   <View key={note._id || note.id} className="bg-card border border-border/80 rounded-2xl p-4 gap-3 shadow-xs">
                     {/* Header Row: Avatar + Author Info + Expiry */}
                     <View className="flex-row items-start justify-between">
@@ -234,33 +253,33 @@ return (
                     </View>
 
                     {/* Action Row */}
-                    {!isMyOwnNote && (
-                      <View className="flex-row items-center gap-2 pt-2 border-t border-border/30 w-full mt-0.5">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onPress={() => handleInterested(targetMember)}
-                          leftIcon={ThumbsUp}
-                          className="flex-1 h-9.5 rounded-xl bg-primary border border-primary"
-                          textClassName="text-xs font-bold text-primary-foreground"
-                        >
-                          {t('btn_interested', 'Interested')}
-                        </Button>
+                    <View className="flex-row items-center gap-2 pt-2 border-t border-border/30 w-full mt-0.5">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onPress={() => handleInterested(targetMember, noteId)}
+                        leftIcon={ThumbsUp}
+                        className="flex-1 h-9.5 rounded-xl bg-primary border border-primary"
+                        textClassName="text-xs font-bold text-primary-foreground"
+                      >
+                        {interestedNoteIds.has(noteId)
+                          ? t('btn_interested_selected', 'Interested ✓')
+                          : t('btn_interested', 'Interested')}
+                      </Button>
 
-                        {phoneNum ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onPress={() => Linking.openURL(`tel:${phoneNum}`)}
-                            leftIcon={Phone}
-                            className="flex-1 h-9.5 rounded-xl border-border bg-muted/30 px-3.5"
-                            textClassName="text-xs font-semibold text-foreground"
-                          >
-                            {t('btn_call', 'Call')}
-                          </Button>
-                        ) : null}
-                      </View>
-                    )}
+                      {phoneNum ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onPress={() => handleCall(phoneNum)}
+                          leftIcon={Phone}
+                          className="h-9.5 rounded-xl border-border bg-muted/30 px-3.5"
+                          textClassName="text-xs font-semibold text-foreground"
+                        >
+                          {t('btn_call', 'Call')}
+                        </Button>
+                      ) : null}
+                    </View>
                   </View>
                 );
               })
@@ -300,10 +319,3 @@ return (
 }
 
 export default AllNotesScreen;
-
-
-
-
-
-
-

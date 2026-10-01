@@ -192,16 +192,18 @@ export const DropdownSelect = ({
 
               {/* In-modal search bar when options > 5 */}
               {(searchable || options.length > 5) && (
-                <View className="flex-row items-center rounded-xl bg-background border border-border px-3 py-2 mb-3">
-                  <Search size={16} className="text-muted-foreground me-2" />
-                  <RNTextInput
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    placeholder={t('search_options', 'Search options...')}
-                    placeholderTextColor="#737c88"
-                    className="flex-1 text-sm font-sans text-foreground p-0 min-h-[22px]"
-                    style={{ outlineStyle: 'none' } as any}
-                  />
+                <View className="mb-3 rounded-2xl border border-border/40 bg-card p-2 shadow-sm">
+                  <View className="h-11 flex-row items-center rounded-xl border border-border/80 bg-background/70 px-3.5 shadow-2xs">
+                    <Search size={18} className="text-muted-foreground me-2.5" />
+                    <RNTextInput
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholder={t('search_options', 'Search options...')}
+                      placeholderTextColor="#737c88"
+                      className="h-full min-w-0 flex-1 p-0 font-sans text-[13px] font-medium text-foreground"
+                      style={{ outlineStyle: 'none' } as any}
+                    />
+                  </View>
                 </View>
               )}
 

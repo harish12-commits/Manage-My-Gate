@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Pressable } from 'react-native';
+import { View, TouchableOpacity, Pressable } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { Shield, Phone, Home, MoreVertical, Edit2 } from 'lucide-react-native';
 import { StatusBadge, StatusVariant } from '@/components/ui/StatusBadge';
 import { useTranslation, i18n } from '@/src/utils/i18n';

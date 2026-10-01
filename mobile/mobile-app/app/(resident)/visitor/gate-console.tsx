@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
+import { Plus } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { Redirect } from 'expo-router';
 import { TabBar } from '@/components/ui/TabBar';
@@ -378,6 +381,15 @@ export default function GateConsoleScreen() {
       title="Gate Security Console"
       subtitle="Guard check-in verification, QR scanner & walk-in entry"
       iconName="ShieldCheck"
+      headerRight={
+        <HeaderActionButton
+          onPress={() => setWalkInModalOpen(true)}
+          icon={Plus}
+          label={t('gate_actions', 'Gate Actions')}
+          accessibilityRole="button"
+          accessibilityLabel="Gate Actions"
+        />
+      }
     >
       <View className="flex-1 bg-background">
         {/* Live Gate Operational KPI Strip */}
@@ -578,48 +590,7 @@ export default function GateConsoleScreen() {
               </Button>
             </View>
 
-            {/* Guard Quick Actions */}
-            <View className="bg-card border border-border rounded-2xl p-4 gap-3">
-              <Text className="text-sm font-bold text-foreground">{t('guard_gate_actions', 'Guard Gate Actions')}</Text>
-
-              <View className="flex-row gap-3">
-                <Button
-                  variant="outline"
-                  onPress={() => setWalkInModalOpen(true)}
-                  className="flex-1 h-auto py-3.5 rounded-xl flex-col items-center justify-center gap-1.5 bg-amber-500/10 border-amber-500/20"
-                  accessibilityLabel={t('initiate_walk_in', 'Initiate Walk-In')}
-                >
-                  <ShieldAlert size={22} className="text-amber-600 dark:text-amber-400" />
-                  <Text className="text-xs font-bold text-amber-600 dark:text-amber-400 text-center">
-                    {t('initiate_walk_in', 'Initiate Walk-In')}
-                  </Text>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onPress={() => setActiveTab('DIRECTORY')}
-                  className="flex-1 h-auto py-3.5 rounded-xl flex-col items-center justify-center gap-1.5 bg-primary/10 border-primary/20"
-                  accessibilityLabel={t('villa_directory', 'Villa Directory')}
-                >
-                  <Search size={22} className="text-primary" />
-                  <Text className="text-xs font-bold text-primary text-center">
-                    {t('villa_directory', 'Villa Directory')}
-                  </Text>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onPress={() => setActiveTab('INSIDE')}
-                  className="flex-1 h-auto py-3.5 rounded-xl flex-col items-center justify-center gap-1.5 bg-red-500/10 border-red-500/20"
-                  accessibilityLabel={t('gate_check_out', 'Gate Check-Out')}
-                >
-                  <LogOut size={22} className="text-red-600 dark:text-red-400" />
-                  <Text className="text-xs font-bold text-red-600 dark:text-red-400 text-center">
-                    {t('gate_check_out', 'Gate Check-Out')}
-                  </Text>
-                </Button>
-              </View>
-            </View>
+            
           </ScrollView>
         )}
       </View>
@@ -660,6 +631,7 @@ export default function GateConsoleScreen() {
           handleVerifyPass(code);
         }}
       />
+
     </ScreenShell>
   );
 }

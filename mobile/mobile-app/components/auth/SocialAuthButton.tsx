@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, Animated } from 'react-native';
+import { View, TouchableOpacity, Modal, Animated } from 'react-native';
+import { Text } from '@/components/ui/text';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useColorScheme } from 'nativewind';
 import { AppLoader } from '@/components/ui/AppLoader';
@@ -96,7 +97,7 @@ export const SocialAuthButton = ({
   const isApple = provider === 'apple';
   const isGlass = variant === 'glass';
   const providerName = isGoogle ? 'Google' : isApple ? 'Apple' : 'Microsoft';
-  const buttonLabel = isApple
+  const buttonLabel = isGoogle ? 'Sign in with Google' : isApple
     ? variant === 'full'
       ? 'Sign in with Apple'
       : 'Apple'
@@ -108,7 +109,7 @@ export const SocialAuthButton = ({
 
   return (
     <>
-      <Animated.View style={{ flex: 1, transform: [{ scale: pressScale }] }}>
+      <Animated.View style={{ flex: 1, minWidth: 0, transform: [{ scale: pressScale }] }}>
         <TouchableOpacity
           onPress={handlePress}
           onPressIn={handlePressIn}
@@ -118,11 +119,18 @@ export const SocialAuthButton = ({
           accessibilityRole="button"
           accessibilityLabel={buttonLabel}
           accessibilityHint={`Continue authentication with ${providerName}`}
-          className={`h-[50px] rounded-2xl flex-row items-center justify-center gap-2.5 shadow-2xs backdrop-blur-md active:bg-white/30 ${
+          style={isGoogle ? {
+            height: variant === 'compact' ? 44 : 48,
+            backgroundColor: '#FFFFFF',
+            borderColor: '#000000',
+            borderWidth: 1,
+            borderRadius: 999,
+          } : undefined}
+          className={`${isGoogle ? 'flex-row items-center justify-center gap-2 px-2' : `h-[48px] rounded-2xl flex-row items-center justify-center gap-2.5 shadow-2xs backdrop-blur-md active:bg-white/30 ${
             isGlass
               ? 'bg-white/20 dark:bg-white/15 border border-white/35'
               : 'bg-white/75 dark:bg-[#1C1917]/75 border border-white/80 dark:border-white/20'
-          } ${disabled || loading ? 'opacity-60' : ''} ${className}`}
+          }`} ${disabled || loading ? 'opacity-60' : ''} ${className}`}
         >
         {loading ? (
           <AppLoader variant="inline" />
@@ -135,7 +143,13 @@ export const SocialAuthButton = ({
             ) : (
               <MicrosoftIcon size={19} />
             )}
-            <Text className={`text-sm font-semibold font-sans ${contentClass}`}>
+            <Text
+              numberOfLines={isGoogle ? 1 : undefined}
+              adjustsFontSizeToFit={isGoogle}
+              minimumFontScale={0.8}
+              style={isGoogle ? { color: '#000000', flexShrink: 1, lineHeight: 20, includeFontPadding: false, textAlignVertical: 'center' } : undefined}
+              className={`text-sm font-semibold ${isGoogle ? 'text-center' : `font-sans ${contentClass}`}`}
+            >
               {buttonLabel}
             </Text>
           </>

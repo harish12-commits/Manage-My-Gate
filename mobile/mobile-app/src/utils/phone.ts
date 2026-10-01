@@ -133,12 +133,7 @@ export const examplePhone = (code: string): string => {
 
 /** Max national digits for the country (from its example mobile number). */
 export const maxNationalDigits = (code: string): number => {
-  try {
-    const ex = getExampleNumber(code as CountryCode, examples);
-    return ex ? String(ex.nationalNumber).length : 15;
-  } catch {
-    return 15;
-  }
+  return 10;
 };
 
 export type PhoneLengthStatus = 'empty' | 'short' | 'ok' | 'long' | 'invalid';
@@ -146,9 +141,8 @@ export type PhoneLengthStatus = 'empty' | 'short' | 'ok' | 'long' | 'invalid';
 export const phoneLengthStatus = (national: string, code: string): PhoneLengthStatus => {
   const digits = (national || '').replace(/\D/g, '');
   if (!digits) return 'empty';
-  const res = validatePhoneNumberLength(digits, code as CountryCode);
-  if (res === 'TOO_SHORT') return 'short';
-  if (res === 'TOO_LONG') return 'long';
-  if (res) return 'invalid';
+  
+  if (digits.length < 10) return 'short';
+  if (digits.length > 10) return 'long';
   return 'ok';
 };

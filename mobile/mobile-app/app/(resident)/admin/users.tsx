@@ -1,8 +1,9 @@
 import React, { useState, useRef, Suspense, lazy } from 'react';
-import { View, Text, FlatList, RefreshControl, ScrollView, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform, Animated, TouchableWithoutFeedback } from 'react-native';
+import { View, FlatList, RefreshControl, ScrollView, TouchableOpacity, Alert, Modal, KeyboardAvoidingView, Platform, Animated, TouchableWithoutFeedback } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Filter, Users, Mail, Users2, Plus, UserPlus, X } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { SearchFilterBar } from '@/components/ui/SearchFilterBar';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -18,6 +19,7 @@ import {
   AssignedUnit,
 } from '@/src/features/userManagement';
 import { AppLoader } from '@/components/ui/AppLoader';
+import { Text } from '@/components/ui/text';
 
 // Lazy Load Heavy Modals for Performance Optimization
 const InviteUserModal = lazy(() => import('@/src/features/userManagement').then(m => ({ default: m.InviteUserModal })));
@@ -175,9 +177,17 @@ export default function UserManagementScreen() {
       loading={false}
       error={error}
       onRetry={refreshUsers}
+      headerRight={
+        <HeaderActionButton
+          onPress={() => setShowInviteModal(true)}
+          icon={UserPlus}
+          label={t('invite_user', 'Invite')}
+          accessibilityRole="button"
+          accessibilityLabel={t('invite_user', 'Invite User')}
+        />
+      }
     >
       <View className="flex-1 bg-background">
-        {/* Search Bar (Premium Float is now handled natively by the component) */}
         <SearchFilterBar
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}

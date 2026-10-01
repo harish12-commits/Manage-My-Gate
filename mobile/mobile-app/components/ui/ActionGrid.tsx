@@ -84,6 +84,9 @@ export function ActionGrid({
               <Pressable
                 key={item.id}
                 onPress={handlePress}
+                onPressIn={() => {
+                  if (item.route && !item.disabled) router.prefetch(item.route as any);
+                }}
                 disabled={item.disabled}
                 accessibilityRole="button"
                 accessibilityLabel={displayName}
@@ -92,20 +95,6 @@ export function ActionGrid({
                   item.disabled && 'opacity-50'
                 )}
               >
-                {/* Optional Badge Notification Pill */}
-                {item.badge !== undefined && item.badge !== null && item.badge !== '' && (
-                  <View
-                    className={cn(
-                      'absolute top-1.5 end-1.5 px-1 py-0.2 rounded-full min-w-[16px] items-center justify-center z-10',
-                      item.badgeColor || 'bg-primary'
-                    )}
-                  >
-                    <Text className="text-[9px] font-bold text-white leading-none">
-                      {item.badge}
-                    </Text>
-                  </View>
-                )}
-
                 {/* Icon Container */}
                 <View
                   className={cn(
