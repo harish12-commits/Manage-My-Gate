@@ -37,12 +37,11 @@ const getCategoryDisplayName = (category) => {
     billing: 'Billing & Invoices',
     villas: 'Unit Management',
     users: 'User Management',
-    notices: 'Notice Board',
+    notices: 'Notice Board & Polls',
     integrations: 'Integrations Hub',
     complaints: 'Complaints & Maintenance',
     roles: 'Role Builder',
     workspaces: 'Workspaces',
-    polls: 'Polls & Surveys',
   }
   const key = category.toLowerCase()
   return map[key] || category.charAt(0).toUpperCase() + category.slice(1)
@@ -53,7 +52,6 @@ const CATEGORY_ORDER = {
   amenities: 2,
   complaints: 3,
   notices: 4,
-  polls: 5,
   digital_wallet: 6,
   billing: 7,
   villas: 8,
@@ -75,6 +73,7 @@ const PermissionMatrix = ({
 
     Object.entries(groupedPermissions).forEach(([categoryKey, perms]) => {
       const lowerKey = categoryKey.toLowerCase()
+      if (lowerKey === 'polls') return // Merged into notices
       result[lowerKey] = perms || []
     })
 
@@ -100,7 +99,54 @@ const PermissionMatrix = ({
   return (
     <div className="d-flex flex-column gap-3">
       {categories.map((category) => {
-        const perms = normalizedGroupedPermissions[category] || []
+        let perms = normalizedGroupedPermissions[category] || []
+
+        if (category === 'complaints') {
+          const allowed = [
+            'dashboard',
+            'raise_ticket',
+            'complaint_management',
+            'assignee',
+            'track_requests',
+            'staff',
+          ]
+          perms = perms.filter((p) => {
+            const permName = p.name || p.code || p._id || ''
+            const action = permName.includes(':')
+              ? permName.split(':')[1]
+              : permName.includes('.')
+                ? permName.split('.')[1]
+                : permName
+            return allowed.includes(action.toLowerCase())
+          })
+        }
+
+        if (category === 'notices') {
+          const allowed = ['active_board', 'polls', 'manage_notices']
+          perms = perms.filter((p) => {
+            const permName = p.name || p.code || p._id || ''
+            const action = permName.includes(':')
+              ? permName.split(':')[1]
+              : permName.includes('.')
+                ? permName.split('.')[1]
+                : permName
+            return allowed.includes(action.toLowerCase())
+          })
+          const existingActions = perms.map((p) => {
+            const name = p.name || p.code || p._id || ''
+            return name.includes(':')
+              ? name.split(':')[1]
+              : name.includes('.')
+                ? name.split('.')[1]
+                : name
+          })
+          if (!existingActions.includes('active_board'))
+            perms.push({ name: 'notices:active_board' })
+          if (!existingActions.includes('polls')) perms.push({ name: 'notices:polls' })
+          if (!existingActions.includes('manage_notices'))
+            perms.push({ name: 'notices:manage_notices' })
+        }
+
         const groupCodes = perms.map((p) => p.name || p.code || p._id)
         const isAllGroupSelected =
           groupCodes.length > 0 && perms.every((p) => isPermissionSelected(p, selectedIds))
