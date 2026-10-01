@@ -109,7 +109,7 @@ export class RoleService {
         await rolePermissionService.updateRolePermissions(newRole._id.toString(), permissionIds, currentSession);
         populatedPermissions = matchedPermissions.map(p => p.name);
         // Emit event after role creation with permissions
-        roleEvents.emit('rolePermissionsUpdated', { roleId: newRole._id.toString(), permissionIds });
+        roleEvents.emit('rolePermissionsUpdated', { roleId: newRole._id.toString(), permissionIds, permissions: populatedPermissions });
       }
       
       if (localSession) {
@@ -181,7 +181,7 @@ export class RoleService {
         await rolePermissionService.updateRolePermissions(id, permissionIds, session);
         populatedPermissions = matchedPermissions.map(p => p.name);
         // Emit event after successful permission update
-        roleEvents.emit('rolePermissionsUpdated', { roleId: id, permissionIds });
+        roleEvents.emit('rolePermissionsUpdated', { roleId: id, permissionIds, permissions: populatedPermissions });
       } else {
         const permissionsList = await rolePermissionService.getPermissionsByRoleId(id);
         populatedPermissions = permissionsList.map(p => p.name);
@@ -283,8 +283,10 @@ export class RoleService {
     
     const rolePermissionService = (await import('../rolePermission/rolePermission.services.js')).default;
     await rolePermissionService.updateRolePermissions(roleId, permissionIds);
-    roleEvents.emit('rolePermissionsUpdated', { roleId, permissionIds });
-    return await rolePermissionService.getPermissionsByRoleId(roleId);
+    const updatedPerms = await rolePermissionService.getPermissionsByRoleId(roleId);
+    const populatedPermissions = updatedPerms.map(p => p.name || p);
+    roleEvents.emit('rolePermissionsUpdated', { roleId, permissionIds, permissions: populatedPermissions });
+    return updatedPerms;
   }
 
   async getRolesByIds(ids, session = null) {

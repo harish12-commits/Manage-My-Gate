@@ -16,7 +16,11 @@ export const initRoleSocket = () => {
       if (!role) return;
 
       const io = getIO();
-      const updatedPermissions = payload.permissions || role.permissions || [];
+      let updatedPermissions = payload.permissions;
+      if (!updatedPermissions || !Array.isArray(updatedPermissions)) {
+        const perms = await roleService.getRolePermissions(roleId);
+        updatedPermissions = perms.map((p) => p.name || p);
+      }
       const socketPayload = {
         roleId: role._id.toString(),
         roleName: role.name,

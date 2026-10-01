@@ -172,24 +172,18 @@ export const syncPermissions = async () => {
     const baselinePermissions = await PermissionModel.find({ name: { $in: COMMUNITY_ADMIN_BASELINE_PERMISSIONS } });
 
     for (const role of communityAdminRoles) {
-      let roleModified = false;
-      for (const perm of baselinePermissions) {
-        const mappingExists = await RolePermissionModel.findOne({
-          roleId: role._id,
-          permissionId: perm._id
-        });
-        if (!mappingExists) {
+      const existingMappingsCount = await RolePermissionModel.countDocuments({ roleId: role._id });
+      if (existingMappingsCount === 0) {
+        for (const perm of baselinePermissions) {
           await RolePermissionModel.create({
             roleId: role._id,
-            permissionId: perm._id
+            permissionId: perm._id,
           });
-          roleModified = true;
-          logger.info(`Self-healed role "${role.name}" (${role._id}) with baseline permission "${perm.name}".`);
         }
-      }
-      if (roleModified) {
-        // Clear the service cache for this role
         rolePermissionService.cache.delete(role._id.toString());
+        logger.info(`Initialized role "${role.name}" (${role._id}) with baseline permissions.`);
+      } else {
+        logger.info(`Role "${role.name}" (${role._id}) already has custom permissions (${existingMappingsCount}). Skipping auto-sync to preserve edits.`);
       }
     }
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Dimensions, Image, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   runOnJS,
@@ -383,9 +383,16 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     lineHeight: 38,
     letterSpacing: 1,
-    textShadowColor: 'rgba(255, 255, 255, 0.35)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 10,
+    ...Platform.select({
+      web: {
+        textShadow: '0px 2px 10px rgba(255, 255, 255, 0.35)',
+      } as any,
+      default: {
+        textShadowColor: 'rgba(255, 255, 255, 0.35)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 10,
+      },
+    }),
   },
   letterA: {
     width: 26,
