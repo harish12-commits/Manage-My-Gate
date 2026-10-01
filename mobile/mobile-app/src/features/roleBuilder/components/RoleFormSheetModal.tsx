@@ -61,6 +61,27 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
       visible={visible}
       onClose={onClose}
       title={role ? `Edit ${role.name}` : 'New Security Role'}
+      footer={
+        <View className="flex-row gap-3 pt-1">
+          <Button
+            variant="outline"
+            onPress={onClose}
+            className="flex-1 h-12 rounded-xl border border-border bg-background"
+            disabled={isSubmitting}
+          >
+            <Text className="text-sm font-bold text-foreground">Cancel</Text>
+          </Button>
+          <Button
+            variant="default"
+            onPress={handleSubmit}
+            className="flex-1 h-12 rounded-xl bg-primary shadow-sm shadow-orange-500/20"
+            disabled={isSubmitting}
+            loading={isSubmitting}
+          >
+            <Text className="text-sm font-bold text-white">Save Changes</Text>
+          </Button>
+        </View>
+      }
     >
       <View className="gap-3.5 pb-6">
         {/* Role Name */}
@@ -164,6 +185,9 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
               />
             )}
           </View>
+
+
+
 
 
         </View>
