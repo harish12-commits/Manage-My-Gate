@@ -306,9 +306,18 @@ export const isFeatureAllowedForUser = (
   const isAdmin = checkIsAdmin(effectiveUser);
   const isSecurity = checkIsSecurityRole(effectiveUser);
 
-  // 1. Community Admin persona: strictly exclude resident self-service
+  // 1. Community Admin persona: strictly exclude resident self-service by default
   if (isAdmin) {
-    if (RESIDENT_ONLY_FEATURE_IDS.has(item.id)) return false;
+    if (RESIDENT_ONLY_FEATURE_IDS.has(item.id)) {
+      // Allow if they explicitly have the permission granted in Role Builder
+      if (permissions.length > 0 && item.permission) {
+        if (!matchesUserPermissions(item.permission, item.id, permissions)) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
 
     // In GlobalNavModal, keep role-specific amenity item filtering (items prefixed with 'a-')
     if (item.id && item.id.startsWith('a-')) {
