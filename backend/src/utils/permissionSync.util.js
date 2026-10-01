@@ -151,8 +151,8 @@ export const syncPermissions = async () => {
       'roles:create', 'roles:read', 'roles:update', 'roles:delete',
       'villas:create', 'villas:read', 'villas:update', 'villas:delete',
       'integrations:create', 'integrations:read', 'integrations:update', 'integrations:delete',
-      'amenities:dashboard', 'amenities:admin_calander', 'amenities:ledgers',
-      'amenities:amenities', 'amenities:maintenance', 'amenities:settings',
+      'amenities:dashboard', 'amenities:admin_calendar', 'amenities:booking_queue', 'amenities:ledgers',
+      'amenities:master', 'amenities:maintenance', 'amenities:settings',
       'amenities:discover', 'amenities:my_booking', 'amenities:wallet',
       'amenities:scanner', 'amenities:security_logs',
       'complaints:view', 'complaints:create', 'complaints:update', 'complaints:delete',
@@ -163,7 +163,7 @@ export const syncPermissions = async () => {
       'complaints:complaint_management', 'complaints:assignee',
       'visitor:admin',
       'notices:active_board', 'notices:polls', 'notices:manage_notices',
-      'billing:dashboard', 'billing:assessment_manager', 'billing:action_center',
+      'billing:billing_hub', 'billing:my_dues', 'billing:assessments', 'billing:ledger', 'billing:my_invoices',
       'workspaces:read', 'workspaces:update',
     ];
 

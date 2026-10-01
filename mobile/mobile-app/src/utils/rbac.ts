@@ -119,15 +119,18 @@ const PERMISSION_SYNONYMS: Record<string, string[]> = {
   'amenities:my_booking': ['amenities:my_booking', 'amenities.my_booking', 'amenities:book', 'amenities.book', 'amenities:resident', 'amenities.resident'],
   'amenities:wallet': ['amenities:wallet', 'amenities.wallet', 'amenities:resident', 'amenities.resident'],
   'amenities:amenities': ['amenities:amenities', 'amenities.amenities', 'amenities:admin', 'amenities.admin', 'amenities:create', 'amenities:update', 'amenities:delete'],
-  'amenities:admin_calander': ['amenities:admin_calander', 'amenities.admin_calander', 'amenities:admin', 'amenities.admin'],
+  'amenities:admin_calendar', 'amenities:booking_queue': ['amenities:admin_calander', 'amenities.admin_calander', 'amenities:admin', 'amenities.admin'],
   'amenities:maintenance': ['amenities:maintenance', 'amenities.maintenance', 'amenities:admin', 'amenities.admin'],
   'amenities:settings': ['amenities:settings', 'amenities.settings', 'amenities:admin', 'amenities.admin'],
   'amenities:dashboard': ['amenities:dashboard', 'amenities.dashboard', 'amenities:admin', 'amenities.admin'],
   'amenities:ledgers': ['amenities:ledgers', 'amenities.ledgers', 'amenities:admin', 'amenities.admin'],
 
   // Billing & Invoices
-  'billing:action_center': ['billing:action_center', 'billing:dashboard', 'billing:view', 'billing:read', 'billing', 'financial_history', 'billing_wallet'],
-  'billing:assessment_manager': ['billing:assessment_manager', 'billing:dashboard', 'billing'],
+  'billing:billing_hub': ['billing:billing_hub', 'billing:view', 'billing:read', 'billing'],
+  'billing:my_dues': ['billing:my_dues', 'billing:view', 'billing'],
+  'billing:assessments': ['billing:assessments', 'billing:view', 'billing'],
+  'billing:ledger': ['billing:ledger', 'billing:view', 'billing'],
+  'billing:my_invoices': ['billing:my_invoices', 'billing:view', 'billing'],
 
   // Administration & Security
   'villas:read': ['villas:read', 'villas.read', 'villas:view', 'villas', 'units:read', 'admin_villas'],
@@ -190,13 +193,11 @@ export const WALLET_LEDGER_FEATURE_IDS = new Set([
   'billing_wallet',
   'financial_history',
   'amenities_wallet',
-  'billing_my_dues',
-  'billing_my_invoices',
 ]);
 
 // Exact Role Builder grants ('Digital Wallet' = billing:action_center). Deliberately excludes billing:dashboard synonyms so that
 // only an explicit Digital Wallet grant exposes these tiles.
-const WALLET_LEDGER_GRANTS = ['billing:action_center', 'billing.action_center', 'billing'];
+const WALLET_LEDGER_GRANTS = ['billing:my_dues', 'billing:my_invoices', 'billing:billing_hub', 'billing.action_center']; // Keep for backwards compat on legacy tokens
 
 // 'amenities:wallet' is the legacy wallet permission still carried by seeded Resident Owner / Tenant roles.
 // It unlocks the wallet tiles only — never billing dues/invoices (the backend rejects those without a billing grant).
@@ -403,7 +404,7 @@ export const isFeatureAllowedForUser = (
       'visitor_community_passes',
       'visitor_admin_logs',
       'billing_dashboard',
-      'billing_action_center',
+      'billing_ledger',
       'billing_my_invoices',
     ];
     return managerAllowed.includes(item.id);

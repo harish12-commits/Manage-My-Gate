@@ -17,7 +17,7 @@
   },
   {
     "feature": "amenities",
-    "actions": ["dashboard", "admin_calander", "ledgers", "amenities", "maintenance", "settings", "discover", "my_booking", "wallet", "scanner", "security_logs"]
+    "actions": ["dashboard", "admin_calendar", "booking_queue", "ledgers", "master", "maintenance", "settings", "discover", "my_booking", "wallet", "scanner", "security_logs"]
   },
   {
     "feature": "complaints",
@@ -37,7 +37,7 @@
   },
   {
     "feature": "billing",
-    "actions": ["dashboard", "assessment_manager", "action_center"]
+    "actions": ["billing_hub", "my_dues", "assessments", "ledger", "my_invoices"]
   },
   {
     "feature": "workspaces",
