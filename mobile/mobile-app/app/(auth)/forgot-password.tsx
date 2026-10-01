@@ -35,6 +35,7 @@ import { PhoneInput } from '@/components/forms/PhoneInput';
 import { OtpInputField } from '@/components/auth/OtpInputField';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { useTranslation } from '@/src/utils/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Step 1: Identifier schema
 const identifierEmailSchema = yup.object().shape({
@@ -77,7 +78,7 @@ const passwordSchema = yup.object().shape({
 
 export default function ForgotPasswordScreen() {
   const { t } = useTranslation();
-  const { forgotPassword, verifyResetOtp, resetPassword, loading, error, successMsg, clearStatus } = useAuth();
+  const insets = useSafeAreaInsets();  const { forgotPassword, verifyResetOtp, resetPassword, loading, error, successMsg, clearStatus } = useAuth();
 
   const [step, setStep] = React.useState<0 | 1 | 2 | 3>(0);
   const [method, setMethod] = React.useState<'email' | 'phone'>('email');
@@ -187,21 +188,27 @@ export default function ForgotPasswordScreen() {
         resizeMode="cover"
       >
         <View className="absolute inset-0 bg-white/45 dark:bg-[#0B0E14]/60" />
+
+        {/* Fixed Brand Identity Section */}
+        <View 
+          className="items-center justify-center z-10 w-full"
+          style={{ paddingTop: Math.max(insets.top, 24) + 12, paddingBottom: 8 }}
+          pointerEvents="box-none"
+        >
+          <NahomEmblem size={96} />
+          <NahomWordmark />
+        </View>
+
         <KeyboardAwareScrollView
             extraScrollHeight={56}
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
-            showsVerticalScrollIndicator={false}
+            enableAutoScroll={Platform.OS !== 'ios'}
+            contentContainerStyle={{
+              flexGrow: 1,
+              paddingBottom: Math.max(insets.bottom, 20) + 24,
+            }}
             keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-            className="px-5 py-8"
-          >
-          <View className="max-w-sm mx-auto w-full gap-4">
-            {/* Brand Emblem */}
-            <View className="items-center justify-center mb-1">
-              <NahomEmblem size={96} />
-              <NahomWordmark />
-            </View>
+        >
+          <View className="max-w-sm mx-auto w-full px-5 py-2 mt-2 gap-4">
 
             {/* Form Card */}
             <View

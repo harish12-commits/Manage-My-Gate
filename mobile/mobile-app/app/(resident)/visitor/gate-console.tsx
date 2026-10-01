@@ -79,7 +79,6 @@ export default function GateConsoleScreen() {
   const [activeLogId, setActiveLogId] = useState<string | null>(null);
   const [walkInModalOpen, setWalkInModalOpen] = useState(false);
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
-  const [actionsSheetOpen, setActionsSheetOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'CONSOLE' | 'WALK_INS' | 'INSIDE' | 'DIRECTORY'>('CONSOLE');
   const [walkInLoading, setWalkInLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -383,10 +382,11 @@ export default function GateConsoleScreen() {
       headerRight={
         <Button
           size="sm"
-          onPress={() => setActionsSheetOpen(true)}
-          className="bg-primary px-3 h-8 rounded-full flex-row items-center justify-center shadow-md shadow-orange-500/20"
+          variant="outline"
+          onPress={() => setWalkInModalOpen(true)}
+          className="h-8 rounded-full flex-row items-center justify-center bg-secondary/80 border border-border/80 px-3 shadow-2xs"
         >
-          <Text className="text-white text-[11px] font-bold">+ {t('gate_actions', 'Gate Actions')}</Text>
+          <Text className="text-foreground text-[11px] font-bold">+ {t('gate_actions', 'Gate Actions')}</Text>
         </Button>
       }
     >
@@ -630,41 +630,7 @@ export default function GateConsoleScreen() {
           handleVerifyPass(code);
         }}
       />
-      {/* Gate Actions Bottom Sheet */}
-      <BottomSheet
-        visible={actionsSheetOpen}
-        onClose={() => setActionsSheetOpen(false)}
-        title={t('gate_actions', 'Gate Actions')}
-      >
-        <View className="gap-2 p-4 pt-0">
-          <Button
-            variant="outline"
-            onPress={() => { setActionsSheetOpen(false); setWalkInModalOpen(true); }}
-            className="h-14 rounded-xl flex-row items-center justify-start gap-3 bg-amber-500/10 border-amber-500/20 px-4"
-          >
-            <ShieldAlert size={20} className="text-amber-600 dark:text-amber-400" />
-            <Text className="text-sm font-bold text-amber-600 dark:text-amber-400">{t('initiate_walk_in', 'Initiate Walk-In')}</Text>
-          </Button>
 
-          <Button
-            variant="outline"
-            onPress={() => { setActionsSheetOpen(false); setActiveTab('DIRECTORY'); }}
-            className="h-14 rounded-xl flex-row items-center justify-start gap-3 bg-primary/10 border-primary/20 px-4 mt-2"
-          >
-            <Search size={20} className="text-primary" />
-            <Text className="text-sm font-bold text-primary">{t('villa_directory', 'Villa Directory')}</Text>
-          </Button>
-
-          <Button
-            variant="outline"
-            onPress={() => { setActionsSheetOpen(false); setActiveTab('INSIDE'); }}
-            className="h-14 rounded-xl flex-row items-center justify-start gap-3 bg-red-500/10 border-red-500/20 px-4 mt-2"
-          >
-            <LogOut size={20} className="text-red-600 dark:text-red-400" />
-            <Text className="text-sm font-bold text-red-600 dark:text-red-400">{t('gate_check_out', 'Gate Check-Out')}</Text>
-          </Button>
-        </View>
-      </BottomSheet>
     </ScreenShell>
   );
 }
