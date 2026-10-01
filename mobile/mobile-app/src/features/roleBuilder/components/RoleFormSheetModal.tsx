@@ -165,22 +165,7 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
             )}
           </View>
 
-          {/* Native Action CTAs */}
-          <View className="flex-row flex-wrap items-center gap-3 mt-2 pt-3 border-t border-border">
-            <Button variant="outline" onPress={onClose} className="flex-1 rounded-xl h-11">
-              <Text className="font-bold text-xs text-foreground">Cancel</Text>
-            </Button>
-            <Button
-              variant="default"
-              loading={isSubmitting}
-              onPress={handleSubmit}
-              className="flex-1 min-w-[140px] rounded-xl h-11 bg-white border border-neutral-300"
-            >
-              <Text className="font-bold text-xs text-black">
-                {role ? 'Save Changes' : 'Create Role'}
-              </Text>
-            </Button>
-          </View>
+
         </View>
     </BottomSheet>
   );

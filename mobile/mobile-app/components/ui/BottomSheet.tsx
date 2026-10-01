@@ -20,6 +20,7 @@ export interface AppBottomSheetProps {
   title?: string;
   snapPoints?: (string | number)[];
   children: React.ReactNode;
+  footer?: React.ReactNode;
   enableDynamicSizing?: boolean;
   contentContainerStyle?: any;
 }
@@ -40,6 +41,7 @@ function BottomSheet({
   title,
   children,
   contentContainerStyle,
+  footer,
 }: AppBottomSheetProps) {
   const { height: screenHeight } = useWindowDimensions();
   if (!visible) return null;
@@ -118,6 +120,11 @@ function BottomSheet({
           >
             {children}
           </KeyboardAwareScrollView>
+          {footer && (
+            <View className="pb-8 pt-3 px-4 border-t border-border/80 bg-card">
+              {footer}
+            </View>
+          )}
         </View>
       </View>
     </Modal>
