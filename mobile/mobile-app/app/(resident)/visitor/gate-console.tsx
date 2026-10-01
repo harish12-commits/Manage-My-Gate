@@ -385,7 +385,7 @@ export default function GateConsoleScreen() {
           onPress={() => setWalkInModalOpen(true)}
           className="h-8 rounded-full flex-row items-center justify-center bg-white px-4 shadow-sm"
         >
-          <Text style={{ color: '#000000', fontWeight: '900', fontSize: 13 }}>+ {t('walk_in', 'Walk In')}</Text>
+          <Text className="text-black font-black text-[14px] tracking-wide">+ {t('walk_in', 'Walk In')}</Text>
         </Button>
       }
     >
