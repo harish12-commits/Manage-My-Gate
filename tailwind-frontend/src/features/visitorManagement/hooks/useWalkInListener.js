@@ -25,7 +25,7 @@ export const useWalkInListener = () => {
     }
 
     // Resolve Socket URL from environment
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5006';
 
     const socket = io(socketUrl, {
       withCredentials: true,

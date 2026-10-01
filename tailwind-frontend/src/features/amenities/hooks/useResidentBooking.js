@@ -66,7 +66,7 @@ export const useResidentBooking = (initialAmenityId) => {
   };
 
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5006';
     const socket = io(backendUrl, { auth: { token } });
 
     socket.on('connect', () => {

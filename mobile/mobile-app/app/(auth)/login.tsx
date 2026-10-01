@@ -39,6 +39,7 @@ import {
   NahomEmblem,
   NahomWordmark,
 } from '@/components/auth/NahomBrandLogo';
+import { AuthMethodSelector } from '@/components/auth/AuthMethodSelector';
 import { SocialAuthButton } from '@/components/auth/SocialAuthButton';
 import { TextInput } from '@/components/forms/TextInput';
 import { PasswordInput } from '@/components/forms/PasswordInput';
@@ -539,6 +540,12 @@ export default function LoginScreen() {
     }
   }, [otpSent, submittedPhone]);
 
+  const handleKeepSignedInChange = (checked: boolean) => {
+    setKeepSignedIn(checked);
+    // Persist immediately so social sign-in uses the same preference.
+    void storage.setItem('keep_signed_in', checked ? 'true' : 'false');
+  };
+
   const savePreferences = async () => {
     try {
       await storage.setItem('keep_signed_in', keepSignedIn ? 'true' : 'false');
@@ -674,73 +681,14 @@ export default function LoginScreen() {
             }}
             className="w-full px-5 mt-5 max-w-sm mx-auto"
           >
-            <View className="bg-white/90 dark:bg-[#111827]/90 backdrop-blur-xl p-1 rounded-full flex-row shadow-sm mx-2">
-              <TouchableOpacity
-                onPress={() => setAuthMode('basic')}
-                activeOpacity={0.85}
-                style={
-                  authMode === 'basic'
-                    ? {
-                        backgroundColor: '#FFFFFF',
-                        shadowColor: '#000000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 6,
-                        elevation: 2,
-                      }
-                    : {
-                        backgroundColor: 'transparent',
-                      }
-                }
-                className="flex-1 py-3 rounded-full flex-row items-center justify-center gap-2"
-              >
-                <User
-                  size={16}
-                  color={authMode === 'basic' ? '#EA580C' : '#475569'}
-                  strokeWidth={2.4}
-                />
-                <Text
-                  style={{ color: authMode === 'basic' ? '#EA580C' : '#475569' }}
-                  className={`text-[13px] ${authMode === 'basic' ? 'font-bold' : 'font-semibold'}`}
-                >
-                  {t('email_password', 'Email / Password')}
-                </Text>
-              </TouchableOpacity>
-
-              <View className="w-px h-6 bg-slate-200 self-center mx-1" />
-
-              <TouchableOpacity
-                onPress={() => setAuthMode('phone')}
-                activeOpacity={0.85}
-                style={
-                  authMode === 'phone'
-                    ? {
-                        backgroundColor: '#FFFFFF',
-                        shadowColor: '#000000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 6,
-                        elevation: 2,
-                      }
-                    : {
-                        backgroundColor: 'transparent',
-                      }
-                }
-                className="flex-1 py-3 rounded-full flex-row items-center justify-center gap-2"
-              >
-                <Smartphone
-                  size={16}
-                  color={authMode === 'phone' ? '#EA580C' : '#475569'}
-                  strokeWidth={2.4}
-                />
-                <Text
-                  style={{ color: authMode === 'phone' ? '#EA580C' : '#475569' }}
-                  className={`text-[13px] ${authMode === 'phone' ? 'font-bold' : 'font-semibold'}`}
-                >
-                  {t('sign_in_with_otp', 'Sign in with OTP')}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <AuthMethodSelector
+              value={authMode}
+              onChange={(mode) => { Keyboard.dismiss(); setAuthMode(mode); }}
+              emailLabel={t('email_password', 'Email / Password')}
+              otpLabel={t('sign_in_with_otp', 'Sign in with OTP')}
+              reduceMotion={reduceMotion}
+              disabled={isSubmittingBasic || isSubmittingPhone || googleLoading}
+            />
           </Animated.View>
         </View>
 
@@ -853,7 +801,7 @@ export default function LoginScreen() {
                             autoCapitalize="none"
                             autoCorrect={false}
                             keyboardType="email-address"
-                            className="bg-white rounded-full h-[54px] py-0 shadow-sm border-0"
+                            className="bg-white rounded-full h-[48px] py-0 shadow-sm border-0"
                             inputClassName="text-slate-900 text-[15px] font-medium"
                             style={{ fontSize: 15, fontWeight: '500', color: '#0F172A' }}
                             selectionColor="#EA580C"
@@ -905,7 +853,7 @@ export default function LoginScreen() {
                             }}
                             placeholder={t('enter_password', 'Enter your password')}
                             placeholderTextColor="#9CA3AF"
-                            className="bg-white rounded-full h-[54px] py-0 shadow-sm border-0"
+                            className="bg-white rounded-full h-[48px] py-0 shadow-sm border-0"
                             inputClassName="text-slate-900 text-[15px] font-medium"
                             style={{ fontSize: 15, fontWeight: '500', color: '#0F172A' }}
                             selectionColor="#EA580C"
@@ -930,7 +878,7 @@ export default function LoginScreen() {
                     <View className="flex-row items-center pt-0.5">
                       <Checkbox
                         checked={keepSignedIn}
-                        onCheckedChange={setKeepSignedIn}
+                        onCheckedChange={handleKeepSignedInChange}
                         label={t('stay_signed_in', 'Stay signed in')}
                         labelClassName="text-[13px] text-white font-medium shadow-sm"
                         className="items-center"
@@ -979,17 +927,19 @@ export default function LoginScreen() {
                           shadowRadius: 14,
                           elevation: 4,
                         }}
-                        className="mt-1 h-[54px] rounded-full flex-row items-center justify-center gap-2 overflow-hidden relative"
+                        className="mt-1 h-[48px] rounded-full flex-row items-center justify-center gap-2 overflow-hidden relative"
                       >
                         <View className="absolute inset-0">
                           <Svg width="100%" height="100%" preserveAspectRatio="none">
                             <Defs>
                               <LinearGradient id="signInGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <Stop offset="0%" stopColor="#EA580C" />
+                                <Stop offset="0%" stopColor="#1E232E" />
+                                <Stop offset="42%" stopColor="#252D3D" />
+                                <Stop offset="75%" stopColor="#EA580C" />
                                 <Stop offset="100%" stopColor="#FF7A00" />
                               </LinearGradient>
                             </Defs>
-                            <Rect width="100%" height="100%" fill="url(#signInGrad)" />
+                            <Rect width="100%" height="100%" rx="16" fill="url(#signInGrad)" />
                           </Svg>
                         </View>
 
@@ -1039,7 +989,7 @@ export default function LoginScreen() {
                           placeholder="98765 43210"
                           placeholderTextColor="#9CA3AF"
                           labelClassName="text-xs font-semibold text-white mb-1.5"
-                          className="bg-white rounded-full h-[54px] py-0 shadow-sm border-0"
+                          className="bg-white rounded-full h-[48px] py-0 shadow-sm border-0"
                           inputClassName="text-slate-900 text-[15px] font-medium"
                           codeClassName="text-slate-900 font-bold"
                           dividerClassName="border-slate-300"
@@ -1061,7 +1011,7 @@ export default function LoginScreen() {
                     <View className="flex-row items-center pt-0.5">
                       <Checkbox
                         checked={keepSignedIn}
-                        onCheckedChange={setKeepSignedIn}
+                        onCheckedChange={handleKeepSignedInChange}
                         label={t('stay_signed_in', 'Stay signed in')}
                         labelClassName="text-[13px] text-white font-medium shadow-sm"
                         className="items-center"
@@ -1090,7 +1040,7 @@ export default function LoginScreen() {
                           shadowRadius: 14,
                           elevation: 4,
                         }}
-                        className="mt-1 h-[54px] rounded-full flex-row items-center justify-center gap-2 overflow-hidden relative"
+                        className="mt-1 h-[48px] rounded-full flex-row items-center justify-center gap-2 overflow-hidden relative"
                       >
                         <View className="absolute inset-0">
                           <Svg width="100%" height="100%" preserveAspectRatio="none">
