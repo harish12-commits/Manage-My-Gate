@@ -106,7 +106,6 @@ const PermissionMatrix = ({
             'dashboard',
             'raise_ticket',
             'complaint_management',
-            'assignee',
             'track_requests',
             'staff',
           ]

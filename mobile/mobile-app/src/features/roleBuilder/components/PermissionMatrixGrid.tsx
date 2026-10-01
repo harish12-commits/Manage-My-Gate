@@ -133,7 +133,7 @@ const PermissionMatrixGrid = ({
         let perms = [...(normalizedGroupedPermissions[category] || [])];
 
         if (category === 'complaints') {
-          const allowed = ['dashboard', 'raise_ticket', 'complaint_management', 'assignee', 'track_requests', 'staff'];
+          const allowed = ['dashboard', 'raise_ticket', 'complaint_management', 'track_requests', 'staff'];
           perms = perms.filter((p) => {
             const permName = p.name || p.code || p._id || '';
             const action = permName.includes(':') ? permName.split(':')[1] : permName.includes('.') ? permName.split('.')[1] : permName;
