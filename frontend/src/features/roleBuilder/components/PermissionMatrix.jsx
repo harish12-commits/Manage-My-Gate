@@ -17,7 +17,13 @@ const formatPermissionLabel = (permissionString) => {
 
 export const isPermissionSelected = (perm, selectedIds = []) => {
   if (!perm || !selectedIds || selectedIds.length === 0) return false
-  const permValue = perm?.name || perm?.code || perm?._id || perm
+  const permValue = String(perm?.name || perm?.code || perm?._id || perm)
+
+  if (permValue.endsWith(':full_access')) {
+    const category = permValue.split(':')[0]
+    return selectedIds.some(p => String(p).startsWith(`${category}:`))
+  }
+
   if (selectedIds.includes(permValue)) return true
   if (perm?._id && selectedIds.includes(String(perm._id))) return true
 
@@ -108,6 +114,7 @@ const PermissionMatrix = ({
             'complaint_management',
             'track_requests',
             'staff',
+            'assignee',
           ]
           perms = perms.filter((p) => {
             const permName = p.name || p.code || p._id || ''
@@ -118,6 +125,16 @@ const PermissionMatrix = ({
                 : permName
             return allowed.includes(action.toLowerCase())
           })
+        }
+
+        if (['users', 'villas', 'roles', 'workspaces', 'integrations'].includes(category)) {
+          perms = [
+            {
+              _id: `${category}:full_access`,
+              name: `${category}:full_access`,
+              description: 'Full Access',
+            }
+          ]
         }
 
         if (category === 'notices') {

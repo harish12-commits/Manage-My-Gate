@@ -29,7 +29,13 @@ const formatPermissionLabel = (permissionString: string) => {
 
 export const isPermissionSelected = (perm: any, selectedIds: string[] = []) => {
   if (!perm || !selectedIds || selectedIds.length === 0) return false;
-  const permValue = perm?.name || perm?.code || perm?._id || perm;
+  const permValue = String(perm?.name || perm?.code || perm?._id || perm);
+
+  if (permValue.endsWith(':full_access')) {
+    const category = permValue.split(':')[0];
+    return selectedIds.some((p) => String(p).startsWith(`${category}:`));
+  }
+
   if (selectedIds.includes(permValue)) return true;
   if (perm?._id && selectedIds.includes(String(perm._id))) return true;
 
@@ -132,10 +138,35 @@ const PermissionMatrixGrid = ({
       {categories.map((category) => {
         let perms = [...(normalizedGroupedPermissions[category] || [])];
 
+        if (category === 'complaints') {
+          const allowed = [
+            'dashboard',
+            'raise_ticket',
+            'complaint_management',
+            'track_requests',
+            'staff',
+            'assignee',
+          ];
+          perms = perms.filter((p) => {
+            const permName = p.name || p.code || p._id || '';
+            const action = permName.includes(':')
+              ? permName.split(':')[1]
+              : permName.includes('.')
+                ? permName.split('.')[1]
+                : permName;
+            return allowed.includes(action.toLowerCase());
+          });
+        }
 
-
-
-
+        if (['users', 'villas', 'roles', 'workspaces', 'integrations'].includes(category)) {
+          perms = [
+            {
+              _id: `${category}:full_access`,
+              name: `${category}:full_access`,
+              description: 'Full Access',
+            }
+          ];
+        }
         const groupCodes = perms.map((p) => p.name || p.code || p._id || '');
         const selectedGroupCount = perms.filter((p) => isPermissionSelected(p, selectedIds)).length;
         const isAllGroupSelected = groupCodes.length > 0 && selectedGroupCount === groupCodes.length;

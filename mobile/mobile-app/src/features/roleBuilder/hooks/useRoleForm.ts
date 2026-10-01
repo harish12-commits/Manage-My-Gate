@@ -77,12 +77,22 @@ export const useRoleForm = ({ role, visible, onSave }: UseRoleFormProps) => {
 
   const handleSelectAllGroup = (groupCodes: string[], checked: boolean) => {
     const currentPermissions = getValues('permissions') || [];
+    
+    // Expand any virtual full_access codes into their real backend permissions
+    const expandedGroupCodes = groupCodes.flatMap(code => {
+      if (String(code).endsWith(':full_access')) {
+        const category = code.split(':')[0];
+        return [`${category}:create`, `${category}:read`, `${category}:update`, `${category}:delete`, `${category}:manage`, `${category}:super_admin`];
+      }
+      return code;
+    });
+
     let newValue: string[];
 
     if (checked) {
-      newValue = Array.from(new Set([...currentPermissions, ...groupCodes]));
+      newValue = Array.from(new Set([...currentPermissions, ...expandedGroupCodes]));
     } else {
-      const toRemove = new Set(groupCodes);
+      const toRemove = new Set(expandedGroupCodes);
       newValue = currentPermissions.filter((code) => !toRemove.has(code));
     }
 
@@ -93,7 +103,18 @@ export const useRoleForm = ({ role, visible, onSave }: UseRoleFormProps) => {
     const currentPermissions = getValues('permissions') || [];
     let newValue: string[];
 
-    if (checked) {
+    if (String(permValue).endsWith(':full_access')) {
+      const category = permValue.split(':')[0];
+      const adminActions = ['create', 'read', 'update', 'delete', 'manage', 'super_admin'];
+      const permsToToggle = adminActions.map(a => `${category}:${a}`);
+      
+      if (checked) {
+        newValue = Array.from(new Set([...currentPermissions, ...permsToToggle]));
+      } else {
+        const toRemove = new Set(permsToToggle);
+        newValue = currentPermissions.filter((p) => !toRemove.has(p) && !String(p).startsWith(`${category}:`));
+      }
+    } else if (checked) {
       newValue = Array.from(new Set([...currentPermissions, permValue]));
     } else {
       newValue = currentPermissions.filter((p) => p !== permValue);
