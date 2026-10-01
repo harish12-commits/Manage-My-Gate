@@ -16,8 +16,8 @@
       },
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://managemygate.e3esg.com/api/v1",
-        "EXPO_PUBLIC_SOCKET_URL": "https://managemygate.e3esg.com",
+        "EXPO_PUBLIC_API_URL": "https://nahom.e3esg.com/api/v1",
+        "EXPO_PUBLIC_SOCKET_URL": "https://nahom.e3esg.com",
         "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_TXAJ0OalVys0pH",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "610778456829-edvpd6gcav2u31jo0p2aeligfopvqfbo.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "610778456829-6g1bvqtplfrgva93sbdsvgbuqmkpr203.apps.googleusercontent.com",
@@ -32,8 +32,8 @@
       },
       "env": {
         "EXPO_USE_PRECOMPILED_MODULES": "1",
-        "EXPO_PUBLIC_API_URL": "https://managemygate.e3esg.com/api/v1",
-        "EXPO_PUBLIC_SOCKET_URL": "https://managemygate.e3esg.com",
+        "EXPO_PUBLIC_API_URL": "https://nahom.e3esg.com/api/v1",
+        "EXPO_PUBLIC_SOCKET_URL": "https://nahom.e3esg.com",
         "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_TXAJ0OalVys0pH",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "610778456829-edvpd6gcav2u31jo0p2aeligfopvqfbo.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "610778456829-6g1bvqtplfrgva93sbdsvgbuqmkpr203.apps.googleusercontent.com",

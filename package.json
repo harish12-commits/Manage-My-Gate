@@ -11,9 +11,12 @@
     "start:backend": "npm run start --prefix backend",
     "build:frontend": "npm run build --prefix frontend",
     "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend && npm install --legacy-peer-deps --prefix mobile/mobile-app",
-    "docker:build": "docker build -t atocash/manage-my-gate-server:prd1.0 -t atocash/manage-my-gate-server:latest ./backend && docker build -t atocash/manage-my-gate-client:prd1.0 -t atocash/manage-my-gate-client:latest ./frontend",
-    "docker:build:backend": "docker build -t atocash/manage-my-gate-server:prd1.0 -t atocash/manage-my-gate-server:latest ./backend",
-    "docker:build:frontend": "docker build -t atocash/manage-my-gate-client:prd1.0 -t atocash/manage-my-gate-client:latest ./frontend"
+    "docker:build": "docker build -t nahom:prd1.0 -t nahom:latest -t atocash/manage-my-gate-server:prd1.0 ./backend && docker build -t nahom-frontend:prd1.0 -t nahom-frontend:latest -t atocash/manage-my-gate-client:prd1.0 ./frontend",
+    "docker:build:backend": "docker build -t nahom:prd1.0 -t nahom:latest -t atocash/manage-my-gate-server:prd1.0 ./backend",
+    "docker:build:frontend": "docker build -t nahom-frontend:prd1.0 -t nahom-frontend:latest -t atocash/manage-my-gate-client:prd1.0 ./frontend",
+    "nahom:up": "docker compose -f docker-compose.nahom.yml up -d",
+    "nahom:down": "docker compose -f docker-compose.nahom.yml down",
+    "nahom:logs": "docker compose -f docker-compose.nahom.yml logs -f --tail 100"
   },
   "dependencies": {
     "expo": "^57.0.20",

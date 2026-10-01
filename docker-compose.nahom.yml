@@ -1,0 +1,163 @@
+# ==============================================================================
+# Nahom (prd1.0) - Complete Standalone All-In-One Stack (Single Shot)
+# Services Included:
+#   1. nahom-mongodb          (Port 27020 -> 27017, replicaSet rs0)
+#   2. nahom-mongodb-rs-init  (Replica Set auto-initializer)
+#   3. nahom-redis            (Port 6380 -> 6379)
+#   4. nahom-backend          (Port 5007 -> 5000, nahom:prd1.0)
+#   5. nahom-frontend         (Port 3005 -> 80, nahom-frontend:prd1.0)
+#   6. nahom-mongo-express    (Port 8082 -> 8081)
+# ==============================================================================
+
+services:
+  nahom-mongodb:
+    image: mongo:7.0.14
+    container_name: nahom-mongodb
+    restart: unless-stopped
+    environment:
+      - GLIBC_TUNABLES=glibc.pthread.rseq=0
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER:-manageadmin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-ManageAdminPwd@123}
+      - TZ=${TZ:-Asia/Kolkata}
+    ports:
+      - "${DB_PORT_EXTERNAL:-27020}:27017"
+    volumes:
+      - nahom_mongodb_data:/data/db
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        export GLIBC_TUNABLES=glibc.pthread.rseq=0
+        if [ ! -f /data/db/replica.key ]; then
+          openssl rand -base64 756 > /data/db/replica.key
+          chmod 400 /data/db/replica.key
+          chown 999:999 /data/db/replica.key 2>/dev/null || true
+        fi
+        exec docker-entrypoint.sh mongod --replSet rs0 --bind_ip_all --keyFile /data/db/replica.key
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      nahom-network:
+        aliases:
+          - mongodb
+          - nahom-mongodb
+
+  nahom-mongodb-rs-init:
+    image: mongo:7.0.14
+    container_name: nahom-mongodb-rs-init
+    environment:
+      - GLIBC_TUNABLES=glibc.pthread.rseq=0
+      - TZ=${TZ:-Asia/Kolkata}
+    depends_on:
+      nahom-mongodb:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        export GLIBC_TUNABLES=glibc.pthread.rseq=0
+        until mongosh --host nahom-mongodb:27017 -u "${MONGO_ROOT_USER:-manageadmin}" -p "${MONGO_ROOT_PASSWORD:-ManageAdminPwd@123}" --authenticationDatabase admin --eval 'print("ready")' > /dev/null 2>&1 || mongosh --host nahom-mongodb:27017 --eval 'print("ready")' > /dev/null 2>&1; do sleep 1; done
+        mongosh --host nahom-mongodb:27017 -u "${MONGO_ROOT_USER:-manageadmin}" -p "${MONGO_ROOT_PASSWORD:-ManageAdminPwd@123}" --authenticationDatabase admin --eval "try { rs.initiate({ _id: 'rs0', members: [ { _id: 0, host: 'nahom-mongodb:27017' } ] }) } catch (e) { print(e.message) }" || mongosh --host nahom-mongodb:27017 --eval "try { rs.initiate({ _id: 'rs0', members: [ { _id: 0, host: 'nahom-mongodb:27017' } ] }) } catch (e) { print(e.message) }"
+    networks:
+      - nahom-network
+
+  nahom-redis:
+    image: redis:alpine
+    container_name: nahom-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT_EXTERNAL:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      nahom-network:
+        aliases:
+          - redis
+          - nahom-redis
+
+  nahom-backend:
+    image: ${BACKEND_IMAGE:-atocash/manage-my-gate-server:prd1.0}
+    container_name: ${BACKEND_CONTAINER_NAME:-nahom-backend}
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-5007}:5000"
+    environment:
+      - PORT=5000
+      - HOST=0.0.0.0
+      - MONGODB_URI=${MONGODB_URI:-mongodb://manageadmin:ManageAdminPwd%40123@nahom-mongodb:27017/manage_my_gate_prod?replicaSet=rs0&authSource=admin}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - VAULT_ENCRYPTION_KEY=${VAULT_ENCRYPTION_KEY}
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-admin@nahom.e3esg.com}
+      - SUPER_ADMIN_USERNAME=${SUPER_ADMIN_USERNAME:-superadmin}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD:-SuperAdminPwd@123}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_ANDROID_CLIENT_ID=${GOOGLE_ANDROID_CLIENT_ID:-610778456829-6g1bvqtplfrgva93sbdsvgbuqmkpr203.apps.googleusercontent.com}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}
+      - MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID}
+      - CLIENT_URL=${CLIENT_URL:-https://nahom.e3esg.com}
+      - APP_CLIENT_URL=${APP_CLIENT_URL:-https://nahom.e3esg.com}
+      - WEB_CLIENT_URL=${WEB_CLIENT_URL:-https://nahom.e3esg.com}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://nahom.e3esg.com}
+      - REDIS_URL=${REDIS_URL:-redis://nahom-redis:6379}
+      - NODE_ENV=${NODE_ENV:-production}
+      - TZ=${TZ:-Asia/Kolkata}
+    depends_on:
+      nahom-mongodb:
+        condition: service_healthy
+      nahom-redis:
+        condition: service_healthy
+    networks:
+      - nahom-network
+
+  nahom-frontend:
+    image: ${FRONTEND_IMAGE:-atocash/manage-my-gate-client:prd1.0}
+    container_name: ${FRONTEND_CONTAINER_NAME:-nahom-frontend}
+    restart: unless-stopped
+    ports:
+      - "${CLIENT_PORT:-3005}:80"
+    environment:
+      - TZ=${TZ:-Asia/Kolkata}
+    depends_on:
+      - nahom-backend
+    networks:
+      - nahom-network
+
+  nahom-mongo-express:
+    image: mongo-express:latest
+    container_name: ${MONGO_EXPRESS_CONTAINER_NAME:-nahom-mongo-express}
+    restart: unless-stopped
+    ports:
+      - "${MONGO_EXPRESS_PORT:-8082}:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=nahom-mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_MONGODB_AUTH_DATABASE=admin
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_ROOT_USER:-manageadmin}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_ROOT_PASSWORD:-ManageAdminPwd@123}
+      - ME_CONFIG_BASICAUTH_USERNAME=${ME_BASICAUTH_USER:-admin}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${ME_BASICAUTH_PASS:-admin123}
+      - ME_CONFIG_SITE_BASEURL=${ME_CONFIG_SITE_BASEURL:-}
+      - TZ=${TZ:-Asia/Kolkata}
+    depends_on:
+      nahom-mongodb:
+        condition: service_healthy
+    networks:
+      - nahom-network
+
+volumes:
+  nahom_mongodb_data:
+
+networks:
+  nahom-network:
+    driver: bridge

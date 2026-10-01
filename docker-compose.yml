@@ -68,14 +68,14 @@ services:
       - mmg-network
 
   backend:
-    image: ${DOCKER_REGISTRY:-atocash}/manage-my-gate-server:${IMAGE_TAG:-prd1.0}
+    image: ${BACKEND_IMAGE:-nahom:${IMAGE_TAG:-prd1.0}}
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: mmg-backend
+    container_name: ${BACKEND_CONTAINER_NAME:-nahom-backend}
     restart: unless-stopped
     ports:
-      - "${SERVER_PORT:-5006}:5000"
+      - "${SERVER_PORT:-5007}:5000"
     environment:
       - PORT=5000
       - HOST=0.0.0.0
@@ -109,7 +109,7 @@ services:
       - mmg-network
 
   frontend:
-    image: ${DOCKER_REGISTRY:-atocash}/manage-my-gate-client:${IMAGE_TAG:-prd1.0}
+    image: ${FRONTEND_IMAGE:-nahom-frontend:${IMAGE_TAG:-prd1.0}}
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -119,10 +119,10 @@ services:
         - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-610778456829-edvpd6gcav2u31jo0p2aeligfopvqfbo.apps.googleusercontent.com}
         - VITE_MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID:-00000000-0000-0000-0000-000000000000}
         - VITE_MICROSOFT_TENANT_ID=${MICROSOFT_TENANT_ID:-common}
-    container_name: mmg-frontend
+    container_name: ${FRONTEND_CONTAINER_NAME:-nahom-frontend}
     restart: unless-stopped
     ports:
-      - "${CLIENT_PORT:-3004}:80"
+      - "${CLIENT_PORT:-3005}:80"
     environment:
       - TZ=${TZ:-Asia/Kolkata}
     depends_on:
@@ -132,10 +132,10 @@ services:
 
   mongo-express:
     image: mongo-express:latest
-    container_name: mmg-mongo-express
+    container_name: ${MONGO_EXPRESS_CONTAINER_NAME:-nahom-mongo-express}
     restart: unless-stopped
     ports:
-      - "${MONGO_EXPRESS_PORT:-8081}:8081"
+      - "${MONGO_EXPRESS_PORT:-8082}:8081"
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongodb
       - ME_CONFIG_MONGODB_PORT=27017

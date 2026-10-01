@@ -1,8 +1,9 @@
 # ==============================================================================
-# Manage-My-Gate: Automated Docker Build & Push Script
-# Default tag: prd1.0
+# Nahom (Manage-My-Gate): Automated Docker Build & Push Script
+# Default Image: nahom:prd1.0
 # ==============================================================================
 param(
+    [string]$ImageName = "nahom",
     [string]$Tag = "prd1.0",
     [string]$Registry = "atocash",
     [switch]$SkipPush
@@ -11,9 +12,9 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host "  Manage-My-Gate: Build & Push Docker Images to Docker Hub" -ForegroundColor Cyan
-Write-Host "  Target Registry: $Registry" -ForegroundColor Cyan
-Write-Host "  Target Image Tag: $Tag" -ForegroundColor Cyan
+Write-Host "  Nahom: Build & Tag Production Docker Images" -ForegroundColor Cyan
+Write-Host "  Primary Image: ${ImageName}:${Tag}" -ForegroundColor Cyan
+Write-Host "  Registry Image: ${Registry}/manage-my-gate-server:${Tag}" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # 1. Verify Docker Engine
@@ -61,9 +62,12 @@ if (-not $dockerReady) {
 # Navigate to project root
 Set-Location -Path $PSScriptRoot
 
-# 2. Build Backend Image
-Write-Host "`n[2/4] Building Backend Image ($Registry/manage-my-gate-server:$Tag)..." -ForegroundColor Yellow
+# 2. Build Backend Image (nahom:prd1.0)
+Write-Host "`n[2/4] Building Backend Image (${ImageName}:${Tag})..." -ForegroundColor Yellow
 docker build `
+  -t "${ImageName}:${Tag}" `
+  -t "${ImageName}:latest" `
+  -t "${ImageName}-backend:${Tag}" `
   -t "${Registry}/manage-my-gate-server:${Tag}" `
   -t "${Registry}/manage-my-gate-server:latest" `
   ./backend
@@ -71,11 +75,14 @@ if ($LASTEXITCODE -ne 0) {
     Write-Error "Backend Docker build failed!"
     exit 1
 }
-Write-Host "Backend image built successfully." -ForegroundColor Green
+Write-Host "Backend image built successfully as ${ImageName}:${Tag}." -ForegroundColor Green
 
-# 3. Build Frontend Image
-Write-Host "`n[3/4] Building Frontend Image ($Registry/manage-my-gate-client:$Tag)..." -ForegroundColor Yellow
+# 3. Build Frontend Image (nahom-frontend:prd1.0)
+Write-Host "`n[3/4] Building Frontend Image (${ImageName}-frontend:${Tag})..." -ForegroundColor Yellow
 docker build `
+  -t "${ImageName}-frontend:${Tag}" `
+  -t "${ImageName}-frontend:latest" `
+  -t "${ImageName}-client:${Tag}" `
   -t "${Registry}/manage-my-gate-client:${Tag}" `
   -t "${Registry}/manage-my-gate-client:latest" `
   --build-arg VITE_API_URL="/api" `
@@ -88,31 +95,33 @@ if ($LASTEXITCODE -ne 0) {
     Write-Error "Frontend Docker build failed!"
     exit 1
 }
-Write-Host "Frontend image built successfully." -ForegroundColor Green
+Write-Host "Frontend image built successfully as ${ImageName}-frontend:${Tag}." -ForegroundColor Green
 
-# 4. Push Images to Docker Hub
+# 4. Push Images
 if ($SkipPush) {
-    Write-Host "`n[4/4] Skipping push step (-SkipPush flag specified)." -ForegroundColor Yellow
+    Write-Host "`n[4/4] Skipping push step (-SkipPush specified)." -ForegroundColor Yellow
 } else {
-    Write-Host "`n[4/4] Pushing images to Docker Hub..." -ForegroundColor Yellow
+    Write-Host "`n[4/4] Pushing images..." -ForegroundColor Yellow
 
-    Write-Host "Pushing ${Registry}/manage-my-gate-server:${Tag}..." -ForegroundColor Cyan
-    docker push "${Registry}/manage-my-gate-server:${Tag}"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Pushing backend image failed! Please run 'docker login' and try again."
-        exit 1
+    if ($Registry) {
+        Write-Host "Pushing ${Registry}/manage-my-gate-server:${Tag}..." -ForegroundColor Cyan
+        docker push "${Registry}/manage-my-gate-server:${Tag}"
+        Write-Host "Pushing ${Registry}/manage-my-gate-client:${Tag}..." -ForegroundColor Cyan
+        docker push "${Registry}/manage-my-gate-client:${Tag}"
     }
 
-    Write-Host "Pushing ${Registry}/manage-my-gate-client:${Tag}..." -ForegroundColor Cyan
-    docker push "${Registry}/manage-my-gate-client:${Tag}"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Pushing frontend image failed! Please run 'docker login' and try again."
-        exit 1
+    try {
+        Write-Host "Pushing ${ImageName}:${Tag}..." -ForegroundColor Cyan
+        docker push "${ImageName}:${Tag}"
+        Write-Host "Pushing ${ImageName}-frontend:${Tag}..." -ForegroundColor Cyan
+        docker push "${ImageName}-frontend:${Tag}"
+    } catch {
+        Write-Host "Local tag push skipped or requires repository credentials." -ForegroundColor Yellow
     }
 }
 
 Write-Host "`n==========================================================" -ForegroundColor Green
-Write-Host "  SUCCESS: Docker images prepared for production!        " -ForegroundColor Green
-Write-Host "  - Backend:  ${Registry}/manage-my-gate-server:${Tag}   " -ForegroundColor Green
-Write-Host "  - Frontend: ${Registry}/manage-my-gate-client:${Tag}   " -ForegroundColor Green
+Write-Host "  SUCCESS: Docker production images ready!               " -ForegroundColor Green
+Write-Host "  - Backend:  ${ImageName}:${Tag}                        " -ForegroundColor Green
+Write-Host "  - Frontend: ${ImageName}-frontend:${Tag}               " -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green

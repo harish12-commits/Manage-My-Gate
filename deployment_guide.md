@@ -74,13 +74,16 @@ Create a `.env` file in the root directory (`/opt/manage-my-gate`) to store envi
 
 ```bash
 cat <<EOF > .env
-# Registry Settings
-DOCKER_REGISTRY=atocash
+# Image Settings
+IMAGE_NAME=nahom
 IMAGE_TAG=prd1.0
+BACKEND_IMAGE=nahom:prd1.0
+FRONTEND_IMAGE=nahom-frontend:prd1.0
 
-# External Port Configurations
-CLIENT_PORT=3004
-SERVER_PORT=5006
+# External Port Configurations (Available ports: 5007 & 3005; or 5006 & 3004 if replacing running containers)
+CLIENT_PORT=3005
+SERVER_PORT=5007
+MONGO_EXPRESS_PORT=8082
 DB_PORT_EXTERNAL=27019
 REDIS_PORT_EXTERNAL=6379
 
