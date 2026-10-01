@@ -118,8 +118,9 @@ const PERMISSION_SYNONYMS: Record<string, string[]> = {
   'amenities:discover': ['amenities:discover', 'amenities.discover', 'amenities:resident', 'amenities.resident', 'amenities:read', 'amenities.read'],
   'amenities:my_booking': ['amenities:my_booking', 'amenities.my_booking', 'amenities:book', 'amenities.book', 'amenities:resident', 'amenities.resident'],
   'amenities:wallet': ['amenities:wallet', 'amenities.wallet', 'amenities:resident', 'amenities.resident'],
-  'amenities:amenities': ['amenities:amenities', 'amenities.amenities', 'amenities:admin', 'amenities.admin', 'amenities:create', 'amenities:update', 'amenities:delete'],
-  'amenities:admin_calendar', 'amenities:booking_queue': ['amenities:admin_calander', 'amenities.admin_calander', 'amenities:admin', 'amenities.admin'],
+  'amenities:master': ['amenities:master', 'amenities.master', 'amenities:amenities', 'amenities.amenities', 'amenities:admin', 'amenities.admin', 'amenities:create', 'amenities:update', 'amenities:delete'],
+  'amenities:admin_calendar': ['amenities:admin_calendar', 'amenities:admin_calander', 'amenities.admin_calander', 'amenities:admin', 'amenities.admin'],
+  'amenities:booking_queue': ['amenities:booking_queue', 'amenities:admin_calander', 'amenities.admin_calander', 'amenities:admin', 'amenities.admin'],
   'amenities:maintenance': ['amenities:maintenance', 'amenities.maintenance', 'amenities:admin', 'amenities.admin'],
   'amenities:settings': ['amenities:settings', 'amenities.settings', 'amenities:admin', 'amenities.admin'],
   'amenities:dashboard': ['amenities:dashboard', 'amenities.dashboard', 'amenities:admin', 'amenities.admin'],
@@ -257,7 +258,9 @@ const FALLBACK_RESIDENT_FEATURE_IDS = new Set([
 
 const FALLBACK_RESIDENT_PERMISSIONS = new Set([
   'visitor:resident',
-  'billing:action_center',
+  'billing:my_dues',
+  'billing:billing_hub',
+  'billing:my_invoices',
   'amenities:discover',
   'amenities:my_booking',
   'amenities:wallet',
@@ -448,7 +451,7 @@ export const getDefaultQuickActionsForUser = (user: UserLike | null | undefined)
       'admin_users',
       'admin_villas',
       'visitor_admin_dashboard',
-      'billing_action_center',
+      'billing_ledger',
       'community_engagement_manage',
       'amenities_dashboard',
     ];
