@@ -374,9 +374,11 @@ export default function ForgotPasswordScreen() {
                     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16, overflow: 'hidden' }}>
                       <Svg height="100%" width="100%" style={{ position: 'absolute' }}>
                         <Defs>
-                          <LinearGradient id="signInGrad" x1="0" y1="0" x2="1" y2="1">
-                            <Stop offset="0" stopColor="#F97316" stopOpacity="1" />
-                            <Stop offset="1" stopColor="#EA580C" stopOpacity="1" />
+                          <LinearGradient id="signInGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <Stop offset="0%" stopColor="#1E232E" />
+                            <Stop offset="42%" stopColor="#252D3D" />
+                            <Stop offset="75%" stopColor="#EA580C" />
+                            <Stop offset="100%" stopColor="#FF7A00" />
                           </LinearGradient>
                         </Defs>
                         <Rect width="100%" height="100%" rx="16" fill="url(#signInGrad)" />
