@@ -6,6 +6,7 @@ import userService from '../user/user.services.js';
 import onboardingWizardEvents from './onboardingWizard.events.js';
 import HttpError from '../../utils/httpError.utils.js';
 import logger, { loggerStorage } from '../../utils/logger.utils.js';
+import crypto from 'crypto';
 
 const MAX_IMPORT_ROWS = 5000;
 
@@ -220,7 +221,7 @@ export class OnboardingWizardService {
             email: String(email).trim().toLowerCase(),
             username: String(email).trim().toLowerCase(),
             phone: String(phone).trim(),
-            password: 'ChangeMe123!',
+            password: crypto.randomBytes(16).toString('hex') + 'Aa1!', // Random secure password requiring reset
             roles: ['Resident'],
             orgId: organisationId,
           };
