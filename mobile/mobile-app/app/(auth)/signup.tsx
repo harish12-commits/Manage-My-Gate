@@ -61,7 +61,7 @@ const signupSchema = yup.object().shape({
       }
       if (value.startsWith('+966')) { const n = value.slice(4); if (n.length !== 9) return this.createError({ message: 'Saudi mobile number must be exactly 9 digits' }); return true; }
       if (value.startsWith('+971')) { const n = value.slice(4); if (n.length !== 9) return this.createError({ message: 'UAE mobile number must be exactly 9 digits' }); return true; }
-      return /^\+[1-9]\d{7,14}$/.test(value);
+      return /^\+[1-9]\d{10,14}$/.test(value);
     }),
   unitNumber: yup.string().optional(),
   password: yup.string().required('Password is required').min(6, 'Password must be at least 6 characters'),
@@ -81,7 +81,7 @@ const phoneSignInSchema = yup.object().shape({
     .required('Phone number is required')
     .test('valid-phone', 'Please enter a valid phone number with country code', (value) => {
       if (!value) return false;
-      return /^\+[1-9]\d{7,14}$/.test(value.trim());
+      return /^\+[1-9]\d{10,14}$/.test(value.trim());
     }),
 });
 

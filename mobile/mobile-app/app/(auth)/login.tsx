@@ -74,7 +74,7 @@ const phoneSchema = yup.object().shape({
     .required('Phone number is required')
     .test('valid-phone', 'Please enter a valid mobile number with country code', (value) => {
       if (!value) return false;
-      return /^\+[1-9]\d{7,14}$/.test(value.trim());
+      return /^\+[1-9]\d{10,14}$/.test(value.trim());
     }),
 });
 

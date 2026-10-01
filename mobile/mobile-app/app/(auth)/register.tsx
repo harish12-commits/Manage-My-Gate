@@ -37,7 +37,7 @@ const registerSchema = yup.object().shape({
         }
         return true;
       }
-      return /^\+[1-9]\d{7,14}$/.test(value);
+      return /^\+[1-9]\d{10,14}$/.test(value);
     }),
   password: yup
     .string()
