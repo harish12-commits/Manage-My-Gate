@@ -25,8 +25,8 @@ export const SYSTEM_FEATURE_CATALOG = [
       { id: 'amenities_dashboard', name: 'Amenity Dashboard', permission: 'amenities:dashboard', iconName: 'Building2', colorBg: 'bg-indigo-500/15', colorIcon: '#6366f1', route: '/(resident)/amenities/dashboard' },
       { id: 'amenities_discover', name: 'Discover Amenities', permission: 'amenities:discover', iconName: 'Compass', colorBg: 'bg-orange-500/15', colorIcon: '#f97316', route: '/(resident)/amenities/discover' },
       { id: 'amenities_my_booking', name: 'My Bookings', permission: 'amenities:my_booking', iconName: 'CalendarCheck', colorBg: 'bg-blue-500/15', colorIcon: '#2563eb', route: '/(resident)/amenities/my-bookings' },
-      { id: 'amenities_master', name: 'Amenity Master', permission: 'amenities:amenities', iconName: 'SlidersHorizontal', colorBg: 'bg-teal-500/15', colorIcon: '#0d9488', route: '/(resident)/amenities/admin-master' },
-      { id: 'amenities_admin_calendar', name: 'Admin Calendar', permission: 'amenities:admin_calander', iconName: 'CalendarDays', colorBg: 'bg-pink-500/15', colorIcon: '#ec4899', route: '/(resident)/amenities/admin-calendar' },
+      { id: 'amenities_master', name: 'Amenity Master', permission: 'amenities:master', iconName: 'SlidersHorizontal', colorBg: 'bg-teal-500/15', colorIcon: '#0d9488', route: '/(resident)/amenities/admin-master' },
+      { id: 'amenities_admin_calendar', name: 'Admin Calendar', permission: 'amenities:admin_calendar', iconName: 'CalendarDays', colorBg: 'bg-pink-500/15', colorIcon: '#ec4899', route: '/(resident)/amenities/admin-calendar' },
       { id: 'amenities_ledgers', name: 'Ledgers & Accounts', permission: 'amenities:ledgers', iconName: 'Receipt', colorBg: 'bg-emerald-500/15', colorIcon: '#059669', route: '/(resident)/amenities/ledgers' },
       { id: 'amenities_maintenance', name: 'Maintenance Schedule', permission: 'amenities:maintenance', iconName: 'Wrench', colorBg: 'bg-orange-600/15', colorIcon: '#ea580c', route: '/(resident)/amenities/maintenance' },
       { id: 'amenities_scanner', name: 'Security Gate Scanner', permission: 'amenities:scanner', iconName: 'ScanLine', colorBg: 'bg-sky-500/15', colorIcon: '#0284c7', route: '/(resident)/amenities/scanner' },
@@ -70,10 +70,11 @@ export const SYSTEM_FEATURE_CATALOG = [
     categoryName: 'Billing & Invoices',
     actionButton: { label: 'View all', type: 'link', route: '/(resident)/billing' },
     items: [
-      { id: 'billing_dashboard', name: 'Billing Dashboard', permission: 'billing:action_center', iconName: 'CreditCard', colorBg: 'bg-emerald-500/15', colorIcon: '#10b981', route: '/(resident)/billing' },
-      { id: 'billing_my_dues', name: 'My Personal Dues', permission: 'billing:action_center', iconName: 'Receipt', colorBg: 'bg-rose-500/15', colorIcon: '#f43f5e', route: '/(resident)/billing/my-dues' },
-      { id: 'billing_assessment_manager', name: 'Assessment Manager', permission: 'billing:assessment_manager', iconName: 'Calculator', colorBg: 'bg-indigo-500/15', colorIcon: '#6366f1', route: '/(resident)/admin/billing/assessments' },
-      { id: 'billing_action_center', name: 'Billing Ledger', permission: 'billing:dashboard', iconName: 'FileSpreadsheet', colorBg: 'bg-cyan-600/15', colorIcon: '#0891b2', route: '/(resident)/admin/billing/ledger' }
+      { id: 'billing_dashboard', name: 'Billing Dashboard', permission: 'billing:billing_hub', iconName: 'CreditCard', colorBg: 'bg-emerald-500/15', colorIcon: '#10b981', route: '/(resident)/billing' },
+      { id: 'billing_my_dues', name: 'My Personal Dues', permission: 'billing:my_dues', iconName: 'Receipt', colorBg: 'bg-rose-500/15', colorIcon: '#f43f5e', route: '/(resident)/billing/my-dues' },
+      { id: 'billing_my_invoices', name: 'My Invoices', permission: 'billing:my_invoices', iconName: 'FileText', colorBg: 'bg-indigo-500/15', colorIcon: '#6366f1', route: '/(resident)/billing/my-dues' },
+      { id: 'billing_assessment_manager', name: 'Assessment Manager', permission: 'billing:assessments', iconName: 'Calculator', colorBg: 'bg-indigo-500/15', colorIcon: '#6366f1', route: '/(resident)/admin/billing/assessments' },
+      { id: 'billing_action_center', name: 'Billing Ledger', permission: 'billing:ledger', iconName: 'FileSpreadsheet', colorBg: 'bg-cyan-600/15', colorIcon: '#0891b2', route: '/(resident)/admin/billing/ledger' }
     ]
   },
   {

@@ -15,7 +15,8 @@ To deploy the application, you first need to build the Docker images locally and
 #### 1. Backend Build and Push
 ```bash
 cd backend
-docker build --no-cache -t atocash/manage-my-gate-server:latest .
+docker build --no-cache -t atocash/manage-my-gate-server:prd1.0 -t atocash/manage-my-gate-server:latest .
+docker push atocash/manage-my-gate-server:prd1.0
 docker push atocash/manage-my-gate-server:latest
 ```
 
@@ -24,18 +25,20 @@ docker push atocash/manage-my-gate-server:latest
 **Single-Line (Recommended for Windows PowerShell / Command Prompt):**
 ```bash
 cd ../frontend
-docker build --no-cache -t atocash/manage-my-gate-client:latest --build-arg VITE_API_URL="https://managemygate.e3esg.com/api" --build-arg VITE_GOOGLE_CLIENT_ID="your_google_client_id_here" --build-arg VITE_MICROSOFT_CLIENT_ID="your_microsoft_client_id_here" --build-arg VITE_MICROSOFT_TENANT_ID="your_microsoft_tenant_id_here" .
+docker build --no-cache -t atocash/manage-my-gate-client:prd1.0 -t atocash/manage-my-gate-client:latest --build-arg VITE_API_URL="https://managemygate.e3esg.com/api" --build-arg VITE_GOOGLE_CLIENT_ID="your_google_client_id_here" --build-arg VITE_MICROSOFT_CLIENT_ID="your_microsoft_client_id_here" --build-arg VITE_MICROSOFT_TENANT_ID="your_microsoft_tenant_id_here" .
+docker push atocash/manage-my-gate-client:prd1.0
 docker push atocash/manage-my-gate-client:latest
 ```
 
 **Linux / macOS / Git Bash (Multi-line with `\`):**
 ```bash
 cd ../frontend
-docker build --no-cache -t atocash/manage-my-gate-client:latest \
+docker build --no-cache -t atocash/manage-my-gate-client:prd1.0 -t atocash/manage-my-gate-client:latest \
   --build-arg VITE_API_URL="https://managemygate.e3esg.com/api" \
   --build-arg VITE_GOOGLE_CLIENT_ID="your_google_client_id_here" \
   --build-arg VITE_MICROSOFT_CLIENT_ID="your_microsoft_client_id_here" \
   --build-arg VITE_MICROSOFT_TENANT_ID="your_microsoft_tenant_id_here" .
+docker push atocash/manage-my-gate-client:prd1.0
 docker push atocash/manage-my-gate-client:latest
 ```
 
@@ -73,7 +76,7 @@ Create a `.env` file in the root directory (`/opt/manage-my-gate`) to store envi
 cat <<EOF > .env
 # Registry Settings
 DOCKER_REGISTRY=atocash
-IMAGE_TAG=latest
+IMAGE_TAG=prd1.0
 
 # External Port Configurations
 CLIENT_PORT=3004

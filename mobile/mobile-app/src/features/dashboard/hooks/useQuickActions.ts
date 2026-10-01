@@ -136,12 +136,21 @@ export const useQuickActions = () => {
         const rawCat = rawCatalog.find((rc) => rc.categoryKey === builtinCat.categoryKey);
         if (!rawCat) return builtinCat;
         // Strictly filter raw items: must exist in canonical catalog and match this category
-        const validRawItems = (rawCat.items || []).filter((item: FeatureItem) => {
-          const canonical = canonicalMap.get(item.id);
-          if (!canonical) return false;
-          return (canonical.categoryKey || 'general') === builtinCat.categoryKey;
-        });
-        const mergedItems = [...validRawItems];
+        const validRawItems: FeatureItem[] = (rawCat.items || [])
+          .filter((item: FeatureItem) => {
+            const canonical = canonicalMap.get(item.id);
+            if (!canonical) return false;
+            return (canonical.categoryKey || 'general') === builtinCat.categoryKey;
+          })
+          .map((item: FeatureItem): FeatureItem => {
+            const canonical = canonicalMap.get(item.id)!;
+            return {
+              ...item,
+              permission: canonical.permission || item.permission,
+              route: canonical.route || item.route,
+            };
+          });
+        const mergedItems: FeatureItem[] = [...validRawItems];
         builtinCat.items.forEach((bi) => {
           if (!mergedItems.some((ri) => ri.id === bi.id)) {
             mergedItems.push(bi);
@@ -170,6 +179,7 @@ export const useQuickActions = () => {
         // top-up is always a valid resident & admin feature.
         'digital_wallet': ['billing', 'amenities', 'wallet'],
         'financial_billing': ['billing'],
+        'administration_security': ['administration_security', 'admin'],
       };
       
       const itemToModuleMap: Record<string, string[]> = {};

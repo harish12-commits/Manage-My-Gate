@@ -9,15 +9,17 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/manage_my_gate_dev';
 
-export async function seedAmenitiesCatalog() {
-  console.log(`[SEED] Connecting to MongoDB at ${MONGO_URI}...`);
-  await mongoose.connect(MONGO_URI);
-  console.log('[SEED] Connected successfully.');
+export async function seedAmenitiesCatalog(shouldDisconnect = false) {
+  if (mongoose.connection.readyState !== 1) {
+    console.log(`[SEED] Connecting to MongoDB at ${MONGO_URI}...`);
+    await mongoose.connect(MONGO_URI);
+    console.log('[SEED] Connected successfully.');
+  }
 
   const db = mongoose.connection.db;
 
-  // Find all organizations to seed
-  const orgs = await db.collection('organizations').find({}).toArray();
+  // Find all residential/commercial organizations to seed (excluding system platform)
+  const orgs = await db.collection('organizations').find({ isPlatform: { $ne: true } }).toArray();
   if (!orgs || orgs.length === 0) {
     console.error('[SEED] No organizations found in database!');
     process.exit(1);
@@ -550,10 +552,14 @@ export async function seedAmenitiesCatalog() {
 
   console.log('\n==================================================');
   console.log('[SEED] All organizations successfully seeded with complete amenity catalogs.');
-  await mongoose.disconnect();
+  if (shouldDisconnect) {
+    await mongoose.disconnect();
+  }
 }
 
-seedAmenitiesCatalog().catch((err) => {
-  console.error('[SEED] Fatal error seeding amenities catalog:', err);
-  process.exit(1);
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  seedAmenitiesCatalog(true).catch((err) => {
+    console.error('[SEED] Fatal error seeding amenities catalog:', err);
+    process.exit(1);
+  });
+}

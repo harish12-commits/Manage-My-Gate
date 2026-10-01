@@ -22,6 +22,7 @@ import { useTranslation } from '@/src/utils/i18n';
 import { useBottomNavScroll } from '@/components/navigation/BottomNavScrollContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
+import { EmptyState } from '@/components/feedback/EmptyState';
 
 
 export default function AllFeaturesScreen() {
@@ -36,13 +37,36 @@ export default function AllFeaturesScreen() {
   // Handle Expo Router stringified params safely
   const initialCategory = params.category && params.category !== 'null' && params.category !== 'undefined' 
     ? params.category 
-    : 'visitor_management';
+    : null;
     
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(initialCategory);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   
   const { user } = useAuth();
   const { featureCatalog, allFeaturesList } = useQuickActions();
+
+  // Authoritative filtering: only categories with allowed items for this user are accessible
+  const accessibleCategories = useMemo(() => {
+    if (!featureCatalog || featureCatalog.length === 0) return [];
+    return featureCatalog
+      .map((cat) => {
+        const allowedItems = (cat.items || []).filter((item) => {
+          if (searchQuery) {
+            const localizedName = tFeatureName(item.id, item.name);
+            const q = searchQuery.toLowerCase();
+            if (
+              !item.name.toLowerCase().includes(q) &&
+              !localizedName.toLowerCase().includes(q)
+            ) {
+              return false;
+            }
+          }
+          return isFeatureAllowedForUser(item, user);
+        });
+        return { ...cat, items: allowedItems };
+      })
+      .filter((cat) => cat.items.length > 0);
+  }, [featureCatalog, user, searchQuery, tFeatureName]);
 
   // Lazy loading state to prevent navigation stutter
   const [isReady, setIsReady] = useState(false);
@@ -52,15 +76,15 @@ export default function AllFeaturesScreen() {
     return () => cancelAnimationFrame(id);
   }, []);
 
-  // Sync selected category with active workspace modules (Responsiveness)
+  // Sync selected category with accessible categories
   useEffect(() => {
-    if (featureCatalog && featureCatalog.length > 0) {
-      const categoryExists = featureCatalog.some(cat => cat.categoryKey === selectedCategoryKey);
-      if (!categoryExists && selectedCategoryKey !== null) {
-        setSelectedCategoryKey(featureCatalog[0].categoryKey);
+    if (accessibleCategories.length > 0 && selectedCategoryKey !== null) {
+      const categoryExists = accessibleCategories.some(cat => cat.categoryKey === selectedCategoryKey);
+      if (!categoryExists) {
+        setSelectedCategoryKey(null);
       }
     }
-  }, [featureCatalog, selectedCategoryKey]);
+  }, [accessibleCategories, selectedCategoryKey]);
 
   // Standard Back Button Handler: Navigates back to previous page
   const handleBackPress = useCallback(() => {
@@ -132,7 +156,7 @@ export default function AllFeaturesScreen() {
   };
 
   const isAdminRole = checkIsAdmin(user);
-  const activeCategory = featureCatalog?.find(cat => cat.categoryKey === selectedCategoryKey);
+  const activeCategory = accessibleCategories?.find(cat => cat.categoryKey === selectedCategoryKey);
 
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -178,7 +202,7 @@ export default function AllFeaturesScreen() {
           </View>
 
           {/* Filter Pills */}
-          {featureCatalog && featureCatalog.length > 0 && (
+          {accessibleCategories && accessibleCategories.length > 0 && (
             <ScrollView 
               horizontal 
               showsHorizontalScrollIndicator={false} 
@@ -194,7 +218,7 @@ export default function AllFeaturesScreen() {
                 </Text>
               </TouchableOpacity>
               
-              {featureCatalog.map((cat) => {
+              {accessibleCategories.map((cat) => {
                 const isSelected = selectedCategoryKey === cat.categoryKey;
                 let shortName = tCategoryName(cat.categoryKey, cat.categoryName);
                 if (shortName.includes('&')) {
@@ -216,24 +240,11 @@ export default function AllFeaturesScreen() {
           )}
 
           {/* DYNAMIC CATEGORY SECTIONS FROM BACKEND */}
-          {featureCatalog && featureCatalog.length > 0 ? (
-            featureCatalog
+          {accessibleCategories && accessibleCategories.length > 0 ? (
+            accessibleCategories
               .filter((cat) => !selectedCategoryKey || cat.categoryKey === selectedCategoryKey)
               .map((category) => {
-                const filteredItems = category.items.filter((item) => {
-                  if (searchQuery) {
-                    const localizedName = tFeatureName(item.id, item.name);
-                    const q = searchQuery.toLowerCase();
-                    if (
-                      !item.name.toLowerCase().includes(q) &&
-                      !localizedName.toLowerCase().includes(q)
-                    ) {
-                      return false;
-                    }
-                  }
-
-                  return isFeatureAllowedForUser(item, user);
-                });
+                const filteredItems = category.items;
 
                 if (filteredItems.length === 0) return null;
 
@@ -307,7 +318,13 @@ export default function AllFeaturesScreen() {
                   </View>
                 );
               })
-          ) : null}
+          ) : (
+            <EmptyState
+              icon={Search}
+              title={searchQuery ? t('no_matching_features', 'No features found') : t('no_accessible_features', 'No features available')}
+              description={searchQuery ? t('try_adjusting_search', 'Try adjusting your search terms') : t('no_permissions_assigned', 'No features have been assigned to your role.')}
+            />
+          )}
         </View>
       </ScrollView>
       ) : null}

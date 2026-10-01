@@ -161,8 +161,10 @@ export const syncPermissions = async () => {
       'complaints:timeline', 'complaints:export', 'complaints:analytics',
       'complaints:staff', 'complaints:raise_ticket', 'complaints:track_requests',
       'complaints:complaint_management', 'complaints:assignee',
-      'visitor:admin',
+      'visitor:admin', 'visitor:resident', 'visitor:guard',
       'notices:active_board', 'notices:polls', 'notices:manage_notices',
+      'polls:read', 'polls:create', 'polls:update', 'polls:delete', 'polls:publish',
+      'polls:vote', 'polls:view_voters', 'polls:close', 'polls:export',
       'billing:billing_hub', 'billing:my_dues', 'billing:assessments', 'billing:ledger', 'billing:my_invoices',
       'workspaces:read', 'workspaces:update',
     ];

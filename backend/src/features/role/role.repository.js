@@ -94,6 +94,7 @@ export class RoleRepository {
     const formattedData = data.map((r) => ({
       ...r,
       _id: r._id,
+      id: r._id ? r._id.toString() : r.id,
     }));
 
     const totalRecords = result[0]?.metadata[0]?.totalRecords || 0;

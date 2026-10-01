@@ -8,7 +8,7 @@
  *
  * Login accounts created (password for demo users: Test@1234):
  *   Super admin     : SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD from backend/.env
- *   Community admin : admin@mygate.com
+ *   Community admin : admin@mygate.com (Full access to Nexus Community & Srihariparthasarathi Community)
  *   Residents       : owner1@mygate.com, owner2@mygate.com, tenant1@mygate.com, tenant2@mygate.com
  *   Guard           : guard1@mygate.com
  */
@@ -103,48 +103,115 @@ try {
     { planCode: 'FEAT_VISITOR_MGMT', name: 'Visitor Management', type: 'UNIT_ADDON', pricingModel: 'PER_UNIT', basePrice: 1000, unitPrice: 5, billingInterval: 'MONTHLY', features: ['QR Code Entry', 'Pre-approval', 'Gate Pass Generation', 'Delivery Tracking'], status: 'ACTIVE', maxAgentDiscountPercent: 15, setupFee: 500, freeTrialDuration: 0 },
   ]);
 
-  // 5. Seed: demo community ----------------------------------------------------
-  step('Seeding demo community, roles, users, villas and memberships');
-  const [Organization, Role, User, Villa, OrgMembership] = await Promise.all([
+  // 5. Seed: demo communities ----------------------------------------------------
+  step('Seeding demo communities, roles, users, villas, workspaces and memberships');
+  const [Organization, Role, User, Villa, OrgMembership, Workspace] = await Promise.all([
     model('organization/organization.model.js'),
     model('role/role.model.js'),
     model('user/user.model.js'),
     model('villa/villa.model.js'),
     model('orgMembership/orgMembership.model.js'),
+    model('workspace/workspace.model.js'),
   ]);
 
-  const org = await Organization.create({
-    name: 'Srihariparthasarathi Community',
+  const { DEFAULT_MODULES } = await import(pathToFileURL(path.join(backendRoot, 'src/features/workspace/workspace.service.js')).href);
+  const fullAllowedFeatures = ['billing', 'villas', 'visitor', 'complaints', 'amenities', 'notices', 'administration_security', 'digital_wallet'];
+
+  // Organization 1: Nexus Community
+  const orgNexus = await Organization.create({
+    name: 'Nexus Community',
     status: 'Active',
     organizationType: 'Residential',
-    allowedFeatures: ['billing', 'villas', 'visitor', 'complaints', 'amenities'],
+    allowedFeatures: fullAllowedFeatures,
     isPlatform: false,
   });
 
-  const mkRole = (name, description, isTenantRole) => Role.create({ name, orgId: org._id, description, isTenantRole });
-  const roleAdmin = await mkRole('Community Admin', 'Community Administrator with full billing privileges', false);
-  const roleOwner = await mkRole('Resident Owner', 'Villa Owner residing in the community', true);
-  const roleTenant = await mkRole('Resident Tenant', 'Tenant renting a villa in the community', true);
-  const roleGuard = await mkRole('Security Guard', 'Security Guard patrolling the community gates', false);
+  // Organization 2: Srihariparthasarathi Community
+  const orgSrihari = await Organization.create({
+    name: 'Srihariparthasarathi Community',
+    status: 'Active',
+    organizationType: 'Residential',
+    allowedFeatures: fullAllowedFeatures,
+    isPlatform: false,
+  });
+
+  const mkRole = (name, description, isTenantRole, orgId) => Role.create({ name, orgId, description, isTenantRole });
+
+  // Roles for Nexus Community
+  const roleAdminNexus = await mkRole('Community Admin', 'Community Administrator with full privileges', false, orgNexus._id);
+  const roleOwnerNexus = await mkRole('Resident Owner', 'Villa Owner residing in the community', true, orgNexus._id);
+  const roleTenantNexus = await mkRole('Resident Tenant', 'Tenant renting a villa in the community', true, orgNexus._id);
+  const roleGuardNexus = await mkRole('Security Guard', 'Security Guard patrolling the community gates', false, orgNexus._id);
+
+  // Roles for Srihariparthasarathi Community
+  const roleAdminSrihari = await mkRole('Community Admin', 'Community Administrator with full privileges', false, orgSrihari._id);
+  const roleOwnerSrihari = await mkRole('Resident Owner', 'Villa Owner residing in the community', true, orgSrihari._id);
+  const roleTenantSrihari = await mkRole('Resident Tenant', 'Tenant renting a villa in the community', true, orgSrihari._id);
+  const roleGuardSrihari = await mkRole('Security Guard', 'Security Guard patrolling the community gates', false, orgSrihari._id);
 
   const hashed = await bcrypt.hash(DEMO_PASSWORD, 12);
-  const mkUser = (username, name, phone, role, residencyType) =>
-    User.create({ email: `${username === 'admin' ? 'admin' : username}@mygate.com`, username, password: hashed, status: 'Active', name, phone, roles: [role._id], residencyType });
+  const mkUser = (username, name, phone, roles, residencyType) =>
+    User.create({
+      email: `${username === 'admin' ? 'admin' : username}@mygate.com`,
+      username,
+      password: hashed,
+      status: 'Active',
+      name,
+      phone,
+      roles,
+      residencyType
+    });
 
-  const admin = await mkUser('admin', 'Community Admin', '+919999999991', roleAdmin, 'None');
-  const owner1 = await mkUser('owner1', 'Rajesh Kumar (Owner 1)', '+919999999992', roleOwner, 'Resident Owner');
-  const owner2 = await mkUser('owner2', 'Vikram Singh (Owner 2)', '+919999999993', roleOwner, 'Resident Owner');
-  const tenant1 = await mkUser('tenant1', 'Rahul Mehta (Tenant 1)', '+919999999994', roleTenant, 'Tenant');
-  const tenant2 = await mkUser('tenant2', 'Aisha Khan (Tenant 2)', '+919999999995', roleTenant, 'Tenant');
-  const guard = await mkUser('guard1', 'Bahadur Singh (Guard 1)', '+919999999996', roleGuard, 'Staff');
+  const admin = await mkUser('admin', 'Community Admin', '+919999999991', [roleAdminNexus._id, roleAdminSrihari._id], 'None');
+  const owner1 = await mkUser('owner1', 'Rajesh Kumar (Owner 1)', '+919999999992', [roleOwnerNexus._id, roleOwnerSrihari._id], 'Resident Owner');
+  const owner2 = await mkUser('owner2', 'Vikram Singh (Owner 2)', '+919999999993', [roleOwnerNexus._id, roleOwnerSrihari._id], 'Resident Owner');
+  const tenant1 = await mkUser('tenant1', 'Rahul Mehta (Tenant 1)', '+919999999994', [roleTenantNexus._id, roleTenantSrihari._id], 'Tenant');
+  const tenant2 = await mkUser('tenant2', 'Aisha Khan (Tenant 2)', '+919999999995', [roleTenantNexus._id, roleTenantSrihari._id], 'Tenant');
+  const guard = await mkUser('guard1', 'Bahadur Singh (Guard 1)', '+919999999996', [roleGuardNexus._id, roleGuardSrihari._id], 'Staff');
 
+  // Workspaces with all modules active
+  await Workspace.create([
+    {
+      workspaceName: orgNexus.name,
+      organizationId: orgNexus._id,
+      organizationName: orgNexus.name,
+      createdBy: admin._id,
+      modules: DEFAULT_MODULES,
+      status: 'Active',
+    },
+    {
+      workspaceName: orgSrihari.name,
+      organizationId: orgSrihari._id,
+      organizationName: orgSrihari.name,
+      createdBy: admin._id,
+      modules: DEFAULT_MODULES,
+      status: 'Active',
+    }
+  ]);
+
+  // Villas for Nexus Community
+  const villaNexusA101 = await Villa.create({
+    orgId: orgNexus._id, unitNumber: 'Villa N-101', blockOrBuilding: 'Nexus Block', type: 'Villa', status: 'Occupied',
+    primaryResidentId: owner1._id,
+    residents: [{ userId: owner1._id, residencyType: 'Resident Owner', isPrimary: true }],
+  });
+  const villaNexusA102 = await Villa.create({
+    orgId: orgNexus._id, unitNumber: 'Villa N-102', blockOrBuilding: 'Nexus Block', type: 'Villa', status: 'Occupied',
+    primaryResidentId: tenant1._id,
+    residents: [
+      { userId: owner2._id, residencyType: 'Non-Resident Owner', isPrimary: false },
+      { userId: tenant1._id, residencyType: 'Tenant', isPrimary: true },
+    ],
+  });
+
+  // Villas for Srihariparthasarathi Community
   const villaA101 = await Villa.create({
-    orgId: org._id, unitNumber: 'Villa A-101', blockOrBuilding: 'Block A', type: 'Villa', status: 'Occupied',
+    orgId: orgSrihari._id, unitNumber: 'Villa A-101', blockOrBuilding: 'Block A', type: 'Villa', status: 'Occupied',
     primaryResidentId: owner1._id,
     residents: [{ userId: owner1._id, residencyType: 'Resident Owner', isPrimary: true }],
   });
   const villaA102 = await Villa.create({
-    orgId: org._id, unitNumber: 'Villa A-102', blockOrBuilding: 'Block A', type: 'Villa', status: 'Occupied',
+    orgId: orgSrihari._id, unitNumber: 'Villa A-102', blockOrBuilding: 'Block A', type: 'Villa', status: 'Occupied',
     primaryResidentId: tenant1._id,
     residents: [
       { userId: owner2._id, residencyType: 'Non-Resident Owner', isPrimary: false },
@@ -152,42 +219,117 @@ try {
     ],
   });
   const villaB201 = await Villa.create({
-    orgId: org._id, unitNumber: 'Villa B-201', blockOrBuilding: 'Block B', type: 'Villa', status: 'Occupied',
+    orgId: orgSrihari._id, unitNumber: 'Villa B-201', blockOrBuilding: 'Block B', type: 'Villa', status: 'Occupied',
     primaryResidentId: tenant2._id,
     residents: [
       { userId: owner1._id, residencyType: 'Non-Resident Owner', isPrimary: false },
       { userId: tenant2._id, residencyType: 'Tenant', isPrimary: true },
     ],
   });
-  await User.updateOne({ _id: owner1._id }, { $set: { villaId: villaA101._id } });
-  await User.updateOne({ _id: tenant1._id }, { $set: { villaId: villaA102._id } });
+
+  await User.updateOne({ _id: owner1._id }, { $set: { villaId: villaNexusA101._id } });
+  await User.updateOne({ _id: tenant1._id }, { $set: { villaId: villaNexusA102._id } });
   await User.updateOne({ _id: tenant2._id }, { $set: { villaId: villaB201._id } });
 
-  const membership = (user, role, residentType, villa) => ({
-    userId: user._id, orgId: org._id, roleId: role._id, roleIds: [role._id], residentType, ...(villa ? { villaId: villa._id } : {}),
+  const membership = (user, role, orgId, residentType, villa, status = 'Active') => ({
+    userId: user._id,
+    orgId,
+    roleId: role._id,
+    roleIds: [role._id],
+    residentType,
+    status,
+    ...(villa ? { villaId: villa._id } : {}),
   });
+
   await OrgMembership.create([
-    membership(admin, roleAdmin, 'None'),
-    membership(owner1, roleOwner, 'Owner', villaA101),
-    membership(owner2, roleOwner, 'Owner', villaA102),
-    membership(tenant1, roleTenant, 'Tenant', villaA102),
-    membership(tenant2, roleTenant, 'Tenant', villaB201),
-    membership(guard, roleGuard, 'None'),
+    // Nexus Community Memberships (Active primary workspace for admin@mygate.com)
+    membership(admin, roleAdminNexus, orgNexus._id, 'None', null, 'Active'),
+    membership(owner1, roleOwnerNexus, orgNexus._id, 'Owner', villaNexusA101, 'Active'),
+    membership(owner2, roleOwnerNexus, orgNexus._id, 'Owner', villaNexusA102, 'Active'),
+    membership(tenant1, roleTenantNexus, orgNexus._id, 'Tenant', villaNexusA102, 'Active'),
+    membership(guard, roleGuardNexus, orgNexus._id, 'None', null, 'Active'),
+
+    // Srihariparthasarathi Community Memberships
+    membership(admin, roleAdminSrihari, orgSrihari._id, 'None', null, 'Active'),
+    membership(owner1, roleOwnerSrihari, orgSrihari._id, 'Owner', villaA101, 'Active'),
+    membership(owner2, roleOwnerSrihari, orgSrihari._id, 'Owner', villaA102, 'Active'),
+    membership(tenant1, roleTenantSrihari, orgSrihari._id, 'Tenant', villaA102, 'Active'),
+    membership(tenant2, roleTenantSrihari, orgSrihari._id, 'Tenant', villaB201, 'Active'),
+    membership(guard, roleGuardSrihari, orgSrihari._id, 'None', null, 'Active'),
   ]);
 
-  // 6. Re-run bootstrap so the new Community Admin role gets its baseline permissions
-  step('Mapping baseline permissions to the new community roles');
+  // 6. Re-run bootstrap so both Community Admin roles get the full baseline permissions (all 68 permissions)
+  step('Mapping baseline permissions to all community roles');
   await syncPermissions();
+
+  // 7. Seed comprehensive amenities catalog for both communities ------------------
+  step('Seeding amenities and facilities catalog');
+  const { seedAmenitiesCatalog } = await import(pathToFileURL(path.join(backendRoot, 'src/scripts/seed_amenities_catalog.mjs')).href);
+  await seedAmenitiesCatalog();
+
+  // 8. Seed sample notices & complaints ------------------------------------------
+  step('Seeding sample notices and complaints');
+  const Notice = await model('noticeBoard/noticeBoard.model.js');
+  const Complaint = await model('complaint/complaint.model.js');
+
+  for (const o of [orgNexus, orgSrihari]) {
+    await Notice.create([
+      {
+        orgId: o._id,
+        title: 'Community Annual General Meeting',
+        description: 'The AGM is scheduled for this coming Saturday at 10:00 AM in the Clubhouse.',
+        category: 'Meetings',
+        priority: 'High',
+        status: 'Published',
+        publishedAt: new Date(),
+        expiryDate: new Date(Date.now() + 30 * 86400000),
+        createdBy: admin._id,
+      },
+      {
+        orgId: o._id,
+        title: 'Scheduled Water Tank Cleaning',
+        description: 'Water supply will be temporarily suspended between 2:00 PM and 5:00 PM tomorrow.',
+        category: 'Maintenance',
+        priority: 'Medium',
+        status: 'Published',
+        publishedAt: new Date(),
+        expiryDate: new Date(Date.now() + 7 * 86400000),
+        createdBy: admin._id,
+      }
+    ]);
+
+    await Complaint.create([
+      {
+        orgId: o._id,
+        complaintNumber: `CMP-${Date.now().toString().slice(-6)}`,
+        residentId: owner1._id,
+        residentName: 'Rajesh Kumar',
+        residentEmail: 'owner1@mygate.com',
+        residentMobile: '+919999999992',
+        category: 'Plumbing',
+        subCategory: 'Pipe Leakage',
+        department: 'Maintenance',
+        title: 'Water pipe leakage in garden area',
+        description: 'Persistent low water pressure and visible leakage near Villa A-101 garden sprinkler.',
+        priority: 'High',
+        status: 'In Progress',
+        assignedTo: admin._id,
+        assignedToName: 'Community Admin',
+        location: { building: 'Block A', unitNumber: 'Villa A-101' },
+      }
+    ]);
+  }
 
   // Summary ------------------------------------------------------------------------
   step('Done. Document counts:');
   const counts = await Promise.all(
-    ['organizations', 'roles', 'users', 'villas', 'orgmemberships', 'permissions', 'masterpricings'].map(async (c) => {
+    ['organizations', 'roles', 'users', 'villas', 'orgmemberships', 'permissions', 'rolepermissions', 'workspaces', 'amenity_management_facilities', 'notices', 'complaints', 'masterpricings'].map(async (c) => {
       try { return `${c}: ${await mongoose.connection.collection(c).countDocuments()}`; } catch { return `${c}: n/a`; }
     })
   );
   console.log('  ' + counts.join('\n  '));
   console.log(`\nSuper admin: ${process.env.SUPER_ADMIN_EMAIL || 'admin@enterprise.com'}  |  demo users password: ${DEMO_PASSWORD}`);
+  console.log(`Community admin user: admin@mygate.com  |  password: ${DEMO_PASSWORD}`);
 } catch (err) {
   console.error('\nFAILED:', err);
   process.exitCode = 1;

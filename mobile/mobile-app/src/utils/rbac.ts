@@ -127,11 +127,14 @@ const PERMISSION_SYNONYMS: Record<string, string[]> = {
   'amenities:ledgers': ['amenities:ledgers', 'amenities.ledgers', 'amenities:admin', 'amenities.admin'],
 
   // Billing & Invoices
-  'billing:billing_hub': ['billing:billing_hub', 'billing:view', 'billing:read', 'billing'],
-  'billing:my_dues': ['billing:my_dues', 'billing:view', 'billing'],
-  'billing:assessments': ['billing:assessments', 'billing:view', 'billing'],
-  'billing:ledger': ['billing:ledger', 'billing:view', 'billing'],
-  'billing:my_invoices': ['billing:my_invoices', 'billing:view', 'billing'],
+  'billing:billing_hub': ['billing:billing_hub', 'billing:action_center', 'billing:dashboard', 'billing:view', 'billing:read', 'billing'],
+  'billing:my_dues': ['billing:my_dues', 'billing:action_center', 'billing:view', 'billing'],
+  'billing:assessments': ['billing:assessments', 'billing:assessment_manager', 'billing:view', 'billing'],
+  'billing:ledger': ['billing:ledger', 'billing:action_center', 'billing:dashboard', 'billing:view', 'billing'],
+  'billing:my_invoices': ['billing:my_invoices', 'billing:action_center', 'billing:view', 'billing'],
+  'billing:action_center': ['billing:action_center', 'billing:billing_hub', 'billing:my_dues', 'billing:my_invoices', 'billing:ledger', 'billing:assessments', 'billing:view', 'billing:read', 'billing'],
+  'billing:assessment_manager': ['billing:assessment_manager', 'billing:assessments', 'billing:view', 'billing'],
+  'billing:dashboard': ['billing:dashboard', 'billing:billing_hub', 'billing:ledger', 'billing:view', 'billing'],
 
   // Administration & Security
   'villas:read': ['villas:read', 'villas.read', 'villas:view', 'villas', 'units:read', 'admin_villas'],
@@ -198,7 +201,7 @@ export const WALLET_LEDGER_FEATURE_IDS = new Set([
 
 // Exact Role Builder grants ('Digital Wallet' = billing:action_center). Deliberately excludes billing:dashboard synonyms so that
 // only an explicit Digital Wallet grant exposes these tiles.
-const WALLET_LEDGER_GRANTS = ['billing:my_dues', 'billing:my_invoices', 'billing:billing_hub', 'billing.action_center']; // Keep for backwards compat on legacy tokens
+const WALLET_LEDGER_GRANTS = ['billing:my_dues', 'billing:my_invoices', 'billing:billing_hub', 'billing:ledger', 'billing:assessments', 'billing:action_center', 'billing.action_center']; // Keep for backwards compat on legacy tokens
 
 // 'amenities:wallet' is the legacy wallet permission still carried by seeded Resident Owner / Tenant roles.
 // It unlocks the wallet tiles only — never billing dues/invoices (the backend rejects those without a billing grant).

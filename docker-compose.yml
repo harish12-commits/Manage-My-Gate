@@ -68,7 +68,7 @@ services:
       - mmg-network
 
   backend:
-    image: ${DOCKER_REGISTRY:-atocash}/manage-my-gate-server:${IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-atocash}/manage-my-gate-server:${IMAGE_TAG:-prd1.0}
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -109,7 +109,7 @@ services:
       - mmg-network
 
   frontend:
-    image: ${DOCKER_REGISTRY:-atocash}/manage-my-gate-client:${IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-atocash}/manage-my-gate-client:${IMAGE_TAG:-prd1.0}
     build:
       context: ./frontend
       dockerfile: Dockerfile

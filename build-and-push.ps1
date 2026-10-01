@@ -1,10 +1,19 @@
 # ==============================================================================
 # Manage-My-Gate: Automated Docker Build & Push Script
+# Default tag: prd1.0
 # ==============================================================================
+param(
+    [string]$Tag = "prd1.0",
+    [string]$Registry = "atocash",
+    [switch]$SkipPush
+)
+
 $ErrorActionPreference = "Stop"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host "  Manage-My-Gate: Build & Push Docker Images to Docker Hub" -ForegroundColor Cyan
+Write-Host "  Target Registry: $Registry" -ForegroundColor Cyan
+Write-Host "  Target Image Tag: $Tag" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # 1. Verify Docker Engine
@@ -53,8 +62,11 @@ if (-not $dockerReady) {
 Set-Location -Path $PSScriptRoot
 
 # 2. Build Backend Image
-Write-Host "`n[2/4] Building Backend Image (atocash/manage-my-gate-server:latest)..." -ForegroundColor Yellow
-docker build -t atocash/manage-my-gate-server:latest ./backend
+Write-Host "`n[2/4] Building Backend Image ($Registry/manage-my-gate-server:$Tag)..." -ForegroundColor Yellow
+docker build `
+  -t "${Registry}/manage-my-gate-server:${Tag}" `
+  -t "${Registry}/manage-my-gate-server:latest" `
+  ./backend
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Backend Docker build failed!"
     exit 1
@@ -62,8 +74,10 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Backend image built successfully." -ForegroundColor Green
 
 # 3. Build Frontend Image
-Write-Host "`n[3/4] Building Frontend Image (atocash/manage-my-gate-client:latest)..." -ForegroundColor Yellow
-docker build -t atocash/manage-my-gate-client:latest `
+Write-Host "`n[3/4] Building Frontend Image ($Registry/manage-my-gate-client:$Tag)..." -ForegroundColor Yellow
+docker build `
+  -t "${Registry}/manage-my-gate-client:${Tag}" `
+  -t "${Registry}/manage-my-gate-client:latest" `
   --build-arg VITE_API_URL="/api" `
   --build-arg VITE_SOCKET_URL="" `
   --build-arg VITE_GOOGLE_CLIENT_ID="610778456829-edvpd6gcav2u31jo0p2aeligfopvqfbo.apps.googleusercontent.com" `
@@ -77,24 +91,28 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Frontend image built successfully." -ForegroundColor Green
 
 # 4. Push Images to Docker Hub
-Write-Host "`n[4/4] Pushing images to Docker Hub..." -ForegroundColor Yellow
+if ($SkipPush) {
+    Write-Host "`n[4/4] Skipping push step (-SkipPush flag specified)." -ForegroundColor Yellow
+} else {
+    Write-Host "`n[4/4] Pushing images to Docker Hub..." -ForegroundColor Yellow
 
-Write-Host "Pushing atocash/manage-my-gate-server:latest..." -ForegroundColor Cyan
-docker push atocash/manage-my-gate-server:latest
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Pushing backend image failed! Please run 'docker login' and try again."
-    exit 1
-}
+    Write-Host "Pushing ${Registry}/manage-my-gate-server:${Tag}..." -ForegroundColor Cyan
+    docker push "${Registry}/manage-my-gate-server:${Tag}"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Pushing backend image failed! Please run 'docker login' and try again."
+        exit 1
+    }
 
-Write-Host "Pushing atocash/manage-my-gate-client:latest..." -ForegroundColor Cyan
-docker push atocash/manage-my-gate-client:latest
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Pushing frontend image failed! Please run 'docker login' and try again."
-    exit 1
+    Write-Host "Pushing ${Registry}/manage-my-gate-client:${Tag}..." -ForegroundColor Cyan
+    docker push "${Registry}/manage-my-gate-client:${Tag}"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Pushing frontend image failed! Please run 'docker login' and try again."
+        exit 1
+    }
 }
 
 Write-Host "`n==========================================================" -ForegroundColor Green
-Write-Host "  SUCCESS: Both Docker images built and pushed to Hub!    " -ForegroundColor Green
-Write-Host "  - Backend:  atocash/manage-my-gate-server:latest        " -ForegroundColor Green
-Write-Host "  - Frontend: atocash/manage-my-gate-client:latest        " -ForegroundColor Green
+Write-Host "  SUCCESS: Docker images prepared for production!        " -ForegroundColor Green
+Write-Host "  - Backend:  ${Registry}/manage-my-gate-server:${Tag}   " -ForegroundColor Green
+Write-Host "  - Frontend: ${Registry}/manage-my-gate-client:${Tag}   " -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green
