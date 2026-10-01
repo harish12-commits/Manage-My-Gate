@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
+import { Plus } from 'lucide-react-native';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { Redirect } from 'expo-router';
 import { TabBar } from '@/components/ui/TabBar';
@@ -380,13 +382,13 @@ export default function GateConsoleScreen() {
       subtitle="Guard check-in verification, QR scanner & walk-in entry"
       iconName="ShieldCheck"
       headerRight={
-        <Button
-          size="sm"
+        <HeaderActionButton
           onPress={() => setWalkInModalOpen(true)}
-          className="h-8 rounded-full flex-row items-center justify-center bg-white px-4 shadow-sm"
-        >
-          <Text className="text-[13px] font-extrabold text-black tracking-wide">+ {t('walk_in', 'Walk In')}</Text>
-        </Button>
+          icon={Plus}
+          label={t('gate_actions', 'Gate Actions')}
+          accessibilityRole="button"
+          accessibilityLabel="Gate Actions"
+        />
       }
     >
       <View className="flex-1 bg-background">

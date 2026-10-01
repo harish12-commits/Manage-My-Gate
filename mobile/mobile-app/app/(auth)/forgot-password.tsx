@@ -33,6 +33,7 @@ import { KeyboardAwareScrollView } from '@/components/layout/KeyboardAwareScroll
 import { NahomEmblem, NahomWordmark } from '@/components/auth/NahomBrandLogo';
 import { PhoneInput } from '@/components/forms/PhoneInput';
 import { OtpInputField } from '@/components/auth/OtpInputField';
+import { AuthMethodSelector } from '@/components/auth/AuthMethodSelector';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { useTranslation } from '@/src/utils/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
