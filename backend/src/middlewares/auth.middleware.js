@@ -27,6 +27,7 @@ const JWT_VERIFY_OPTIONS = { algorithms: ['HS256'] };
  * one in the signed token, the caller must hold an active membership there (platform users exempt).
  */
 const assertOrgHeaderAllowed = async (req, decoded) => {
+  if (req.originalUrl && (req.originalUrl.includes('/switch-context') || req.originalUrl.includes('/current-context'))) return;
   const headerOrg = req.headers['x-organization-id'] || req.headers['x-org-id'];
   if (!headerOrg || decoded.isPlatform === true) return;
   const requested = String(headerOrg);

@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 import ExcelJS from 'exceljs';
 import { Readable } from 'stream';
+import crypto from 'crypto';
 import villaService from '../villa/villa.services.js';
 import userService from '../user/user.services.js';
 import onboardingWizardEvents from './onboardingWizard.events.js';
 import HttpError from '../../utils/httpError.utils.js';
 import logger, { loggerStorage } from '../../utils/logger.utils.js';
-import crypto from 'crypto';
 
 const MAX_IMPORT_ROWS = 5000;
 
@@ -221,7 +221,7 @@ export class OnboardingWizardService {
             email: String(email).trim().toLowerCase(),
             username: String(email).trim().toLowerCase(),
             phone: String(phone).trim(),
-            password: crypto.randomBytes(16).toString('hex') + 'Aa1!', // Random secure password requiring reset
+            password: crypto.randomBytes(16).toString('hex'),
             roles: ['Resident'],
             orgId: organisationId,
           };
