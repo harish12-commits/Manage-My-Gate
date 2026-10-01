@@ -1,15 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import {
-  CCard,
-  CCardBody,
-  CContainer,
-  CRow,
-  CCol,
-  CAlert,
-  useColorModes,
-} from '@coreui/react'
+import { CCard, CCardBody, CContainer, CRow, CCol, CAlert, useColorModes } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSun, cilMoon } from '@coreui/icons'
 import useAuth from '../../../features/auth/hooks/useAuth.js'

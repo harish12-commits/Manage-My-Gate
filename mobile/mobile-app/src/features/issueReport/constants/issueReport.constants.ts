@@ -22,7 +22,7 @@ export interface ReportTypeOption {
 
 export const REPORT_TYPE_OPTIONS: ReportTypeOption[] = [
   {
-    label: 'Bug / Problem',
+    label: 'Get Help',
     value: 'BUG',
     description: 'Something is broken or not working as expected',
     iconName: 'Bug',
@@ -42,7 +42,7 @@ export const REPORT_TYPE_OPTIONS: ReportTypeOption[] = [
 ];
 
 export const REPORT_TYPES: Record<ReportType, { label: string; color: 'danger' | 'info' | 'neutral' }> = {
-  BUG: { label: 'Bug / Problem', color: 'danger' },
+  BUG: { label: 'Get Help', color: 'danger' },
   FEATURE_REQUEST: { label: 'Feature Request', color: 'info' },
   OTHER: { label: 'Other', color: 'neutral' },
 };

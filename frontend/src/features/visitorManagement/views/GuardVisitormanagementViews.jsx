@@ -39,11 +39,7 @@ export const GuardVisitormanagementViews = () => {
           )}
 
           {activeTab === 'walkin' && (
-            <WalkInApprovalList
-              walkins={liveEntries}
-              setWalkins={() => {}}
-              logs={liveEntries}
-            />
+            <WalkInApprovalList walkins={liveEntries} setWalkins={() => {}} logs={liveEntries} />
           )}
 
           {activeTab === 'scanner' && (

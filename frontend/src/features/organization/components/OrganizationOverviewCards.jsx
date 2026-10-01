@@ -28,7 +28,11 @@ export const OrganizationOverviewCards = ({ summary }) => {
       {/* Total Villas */}
       <div className="kpi-card">
         <div className="kpi-title">
-          <CIcon icon={cilBuilding} size="sm" style={{ color: 'var(--primary)', marginRight: '8px' }} />
+          <CIcon
+            icon={cilBuilding}
+            size="sm"
+            style={{ color: 'var(--primary)', marginRight: '8px' }}
+          />
           {t('superAdmin.orgDetails.totalVillas', { defaultValue: 'Total Villas' })}
         </div>
         <div className="kpi-value">{totalVillas}</div>
@@ -54,7 +58,11 @@ export const OrganizationOverviewCards = ({ summary }) => {
       {/* Active Users */}
       <div className="kpi-card">
         <div className="kpi-title">
-          <CIcon icon={cilCheckCircle} size="sm" style={{ color: 'var(--success)', marginRight: '8px' }} />
+          <CIcon
+            icon={cilCheckCircle}
+            size="sm"
+            style={{ color: 'var(--success)', marginRight: '8px' }}
+          />
           {t('superAdmin.orgDetails.activeUsers', { defaultValue: 'Active Users' })}
         </div>
         <div className="kpi-value">{activeUsers}</div>

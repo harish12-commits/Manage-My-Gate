@@ -58,18 +58,22 @@ const AmenitiesMasterView = () => {
 
   const handleSave = async (data) => {
     try {
-      if (!data) throw new Error("Form data is undefined")
+      if (!data) throw new Error('Form data is undefined')
 
       // Map the legacy UI data to the new Domain schema required by backend V2
       const mappedPayload = {
         ...data,
-        code: data.code || (data.name || 'FACILITY').toUpperCase().replace(/\s+/g, '-').substring(0, 15) + '-' + Math.floor(1000 + Math.random() * 9000),
+        code:
+          data.code ||
+          (data.name || 'FACILITY').toUpperCase().replace(/\s+/g, '-').substring(0, 15) +
+            '-' +
+            Math.floor(1000 + Math.random() * 9000),
         archetype:
           data.type === 'Event Space'
             ? 'EVENT_SPACE'
             : data.type === 'Sports'
-            ? 'EXCLUSIVE_HOURLY'
-            : 'SHARED_CAPACITY',
+              ? 'EXCLUSIVE_HOURLY'
+              : 'SHARED_CAPACITY',
         operatingHours:
           data.openDays?.map((day) => ({
             dayOfWeek: day,
@@ -88,11 +92,12 @@ const AmenitiesMasterView = () => {
         },
         cancellationPolicy: {
           isAllowed: data.bookingRules?.isCancellationEnabled || false,
-          refundCutoffHours: data.bookingRules?.cancellationRefundRules?.[0]?.cancelBeforeHours || 0,
+          refundCutoffHours:
+            data.bookingRules?.cancellationRefundRules?.[0]?.cancelBeforeHours || 0,
           refundPercentage: data.bookingRules?.cancellationRefundRules?.[0]?.refundPercentage || 0,
         },
         location: data.location || 'N/A',
-        status: (String(data.status || 'ACTIVE')).toUpperCase(),
+        status: String(data.status || 'ACTIVE').toUpperCase(),
       }
 
       if (selectedAmenity) {
@@ -175,7 +180,7 @@ const AmenitiesMasterView = () => {
       toast.success(
         bookingAction === 'HONOR_EXISTING'
           ? `${target.name} deactivated. Existing bookings will be honored.`
-          : `${target.name} deactivated. Existing bookings cancelled with 100% full refund.`
+          : `${target.name} deactivated. Existing bookings cancelled with 100% full refund.`,
       )
     } catch (err) {
       toast.error(typeof err === 'string' ? err : err.message || 'Failed to deactivate facility')

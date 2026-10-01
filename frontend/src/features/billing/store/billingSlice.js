@@ -78,7 +78,16 @@ export const submitOfflineSettlement = createAsyncThunk(
   'billing/submitOfflineSettlement',
   async (payload, { rejectWithValue }) => {
     try {
-      const { invoiceId, paymentReference, offlineReference, amountPaid, amount, paymentMethod, paymentDate, paymentScreenshot } = payload
+      const {
+        invoiceId,
+        paymentReference,
+        offlineReference,
+        amountPaid,
+        amount,
+        paymentMethod,
+        paymentDate,
+        paymentScreenshot,
+      } = payload
       const response = await billingService.settleInvoiceOffline(invoiceId, {
         paymentReference: paymentReference || offlineReference,
         offlineReference: paymentReference || offlineReference,

@@ -89,7 +89,8 @@ export const useBilling = () => {
           invoiceId,
           paymentReference: referenceData.paymentReference || referenceData.offlineReference,
           offlineReference: referenceData.paymentReference || referenceData.offlineReference,
-          amountPaid: referenceData.amountPaid || referenceData.offlineAmount || referenceData.amount,
+          amountPaid:
+            referenceData.amountPaid || referenceData.offlineAmount || referenceData.amount,
           amount: referenceData.amountPaid || referenceData.offlineAmount || referenceData.amount,
           paymentMethod: referenceData.paymentMethod || 'BANK_TRANSFER',
           paymentDate: referenceData.paymentDate,

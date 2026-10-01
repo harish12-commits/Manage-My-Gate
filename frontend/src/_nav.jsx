@@ -86,7 +86,7 @@ const _nav = [
         icon: <CIcon icon={cilApps} customClassName="nav-icon" />,
         requiredPermission: 'integrations:read',
       },
-    ]
+    ],
   },
   {
     component: CNavItem,
@@ -130,7 +130,7 @@ const _nav = [
       'complaints:track_requests',
       'complaints:complaint_management',
       'complaints:staff',
-      'complaints:assignee'
+      'complaints:assignee',
     ],
   },
   {

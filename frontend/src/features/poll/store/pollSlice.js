@@ -120,7 +120,7 @@ const pollSlice = createSlice({
       const poll = action.payload
       // Remove from closed, add to active
       state.closedPolls.data = state.closedPolls.data.filter((p) => p._id !== poll._id)
-      
+
       const exists = state.activePolls.data.find((p) => p._id === poll._id)
       if (!exists) {
         state.activePolls.data.unshift(poll)

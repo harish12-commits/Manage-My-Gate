@@ -1,12 +1,12 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import AmenitiesTopNav from '../components/AmenitiesTopNav.jsx';
-import V2MaintenanceFormModal from '../components/admin/V2MaintenanceFormModal.jsx';
-import DeclareEmergencyModal from '../components/admin/DeclareEmergencyModal.jsx';
-import RecurringMaintenanceModal from '../components/admin/RecurringMaintenanceModal.jsx';
-import MaintenanceImpactModal from '../components/admin/MaintenanceImpactModal.jsx';
-import MaintenanceExtensionModal from '../components/admin/MaintenanceExtensionModal.jsx';
-import MaintenanceDetailModal from '../components/admin/MaintenanceDetailModal.jsx';
+import React, { useEffect, useState, useCallback } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import AmenitiesTopNav from '../components/AmenitiesTopNav.jsx'
+import V2MaintenanceFormModal from '../components/admin/V2MaintenanceFormModal.jsx'
+import DeclareEmergencyModal from '../components/admin/DeclareEmergencyModal.jsx'
+import RecurringMaintenanceModal from '../components/admin/RecurringMaintenanceModal.jsx'
+import MaintenanceImpactModal from '../components/admin/MaintenanceImpactModal.jsx'
+import MaintenanceExtensionModal from '../components/admin/MaintenanceExtensionModal.jsx'
+import MaintenanceDetailModal from '../components/admin/MaintenanceDetailModal.jsx'
 import {
   fetchV2Maintenance,
   fetchFacilities,
@@ -15,12 +15,12 @@ import {
   updateV2MaintenanceStatus,
   scheduleV2Maintenance,
   clearStatus,
-} from '../store/amenitySlice.js';
-import amenityManagementApi from '../services/amenityManagementApi.js';
-import '../styles/_amenities.scss';
+} from '../store/amenitySlice.js'
+import amenityManagementApi from '../services/amenityManagementApi.js'
+import '../styles/_amenities.scss'
 
 const AdminMaintenanceView = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch()
   const {
     maintenanceBlocks,
     maintenancePagination,
@@ -29,54 +29,54 @@ const AdminMaintenanceView = () => {
     loading,
     error,
     successMsg,
-  } = useSelector((state) => state.amenities);
+  } = useSelector((state) => state.amenities)
 
   const facilitiesList = Array.isArray(facilities)
     ? facilities
     : Array.isArray(facilities?.data)
       ? facilities.data
-      : [];
+      : []
 
   const blocksList = Array.isArray(maintenanceBlocks)
     ? maintenanceBlocks
     : Array.isArray(maintenanceBlocks?.data)
       ? maintenanceBlocks.data
-      : [];
+      : []
 
   // Filter & Pagination States
-  const [selectedFacility, setSelectedFacility] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
+  const [selectedFacility, setSelectedFacility] = useState('')
+  const [selectedStatus, setSelectedStatus] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 50
 
   // Modal Visibility States
-  const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
-  const [emergencyModalVisible, setEmergencyModalVisible] = useState(false);
-  const [recurringModalVisible, setRecurringModalVisible] = useState(false);
-  const [detailModalVisible, setDetailModalVisible] = useState(false);
-  const [extensionModalVisible, setExtensionModalVisible] = useState(false);
-  const [impactModalVisible, setImpactModalVisible] = useState(false);
+  const [scheduleModalVisible, setScheduleModalVisible] = useState(false)
+  const [emergencyModalVisible, setEmergencyModalVisible] = useState(false)
+  const [recurringModalVisible, setRecurringModalVisible] = useState(false)
+  const [detailModalVisible, setDetailModalVisible] = useState(false)
+  const [extensionModalVisible, setExtensionModalVisible] = useState(false)
+  const [impactModalVisible, setImpactModalVisible] = useState(false)
 
   // Active item states
-  const [activeBlock, setActiveBlock] = useState(null);
-  const [activeConflicts, setActiveConflicts] = useState([]);
-  const [pendingSchedulePayload, setPendingSchedulePayload] = useState(null);
+  const [activeBlock, setActiveBlock] = useState(null)
+  const [activeConflicts, setActiveConflicts] = useState([])
+  const [pendingSchedulePayload, setPendingSchedulePayload] = useState(null)
 
   const loadData = useCallback(() => {
-    const params = { page: currentPage, limit: itemsPerPage };
-    if (selectedFacility) params.facilityId = selectedFacility;
-    if (selectedStatus) params.status = selectedStatus;
-    dispatch(fetchV2Maintenance(params));
-    dispatch(fetchFacilities());
-    dispatch(getAmenities());
-  }, [dispatch, currentPage, selectedFacility, selectedStatus]);
+    const params = { page: currentPage, limit: itemsPerPage }
+    if (selectedFacility) params.facilityId = selectedFacility
+    if (selectedStatus) params.status = selectedStatus
+    dispatch(fetchV2Maintenance(params))
+    dispatch(fetchFacilities())
+    dispatch(getAmenities())
+  }, [dispatch, currentPage, selectedFacility, selectedStatus])
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData()
+  }, [loadData])
 
   // Auto-sync existing V1 amenities that do not yet have a matching V2 facility
-  const syncedRef = React.useRef(new Set());
+  const syncedRef = React.useRef(new Set())
   useEffect(() => {
     if (Array.isArray(v1Amenities) && v1Amenities.length > 0 && facilitiesList.length >= 0) {
       const missing = v1Amenities.filter(
@@ -87,24 +87,24 @@ const AdminMaintenanceView = () => {
           !facilitiesList.some(
             (f) =>
               f.name?.toLowerCase().trim() === v1.name?.toLowerCase().trim() ||
-              (v1.code && f.code?.toUpperCase().trim() === v1.code?.toUpperCase().trim())
-          )
-      );
+              (v1.code && f.code?.toUpperCase().trim() === v1.code?.toUpperCase().trim()),
+          ),
+      )
 
       if (missing.length > 0) {
-        missing.forEach((v1) => syncedRef.current.add(v1._id));
+        missing.forEach((v1) => syncedRef.current.add(v1._id))
         Promise.all(
           missing.map((v1) =>
             amenityManagementApi
               .createFacility(mapAmenityToFacilityPayload(v1))
-              .catch((e) => console.warn('Auto-sync facility error:', e?.message || e))
-          )
+              .catch((e) => console.warn('Auto-sync facility error:', e?.message || e)),
+          ),
         ).then(() => {
-          dispatch(fetchFacilities());
-        });
+          dispatch(fetchFacilities())
+        })
       }
     }
-  }, [v1Amenities, facilitiesList, dispatch]);
+  }, [v1Amenities, facilitiesList, dispatch])
 
   // Status badge style helper
   const getStatusBadge = (status, isEmergency) => {
@@ -113,28 +113,25 @@ const AdminMaintenanceView = () => {
         <span className="badge badge-danger">
           <i className="fa-solid fa-bolt me-1"></i> EMERGENCY
         </span>
-      );
+      )
     }
     switch (status) {
       case 'COMPLETED':
-        return <span className="badge badge-success">Completed</span>;
+        return <span className="badge badge-success">Completed</span>
       case 'IN_PROGRESS':
       case 'ACTIVE':
-        return <span className="badge badge-warning">In Progress</span>;
+        return <span className="badge badge-warning">In Progress</span>
       case 'CANCELLED':
-        return <span className="badge badge-danger">Cancelled</span>;
+        return <span className="badge badge-danger">Cancelled</span>
       case 'SCHEDULED':
       default:
         return (
-          <span
-            className="badge badge-primary"
-            style={{ background: '#e0e7ff', color: '#4338ca' }}
-          >
+          <span className="badge badge-primary" style={{ background: '#e0e7ff', color: '#4338ca' }}>
             Scheduled
           </span>
-        );
+        )
     }
-  };
+  }
 
   // Actions
   const handleComplete = async (block) => {
@@ -143,11 +140,11 @@ const AdminMaintenanceView = () => {
         updateV2MaintenanceStatus({
           blockId: block._id,
           data: { status: 'COMPLETED' },
-        })
-      );
-      loadData();
+        }),
+      )
+      loadData()
     }
-  };
+  }
 
   const handleCancel = async (block) => {
     if (window.confirm(`Are you sure you want to cancel maintenance "${block.title}"?`)) {
@@ -155,19 +152,19 @@ const AdminMaintenanceView = () => {
         updateV2MaintenanceStatus({
           blockId: block._id,
           data: { status: 'CANCELLED' },
-        })
-      );
-      loadData();
+        }),
+      )
+      loadData()
     }
-  };
+  }
 
   // Handlers for conflicts from scheduling
   const handleConflictsDetectedDuringSchedule = (payload, conflicts) => {
-    setPendingSchedulePayload(payload);
-    setActiveConflicts(conflicts);
-    setActiveBlock(null);
-    setImpactModalVisible(true);
-  };
+    setPendingSchedulePayload(payload)
+    setActiveConflicts(conflicts)
+    setActiveBlock(null)
+    setImpactModalVisible(true)
+  }
 
   const handleResolutionsConfirmed = async (resolutions) => {
     if (pendingSchedulePayload) {
@@ -178,21 +175,21 @@ const AdminMaintenanceView = () => {
             ...pendingSchedulePayload,
             resolutions,
             conflictAction: 'CANCEL_AND_PROCEED',
-          })
-        ).unwrap();
-        setPendingSchedulePayload(null);
-        setActiveConflicts([]);
-        loadData();
+          }),
+        ).unwrap()
+        setPendingSchedulePayload(null)
+        setActiveConflicts([])
+        loadData()
       } catch (err) {
         // Redux handles error
       }
     } else if (activeBlock) {
-      loadData();
+      loadData()
     }
-  };
+  }
 
-  const totalItems = maintenancePagination?.total || blocksList?.length || 0;
-  const totalPages = maintenancePagination?.pages || Math.ceil(totalItems / itemsPerPage) || 1;
+  const totalItems = maintenancePagination?.total || blocksList?.length || 0
+  const totalPages = maintenancePagination?.pages || Math.ceil(totalItems / itemsPerPage) || 1
 
   return (
     <div className="amenities-module-wrapper amenity-os-theme">
@@ -282,8 +279,8 @@ const AdminMaintenanceView = () => {
                   className="form-control form-control-sm"
                   value={selectedFacility}
                   onChange={(e) => {
-                    setSelectedFacility(e.target.value);
-                    setCurrentPage(1);
+                    setSelectedFacility(e.target.value)
+                    setCurrentPage(1)
                   }}
                 >
                   <option value="">All Facilities</option>
@@ -300,8 +297,8 @@ const AdminMaintenanceView = () => {
                   className="form-control form-control-sm"
                   value={selectedStatus}
                   onChange={(e) => {
-                    setSelectedStatus(e.target.value);
-                    setCurrentPage(1);
+                    setSelectedStatus(e.target.value)
+                    setCurrentPage(1)
                   }}
                 >
                   <option value="">All Statuses</option>
@@ -316,9 +313,9 @@ const AdminMaintenanceView = () => {
                 <button
                   className="btn btn-sm btn-link text-muted"
                   onClick={() => {
-                    setSelectedFacility('');
-                    setSelectedStatus('');
-                    setCurrentPage(1);
+                    setSelectedFacility('')
+                    setSelectedStatus('')
+                    setCurrentPage(1)
                   }}
                 >
                   Clear Filters
@@ -345,7 +342,8 @@ const AdminMaintenanceView = () => {
                   {loading && blocksList.length === 0 ? (
                     <tr>
                       <td colSpan="6" style={{ textAlign: 'center', padding: '30px' }}>
-                        <i className="fa-solid fa-spinner fa-spin me-2"></i> Loading maintenance schedules...
+                        <i className="fa-solid fa-spinner fa-spin me-2"></i> Loading maintenance
+                        schedules...
                       </td>
                     </tr>
                   ) : blocksList.length === 0 ? (
@@ -356,12 +354,13 @@ const AdminMaintenanceView = () => {
                     </tr>
                   ) : (
                     blocksList.map((block) => {
-                      const facilityName = block.facilityId?.name || block.facilityName || 'Facility';
+                      const facilityName =
+                        block.facilityId?.name || block.facilityName || 'Facility'
                       const resourceDesc = block.resourceId?.name
                         ? block.resourceId.name
                         : block.resourceIds && block.resourceIds.length > 0
-                        ? `${block.resourceIds.length} Resources`
-                        : 'Entire Facility';
+                          ? `${block.resourceIds.length} Resources`
+                          : 'Entire Facility'
 
                       return (
                         <tr key={block._id}>
@@ -380,17 +379,31 @@ const AdminMaintenanceView = () => {
                               {new Date(block.startDateTime).toLocaleDateString()}
                             </div>
                             <div className="text-muted small">
-                              {new Date(block.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{' '}
-                              - {new Date(block.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(block.startDateTime).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}{' '}
+                              -{' '}
+                              {new Date(block.endDateTime).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
                             </div>
                           </td>
                           <td>
                             <div className="small text-primary fw-medium">
-                              {new Date(block.effectiveStartDateTime || block.startDateTime).toLocaleDateString()}
+                              {new Date(
+                                block.effectiveStartDateTime || block.startDateTime,
+                              ).toLocaleDateString()}
                             </div>
                             <div className="text-muted small">
-                              {new Date(block.effectiveStartDateTime || block.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{' '}
-                              - {new Date(block.effectiveEndDateTime || block.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(
+                                block.effectiveStartDateTime || block.startDateTime,
+                              ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{' '}
+                              -{' '}
+                              {new Date(
+                                block.effectiveEndDateTime || block.endDateTime,
+                              ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </td>
                           <td>{getStatusBadge(block.status, block.isEmergency)}</td>
@@ -400,8 +413,8 @@ const AdminMaintenanceView = () => {
                                 className="btn btn-sm btn-outline-secondary"
                                 title="View Details"
                                 onClick={() => {
-                                  setActiveBlock(block);
-                                  setDetailModalVisible(true);
+                                  setActiveBlock(block)
+                                  setDetailModalVisible(true)
                                 }}
                               >
                                 <i className="fa-solid fa-eye"></i>
@@ -413,8 +426,8 @@ const AdminMaintenanceView = () => {
                                     className="btn btn-sm btn-outline-primary"
                                     title="Extend Window"
                                     onClick={() => {
-                                      setActiveBlock(block);
-                                      setExtensionModalVisible(true);
+                                      setActiveBlock(block)
+                                      setExtensionModalVisible(true)
                                     }}
                                   >
                                     <i className="fa-solid fa-clock-rotate-left"></i>
@@ -440,7 +453,7 @@ const AdminMaintenanceView = () => {
                             </div>
                           </td>
                         </tr>
-                      );
+                      )
                     })
                   )}
                 </tbody>
@@ -479,8 +492,8 @@ const AdminMaintenanceView = () => {
       <V2MaintenanceFormModal
         visible={scheduleModalVisible}
         onClose={() => {
-          setScheduleModalVisible(false);
-          dispatch(clearStatus());
+          setScheduleModalVisible(false)
+          dispatch(clearStatus())
         }}
         onSuccess={() => loadData()}
         onConflictsDetected={handleConflictsDetectedDuringSchedule}
@@ -489,8 +502,8 @@ const AdminMaintenanceView = () => {
       <DeclareEmergencyModal
         visible={emergencyModalVisible}
         onClose={() => {
-          setEmergencyModalVisible(false);
-          dispatch(clearStatus());
+          setEmergencyModalVisible(false)
+          dispatch(clearStatus())
         }}
         onSuccess={() => loadData()}
       />
@@ -498,8 +511,8 @@ const AdminMaintenanceView = () => {
       <RecurringMaintenanceModal
         visible={recurringModalVisible}
         onClose={() => {
-          setRecurringModalVisible(false);
-          dispatch(clearStatus());
+          setRecurringModalVisible(false)
+          dispatch(clearStatus())
         }}
         onSuccess={() => loadData()}
       />
@@ -507,50 +520,50 @@ const AdminMaintenanceView = () => {
       <MaintenanceExtensionModal
         visible={extensionModalVisible}
         onClose={() => {
-          setExtensionModalVisible(false);
-          setActiveBlock(null);
-          dispatch(clearStatus());
+          setExtensionModalVisible(false)
+          setActiveBlock(null)
+          dispatch(clearStatus())
         }}
         block={activeBlock}
         onSuccess={() => loadData()}
         onConflictsDetected={(blockId, conflicts) => {
-          setActiveConflicts(conflicts);
-          setImpactModalVisible(true);
+          setActiveConflicts(conflicts)
+          setImpactModalVisible(true)
         }}
       />
 
       <MaintenanceDetailModal
         visible={detailModalVisible}
         onClose={() => {
-          setDetailModalVisible(false);
-          setActiveBlock(null);
+          setDetailModalVisible(false)
+          setActiveBlock(null)
         }}
         block={activeBlock}
         onExtend={(block) => {
-          setActiveBlock(block);
-          setExtensionModalVisible(true);
+          setActiveBlock(block)
+          setExtensionModalVisible(true)
         }}
         onResolveImpacts={(block, impacts) => {
-          setActiveBlock(block);
-          setActiveConflicts(impacts);
-          setImpactModalVisible(true);
+          setActiveBlock(block)
+          setActiveConflicts(impacts)
+          setImpactModalVisible(true)
         }}
       />
 
       <MaintenanceImpactModal
         visible={impactModalVisible}
         onClose={() => {
-          setImpactModalVisible(false);
-          setActiveConflicts([]);
-          setActiveBlock(null);
-          setPendingSchedulePayload(null);
+          setImpactModalVisible(false)
+          setActiveConflicts([])
+          setActiveBlock(null)
+          setPendingSchedulePayload(null)
         }}
         blockId={activeBlock?._id || null}
         conflicts={activeConflicts}
         onResolved={handleResolutionsConfirmed}
       />
     </div>
-  );
-};
+  )
+}
 
-export default AdminMaintenanceView;
+export default AdminMaintenanceView

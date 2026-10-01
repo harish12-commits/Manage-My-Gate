@@ -41,11 +41,17 @@ export const mapAmenityToFacilityPayload = (data) => {
   const cleanName = String(data.name || 'Amenity').trim()
   const cleanCode = data.code
     ? String(data.code).toUpperCase().trim()
-    : `FAC-${cleanName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 8) || 'AMENITY'}-${Date.now().toString().slice(-4)}`
+    : `FAC-${
+        cleanName
+          .replace(/[^a-zA-Z0-9]/g, '')
+          .toUpperCase()
+          .slice(0, 8) || 'AMENITY'
+      }-${Date.now().toString().slice(-4)}`
 
   const openTime = data.bookingRules?.openTime || '06:00'
   const closeTime = data.bookingRules?.closeTime || '22:00'
-  const openDays = Array.isArray(data.openDays) && data.openDays.length > 0 ? data.openDays : [0, 1, 2, 3, 4, 5, 6]
+  const openDays =
+    Array.isArray(data.openDays) && data.openDays.length > 0 ? data.openDays : [0, 1, 2, 3, 4, 5, 6]
 
   const operatingHours = openDays.map((day) => ({
     dayOfWeek: Number(day),
@@ -57,7 +63,9 @@ export const mapAmenityToFacilityPayload = (data) => {
   const rawPricingType = String(data.pricing?.pricingType || 'HOURLY').toUpperCase()
   const pricingType = ['FREE', 'HOURLY', 'DAILY', 'FIXED_EVENT', 'TIERED'].includes(rawPricingType)
     ? rawPricingType
-    : rawPricingType === 'FIXED' ? 'FIXED_EVENT' : 'HOURLY'
+    : rawPricingType === 'FIXED'
+      ? 'FIXED_EVENT'
+      : 'HOURLY'
 
   return {
     name: cleanName,
@@ -649,12 +657,12 @@ export const amenitySlice = createSlice({
         state.facilities = Array.isArray(payloadData)
           ? payloadData
           : Array.isArray(payloadData?.data)
-          ? payloadData.data
-          : Array.isArray(payloadData?.records)
-          ? payloadData.records
-          : Array.isArray(payloadData?.items)
-          ? payloadData.items
-          : []
+            ? payloadData.data
+            : Array.isArray(payloadData?.records)
+              ? payloadData.records
+              : Array.isArray(payloadData?.items)
+                ? payloadData.items
+                : []
       })
       .addCase(fetchFacilities.rejected, (state, action) => {
         state.loading = false
@@ -673,11 +681,19 @@ export const amenitySlice = createSlice({
       // V2 Resources
       .addCase(fetchResources.fulfilled, (state, action) => {
         const payloadData = action.payload?.data || action.payload?.items || action.payload
-        state.resources = Array.isArray(payloadData) ? payloadData : Array.isArray(payloadData?.data) ? payloadData.data : []
+        state.resources = Array.isArray(payloadData)
+          ? payloadData
+          : Array.isArray(payloadData?.data)
+            ? payloadData.data
+            : []
       })
       .addCase(fetchResourcesByFacility.fulfilled, (state, action) => {
         const payloadData = action.payload?.data || action.payload?.items || action.payload
-        state.resources = Array.isArray(payloadData) ? payloadData : Array.isArray(payloadData?.data) ? payloadData.data : []
+        state.resources = Array.isArray(payloadData)
+          ? payloadData
+          : Array.isArray(payloadData?.data)
+            ? payloadData.data
+            : []
       })
 
       // V2 Maintenance Blocks List
@@ -696,12 +712,12 @@ export const amenitySlice = createSlice({
         state.maintenanceBlocks = Array.isArray(payloadData)
           ? payloadData
           : Array.isArray(payloadData?.data)
-          ? payloadData.data
-          : Array.isArray(payloadData?.records)
-          ? payloadData.records
-          : Array.isArray(payloadData?.items)
-          ? payloadData.items
-          : []
+            ? payloadData.data
+            : Array.isArray(payloadData?.records)
+              ? payloadData.records
+              : Array.isArray(payloadData?.items)
+                ? payloadData.items
+                : []
         if (action.payload?.pagination) {
           state.maintenancePagination = action.payload.pagination
         } else if (action.payload?.total !== undefined) {
@@ -843,12 +859,7 @@ export const amenitySlice = createSlice({
   },
 })
 
-export const {
-  clearStatus,
-  clearImpactPreview,
-  clearActiveImpacts,
-  clearAlternativeSlots,
-} = amenitySlice.actions
+export const { clearStatus, clearImpactPreview, clearActiveImpacts, clearAlternativeSlots } =
+  amenitySlice.actions
 
 export default amenitySlice.reducer
-

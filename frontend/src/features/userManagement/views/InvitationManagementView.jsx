@@ -1,16 +1,7 @@
 import React, { useState, useMemo } from 'react'
-import {
-  CBadge,
-  CButton,
-  CSpinner,
-  CAlert,
-} from '@coreui/react'
+import { CBadge, CButton, CSpinner, CAlert } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import {
-  cilSend,
-  cilBan,
-  cilUserPlus,
-} from '@coreui/icons'
+import { cilSend, cilBan, cilUserPlus } from '@coreui/icons'
 import { toast } from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 
@@ -61,12 +52,14 @@ const InvitationManagementView = () => {
     try {
       const res = await handleResend(invitation._id)
       if (res?.error) {
-        toast.error(res.error.message || t('invitations.resendFailed', 'Failed to resend invitation'))
+        toast.error(
+          res.error.message || t('invitations.resendFailed', 'Failed to resend invitation'),
+        )
       } else {
         toast.success(
           t('invitations.resendSuccess', 'Invitation successfully resent to {{email}}', {
             email: invitation?.recipient?.email || 'recipient',
-          })
+          }),
         )
       }
     } catch (err) {
@@ -78,7 +71,9 @@ const InvitationManagementView = () => {
   const onConfirmRevoke = async (invitationId) => {
     const res = await handleRevoke(invitationId)
     if (res?.error) {
-      throw new Error(res.error.message || t('invitations.revokeFailed', 'Failed to revoke invitation'))
+      throw new Error(
+        res.error.message || t('invitations.revokeFailed', 'Failed to revoke invitation'),
+      )
     }
     toast.success(t('invitations.revokeSuccess', 'Invitation successfully revoked'))
   }
@@ -102,9 +97,7 @@ const InvitationManagementView = () => {
               {row.recipient?.name || row.recipient?.username || t('common.na', '—')}
             </div>
             <div className="small text-muted">{row.recipient?.email || t('common.na', '—')}</div>
-            {row.recipient?.phone && (
-              <div className="small text-muted">{row.recipient.phone}</div>
-            )}
+            {row.recipient?.phone && <div className="small text-muted">{row.recipient.phone}</div>}
           </div>
         ),
       },
@@ -177,7 +170,7 @@ const InvitationManagementView = () => {
         },
       },
     ],
-    [t]
+    [t],
   )
 
   // Action column renderer
@@ -198,11 +191,7 @@ const InvitationManagementView = () => {
             title={t('invitations.resendTooltip', 'Resend invitation with new expiration')}
             className="d-inline-flex align-items-center gap-1 px-2 py-1"
           >
-            {isActionLoading ? (
-              <CSpinner size="sm" />
-            ) : (
-              <CIcon icon={cilSend} size="sm" />
-            )}
+            {isActionLoading ? <CSpinner size="sm" /> : <CIcon icon={cilSend} size="sm" />}
             <span className="small">{t('invitations.resend', 'Resend')}</span>
           </CButton>
         )}

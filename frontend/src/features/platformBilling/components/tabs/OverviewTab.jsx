@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 
 const OverviewTab = ({ lead }) => {
   return (
@@ -15,15 +15,27 @@ const OverviewTab = ({ lead }) => {
               {lead?.status === 'NEW' ? '● Current' : '✓'}
             </div>
           </div>
-          <div className={`card shadow-none ${lead?.status === 'QUALIFIED' ? 'border-primary' : ''}`}>
+          <div
+            className={`card shadow-none ${lead?.status === 'QUALIFIED' ? 'border-primary' : ''}`}
+          >
             <div className="kpi-label">Qualified</div>
-            <div className={`kpi-value text-md ${lead?.status === 'QUALIFIED' ? 'text-primary' : ''}`}>
-              {lead?.status === 'QUALIFIED' ? '● Current' : (lead?.status === 'DEMO_SCHEDULED' ? '✓' : 'Next')}
+            <div
+              className={`kpi-value text-md ${lead?.status === 'QUALIFIED' ? 'text-primary' : ''}`}
+            >
+              {lead?.status === 'QUALIFIED'
+                ? '● Current'
+                : lead?.status === 'DEMO_SCHEDULED'
+                  ? '✓'
+                  : 'Next'}
             </div>
           </div>
-          <div className={`card shadow-none ${lead?.status === 'DEMO_SCHEDULED' ? 'border-primary' : ''}`}>
+          <div
+            className={`card shadow-none ${lead?.status === 'DEMO_SCHEDULED' ? 'border-primary' : ''}`}
+          >
             <div className="kpi-label">Demo Scheduled</div>
-            <div className={`kpi-value text-md ${lead?.status === 'DEMO_SCHEDULED' ? 'text-primary' : ''}`}>
+            <div
+              className={`kpi-value text-md ${lead?.status === 'DEMO_SCHEDULED' ? 'text-primary' : ''}`}
+            >
               {lead?.status === 'DEMO_SCHEDULED' ? '● Current' : 'Next'}
             </div>
           </div>
@@ -32,7 +44,9 @@ const OverviewTab = ({ lead }) => {
 
       <div className="grid2">
         <div className="panel shadow-none">
-          <div className="panel-head"><h2>User & Organization</h2></div>
+          <div className="panel-head">
+            <h2>User & Organization</h2>
+          </div>
           <div className="panel-body">
             <div className="field-grid">
               <div className="field">
@@ -59,7 +73,9 @@ const OverviewTab = ({ lead }) => {
                 <label>Requested Features</label>
                 <div className="field-value">
                   {lead?.selectedFeatures && lead.selectedFeatures.length > 0
-                    ? lead.selectedFeatures.map(f => f.charAt(0).toUpperCase() + f.slice(1)).join(', ')
+                    ? lead.selectedFeatures
+                        .map((f) => f.charAt(0).toUpperCase() + f.slice(1))
+                        .join(', ')
                     : 'None selected'}
                 </div>
               </div>
@@ -73,16 +89,21 @@ const OverviewTab = ({ lead }) => {
           </div>
           <div className="panel-body">
             <div className="mini-note">
-              • Organization size is suitable for Tier 2 pricing.<br/><br/>
-              • Customer requested a 15-Day Free Trial before full commitment.<br/><br/>
-              • Estimated annual contract value is above the average new lead.<br/><br/>
-              • Recommend activating 15-Day Free Trial and scheduling a demo.
+              • Organization size is suitable for Tier 2 pricing.
+              <br />
+              <br />
+              • Customer requested a 15-Day Free Trial before full commitment.
+              <br />
+              <br />
+              • Estimated annual contract value is above the average new lead.
+              <br />
+              <br />• Recommend activating 15-Day Free Trial and scheduling a demo.
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default OverviewTab;
+export default OverviewTab

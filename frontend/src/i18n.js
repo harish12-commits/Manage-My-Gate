@@ -53,7 +53,8 @@ const resources = {
           password: 'Password',
           passwordRequired: 'Password is required.',
           passwordMinLength: 'Password must be at least 8 characters long.',
-          passwordStrength: 'Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.',
+          passwordStrength:
+            'Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.',
           passwordHint: 'Minimum 8 characters with upper, lower, number, and symbol.',
           confirmPassword: 'Confirm Password',
           confirmPasswordRequired: 'Please confirm your password.',
@@ -69,24 +70,30 @@ const resources = {
           acceptCtaWithOrg: 'Accept Invitation & Join {{org}}',
           switchAccount: 'Sign in with a different account',
           identityMismatchTitle: 'Account Mismatch',
-          identityMismatchDesc: 'You are currently signed in as {{currentEmail}}, but this invitation was sent to {{invitedEmail}}.',
+          identityMismatchDesc:
+            'You are currently signed in as {{currentEmail}}, but this invitation was sent to {{invitedEmail}}.',
           signOutAndSwitch: 'Sign Out & Continue with {{invitedEmail}}',
           invalidTitle: 'Invitation Invalid',
           invalidDesc: 'This invitation link is invalid or malformed.',
           invalidToken: 'Invalid or missing invitation link. Please request a new invitation.',
           expiredTitle: 'Invitation Expired',
-          expiredDesc: 'This invitation has expired. Please ask your Community Administrator to resend the invitation.',
+          expiredDesc:
+            'This invitation has expired. Please ask your Community Administrator to resend the invitation.',
           revokedTitle: 'Invitation Revoked',
-          revokedDesc: 'This invitation is no longer available as it has been revoked by the administrator.',
+          revokedDesc:
+            'This invitation is no longer available as it has been revoked by the administrator.',
           alreadyAcceptedTitle: 'Invitation Already Accepted',
-          alreadyAcceptedDesc: 'This invitation has already been accepted and cannot be used again.',
+          alreadyAcceptedDesc:
+            'This invitation has already been accepted and cannot be used again.',
           rejectedTitle: 'Invitation Declined',
-          rejectedDesc: 'This invitation was previously declined. Please request a new invitation if you wish to join.',
+          rejectedDesc:
+            'This invitation was previously declined. Please request a new invitation if you wish to join.',
           goToDashboard: 'Go to Dashboard',
           signInNow: 'Sign In to Account',
           backToLogin: 'Back to Log In',
           success: 'Invitation accepted successfully! Welcome to your workspace.',
-          error: 'Failed to accept invitation. Please check your credentials or contact administrator.',
+          error:
+            'Failed to accept invitation. Please check your credentials or contact administrator.',
           submit: 'Set Password',
           loading: 'Setting password...',
         },
@@ -103,7 +110,8 @@ const resources = {
           orgName: 'Organization Name',
           submit: 'Create Account',
           loginLink: 'Already have an account? Sign in',
-          userExistsSignInPrompt: 'Already have an account? Sign in to create another organisation under your account',
+          userExistsSignInPrompt:
+            'Already have an account? Sign in to create another organisation under your account',
         },
         login: {
           promoTitle: 'Enterprise Workspace Platform',
@@ -190,7 +198,8 @@ const resources = {
       },
       userManagement: {
         title: 'User Management',
-        subtitle: 'Manage community users, invite new members, assign roles, and configure permissions.',
+        subtitle:
+          'Manage community users, invite new members, assign roles, and configure permissions.',
         searchPlaceholder: 'Search name, email, or role...',
         inviteUser: 'Invite User',
         bulkInvite: 'Bulk Invite',
@@ -485,8 +494,10 @@ const resources = {
         filterByStatus: 'Filter by status',
         inviteUser: 'Invite User',
         revokeTitle: 'Revoke Invitation',
-        revokeConfirmation: 'Are you sure you want to revoke the invitation for {{name}} ({{email}})?',
-        revokeWarning: 'Once revoked, the invitation link will become immediately invalid and cannot be accepted.',
+        revokeConfirmation:
+          'Are you sure you want to revoke the invitation for {{name}} ({{email}})?',
+        revokeWarning:
+          'Once revoked, the invitation link will become immediately invalid and cannot be accepted.',
         confirmRevoke: 'Revoke Invitation',
         revoking: 'Revoking...',
         revokeSuccess: 'Invitation successfully revoked',
@@ -537,7 +548,8 @@ const resources = {
       },
       issueReport: {
         pageTitle: 'Issue Reports',
-        pageSubtitle: 'Inspect submitted bug reports, feature requests, and inquiries from across communities.',
+        pageSubtitle:
+          'Inspect submitted bug reports, feature requests, and inquiries from across communities.',
         errorTitle: 'Error Loading Reports',
         searchPlaceholder: 'Search by title, number, user, or org...',
         allOrgs: 'All Communities',
@@ -580,7 +592,8 @@ const resources = {
         paginationSummary: 'Showing {{start}}–{{end}} of {{total}} reports',
         perPage: 'Per page:',
         emailConfigTitle: 'Platform Email Notifications',
-        emailConfigSubtitle: 'Configure the email address that receives reported issue details whenever a user submits an issue.',
+        emailConfigSubtitle:
+          'Configure the email address that receives reported issue details whenever a user submits an issue.',
         emailPlaceholder: 'e.g. admin@platform.com',
         saveEmail: 'Save Configuration',
         savingEmail: 'Saving...',
@@ -781,7 +794,8 @@ const resources = {
         paginationSummary: 'عرض {{start}}–{{end}} من أصل {{total}} تقرير',
         perPage: 'لكل صفحة:',
         emailConfigTitle: 'إشعارات البريد الإلكتروني للمنصة',
-        emailConfigSubtitle: 'تكوين عنوان البريد الإلكتروني الذي يتلقى تفاصيل المشكلات المبلغ عنها عند قيام المستخدم بإرسال مشكلة.',
+        emailConfigSubtitle:
+          'تكوين عنوان البريد الإلكتروني الذي يتلقى تفاصيل المشكلات المبلغ عنها عند قيام المستخدم بإرسال مشكلة.',
         emailPlaceholder: 'مثال: admin@platform.com',
         saveEmail: 'حفظ التكوين',
         savingEmail: 'جاري الحفظ...',

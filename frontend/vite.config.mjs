@@ -17,8 +17,16 @@ export default defineConfig(() => {
           manualChunks(rawId) {
             const id = rawId.split(path.sep).join('/')
             if (!id.includes('/node_modules/')) return undefined
-            if (/\/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) return 'vendor-react'
-            if (/\/node_modules\/@coreui\/(chartjs|react-chartjs)\/|\/node_modules\/chart\.js\//.test(id)) return 'vendor-charts'
+            if (
+              /\/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)
+            )
+              return 'vendor-react'
+            if (
+              /\/node_modules\/@coreui\/(chartjs|react-chartjs)\/|\/node_modules\/chart\.js\//.test(
+                id,
+              )
+            )
+              return 'vendor-charts'
             if (id.includes('/node_modules/@coreui/')) return 'vendor-coreui'
             if (id.includes('/node_modules/@fullcalendar/')) return 'vendor-calendar'
             if (/\/node_modules\/(xlsx|file-saver)\//.test(id)) return 'vendor-xlsx'
@@ -38,14 +46,14 @@ export default defineConfig(() => {
     plugins: [react()],
     resolve: {
       alias: {
-        'src/': `${fileURLToPath(new URL('./src', import.meta.url)).replace(/\\/g, '/')}/`
+        'src/': `${fileURLToPath(new URL('./src', import.meta.url)).replace(/\\/g, '/')}/`,
       },
       extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.scss'],
     },
     server: {
       port: 3004,
       headers: {
-        'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
+        'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
       },
       proxy: {
         '/api': {
@@ -53,9 +61,9 @@ export default defineConfig(() => {
           changeOrigin: true,
           configure: (proxy) => {
             proxy.on('error', (err) => {
-              if (['ECONNRESET', 'ECONNABORTED', 'ECONNREFUSED'].includes(err.code)) return;
-              console.warn('[vite-proxy-api-error]', err);
-            });
+              if (['ECONNRESET', 'ECONNABORTED', 'ECONNREFUSED'].includes(err.code)) return
+              console.warn('[vite-proxy-api-error]', err)
+            })
           },
         },
         '/socket.io': {
@@ -64,9 +72,9 @@ export default defineConfig(() => {
           changeOrigin: true,
           configure: (proxy) => {
             proxy.on('error', (err) => {
-              if (['ECONNRESET', 'ECONNABORTED', 'ECONNREFUSED'].includes(err.code)) return;
-              console.warn('[vite-proxy-ws-error]', err);
-            });
+              if (['ECONNRESET', 'ECONNABORTED', 'ECONNREFUSED'].includes(err.code)) return
+              console.warn('[vite-proxy-ws-error]', err)
+            })
           },
         },
         '/public': {

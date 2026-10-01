@@ -1,94 +1,96 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState, useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import {
   declareEmergencyMaintenance,
   fetchFacilities,
   fetchResourcesByFacility,
   clearStatus,
-} from '../../store/amenitySlice.js';
+} from '../../store/amenitySlice.js'
 
 const DeclareEmergencyModal = ({ visible, onClose, onSuccess }) => {
-  const dispatch = useDispatch();
-  const { facilities, resources, loading, error } = useSelector((state) => state.amenities);
+  const dispatch = useDispatch()
+  const { facilities, resources, loading, error } = useSelector((state) => state.amenities)
 
   const facilitiesList = Array.isArray(facilities)
     ? facilities
     : Array.isArray(facilities?.data)
       ? facilities.data
-      : [];
+      : []
 
   const resourcesList = Array.isArray(resources)
     ? resources
     : Array.isArray(resources?.data)
       ? resources.data
-      : [];
+      : []
 
-  const [facilityId, setFacilityId] = useState('');
-  const [resourceId, setResourceId] = useState('');
-  const [title, setTitle] = useState('');
-  const [reason, setReason] = useState('');
-  const [maintenanceType, setMaintenanceType] = useState('REPAIR');
-  const [internalNotes, setInternalNotes] = useState('');
-  const [endDateTime, setEndDateTime] = useState('');
-  const [bufferAfterMinutes, setBufferAfterMinutes] = useState(30);
-  const [conflictAction, setConflictAction] = useState('CANCEL_AND_PROCEED');
-  const [validationError, setValidationError] = useState('');
+  const [facilityId, setFacilityId] = useState('')
+  const [resourceId, setResourceId] = useState('')
+  const [title, setTitle] = useState('')
+  const [reason, setReason] = useState('')
+  const [maintenanceType, setMaintenanceType] = useState('REPAIR')
+  const [internalNotes, setInternalNotes] = useState('')
+  const [endDateTime, setEndDateTime] = useState('')
+  const [bufferAfterMinutes, setBufferAfterMinutes] = useState(30)
+  const [conflictAction, setConflictAction] = useState('CANCEL_AND_PROCEED')
+  const [validationError, setValidationError] = useState('')
 
   useEffect(() => {
     if (visible) {
-      dispatch(fetchFacilities());
-      setFacilityId('');
-      setResourceId('');
-      setTitle('Emergency Repair');
-      setReason('');
-      setMaintenanceType('REPAIR');
-      setInternalNotes('');
+      dispatch(fetchFacilities())
+      setFacilityId('')
+      setResourceId('')
+      setTitle('Emergency Repair')
+      setReason('')
+      setMaintenanceType('REPAIR')
+      setInternalNotes('')
       // Default to 4 hours in the future
-      const fourHoursAhead = new Date(Date.now() + 4 * 60 * 60 * 1000);
-      const isoLocal = new Date(fourHoursAhead.getTime() - fourHoursAhead.getTimezoneOffset() * 60000)
+      const fourHoursAhead = new Date(Date.now() + 4 * 60 * 60 * 1000)
+      const isoLocal = new Date(
+        fourHoursAhead.getTime() - fourHoursAhead.getTimezoneOffset() * 60000,
+      )
         .toISOString()
-        .slice(0, 16);
-      setEndDateTime(isoLocal);
-      setBufferAfterMinutes(30);
-      setConflictAction('CANCEL_AND_PROCEED');
-      setValidationError('');
+        .slice(0, 16)
+      setEndDateTime(isoLocal)
+      setBufferAfterMinutes(30)
+      setConflictAction('CANCEL_AND_PROCEED')
+      setValidationError('')
     }
-  }, [visible, dispatch]);
+  }, [visible, dispatch])
 
   const handleFacilityChange = (e) => {
-    const selectedId = e.target.value;
-    setFacilityId(selectedId);
-    setResourceId('');
+    const selectedId = e.target.value
+    setFacilityId(selectedId)
+    setResourceId('')
     if (selectedId) {
-      dispatch(fetchResourcesByFacility(selectedId));
+      dispatch(fetchResourcesByFacility(selectedId))
     }
-  };
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setValidationError('');
+    e.preventDefault()
+    setValidationError('')
 
     if (!facilityId) {
-      setValidationError('Facility is required.');
-      return;
+      setValidationError('Facility is required.')
+      return
     }
     if (!title.trim()) {
-      setValidationError('Title is required.');
-      return;
+      setValidationError('Title is required.')
+      return
     }
     if (!reason.trim()) {
-      setValidationError('Reason is required.');
-      return;
+      setValidationError('Reason is required.')
+      return
     }
     if (!endDateTime) {
-      setValidationError('End date/time is required.');
-      return;
+      setValidationError('End date/time is required.')
+      return
     }
 
-    const endEpoch = new Date(endDateTime).getTime();
+    const endEpoch = new Date(endDateTime).getTime()
     if (isNaN(endEpoch) || endEpoch <= Date.now()) {
-      setValidationError('End date/time must be strictly in the future.');
-      return;
+      setValidationError('End date/time must be strictly in the future.')
+      return
     }
 
     try {
@@ -103,17 +105,17 @@ const DeclareEmergencyModal = ({ visible, onClose, onSuccess }) => {
           endDateTime: new Date(endDateTime).toISOString(),
           bufferAfterMinutes: Number(bufferAfterMinutes) || 0,
           conflictAction,
-        })
-      ).unwrap();
+        }),
+      ).unwrap()
 
-      if (onSuccess) onSuccess(res);
-      onClose();
+      if (onSuccess) onSuccess(res)
+      onClose()
     } catch (err) {
-      setValidationError(typeof err === 'object' ? err.message : err);
+      setValidationError(typeof err === 'object' ? err.message : err)
     }
-  };
+  }
 
-  if (!visible) return null;
+  if (!visible) return null
 
   return (
     <div className="modal-overlay active amenity-os-theme" onClick={onClose}>
@@ -146,8 +148,9 @@ const DeclareEmergencyModal = ({ visible, onClose, onSuccess }) => {
                 fontSize: '13px',
               }}
             >
-              <strong>Urgent Immediate Action:</strong> This takes effect immediately (status: <code>IN_PROGRESS</code>).
-              New bookings will be blocked instantly. Checked-in residents will be flagged for safety review.
+              <strong>Urgent Immediate Action:</strong> This takes effect immediately (status:{' '}
+              <code>IN_PROGRESS</code>). New bookings will be blocked instantly. Checked-in
+              residents will be flagged for safety review.
             </div>
 
             {validationError && (
@@ -191,7 +194,9 @@ const DeclareEmergencyModal = ({ visible, onClose, onSuccess }) => {
                   </option>
                 ))}
               </select>
-              <small className="text-muted">Leave as Entire Facility to perform complete facility closure.</small>
+              <small className="text-muted">
+                Leave as Entire Facility to perform complete facility closure.
+              </small>
             </div>
 
             <div className="form-row-grid">
@@ -290,7 +295,12 @@ const DeclareEmergencyModal = ({ visible, onClose, onSuccess }) => {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={loading}>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={onClose}
+              disabled={loading}
+            >
               Cancel
             </button>
             <button type="submit" className="btn btn-danger" disabled={loading}>
@@ -308,7 +318,7 @@ const DeclareEmergencyModal = ({ visible, onClose, onSuccess }) => {
         </form>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default DeclareEmergencyModal;
+export default DeclareEmergencyModal

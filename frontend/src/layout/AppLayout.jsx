@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import Topbar from './Topbar';
+import React, { useState } from 'react'
+import { Outlet } from 'react-router-dom'
+import Sidebar from './Sidebar'
+import Topbar from './Topbar'
 
 const AppLayout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+    setIsSidebarOpen(!isSidebarOpen)
+  }
 
   const closeSidebar = () => {
-    setIsSidebarOpen(false);
-  };
+    setIsSidebarOpen(false)
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
@@ -21,7 +21,6 @@ const AppLayout = () => {
 
       {/* Main Content Wrapper - responds to sidebar width */}
       <div className="flex-1 flex flex-col md:ml-[80px] lg:ml-[245px] transition-all duration-300 w-full">
-        
         {/* Sticky Topbar */}
         <Topbar toggleSidebar={toggleSidebar} />
 
@@ -34,7 +33,7 @@ const AppLayout = () => {
         </main>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AppLayout;
+export default AppLayout

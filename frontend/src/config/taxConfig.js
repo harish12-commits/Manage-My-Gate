@@ -1,1 +1,1 @@
-export const GST_RATE = 0.15;
+export const GST_RATE = 0.15

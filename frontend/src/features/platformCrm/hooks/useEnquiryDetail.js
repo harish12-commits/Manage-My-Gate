@@ -1,5 +1,5 @@
-import { useDispatch, useSelector } from 'react-redux';
-import { useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux'
+import { useCallback } from 'react'
 import {
   getEnquiryDetail,
   getActivities,
@@ -9,11 +9,11 @@ import {
   updateEnquiryStage,
   convertToCustomer,
   clearActiveEnquiry,
-  assignExecutive
-} from '../platformCrmSlice.js';
+  assignExecutive,
+} from '../platformCrmSlice.js'
 
 export const useEnquiryDetail = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch()
   const {
     activeEnquiry,
     activities,
@@ -23,34 +23,49 @@ export const useEnquiryDetail = () => {
     error,
     actionLoading,
     actionSuccess,
-  } = useSelector((state) => state.platformCrm);
+  } = useSelector((state) => state.platformCrm)
 
-  const fetchFullEnquiryData = useCallback((id) => {
-    dispatch(getEnquiryDetail(id));
-    dispatch(getActivities(id));
-    dispatch(getStageHistory(id));
-    dispatch(getInsights(id));
-  }, [dispatch]);
+  const fetchFullEnquiryData = useCallback(
+    (id) => {
+      dispatch(getEnquiryDetail(id))
+      dispatch(getActivities(id))
+      dispatch(getStageHistory(id))
+      dispatch(getInsights(id))
+    },
+    [dispatch],
+  )
 
-  const changeStage = useCallback(async (id, data) => {
-    return await dispatch(updateEnquiryStage({ id, data }));
-  }, [dispatch]);
+  const changeStage = useCallback(
+    async (id, data) => {
+      return await dispatch(updateEnquiryStage({ id, data }))
+    },
+    [dispatch],
+  )
 
-  const createNewActivity = useCallback(async (id, data) => {
-    return await dispatch(addActivity({ id, data }));
-  }, [dispatch]);
+  const createNewActivity = useCallback(
+    async (id, data) => {
+      return await dispatch(addActivity({ id, data }))
+    },
+    [dispatch],
+  )
 
-  const convertToOrg = useCallback(async (id) => {
-    return await dispatch(convertToCustomer(id));
-  }, [dispatch]);
+  const convertToOrg = useCallback(
+    async (id) => {
+      return await dispatch(convertToCustomer(id))
+    },
+    [dispatch],
+  )
 
-  const assignSalesExecutive = useCallback(async (id, data) => {
-    return await dispatch(assignExecutive({ id, data }));
-  }, [dispatch]);
+  const assignSalesExecutive = useCallback(
+    async (id, data) => {
+      return await dispatch(assignExecutive({ id, data }))
+    },
+    [dispatch],
+  )
 
   const resetEnquiry = useCallback(() => {
-    dispatch(clearActiveEnquiry());
-  }, [dispatch]);
+    dispatch(clearActiveEnquiry())
+  }, [dispatch])
 
   return {
     activeEnquiry,
@@ -67,5 +82,5 @@ export const useEnquiryDetail = () => {
     convertToOrg,
     assignSalesExecutive,
     resetEnquiry,
-  };
-};
+  }
+}

@@ -102,9 +102,17 @@ export const AssessmentDetail = memo(({ assessment = null, onEdit, onRunBilling 
             type="button"
             className="btn btn-success btn-sm rounded-3 text-nowrap d-flex align-items-center"
             onClick={() => {
-              const billingPeriodString = window.prompt("Enter Billing Period (e.g. 2026-07):", new Date().toISOString().substring(0, 7));
-              if (!billingPeriodString) return;
-              dispatch(triggerInvoiceGenerationThunk({ assessmentId: assessment._id, billingPeriodString }))
+              const billingPeriodString = window.prompt(
+                'Enter Billing Period (e.g. 2026-07):',
+                new Date().toISOString().substring(0, 7),
+              )
+              if (!billingPeriodString) return
+              dispatch(
+                triggerInvoiceGenerationThunk({
+                  assessmentId: assessment._id,
+                  billingPeriodString,
+                }),
+              )
                 .unwrap()
                 .then(() => toast.success('WhatsApp links generated & sent!'))
                 .catch((err) => toast.error('Failed to trigger: ' + err))

@@ -1,30 +1,33 @@
-import { useDispatch, useSelector } from 'react-redux';
-import { useCallback, useState } from 'react';
-import { submitRegistrationEnquiry, resetRegistrationState } from '../registrationSlice.js';
+import { useDispatch, useSelector } from 'react-redux'
+import { useCallback, useState } from 'react'
+import { submitRegistrationEnquiry, resetRegistrationState } from '../registrationSlice.js'
 
 export const useRegistration = () => {
-  const dispatch = useDispatch();
-  const { loading, success, error, enquiryId } = useSelector((state) => state.registration);
-  
-  const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 3;
+  const dispatch = useDispatch()
+  const { loading, success, error, enquiryId } = useSelector((state) => state.registration)
+
+  const [currentStep, setCurrentStep] = useState(1)
+  const totalSteps = 3
 
   const nextStep = useCallback(() => {
-    setCurrentStep((prev) => (prev < totalSteps ? prev + 1 : prev));
-  }, []);
+    setCurrentStep((prev) => (prev < totalSteps ? prev + 1 : prev))
+  }, [])
 
   const prevStep = useCallback(() => {
-    setCurrentStep((prev) => (prev > 1 ? prev - 1 : prev));
-  }, []);
+    setCurrentStep((prev) => (prev > 1 ? prev - 1 : prev))
+  }, [])
 
-  const submitRegistration = useCallback(async (data) => {
-    await dispatch(submitRegistrationEnquiry(data));
-  }, [dispatch]);
+  const submitRegistration = useCallback(
+    async (data) => {
+      await dispatch(submitRegistrationEnquiry(data))
+    },
+    [dispatch],
+  )
 
   const reset = useCallback(() => {
-    setCurrentStep(1);
-    dispatch(resetRegistrationState());
-  }, [dispatch]);
+    setCurrentStep(1)
+    dispatch(resetRegistrationState())
+  }, [dispatch])
 
   return {
     currentStep,
@@ -37,5 +40,5 @@ export const useRegistration = () => {
     success,
     error,
     enquiryId,
-  };
-};
+  }
+}

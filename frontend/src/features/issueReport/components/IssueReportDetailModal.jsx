@@ -19,21 +19,11 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilCopy, cilCheck, cilImage, cilExternalLink } from '@coreui/icons'
-import {
-  REPORT_TYPES,
-  FEATURE_MODULES,
-  SOURCES,
-} from '../constants/issueReport.constants.js'
+import { REPORT_TYPES, FEATURE_MODULES, SOURCES } from '../constants/issueReport.constants.js'
 import { useProtectedAttachment } from '../hooks/useProtectedAttachment.js'
 import AppLoader from '../../../components/common/AppLoader'
 
-export const IssueReportDetailModal = ({
-  visible,
-  onClose,
-  report,
-  loading,
-  error,
-}) => {
+export const IssueReportDetailModal = ({ visible, onClose, report, loading, error }) => {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
   const [previewImage, setPreviewImage] = useState(null)
@@ -58,18 +48,12 @@ export const IssueReportDetailModal = ({
     ? REPORT_TYPES[report.reportType] || { label: report.reportType, color: 'secondary' }
     : null
 
-  const featureLabel = report?.feature
-    ? FEATURE_MODULES[report.feature] || report.feature
-    : '—'
+  const featureLabel = report?.feature ? FEATURE_MODULES[report.feature] || report.feature : '—'
 
-  const sourceLabel = report?.source
-    ? SOURCES[report.source] || report.source
-    : 'Mobile App'
+  const sourceLabel = report?.source ? SOURCES[report.source] || report.source : 'Mobile App'
 
   const screenshot =
-    report?.attachments && report.attachments.length > 0
-      ? report.attachments[0]
-      : null
+    report?.attachments && report.attachments.length > 0 ? report.attachments[0] : null
 
   const { src: screenshotUrl, failed: screenshotFailed } = useProtectedAttachment(screenshot?.url)
 
@@ -99,7 +83,9 @@ export const IssueReportDetailModal = ({
           {loading && !report && (
             <div className="text-center py-5">
               <AppLoader variant="block" />
-              <span>{t('issueReport.loadingDetails', { defaultValue: 'Loading report details...' })}</span>
+              <span>
+                {t('issueReport.loadingDetails', { defaultValue: 'Loading report details...' })}
+              </span>
             </div>
           )}
 
@@ -111,7 +97,9 @@ export const IssueReportDetailModal = ({
 
           {!report && !loading && !error && (
             <div className="text-center py-5 text-muted">
-              <p className="mb-0">{t('issueReport.noDetailsFound', { defaultValue: 'No report details available.' })}</p>
+              <p className="mb-0">
+                {t('issueReport.noDetailsFound', { defaultValue: 'No report details available.' })}
+              </p>
             </div>
           )}
 
@@ -146,7 +134,11 @@ export const IssueReportDetailModal = ({
                     title={t('issueReport.copyReportNumber', { defaultValue: 'Copy Report #' })}
                   >
                     <CIcon icon={copied ? cilCheck : cilCopy} size="sm" className="me-1" />
-                    <small>{copied ? t('common.copied', { defaultValue: 'Copied' }) : t('common.copy', { defaultValue: 'Copy' })}</small>
+                    <small>
+                      {copied
+                        ? t('common.copied', { defaultValue: 'Copied' })
+                        : t('common.copy', { defaultValue: 'Copy' })}
+                    </small>
                   </CButton>
 
                   {typeConfig && (
@@ -247,7 +239,9 @@ export const IssueReportDetailModal = ({
                   <CCard className="h-100 border">
                     <CCardBody>
                       <h6 className="fw-bold text-primary border-bottom pb-2 mb-3">
-                        {t('issueReport.techContext', { defaultValue: 'Technical / Device Context' })}
+                        {t('issueReport.techContext', {
+                          defaultValue: 'Technical / Device Context',
+                        })}
                       </h6>
 
                       <div className="mb-2">
@@ -314,7 +308,9 @@ export const IssueReportDetailModal = ({
                             setPreviewImage(screenshotUrl)
                           }
                         }}
-                        title={t('issueReport.clickToEnlarge', { defaultValue: 'Click to enlarge' })}
+                        title={t('issueReport.clickToEnlarge', {
+                          defaultValue: 'Click to enlarge',
+                        })}
                       >
                         <img
                           src={screenshotUrl}
@@ -332,18 +328,26 @@ export const IssueReportDetailModal = ({
                     ) : imageError || screenshotFailed ? (
                       <div className="p-4 text-center text-muted border rounded bg-white">
                         <CIcon icon={cilImage} size="xl" className="mb-2" />
-                        <div>{t('issueReport.imageLoadError', { defaultValue: 'Screenshot preview unavailable.' })}</div>
+                        <div>
+                          {t('issueReport.imageLoadError', {
+                            defaultValue: 'Screenshot preview unavailable.',
+                          })}
+                        </div>
                       </div>
                     ) : (
                       <div className="p-4 text-center text-muted border rounded bg-white">
                         <CSpinner size="sm" className="me-2" />
-                        {t('issueReport.loadingScreenshot', { defaultValue: 'Loading screenshot...' })}
+                        {t('issueReport.loadingScreenshot', {
+                          defaultValue: 'Loading screenshot...',
+                        })}
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="p-3 bg-light rounded border text-muted small">
-                    {t('issueReport.noAttachment', { defaultValue: 'No screenshot was attached to this report.' })}
+                    {t('issueReport.noAttachment', {
+                      defaultValue: 'No screenshot was attached to this report.',
+                    })}
                   </div>
                 )}
               </div>
@@ -367,7 +371,9 @@ export const IssueReportDetailModal = ({
           alignment="center"
         >
           <CModalHeader closeButton>
-            <CModalTitle>{t('issueReport.screenshotViewer', { defaultValue: 'Screenshot Viewer' })}</CModalTitle>
+            <CModalTitle>
+              {t('issueReport.screenshotViewer', { defaultValue: 'Screenshot Viewer' })}
+            </CModalTitle>
           </CModalHeader>
           <CModalBody className="text-center p-2 bg-dark">
             <img

@@ -11,7 +11,8 @@ const AmenityDetailsDrawer = ({ visible, onClose, amenity }) => {
     amenity.images && amenity.images.length > 0
       ? amenity.images[0]
       : 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=800&q=80'
-  const rate = amenity.pricing?.baseRate ?? amenity.pricingConfig?.baseRate ?? amenity.ratePerHour ?? 0
+  const rate =
+    amenity.pricing?.baseRate ?? amenity.pricingConfig?.baseRate ?? amenity.ratePerHour ?? 0
   const pricingType = amenity.pricing?.pricingType || amenity.pricingConfig?.pricingType || 'hourly'
   const deposit = amenity.pricing?.securityDeposit ?? amenity.pricingConfig?.securityDeposit ?? 0
 
@@ -74,7 +75,9 @@ const AmenityDetailsDrawer = ({ visible, onClose, amenity }) => {
             <div style={{ color: 'var(--text-muted)' }} className="fw-semibold small">
               Category
             </div>
-            <div className="fw-semibold small">{amenity.category || amenity.type || amenity.archetype || 'N/A'}</div>
+            <div className="fw-semibold small">
+              {amenity.category || amenity.type || amenity.archetype || 'N/A'}
+            </div>
 
             <div style={{ color: 'var(--text-muted)' }} className="fw-semibold small">
               Location
@@ -84,7 +87,9 @@ const AmenityDetailsDrawer = ({ visible, onClose, amenity }) => {
             <div style={{ color: 'var(--text-muted)' }} className="fw-semibold small">
               Capacity
             </div>
-            <div className="fw-semibold small">{amenity.capacity ?? amenity.maxCapacity ?? 'N/A'}</div>
+            <div className="fw-semibold small">
+              {amenity.capacity ?? amenity.maxCapacity ?? 'N/A'}
+            </div>
 
             <div style={{ color: 'var(--text-muted)' }} className="fw-semibold small">
               Pricing

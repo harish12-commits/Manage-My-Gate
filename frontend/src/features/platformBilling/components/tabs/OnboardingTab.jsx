@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 
 const steps = [
   { label: 'Organization workspace created', icon: '1' },
   { label: 'Import sample community data', icon: '2' },
   { label: 'Configure trial modules', icon: '3' },
-  { label: 'Go Live', icon: '4' }
-];
+  { label: 'Go Live', icon: '4' },
+]
 
 const OnboardingTab = ({ currentStepIndex = 1 }) => {
-  const [simulatedStepIndex, setSimulatedStepIndex] = useState(currentStepIndex);
+  const [simulatedStepIndex, setSimulatedStepIndex] = useState(currentStepIndex)
 
   const handleAdvance = () => {
     if (simulatedStepIndex < steps.length) {
-      setSimulatedStepIndex(prev => prev + 1);
+      setSimulatedStepIndex((prev) => prev + 1)
     }
-  };
+  }
 
   return (
     <div className="panel-body grid2">
@@ -26,22 +26,22 @@ const OnboardingTab = ({ currentStepIndex = 1 }) => {
         <div className="panel-body">
           <div className="step-list">
             {steps.map((step, idx) => {
-              let statusClass = '';
-              if (idx < simulatedStepIndex) statusClass = 'done';
-              else if (idx === simulatedStepIndex) statusClass = 'current';
+              let statusClass = ''
+              if (idx < simulatedStepIndex) statusClass = 'done'
+              else if (idx === simulatedStepIndex) statusClass = 'current'
 
               return (
                 <div key={idx} className={`step ${statusClass}`}>
                   <div className="step-icon">{idx < simulatedStepIndex ? '✓' : step.icon}</div>
                   {step.label}
                 </div>
-              );
+              )
             })}
           </div>
           <div className="mt-4 d-flex justify-between align-center">
             <div className="mini-note">Wizard guides user through essential configurations.</div>
-            <button 
-              className="btn small" 
+            <button
+              className="btn small"
               onClick={handleAdvance}
               disabled={simulatedStepIndex >= steps.length}
             >
@@ -51,7 +51,7 @@ const OnboardingTab = ({ currentStepIndex = 1 }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default OnboardingTab;
+export default OnboardingTab

@@ -54,7 +54,6 @@ const SUPER_ADMIN_PATHS = new Set([
 const portalNav = navigation.filter((item) => !SUPER_ADMIN_PATHS.has(item.to))
 const superAdminNav = navigation.filter((item) => SUPER_ADMIN_PATHS.has(item.to))
 
-
 /**
  * AppSidebar functional component
  *
@@ -94,8 +93,10 @@ const AppSidebar = () => {
 
     const isModuleEnabled = (key) => {
       if (allowedFeatures.includes(key)) return true
-      if (activeWorkspace?.modules?.some((m) => m.moduleKey === key && m.enabled !== false)) return true
-      if (activeWorkspace?.workspaceModules?.some((m) => m.moduleKey === key && m.enabled === true)) return true
+      if (activeWorkspace?.modules?.some((m) => m.moduleKey === key && m.enabled !== false))
+        return true
+      if (activeWorkspace?.workspaceModules?.some((m) => m.moduleKey === key && m.enabled === true))
+        return true
       return false
     }
 
@@ -124,10 +125,15 @@ const AppSidebar = () => {
     }
 
     if (Array.isArray(item.requiredPermission)) {
-      return item.requiredPermission.some((perm) => isFeatureEnabled(perm) && (isPlatform || checkPermission(perm)))
+      return item.requiredPermission.some(
+        (perm) => isFeatureEnabled(perm) && (isPlatform || checkPermission(perm)),
+      )
     }
 
-    return isFeatureEnabled(item.requiredPermission) && (isPlatform || checkPermission(item.requiredPermission))
+    return (
+      isFeatureEnabled(item.requiredPermission) &&
+      (isPlatform || checkPermission(item.requiredPermission))
+    )
   }
 
   const filterItems = (items) => {

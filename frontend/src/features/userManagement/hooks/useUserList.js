@@ -79,7 +79,16 @@ export const useUserList = () => {
   useEffect(() => {
     dispatch(clearUsers())
     dispatch(fetchUsersAsync({ page: currentPage, limit: rowsPerPage }))
-  }, [dispatch, activeOrgId, activeVillaId, currentPage, rowsPerPage, searchQuery, selectedRoles, statusFilter])
+  }, [
+    dispatch,
+    activeOrgId,
+    activeVillaId,
+    currentPage,
+    rowsPerPage,
+    searchQuery,
+    selectedRoles,
+    statusFilter,
+  ])
 
   // Load roles on mount if not loaded
   useEffect(() => {
@@ -170,7 +179,7 @@ export const useUserList = () => {
       await dispatch(updateUserRolesAsync(payload)).unwrap()
       closeManageRolesModal()
       dispatch(fetchUsersAsync({ page: currentPage, limit: rowsPerPage }))
-      
+
       // If the admin is modifying their own roles, refresh the auth context to update availableWorkspaces
       if (userId === currentUserId) {
         dispatch(switchWorkspaceContext({ targetOrgId: activeOrgId, targetVillaId: activeVillaId }))

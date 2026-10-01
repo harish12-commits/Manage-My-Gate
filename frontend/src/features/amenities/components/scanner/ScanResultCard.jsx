@@ -28,7 +28,8 @@ const ScanResultCard = memo(({ result, onReset }) => {
 
   const photoUrl = resident.photoUrl || resident.profilePicture || resident.avatar || null
   const residentName = resident.name || resident.username || 'Resident'
-  const unitNumber = resident.unitNumber || resident.villaNumber || resident.unit || resident.flatNumber || 'N/A'
+  const unitNumber =
+    resident.unitNumber || resident.villaNumber || resident.unit || resident.flatNumber || 'N/A'
   const facilityName = facility.name || 'Amenity'
   const passCode = pass.passCode || booking.bookingId || booking.reservationNumber || 'N/A'
   const checkInTimestamp = pass.checkInTimestamp || booking.checkInTime
@@ -96,8 +97,18 @@ const ScanResultCard = memo(({ result, onReset }) => {
               <span className="text-muted fw-semibold">Time</span>
               <span className="fw-bold">
                 {isExit
-                  ? (checkOutTimestamp ? new Date(checkOutTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now')
-                  : (checkInTimestamp ? new Date(checkInTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now')}
+                  ? checkOutTimestamp
+                    ? new Date(checkOutTimestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : 'Now'
+                  : checkInTimestamp
+                    ? new Date(checkInTimestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : 'Now'}
               </span>
             </div>
             <div className="d-flex justify-content-between pt-1">

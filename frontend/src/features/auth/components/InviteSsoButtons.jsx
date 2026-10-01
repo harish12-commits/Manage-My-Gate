@@ -33,7 +33,10 @@ const useIsDarkMode = () => {
     mediaQuery.addEventListener('change', handleChange)
 
     const observer = new MutationObserver(handleChange)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-coreui-theme'] })
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-coreui-theme'],
+    })
 
     return () => {
       mediaQuery.removeEventListener('change', handleChange)
@@ -52,7 +55,9 @@ export const InviteSsoButtons = ({ onSsoSuccess, onSsoError, disabled }) => {
   const handleMicrosoftClick = async () => {
     if (!msalInstance) {
       if (onSsoError) {
-        onSsoError(t('auth.invite.msalUnavailable', 'Microsoft sign-in is not configured or unavailable.'))
+        onSsoError(
+          t('auth.invite.msalUnavailable', 'Microsoft sign-in is not configured or unavailable.'),
+        )
       }
       return
     }
@@ -95,7 +100,10 @@ export const InviteSsoButtons = ({ onSsoSuccess, onSsoError, disabled }) => {
     <div className="invite-sso-container">
       <div className="d-flex align-items-center my-4">
         <div className="flex-grow-1 border-top" />
-        <span className="px-3 text-muted small text-uppercase fw-semibold" style={{ letterSpacing: '0.05em' }}>
+        <span
+          className="px-3 text-muted small text-uppercase fw-semibold"
+          style={{ letterSpacing: '0.05em' }}
+        >
           {t('auth.invite.orContinueWith', 'Or continue with')}
         </span>
         <div className="flex-grow-1 border-top" />
@@ -113,7 +121,12 @@ export const InviteSsoButtons = ({ onSsoSuccess, onSsoError, disabled }) => {
             onError={() => {
               console.error('Google SSO Error')
               if (onSsoError) {
-                onSsoError(t('auth.invite.googleSsoError', 'Google sign-in was cancelled or encountered an error.'))
+                onSsoError(
+                  t(
+                    'auth.invite.googleSsoError',
+                    'Google sign-in was cancelled or encountered an error.',
+                  ),
+                )
               }
             }}
             type="standard"

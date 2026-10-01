@@ -99,13 +99,12 @@ export const CommunityIssueReportsView = () => {
                       {t('issueReport.communityPageTitle', { defaultValue: 'Issue Reports' })}
                     </h3>
                     <CBadge color="info" shape="rounded-pill" className="px-2 py-1">
-                      {t('issueReport.sourceBadge', { defaultValue: 'Source: Report an Issue' })}
+                      {t('issueReport.sourceBadge', { defaultValue: 'Source: Contact Support' })}
                     </CBadge>
                   </div>
                   <p className="mb-0 text-muted small">
                     {t('issueReport.communityPageSubtitle', {
-                      defaultValue:
-                        'Reports submitted by residents through Report an Issue.',
+                      defaultValue: 'Reports submitted by residents through Contact Support.',
                     })}
                   </p>
                 </div>

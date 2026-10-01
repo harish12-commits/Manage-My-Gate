@@ -1,50 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState, useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import {
   resolveV2Impact,
   fetchAlternativeSlots,
   clearAlternativeSlots,
-} from '../../store/amenitySlice.js';
+} from '../../store/amenitySlice.js'
 
-const MaintenanceImpactModal = ({
-  visible,
-  onClose,
-  blockId,
-  conflicts = [],
-  onResolved,
-}) => {
-  const dispatch = useDispatch();
-  const { alternativeSlots, loading } = useSelector((state) => state.amenities);
+const MaintenanceImpactModal = ({ visible, onClose, blockId, conflicts = [], onResolved }) => {
+  const dispatch = useDispatch()
+  const { alternativeSlots, loading } = useSelector((state) => state.amenities)
 
-  const [resolutions, setResolutions] = useState({});
-  const [activeRescheduleTarget, setActiveRescheduleTarget] = useState(null);
-  const [altSearching, setAltSearching] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+  const [resolutions, setResolutions] = useState({})
+  const [activeRescheduleTarget, setActiveRescheduleTarget] = useState(null)
+  const [altSearching, setAltSearching] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
     if (visible && conflicts && conflicts.length > 0) {
-      const initialMap = {};
+      const initialMap = {}
       conflicts.forEach((c) => {
-        const id = c.targetId || c._id;
-        initialMap[id] = c.recommendedResolution || (c.requiresManualReview ? 'REVIEW_INDIVIDUALLY' : 'CANCEL');
-      });
-      setResolutions(initialMap);
-      setActiveRescheduleTarget(null);
-      setSubmitError('');
-      dispatch(clearAlternativeSlots());
+        const id = c.targetId || c._id
+        initialMap[id] =
+          c.recommendedResolution || (c.requiresManualReview ? 'REVIEW_INDIVIDUALLY' : 'CANCEL')
+      })
+      setResolutions(initialMap)
+      setActiveRescheduleTarget(null)
+      setSubmitError('')
+      dispatch(clearAlternativeSlots())
     }
-  }, [visible, conflicts, dispatch]);
+  }, [visible, conflicts, dispatch])
 
   const handleResolutionChange = (targetId, value) => {
     setResolutions((prev) => ({
       ...prev,
       [targetId]: value,
-    }));
-  };
+    }))
+  }
 
   const handleCheckAlternatives = async (conflict) => {
-    setActiveRescheduleTarget(conflict);
-    setAltSearching(true);
+    setActiveRescheduleTarget(conflict)
+    setAltSearching(true)
     try {
       await dispatch(
         fetchAlternativeSlots({
@@ -53,25 +48,25 @@ const MaintenanceImpactModal = ({
           originalStart: conflict.startTime || conflict.startDateTime,
           originalEnd: conflict.endTime || conflict.endDateTime,
           searchDaysAhead: 7,
-        })
-      ).unwrap();
+        }),
+      ).unwrap()
     } catch (err) {
       // Handled
     } finally {
-      setAltSearching(false);
+      setAltSearching(false)
     }
-  };
+  }
 
   const handleSubmit = async () => {
-    setSubmitError('');
+    setSubmitError('')
     const resolutionPayload = Object.entries(resolutions).map(([targetId, resolution]) => {
-      const target = conflicts.find((c) => (c.targetId || c._id) === targetId);
+      const target = conflicts.find((c) => (c.targetId || c._id) === targetId)
       return {
         targetId,
         targetType: target?.targetType || 'V1_BOOKING',
         resolution,
-      };
-    });
+      }
+    })
 
     if (blockId) {
       try {
@@ -79,21 +74,21 @@ const MaintenanceImpactModal = ({
           resolveV2Impact({
             blockId,
             data: { resolutions: resolutionPayload },
-          })
-        ).unwrap();
-        if (onResolved) onResolved(resolutionPayload);
-        onClose();
+          }),
+        ).unwrap()
+        if (onResolved) onResolved(resolutionPayload)
+        onClose()
       } catch (err) {
-        setSubmitError(typeof err === 'object' ? err.message : err);
+        setSubmitError(typeof err === 'object' ? err.message : err)
       }
     } else {
       // In pre-scheduling mode, pass resolutions back to caller
-      if (onResolved) onResolved(resolutionPayload);
-      onClose();
+      if (onResolved) onResolved(resolutionPayload)
+      onClose()
     }
-  };
+  }
 
-  if (!visible) return null;
+  if (!visible) return null
 
   return (
     <div className="modal-overlay active amenity-os-theme" onClick={onClose}>
@@ -114,13 +109,11 @@ const MaintenanceImpactModal = ({
 
         <div className="modal-body">
           <p className="text-muted small mb-3">
-            The proposed maintenance window intersects {conflicts.length} active reservation(s)/booking(s).
-            Assign a resolution for each resident before proceeding.
+            The proposed maintenance window intersects {conflicts.length} active
+            reservation(s)/booking(s). Assign a resolution for each resident before proceeding.
           </p>
 
-          {submitError && (
-            <div className="alert alert-danger p-2 small mb-3">{submitError}</div>
-          )}
+          {submitError && <div className="alert alert-danger p-2 small mb-3">{submitError}</div>}
 
           <div className="table-responsive" style={{ maxHeight: '350px', overflowY: 'auto' }}>
             <table className="ent-table table-sm" style={{ width: '100%', fontSize: '13px' }}>
@@ -136,8 +129,8 @@ const MaintenanceImpactModal = ({
               </thead>
               <tbody>
                 {conflicts.map((c) => {
-                  const targetId = c.targetId || c._id;
-                  const isCheckedIn = c.status === 'checked-in' || c.status === 'CHECKED_IN';
+                  const targetId = c.targetId || c._id
+                  const isCheckedIn = c.status === 'checked-in' || c.status === 'CHECKED_IN'
                   return (
                     <tr key={targetId} style={isCheckedIn ? { background: '#fffbeb' } : {}}>
                       <td>
@@ -154,19 +147,30 @@ const MaintenanceImpactModal = ({
                       <td>
                         <div>{new Date(c.startTime || c.startDateTime).toLocaleDateString()}</div>
                         <div className="text-muted small">
-                          {new Date(c.startTime || c.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(c.startTime || c.startDateTime).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                           {' - '}
-                          {new Date(c.endTime || c.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(c.endTime || c.endDateTime).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </div>
                       </td>
                       <td>
-                        <span className={`badge ${isCheckedIn ? 'badge-warning' : 'badge-primary'}`}>
+                        <span
+                          className={`badge ${isCheckedIn ? 'badge-warning' : 'badge-primary'}`}
+                        >
                           {c.status}
                         </span>
                       </td>
                       <td>
                         {c.requiresManualReview || isCheckedIn ? (
-                          <span className="badge badge-warning" title="Checked-in resident requires individual care">
+                          <span
+                            className="badge badge-warning"
+                            title="Checked-in resident requires individual care"
+                          >
                             <i className="fa-solid fa-user-shield me-1"></i> Manual Review
                           </span>
                         ) : (
@@ -194,7 +198,7 @@ const MaintenanceImpactModal = ({
                         )}
                       </td>
                     </tr>
-                  );
+                  )
                 })}
               </tbody>
             </table>
@@ -222,7 +226,8 @@ const MaintenanceImpactModal = ({
 
               {altSearching ? (
                 <div className="text-center py-2 text-muted small">
-                  <i className="fa-solid fa-spinner fa-spin me-1"></i> Querying backend availability engine...
+                  <i className="fa-solid fa-spinner fa-spin me-1"></i> Querying backend availability
+                  engine...
                 </div>
               ) : alternativeSlots && alternativeSlots.length > 0 ? (
                 <div className="d-flex flex-wrap gap-2 mt-2">
@@ -232,9 +237,16 @@ const MaintenanceImpactModal = ({
                       className="p-2 border rounded bg-white small"
                       style={{ minWidth: '150px' }}
                     >
-                      <div className="fw-bold">{new Date(slot.startTime || slot.date).toLocaleDateString()}</div>
+                      <div className="fw-bold">
+                        {new Date(slot.startTime || slot.date).toLocaleDateString()}
+                      </div>
                       <div className="text-muted">
-                        {slot.startTime ? new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : slot.slot}
+                        {slot.startTime
+                          ? new Date(slot.startTime).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : slot.slot}
                       </div>
                       {slot.resourceName && (
                         <span className="badge badge-info mt-1" style={{ fontSize: '10px' }}>
@@ -276,7 +288,7 @@ const MaintenanceImpactModal = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default MaintenanceImpactModal;
+export default MaintenanceImpactModal

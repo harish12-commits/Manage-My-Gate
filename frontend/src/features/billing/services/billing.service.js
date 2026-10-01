@@ -45,7 +45,6 @@ export const billingService = {
     return await apiClient.post('/invoices/trigger-whatsapp', payload)
   },
 
-
   /**
    * Record an offline payment for verification (Bank Transfer).
    * @param {string} invoiceId

@@ -15,7 +15,15 @@ import useWalletPayment from '../../hooks/useWalletPayment.js'
 import AppLoader from '../../../../components/common/AppLoader'
 
 export const WalletRechargeModal = memo(
-  ({ isOpen, onClose, walletBalance, isPaymentGatewayConfigured = true, onSuccess, onFailure, user }) => {
+  ({
+    isOpen,
+    onClose,
+    walletBalance,
+    isPaymentGatewayConfigured = true,
+    onSuccess,
+    onFailure,
+    user,
+  }) => {
     const { t } = useTranslation()
     const [amount, setAmount] = useState('1000')
     const [paymentMethod, setPaymentMethod] = useState('RAZORPAY')
@@ -63,7 +71,9 @@ export const WalletRechargeModal = memo(
             <div>
               {!isGatewayReady && (
                 <CAlert color="warning" className="mb-3 text-start small">
-                  <strong>{t('wallet.recharge.unavailableTitle', 'Online Recharge Unavailable:')}</strong>{' '}
+                  <strong>
+                    {t('wallet.recharge.unavailableTitle', 'Online Recharge Unavailable:')}
+                  </strong>{' '}
                   {t(
                     'wallet.recharge.unavailableDesc',
                     'The community administration has not connected an online payment gateway. Please contact management for manual or offline top-up.',

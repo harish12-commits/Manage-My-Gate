@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useCallback } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import {
   fetchInquiries,
   fetchInquiryById,
@@ -20,7 +20,7 @@ import {
   setActiveTab,
   setActiveInquiry,
   clearCrmError,
-} from '../store/crmSlice.js';
+} from '../store/crmSlice.js'
 
 /**
  * Custom Hook: useCrmWorkspace
@@ -29,7 +29,7 @@ import {
  * Encapsulates all Redux Toolkit dispatchers and selectors (Thin View Pattern).
  */
 export const useCrmWorkspace = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch()
 
   // 1. Selector mappings
   const {
@@ -47,155 +47,152 @@ export const useCrmWorkspace = () => {
     statusTransitionLoading,
     taskLoading,
     error,
-  } = useSelector((state) => state.crmWorkspace || state.crm || {});
+  } = useSelector((state) => state.crmWorkspace || state.crm || {})
 
   // 2. Interaction Logic Dispatchers
   const handleTabChange = useCallback(
     (tabName) => {
-      dispatch(setActiveTab(tabName));
+      dispatch(setActiveTab(tabName))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const selectActiveInquiry = useCallback(
     (inquiry) => {
-      dispatch(setActiveInquiry(inquiry));
+      dispatch(setActiveInquiry(inquiry))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const handleStatusTransition = useCallback(
     (id, nextStatus, metadata = {}) => {
-      return dispatch(transitionInquiryStatus({ id, nextStatus, metadata }));
+      return dispatch(transitionInquiryStatus({ id, nextStatus, metadata }))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const fetchTimelineData = useCallback(
     (id) => {
-      return dispatch(fetchInquiryTimeline(id));
+      return dispatch(fetchInquiryTimeline(id))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const fetchSummaryData = useCallback(
     (id) => {
-      return dispatch(fetchInquirySummary(id));
+      return dispatch(fetchInquirySummary(id))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const fetchInquiriesList = useCallback(
     (params = {}) => {
-      return dispatch(fetchInquiries(params));
+      return dispatch(fetchInquiries(params))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const fetchInquiryDetails = useCallback(
     (id) => {
-      return dispatch(fetchInquiryById(id));
+      return dispatch(fetchInquiryById(id))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const createInquiryItem = useCallback(
     (payload) => {
-      return dispatch(createInquiry(payload));
+      return dispatch(createInquiry(payload))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const updateInquiryItem = useCallback(
     (id, data) => {
-      return dispatch(updateInquiry({ id, data }));
+      return dispatch(updateInquiry({ id, data }))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const fetchTasksList = useCallback(
     (params = {}) => {
-      return dispatch(fetchTasks(params));
+      return dispatch(fetchTasks(params))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const createTaskItem = useCallback(
     (payload) => {
-      return dispatch(createTask(payload));
+      return dispatch(createTask(payload))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const updateTaskItem = useCallback(
     (id, data) => {
-      return dispatch(updateTask({ id, data }));
+      return dispatch(updateTask({ id, data }))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const fetchMeetingsList = useCallback(
     (params = {}) => {
-      return dispatch(fetchMeetings(params));
+      return dispatch(fetchMeetings(params))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const scheduleMeetingItem = useCallback(
     (payload) => {
-      return dispatch(scheduleMeeting(payload));
+      return dispatch(scheduleMeeting(payload))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const fetchThreadData = useCallback(
     (inquiryId) => {
-      return dispatch(fetchThread(inquiryId));
+      return dispatch(fetchThread(inquiryId))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const sendChatMessage = useCallback(
     (inquiryId, messageData) => {
-      return dispatch(sendThreadMessage({ inquiryId, messageData }));
+      return dispatch(sendThreadMessage({ inquiryId, messageData }))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const fetchAssignedToMeInquiries = useCallback(
     (userId, params = {}) => {
-      return dispatch(fetchInquiries({ ...params, assignedAgentId: userId }));
+      return dispatch(fetchInquiries({ ...params, assignedAgentId: userId }))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const fetchUnassignedInquiries = useCallback(
     (params = {}) => {
-      return dispatch(fetchInquiries({ ...params, assignedAgentId: 'null' }));
+      return dispatch(fetchInquiries({ ...params, assignedAgentId: 'null' }))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const assignInquiryToUser = useCallback(
     (inquiryId, userId) => {
-      return dispatch(assignInquiry({ inquiryId, userId }));
+      return dispatch(assignInquiry({ inquiryId, userId }))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
   const verifyUserAvailability = useCallback(
     (userIds, startTime, endTime, excludeMeetingId = null) => {
-      return dispatch(checkAvailability({ userIds, startTime, endTime, excludeMeetingId }));
+      return dispatch(checkAvailability({ userIds, startTime, endTime, excludeMeetingId }))
     },
-    [dispatch]
-  );
+    [dispatch],
+  )
 
-  const resetError = useCallback(
-    () => {
-      dispatch(clearCrmError());
-    },
-    [dispatch]
-  );
+  const resetError = useCallback(() => {
+    dispatch(clearCrmError())
+  }, [dispatch])
 
   return {
     // State
@@ -236,7 +233,7 @@ export const useCrmWorkspace = () => {
     fetchThreadData,
     sendChatMessage,
     resetError,
-  };
-};
+  }
+}
 
-export default useCrmWorkspace;
+export default useCrmWorkspace

@@ -35,7 +35,11 @@ const AppHeaderDropdown = () => {
     if (currentWs?.roles && Array.isArray(currentWs.roles) && currentWs.roles.length > 0) {
       return Array.from(new Set(currentWs.roles.filter(Boolean)))
     }
-    if (currentUser?.roles && Array.isArray(currentUser.roles) && (currentUser.orgId === activeOrganizationId || !currentUser.orgId)) {
+    if (
+      currentUser?.roles &&
+      Array.isArray(currentUser.roles) &&
+      (currentUser.orgId === activeOrganizationId || !currentUser.orgId)
+    ) {
       return Array.from(new Set(currentUser.roles.filter(Boolean)))
     }
     return currentUser?.role ? [currentUser.role] : []
@@ -54,7 +58,11 @@ const AppHeaderDropdown = () => {
   }
 
   const handleSwitchWorkspace = async (targetOrgId, targetVillaId) => {
-    if (targetOrgId === activeOrganizationId && (targetVillaId || null) === (currentUser?.villaId || null)) return
+    if (
+      targetOrgId === activeOrganizationId &&
+      (targetVillaId || null) === (currentUser?.villaId || null)
+    )
+      return
     try {
       await dispatch(switchWorkspaceContext({ targetOrgId, targetVillaId })).unwrap()
       navigate('/dashboard')
@@ -147,10 +155,9 @@ const AppHeaderDropdown = () => {
         <CDropdownDivider />
 
         <CDropdownHeader className="fw-semibold text-uppercase py-1 px-3 header-dropdown-org-header">
-          {isPlatform 
+          {isPlatform
             ? t('header.dropdown.switchOrg', { defaultValue: 'Switch Organization' })
-            : t('header.dropdown.switchHouse', { defaultValue: 'Switch House' })
-          }
+            : t('header.dropdown.switchHouse', { defaultValue: 'Switch House' })}
         </CDropdownHeader>
 
         {availableWorkspaces.length === 0 ? (
@@ -161,8 +168,10 @@ const AppHeaderDropdown = () => {
           </CDropdownItem>
         ) : (
           availableWorkspaces.map((ws, idx) => {
-            const isActive = ws.orgId === activeOrganizationId && (ws.villaId || null) === (currentUser?.villaId || null)
-            const displayName = ws.villaNumber 
+            const isActive =
+              ws.orgId === activeOrganizationId &&
+              (ws.villaId || null) === (currentUser?.villaId || null)
+            const displayName = ws.villaNumber
               ? `${ws.name} - Unit ${ws.villaNumber} (${ws.residentType})`
               : ws.name
 

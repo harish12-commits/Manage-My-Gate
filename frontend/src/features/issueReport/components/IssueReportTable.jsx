@@ -11,20 +11,13 @@ import {
   CTableDataCell,
   CBadge,
   CButton,
-  } from '@coreui/react'
+} from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSearch, cilPaperclip } from '@coreui/icons'
-import {
-  REPORT_TYPES,
-  FEATURE_MODULES,
-} from '../constants/issueReport.constants.js'
+import { REPORT_TYPES, FEATURE_MODULES } from '../constants/issueReport.constants.js'
 import AppLoader from '../../../components/common/AppLoader'
 
-export const IssueReportTable = ({
-  reports,
-  loading,
-  onViewDetails,
-}) => {
+export const IssueReportTable = ({ reports, loading, onViewDetails }) => {
   const { t } = useTranslation()
 
   const formatDate = (dateString) => {
@@ -103,9 +96,7 @@ export const IssueReportTable = ({
               <CTableRow key={report._id || report.id} className="align-middle">
                 {/* Report Number */}
                 <CTableDataCell className="align-middle">
-                  <span className="font-monospace fw-bold text-primary">
-                    {report.reportNumber}
-                  </span>
+                  <span className="font-monospace fw-bold text-primary">{report.reportNumber}</span>
                 </CTableDataCell>
 
                 {/* Report Type */}
@@ -117,7 +108,10 @@ export const IssueReportTable = ({
 
                 {/* Feature Module */}
                 <CTableDataCell className="align-middle">
-                  <span className="fw-semibold text-dark text-truncate d-inline-block" title={featureLabel}>
+                  <span
+                    className="fw-semibold text-dark text-truncate d-inline-block"
+                    title={featureLabel}
+                  >
                     {featureLabel}
                   </span>
                 </CTableDataCell>
@@ -125,14 +119,14 @@ export const IssueReportTable = ({
                 {/* Title & Attachment Indicator */}
                 <CTableDataCell className="align-middle">
                   <div className="d-flex align-items-center">
-                    <span
-                      className="text-truncate fw-medium table-title-text"
-                      title={report.title}
-                    >
+                    <span className="text-truncate fw-medium table-title-text" title={report.title}>
                       {report.title}
                     </span>
                     {hasAttachments && (
-                      <span className="badge bg-secondary-subtle text-secondary ms-2 flex-shrink-0" title="Has screenshot">
+                      <span
+                        className="badge bg-secondary-subtle text-secondary ms-2 flex-shrink-0"
+                        title="Has screenshot"
+                      >
                         <CIcon icon={cilPaperclip} size="sm" />
                       </span>
                     )}
@@ -142,10 +136,16 @@ export const IssueReportTable = ({
                 {/* Reporter Snapshot */}
                 <CTableDataCell className="align-middle">
                   <div className="small">
-                    <div className="fw-semibold text-dark text-truncate reporter-name" title={report.reporter?.name || ''}>
+                    <div
+                      className="fw-semibold text-dark text-truncate reporter-name"
+                      title={report.reporter?.name || ''}
+                    >
                       {report.reporter?.name || '—'}
                     </div>
-                    <div className="text-muted text-truncate reporter-email" title={report.reporter?.email || ''}>
+                    <div
+                      className="text-muted text-truncate reporter-email"
+                      title={report.reporter?.email || ''}
+                    >
                       {report.reporter?.email || ''}
                     </div>
                   </div>

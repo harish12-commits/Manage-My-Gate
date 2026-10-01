@@ -16,8 +16,16 @@ import '../styles/_amenities.scss'
 const ResidentWalletView = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { activePasses, transactionHistory, balance, isPaymentGatewayConfigured, loading, error, loadWallet, cancelPass } =
-    useResidentWallet()
+  const {
+    activePasses,
+    transactionHistory,
+    balance,
+    isPaymentGatewayConfigured,
+    loading,
+    error,
+    loadWallet,
+    cancelPass,
+  } = useResidentWallet()
   const [showAddMoney, setShowAddMoney] = useState(false)
 
   const user = useSelector((state) => state.auth?.user)

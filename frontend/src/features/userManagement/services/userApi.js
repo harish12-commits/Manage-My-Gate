@@ -66,7 +66,7 @@ export const deleteUser = async (userId, villaId = null) => {
 export const updateUserRoles = async (userId, roles, villaId = null) => {
   const payload = { roles }
   if (villaId) payload.villaId = villaId
-  
+
   await apiClient.put(`/users/${userId}/roles`, payload)
   return { userId, roles, villaId }
 }
@@ -84,7 +84,7 @@ export const bulkInviteUsers = async (invitations) => {
   const response = await apiClient.post(
     '/users/bulk-invite',
     { invitations: payload, invitationSource: 'WEB' },
-    { headers: { 'X-Client-Type': 'WEB' } }
+    { headers: { 'X-Client-Type': 'WEB' } },
   )
   return response.data
 }
@@ -133,4 +133,3 @@ export const revokeInvitation = async (invitationId) => {
   const response = await apiClient.post(`/users/invitations/${invitationId}/revoke`)
   return response.data
 }
-

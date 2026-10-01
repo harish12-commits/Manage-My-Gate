@@ -59,7 +59,7 @@ const RecentActivityWidget = () => {
     return { icon: 'fa-solid fa-calendar-check', bg: 'var(--info-bg)', color: 'var(--info)' }
   }
 
-  const displayedList = showAll ? (recentActivity || []) : (recentActivity || []).slice(0, 5)
+  const displayedList = showAll ? recentActivity || [] : (recentActivity || []).slice(0, 5)
 
   return (
     <div className="card">
@@ -138,7 +138,14 @@ const RecentActivityWidget = () => {
       </div>
 
       {recentActivity && recentActivity.length > 5 && (
-        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-light)', textAlign: 'center' }}>
+        <div
+          style={{
+            marginTop: '20px',
+            paddingTop: '16px',
+            borderTop: '1px solid var(--border-light)',
+            textAlign: 'center',
+          }}
+        >
           <button
             type="button"
             onClick={() => setShowAll(!showAll)}
@@ -152,12 +159,20 @@ const RecentActivityWidget = () => {
 
       {/* Activity Detail Modal Popup */}
       {selectedItem && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div
+          className="modal show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+        >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content" style={{ borderRadius: '16px' }}>
               <div className="modal-header border-0 pb-0">
                 <h5 className="modal-title fw-bold">Activity Log Details</h5>
-                <button type="button" className="btn-close" onClick={() => setSelectedItem(null)}></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setSelectedItem(null)}
+                ></button>
               </div>
               <div className="modal-body py-4">
                 <div className="p-3 bg-light rounded-3 mb-3">
@@ -167,11 +182,17 @@ const RecentActivityWidget = () => {
                 <div className="d-flex flex-column gap-2 small">
                   <div className="d-flex justify-content-between py-1 border-bottom">
                     <span className="text-muted">Status</span>
-                    <span className="fw-bold text-primary">{selectedItem.status || 'Processed'}</span>
+                    <span className="fw-bold text-primary">
+                      {selectedItem.status || 'Processed'}
+                    </span>
                   </div>
                   <div className="d-flex justify-content-between py-1 border-bottom">
                     <span className="text-muted">Timestamp</span>
-                    <span className="fw-semibold">{selectedItem.timestamp ? new Date(selectedItem.timestamp).toLocaleString() : 'Just now'}</span>
+                    <span className="fw-semibold">
+                      {selectedItem.timestamp
+                        ? new Date(selectedItem.timestamp).toLocaleString()
+                        : 'Just now'}
+                    </span>
                   </div>
                   <div className="d-flex justify-content-between py-1">
                     <span className="text-muted">Activity ID</span>
@@ -180,7 +201,11 @@ const RecentActivityWidget = () => {
                 </div>
               </div>
               <div className="modal-footer border-0 pt-0">
-                <button type="button" className="btn btn-secondary w-100 fw-semibold" onClick={() => setSelectedItem(null)}>
+                <button
+                  type="button"
+                  className="btn btn-secondary w-100 fw-semibold"
+                  onClick={() => setSelectedItem(null)}
+                >
                   Close Details
                 </button>
               </div>

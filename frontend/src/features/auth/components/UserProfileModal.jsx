@@ -37,10 +37,21 @@ const UserProfileModal = ({ visible, onClose }) => {
   const [contextError, setContextError] = useState(null)
 
   const activeOrgId = activeOrganizationId || currentUser?.orgId
-  const activeOrgName = organizationName || currentUser?.organizationName || currentUser?.orgName || 'Active Organisation'
+  const activeOrgName =
+    organizationName ||
+    currentUser?.organizationName ||
+    currentUser?.orgName ||
+    'Active Organisation'
   const currentActiveRole = activeRole || currentUser?.role || 'User'
-  const activeAssignment = useSelector((state) => state.workspace.activeAssignment) || currentUser?.activeAssignment || null
-  const availableAssignments = useSelector((state) => state.workspace.availableAssignments) || currentUser?.availableAssignments || currentUser?.accessibleAssignments || []
+  const activeAssignment =
+    useSelector((state) => state.workspace.activeAssignment) ||
+    currentUser?.activeAssignment ||
+    null
+  const availableAssignments =
+    useSelector((state) => state.workspace.availableAssignments) ||
+    currentUser?.availableAssignments ||
+    currentUser?.accessibleAssignments ||
+    []
 
   // Extract only roles assigned to the user within the currently selected organisation
   const currentWs = availableWorkspaces.find((w) => (w.orgId || w._id) === activeOrgId)
@@ -48,7 +59,11 @@ const UserProfileModal = ({ visible, onClose }) => {
     if (currentWs?.roles && Array.isArray(currentWs.roles) && currentWs.roles.length > 0) {
       return Array.from(new Set(currentWs.roles.filter(Boolean)))
     }
-    if (currentUser?.roles && Array.isArray(currentUser.roles) && (currentUser.orgId === activeOrgId || !currentUser.orgId)) {
+    if (
+      currentUser?.roles &&
+      Array.isArray(currentUser.roles) &&
+      (currentUser.orgId === activeOrgId || !currentUser.orgId)
+    ) {
       return Array.from(new Set(currentUser.roles.filter(Boolean)))
     }
     return currentActiveRole ? [currentActiveRole] : []
@@ -62,9 +77,7 @@ const UserProfileModal = ({ visible, onClose }) => {
     setSwitchingContext(true)
     setContextError(null)
     try {
-      await dispatch(
-        switchWorkspaceContext({ targetOrgId: activeOrgId, targetRole }),
-      ).unwrap()
+      await dispatch(switchWorkspaceContext({ targetOrgId: activeOrgId, targetRole })).unwrap()
       setShowRolePicker(false)
       onClose()
       window.location.reload()
@@ -83,9 +96,7 @@ const UserProfileModal = ({ visible, onClose }) => {
     setSwitchingContext(true)
     setContextError(null)
     try {
-      await dispatch(
-        switchWorkspaceContext({ targetOrgId, targetVillaId }),
-      ).unwrap()
+      await dispatch(switchWorkspaceContext({ targetOrgId, targetVillaId })).unwrap()
       setShowOrgPicker(false)
       onClose()
       window.location.href = '/dashboard'
@@ -97,7 +108,10 @@ const UserProfileModal = ({ visible, onClose }) => {
   }
 
   const handleSwitchAssignment = async (asg) => {
-    if (activeAssignment && (activeAssignment.id === asg.id || activeAssignment.name === asg.name)) {
+    if (
+      activeAssignment &&
+      (activeAssignment.id === asg.id || activeAssignment.name === asg.name)
+    ) {
       setShowAssignmentPicker(false)
       return
     }
@@ -227,11 +241,23 @@ const UserProfileModal = ({ visible, onClose }) => {
           <div className="card mb-3 border bg-light rounded-3 shadow-xs">
             <div className="card-body p-3">
               <div className="mb-2">
-                <div className="text-uppercase text-secondary fw-semibold" style={{ fontSize: '0.72rem', letterSpacing: '0.5px' }}>
+                <div
+                  className="text-uppercase text-secondary fw-semibold"
+                  style={{ fontSize: '0.72rem', letterSpacing: '0.5px' }}
+                >
                   Current Organisation
                 </div>
                 <div className="fw-bold fs-6 text-dark mt-1 d-flex align-items-center gap-2">
-                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--cui-primary, #4f46e5)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    stroke="var(--cui-primary, #4f46e5)"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
                     <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
                     <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
@@ -245,11 +271,23 @@ const UserProfileModal = ({ visible, onClose }) => {
               </div>
 
               <div className="mb-2">
-                <div className="text-uppercase text-secondary fw-semibold" style={{ fontSize: '0.72rem', letterSpacing: '0.5px' }}>
+                <div
+                  className="text-uppercase text-secondary fw-semibold"
+                  style={{ fontSize: '0.72rem', letterSpacing: '0.5px' }}
+                >
                   Current Role
                 </div>
                 <div className="fw-bold fs-6 text-dark mt-1 d-flex align-items-center gap-2">
-                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="#059669" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    stroke="#059669"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                     <path d="m9 12 2 2 4-4" />
                   </svg>
@@ -258,11 +296,23 @@ const UserProfileModal = ({ visible, onClose }) => {
               </div>
 
               <div className="mb-3">
-                <div className="text-uppercase text-secondary fw-semibold" style={{ fontSize: '0.72rem', letterSpacing: '0.5px' }}>
+                <div
+                  className="text-uppercase text-secondary fw-semibold"
+                  style={{ fontSize: '0.72rem', letterSpacing: '0.5px' }}
+                >
                   Current Assignment
                 </div>
                 <div className="fw-bold fs-6 text-dark mt-1 d-flex align-items-center gap-2">
-                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="#0ea5e9" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    stroke="#0ea5e9"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                     <circle cx="12" cy="10" r="3" />
                   </svg>
@@ -285,7 +335,16 @@ const UserProfileModal = ({ visible, onClose }) => {
                     setShowAssignmentPicker(false)
                   }}
                 >
-                  <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="13"
+                    height="13"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
                   </svg>
                   Switch Organisation
@@ -305,7 +364,16 @@ const UserProfileModal = ({ visible, onClose }) => {
                     setShowAssignmentPicker(false)
                   }}
                 >
-                  <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="13"
+                    height="13"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                   </svg>
                   Switch Role
@@ -326,7 +394,16 @@ const UserProfileModal = ({ visible, onClose }) => {
                       setShowOrgPicker(false)
                     }}
                   >
-                    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="13"
+                      height="13"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                       <circle cx="12" cy="10" r="3" />
                     </svg>
@@ -361,7 +438,16 @@ const UserProfileModal = ({ visible, onClose }) => {
                           >
                             <span className="fw-semibold">{r}</span>
                             {isCurrent && (
-                              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                              <svg
+                                viewBox="0 0 24 24"
+                                width="14"
+                                height="14"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
                                 <polyline points="20 6 9 17 4 12" />
                               </svg>
                             )}
@@ -401,13 +487,25 @@ const UserProfileModal = ({ visible, onClose }) => {
                             <div>
                               <div className="fw-semibold">{ws.name}</div>
                               {ws.roles && ws.roles.length > 0 && (
-                                <div className={`small ${isCurrent ? 'text-white-50' : 'text-muted'}`} style={{ fontSize: '0.75rem' }}>
+                                <div
+                                  className={`small ${isCurrent ? 'text-white-50' : 'text-muted'}`}
+                                  style={{ fontSize: '0.75rem' }}
+                                >
                                   Roles: {ws.roles.join(', ')}
                                 </div>
                               )}
                             </div>
                             {isCurrent && (
-                              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                              <svg
+                                viewBox="0 0 24 24"
+                                width="14"
+                                height="14"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
                                 <polyline points="20 6 9 17 4 12" />
                               </svg>
                             )}
@@ -432,10 +530,12 @@ const UserProfileModal = ({ visible, onClose }) => {
                   ) : (
                     <div className="d-flex flex-column gap-1">
                       {availableAssignments.map((asg, idx) => {
-                        const asgObj = typeof asg === 'string' ? { id: asg, name: asg, type: 'general' } : asg
+                        const asgObj =
+                          typeof asg === 'string' ? { id: asg, name: asg, type: 'general' } : asg
                         const isCurrent =
                           activeAssignment &&
-                          (activeAssignment.id === asgObj.id || activeAssignment.name === asgObj.name)
+                          (activeAssignment.id === asgObj.id ||
+                            activeAssignment.name === asgObj.name)
                         return (
                           <button
                             key={asgObj.id || asgObj.name || idx}

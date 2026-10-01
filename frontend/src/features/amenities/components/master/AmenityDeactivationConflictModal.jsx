@@ -40,7 +40,10 @@ export const AmenityDeactivationConflictModal = ({
           </button>
         </div>
 
-        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div
+          className="modal-body"
+          style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+        >
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.5' }}>
             <strong>{amenity.name}</strong> currently has{' '}
             <span style={{ color: '#d97706', fontWeight: 'bold' }}>
@@ -66,13 +69,17 @@ export const AmenityDeactivationConflictModal = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                <i className="fa-regular fa-calendar-check" style={{ color: '#2563eb', marginTop: '3px', fontSize: '16px' }}></i>
+                <i
+                  className="fa-regular fa-calendar-check"
+                  style={{ color: '#2563eb', marginTop: '3px', fontSize: '16px' }}
+                ></i>
                 <div>
                   <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-main)' }}>
                     Honor Existing Bookings
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Deactivate facility for new reservations, but keep and honor all existing scheduled bookings.
+                    Deactivate facility for new reservations, but keep and honor all existing
+                    scheduled bookings.
                   </div>
                 </div>
               </div>
@@ -104,13 +111,17 @@ export const AmenityDeactivationConflictModal = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                <i className="fa-solid fa-rotate-left" style={{ color: '#dc2626', marginTop: '3px', fontSize: '16px' }}></i>
+                <i
+                  className="fa-solid fa-rotate-left"
+                  style={{ color: '#dc2626', marginTop: '3px', fontSize: '16px' }}
+                ></i>
                 <div>
                   <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-main)' }}>
                     Cancel & Refund All
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Cancel all {bookingsCount} upcoming bookings immediately and initiate 100% full refunds to residents.
+                    Cancel all {bookingsCount} upcoming bookings immediately and initiate 100% full
+                    refunds to residents.
                   </div>
                 </div>
               </div>
@@ -135,7 +146,12 @@ export const AmenityDeactivationConflictModal = ({
         </div>
 
         <div className="modal-footer">
-          <button className="btn btn-outline" onClick={onClose} disabled={isLoading} style={{ width: '100%' }}>
+          <button
+            className="btn btn-outline"
+            onClick={onClose}
+            disabled={isLoading}
+            style={{ width: '100%' }}
+          >
             Keep Facility Active (Cancel)
           </button>
         </div>

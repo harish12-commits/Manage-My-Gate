@@ -36,14 +36,20 @@ export const useWalletPayment = () => {
 
         const orderData = orderRes.data
         const effectiveKey = orderData.key || config.razorpayKey || config.razorpayKeyId
-        const isMockOrder = orderData.isMock || orderData.id?.startsWith('order_mock_') || isMockRazorpayKey(effectiveKey)
+        const isMockOrder =
+          orderData.isMock ||
+          orderData.id?.startsWith('order_mock_') ||
+          isMockRazorpayKey(effectiveKey)
 
         if (isMockOrder) {
           // Wait 1 second to show gateway connecting state
           await new Promise((resolve) => setTimeout(resolve, 1000))
 
           const confirmPayment = window.confirm(
-            t('payment.mock_confirm', `[Mock Gateway Mode] Confirm wallet top-up of ₹${amountVal}?\n\n(Tip: Configure VITE_RAZORPAY_KEY and RAZORPAY_KEY_ID in .env to use official Razorpay modal with GPay / PhonePe / Cards / UPI)`),
+            t(
+              'payment.mock_confirm',
+              `[Mock Gateway Mode] Confirm wallet top-up of ₹${amountVal}?\n\n(Tip: Configure VITE_RAZORPAY_KEY and RAZORPAY_KEY_ID in .env to use official Razorpay modal with GPay / PhonePe / Cards / UPI)`,
+            ),
           )
           if (confirmPayment) {
             const verifyPayload = {
@@ -78,7 +84,12 @@ export const useWalletPayment = () => {
 
         if (!window.Razorpay) {
           setLoading(false)
-          toast.error(t('payment.gateway_loading', 'Payment gateway is still loading. Please try again in a moment.'))
+          toast.error(
+            t(
+              'payment.gateway_loading',
+              'Payment gateway is still loading. Please try again in a moment.',
+            ),
+          )
           if (onFailure) onFailure(new Error('Payment gateway not ready'))
           return
         }

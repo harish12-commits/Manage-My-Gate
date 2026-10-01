@@ -281,7 +281,11 @@ const StaffAndVendor = () => {
                             <button className="btn btn-ghost btn-sm" onClick={() => handleEdit(s)}>
                               Edit
                             </button>
-                            <button className="btn btn-ghost btn-sm" style={{ color: '#ef4444' }} onClick={() => handleDelete(s._id)}>
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              style={{ color: '#ef4444' }}
+                              onClick={() => handleDelete(s._id)}
+                            >
                               Delete
                             </button>
                           </div>

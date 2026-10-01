@@ -53,22 +53,23 @@ export const OrganizationManager = () => {
             </h2>
             <p className="page-subtitle">
               {t('superAdmin.orgManager.subtitle', {
-                defaultValue: 'Manage all system organizations, view status, and block/unblock access.',
+                defaultValue:
+                  'Manage all system organizations, view status, and block/unblock access.',
               })}
             </p>
           </div>
         </div>
 
         {/* Error Banner */}
-        {error && (
-          <div className="alert alert-danger mb-4">{error}</div>
-        )}
+        {error && <div className="alert alert-danger mb-4">{error}</div>}
 
         {/* Loading */}
         {loading && organizations.length === 0 ? (
           <div className="loading-center">
             <AppLoader variant="block" />
-            <span>{t('superAdmin.orgManager.loading', { defaultValue: 'Loading organizations...' })}</span>
+            <span>
+              {t('superAdmin.orgManager.loading', { defaultValue: 'Loading organizations...' })}
+            </span>
           </div>
         ) : organizations.length === 0 ? (
           <div className="empty-state">
@@ -77,7 +78,9 @@ export const OrganizationManager = () => {
               {t('superAdmin.orgManager.noData', { defaultValue: 'No organizations found.' })}
             </div>
             <div className="empty-desc">
-              {t('superAdmin.orgManager.noDataDesc', { defaultValue: 'Organizations will appear here once created.' })}
+              {t('superAdmin.orgManager.noDataDesc', {
+                defaultValue: 'Organizations will appear here once created.',
+              })}
             </div>
           </div>
         ) : (
@@ -87,7 +90,9 @@ export const OrganizationManager = () => {
               <table className="ent-table">
                 <thead>
                   <tr>
-                    <th>{t('superAdmin.orgManager.tableName', { defaultValue: 'Organization' })}</th>
+                    <th>
+                      {t('superAdmin.orgManager.tableName', { defaultValue: 'Organization' })}
+                    </th>
                     <th>{t('superAdmin.orgManager.tableVillas', { defaultValue: 'Villas' })}</th>
                     <th>{t('superAdmin.orgManager.tableUsers', { defaultValue: 'Users' })}</th>
                     <th>{t('superAdmin.orgManager.tableStatus', { defaultValue: 'Status' })}</th>
@@ -119,7 +124,9 @@ export const OrganizationManager = () => {
                       <td>
                         <span className={`status-pill ${getStatusClass(org.status)}`}>
                           {org.status
-                            ? t(`superAdmin.orgManager.status.${org.status.toLowerCase()}`, { defaultValue: org.status })
+                            ? t(`superAdmin.orgManager.status.${org.status.toLowerCase()}`, {
+                                defaultValue: org.status,
+                              })
                             : 'Unknown'}
                         </span>
                       </td>
@@ -127,7 +134,9 @@ export const OrganizationManager = () => {
                         <div className="action-btn-group">
                           <button
                             className="action-icon-btn btn-view"
-                            title={t('superAdmin.orgManager.viewDetails', { defaultValue: 'View Details' })}
+                            title={t('superAdmin.orgManager.viewDetails', {
+                              defaultValue: 'View Details',
+                            })}
                             onClick={() => viewDetails(org._id)}
                           >
                             <CIcon icon={cilFolderOpen} size="sm" />
@@ -142,7 +151,10 @@ export const OrganizationManager = () => {
                             onClick={() => toggleStatus(org._id, org.status)}
                             disabled={loading || org.status === 'Pending'}
                           >
-                            <CIcon icon={org.status === 'Active' ? cilBan : cilCheckCircle} size="sm" />
+                            <CIcon
+                              icon={org.status === 'Active' ? cilBan : cilCheckCircle}
+                              size="sm"
+                            />
                           </button>
                         </div>
                       </td>

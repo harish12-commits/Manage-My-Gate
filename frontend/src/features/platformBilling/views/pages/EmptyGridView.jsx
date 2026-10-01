@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 
 const EmptyGridView = ({ title, sub }) => (
   <section className="page">
@@ -11,11 +11,13 @@ const EmptyGridView = ({ title, sub }) => (
     <div className="panel panel-body table-responsive">
       <table className="table">
         <tbody>
-          <tr><td colSpan="100%">No data</td></tr>
+          <tr>
+            <td colSpan="100%">No data</td>
+          </tr>
         </tbody>
       </table>
     </div>
   </section>
-);
+)
 
-export default EmptyGridView;
+export default EmptyGridView

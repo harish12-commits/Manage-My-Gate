@@ -61,7 +61,8 @@ const BookingStepper = memo(({ currentStep }) => {
                 backgroundColor: isActive || isCompleted ? '#321fdb' : '#fff',
                 color: isActive || isCompleted ? '#fff' : '#768192',
                 border: `2px solid ${isActive || isCompleted ? '#321fdb' : '#dee2e6'}`,
-                transition: 'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, max-height 0.3s ease',
+                transition:
+                  'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, max-height 0.3s ease',
               }}
               aria-current={isActive ? 'step' : undefined}
             >

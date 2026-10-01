@@ -16,7 +16,9 @@ export const usePermission = (feature, action) => {
   // Bypass checks for Super Admin, Community Admin, and Admin roles
   const roleUpper = (user.role || '').toUpperCase()
   if (
-    ['Super Admin', 'Platform Super Admin', 'Community Admin', 'Admin', 'SuperAdmin'].includes(user.role) ||
+    ['Super Admin', 'Platform Super Admin', 'Community Admin', 'Admin', 'SuperAdmin'].includes(
+      user.role,
+    ) ||
     roleUpper.includes('ADMIN') ||
     roleUpper.includes('SUPER') ||
     user.isPlatform

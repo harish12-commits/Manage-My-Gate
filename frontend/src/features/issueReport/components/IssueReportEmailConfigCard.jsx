@@ -18,7 +18,8 @@ import useIssueReports from '../hooks/useIssueReports.js'
 
 export const IssueReportEmailConfigCard = () => {
   const { t } = useTranslation()
-  const { emailConfig, fetchEmailConfig, updateEmailConfig, testEmailConfig, clearEmailStatus } = useIssueReports()
+  const { emailConfig, fetchEmailConfig, updateEmailConfig, testEmailConfig, clearEmailStatus } =
+    useIssueReports()
 
   const [inputEmail, setInputEmail] = useState('')
   const [validationError, setValidationError] = useState('')
@@ -61,7 +62,7 @@ export const IssueReportEmailConfigCard = () => {
   const handleTestEmail = async () => {
     setValidationError('')
     clearEmailStatus()
-    
+
     const trimmed = inputEmail.trim()
     if (!trimmed || !validateEmailFormat(trimmed)) {
       setValidationError(
@@ -71,7 +72,7 @@ export const IssueReportEmailConfigCard = () => {
       )
       return
     }
-    
+
     await testEmailConfig(trimmed)
   }
 
@@ -117,7 +118,12 @@ export const IssueReportEmailConfigCard = () => {
 
         {/* Client Validation Error */}
         {validationError && (
-          <CAlert color="danger" dismissible onClose={() => setValidationError('')} className="mb-3">
+          <CAlert
+            color="danger"
+            dismissible
+            onClose={() => setValidationError('')}
+            className="mb-3"
+          >
             <CIcon icon={cilWarning} className="me-2" />
             {validationError}
           </CAlert>
@@ -178,7 +184,10 @@ export const IssueReportEmailConfigCard = () => {
             </CCol>
           </CRow>
           <div className="mt-2 text-muted small">
-            <em>Need to configure SMTP server settings to send emails? Visit the <a href="#/admin/integration-hub">Integration Hub</a> to set up your mail provider.</em>
+            <em>
+              Need to configure SMTP server settings to send emails? Visit the{' '}
+              <a href="#/admin/integration-hub">Integration Hub</a> to set up your mail provider.
+            </em>
           </div>
         </CForm>
       </CCardBody>

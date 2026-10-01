@@ -1,24 +1,51 @@
-import React, { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { useRegistration } from '../hooks/useRegistration.js';
-import { step1Schema, step2Schema, step3Schema } from '../utils/schemas.js';
+import React, { useEffect } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import { useRegistration } from '../hooks/useRegistration.js'
+import { step1Schema, step2Schema, step3Schema } from '../utils/schemas.js'
 
 const AVAILABLE_FEATURES = [
-  'Visitor Management', 'Maintenance & Billing', 'Complaints', 'Notice Board',
-  'Facility Booking', 'Staff Management', 'Vehicle Management', 'Marketplace',
-  'Polls & Voting', 'Analytics Dashboard', 'Security Guard Management', 'Wallet & Payments'
-];
+  'Visitor Management',
+  'Maintenance & Billing',
+  'Complaints',
+  'Notice Board',
+  'Facility Booking',
+  'Staff Management',
+  'Vehicle Management',
+  'Marketplace',
+  'Polls & Voting',
+  'Analytics Dashboard',
+  'Security Guard Management',
+  'Wallet & Payments',
+]
 
 export const RegistrationWizard = () => {
-  const { currentStep, totalSteps, nextStep, prevStep, submitRegistration, loading, success, error, enquiryId, reset } = useRegistration();
+  const {
+    currentStep,
+    totalSteps,
+    nextStep,
+    prevStep,
+    submitRegistration,
+    loading,
+    success,
+    error,
+    enquiryId,
+    reset,
+  } = useRegistration()
 
   // Pick schema based on step
-  let currentSchema = step1Schema;
-  if (currentStep === 2) currentSchema = step2Schema;
-  if (currentStep === 3) currentSchema = step3Schema;
+  let currentSchema = step1Schema
+  if (currentStep === 2) currentSchema = step2Schema
+  if (currentStep === 3) currentSchema = step3Schema
 
-  const { register, handleSubmit, formState: { errors }, trigger, getValues, control } = useForm({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    trigger,
+    getValues,
+    control,
+  } = useForm({
     resolver: yupResolver(currentSchema),
     mode: 'onChange',
     defaultValues: {
@@ -28,33 +55,40 @@ export const RegistrationWizard = () => {
       totalUnits: '',
       organizationName: '',
       selectedFeatures: [],
-    }
-  });
+    },
+  })
 
   const handleNext = async () => {
-    const isStepValid = await trigger();
+    const isStepValid = await trigger()
     if (isStepValid) {
-      nextStep();
+      nextStep()
     }
-  };
+  }
 
   const onSubmit = (data) => {
     if (currentStep === totalSteps) {
-      submitRegistration(data);
+      submitRegistration(data)
     }
-  };
+  }
 
   if (success) {
     return (
       <div className="registration-success-container text-center p-5">
-        <h2 className="text-2xl font-bold text-green-600 mb-4">Registration Submitted Successfully!</h2>
-        <p className="mb-2">Your enquiry ID is: <strong>{enquiryId}</strong></p>
+        <h2 className="text-2xl font-bold text-green-600 mb-4">
+          Registration Submitted Successfully!
+        </h2>
+        <p className="mb-2">
+          Your enquiry ID is: <strong>{enquiryId}</strong>
+        </p>
         <p className="mb-6">Our team will contact you shortly.</p>
-        <button className="btn btn-primary px-4 py-2 bg-blue-600 text-white rounded" onClick={reset}>
+        <button
+          className="btn btn-primary px-4 py-2 bg-blue-600 text-white rounded"
+          onClick={reset}
+        >
           Submit Another Request
         </button>
       </div>
-    );
+    )
   }
 
   return (
@@ -63,7 +97,10 @@ export const RegistrationWizard = () => {
         <h1 className="text-3xl font-bold mb-2">Create Your Community</h1>
         <div className="progress-indicator flex items-center justify-between mt-4">
           {[1, 2, 3].map((step) => (
-            <div key={step} className={`step-item flex-1 text-center border-b-4 pb-2 ${currentStep >= step ? 'border-blue-600 text-blue-600 font-semibold' : 'border-gray-200 text-gray-400'}`}>
+            <div
+              key={step}
+              className={`step-item flex-1 text-center border-b-4 pb-2 ${currentStep >= step ? 'border-blue-600 text-blue-600 font-semibold' : 'border-gray-200 text-gray-400'}`}
+            >
               Step {step}
             </div>
           ))}
@@ -81,23 +118,45 @@ export const RegistrationWizard = () => {
           <div className="step-1-content space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Username</label>
-              <input type="text" {...register('username')} className={`w-full p-2 border rounded ${errors.username ? 'border-red-500' : 'border-gray-300'}`} />
-              {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>}
+              <input
+                type="text"
+                {...register('username')}
+                className={`w-full p-2 border rounded ${errors.username ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors.username && (
+                <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Email Address</label>
-              <input type="email" {...register('email')} className={`w-full p-2 border rounded ${errors.email ? 'border-red-500' : 'border-gray-300'}`} />
+              <input
+                type="email"
+                {...register('email')}
+                className={`w-full p-2 border rounded ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+              />
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Phone Number</label>
-              <input type="text" {...register('phone')} className={`w-full p-2 border rounded ${errors.phone ? 'border-red-500' : 'border-gray-300'}`} />
+              <input
+                type="text"
+                {...register('phone')}
+                className={`w-full p-2 border rounded ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
+              />
               {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Total Units (Villas / Apartments)</label>
-              <input type="number" {...register('totalUnits')} className={`w-full p-2 border rounded ${errors.totalUnits ? 'border-red-500' : 'border-gray-300'}`} />
-              {errors.totalUnits && <p className="text-red-500 text-sm mt-1">{errors.totalUnits.message}</p>}
+              <label className="block text-sm font-medium mb-1">
+                Total Units (Villas / Apartments)
+              </label>
+              <input
+                type="number"
+                {...register('totalUnits')}
+                className={`w-full p-2 border rounded ${errors.totalUnits ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors.totalUnits && (
+                <p className="text-red-500 text-sm mt-1">{errors.totalUnits.message}</p>
+              )}
             </div>
           </div>
         )}
@@ -105,9 +164,17 @@ export const RegistrationWizard = () => {
         {currentStep === 2 && (
           <div className="step-2-content space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Organization / Community Name</label>
-              <input type="text" {...register('organizationName')} className={`w-full p-2 border rounded ${errors.organizationName ? 'border-red-500' : 'border-gray-300'}`} />
-              {errors.organizationName && <p className="text-red-500 text-sm mt-1">{errors.organizationName.message}</p>}
+              <label className="block text-sm font-medium mb-1">
+                Organization / Community Name
+              </label>
+              <input
+                type="text"
+                {...register('organizationName')}
+                className={`w-full p-2 border rounded ${errors.organizationName ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              {errors.organizationName && (
+                <p className="text-red-500 text-sm mt-1">{errors.organizationName.message}</p>
+              )}
             </div>
           </div>
         )}
@@ -118,35 +185,54 @@ export const RegistrationWizard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {AVAILABLE_FEATURES.map((feature) => (
                 <label key={feature} className="flex items-center space-x-2">
-                  <input type="checkbox" value={feature} {...register('selectedFeatures')} className="form-checkbox h-4 w-4 text-blue-600" />
+                  <input
+                    type="checkbox"
+                    value={feature}
+                    {...register('selectedFeatures')}
+                    className="form-checkbox h-4 w-4 text-blue-600"
+                  />
                   <span className="text-sm">{feature}</span>
                 </label>
               ))}
             </div>
-            {errors.selectedFeatures && <p className="text-red-500 text-sm mt-1">{errors.selectedFeatures.message}</p>}
+            {errors.selectedFeatures && (
+              <p className="text-red-500 text-sm mt-1">{errors.selectedFeatures.message}</p>
+            )}
           </div>
         )}
 
         <div className="wizard-footer mt-8 flex justify-between">
           {currentStep > 1 && (
-            <button type="button" onClick={prevStep} className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
+            <button
+              type="button"
+              onClick={prevStep}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+            >
               Previous
             </button>
           )}
-          
+
           {currentStep < totalSteps ? (
-            <button type="button" onClick={handleNext} className="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            <button
+              type="button"
+              onClick={handleNext}
+              className="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
               Next Step
             </button>
           ) : (
-            <button type="submit" disabled={loading} className="ml-auto px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={loading}
+              className="ml-auto px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+            >
               {loading ? 'Submitting...' : 'Submit Enquiry'}
             </button>
           )}
         </div>
       </form>
     </div>
-  );
-};
+  )
+}
 
-export default RegistrationWizard;
+export default RegistrationWizard

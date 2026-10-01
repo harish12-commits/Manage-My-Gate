@@ -1,23 +1,23 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchV2Impacts } from '../../store/amenitySlice.js';
+import React, { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchV2Impacts } from '../../store/amenitySlice.js'
 
 const MaintenanceDetailModal = ({ visible, onClose, block, onResolveImpacts, onExtend }) => {
-  const dispatch = useDispatch();
-  const { activeImpacts } = useSelector((state) => state.amenities);
+  const dispatch = useDispatch()
+  const { activeImpacts } = useSelector((state) => state.amenities)
 
   useEffect(() => {
     if (visible && block?._id) {
-      dispatch(fetchV2Impacts(block._id));
+      dispatch(fetchV2Impacts(block._id))
     }
-  }, [visible, block, dispatch]);
+  }, [visible, block, dispatch])
 
-  if (!visible || !block) return null;
+  if (!visible || !block) return null
 
-  const isEmergency = block.isEmergency;
+  const isEmergency = block.isEmergency
   const unresolvedImpacts = activeImpacts.filter(
-    (i) => i.resolutionStatus === 'PENDING' || i.resolution === 'REVIEW_INDIVIDUALLY'
-  );
+    (i) => i.resolutionStatus === 'PENDING' || i.resolution === 'REVIEW_INDIVIDUALLY',
+  )
 
   return (
     <div className="modal-overlay active amenity-os-theme" onClick={onClose}>
@@ -30,7 +30,9 @@ const MaintenanceDetailModal = ({ visible, onClose, block, onResolveImpacts, onE
                 fontSize: '20px',
               }}
             >
-              <i className={isEmergency ? 'fa-solid fa-bolt' : 'fa-solid fa-screwdriver-wrench'}></i>
+              <i
+                className={isEmergency ? 'fa-solid fa-bolt' : 'fa-solid fa-screwdriver-wrench'}
+              ></i>
             </span>
             <h4 style={{ margin: 0 }} className="fs-4">
               {block.title}
@@ -48,10 +50,10 @@ const MaintenanceDetailModal = ({ visible, onClose, block, onResolveImpacts, onE
                 block.status === 'COMPLETED'
                   ? 'badge-success'
                   : block.status === 'IN_PROGRESS' || block.status === 'ACTIVE'
-                  ? 'badge-warning'
-                  : block.status === 'CANCELLED'
-                  ? 'badge-danger'
-                  : 'badge-primary'
+                    ? 'badge-warning'
+                    : block.status === 'CANCELLED'
+                      ? 'badge-danger'
+                      : 'badge-primary'
               }`}
             >
               {block.status}
@@ -64,18 +66,24 @@ const MaintenanceDetailModal = ({ visible, onClose, block, onResolveImpacts, onE
             <div className="row g-2">
               <div className="col-6">
                 <span className="text-muted small">Facility:</span>
-                <div className="fw-bold">{block.facilityId?.name || block.facilityName || 'Facility'}</div>
+                <div className="fw-bold">
+                  {block.facilityId?.name || block.facilityName || 'Facility'}
+                </div>
               </div>
               <div className="col-6">
                 <span className="text-muted small">Resource Scope:</span>
                 <div className="fw-bold">
-                  {block.resourceId?.name || (block.resourceIds?.length ? `${block.resourceIds.length} Resources` : 'Entire Facility')}
+                  {block.resourceId?.name ||
+                    (block.resourceIds?.length
+                      ? `${block.resourceIds.length} Resources`
+                      : 'Entire Facility')}
                 </div>
               </div>
               <div className="col-6 mt-2">
                 <span className="text-muted small">Scheduled Window:</span>
                 <div className="small">
-                  {new Date(block.startDateTime).toLocaleString()} - {new Date(block.endDateTime).toLocaleString()}
+                  {new Date(block.startDateTime).toLocaleString()} -{' '}
+                  {new Date(block.endDateTime).toLocaleString()}
                 </div>
               </div>
               <div className="col-6 mt-2">
@@ -109,11 +117,12 @@ const MaintenanceDetailModal = ({ visible, onClose, block, onResolveImpacts, onE
                   type="button"
                   className="btn btn-sm btn-outline-warning"
                   onClick={() => {
-                    onClose();
-                    if (onResolveImpacts) onResolveImpacts(block, activeImpacts);
+                    onClose()
+                    if (onResolveImpacts) onResolveImpacts(block, activeImpacts)
                   }}
                 >
-                  <i className="fa-solid fa-triangle-exclamation me-1"></i> Resolve {unresolvedImpacts.length} Pending
+                  <i className="fa-solid fa-triangle-exclamation me-1"></i> Resolve{' '}
+                  {unresolvedImpacts.length} Pending
                 </button>
               )}
             </div>
@@ -142,7 +151,9 @@ const MaintenanceDetailModal = ({ visible, onClose, block, onResolveImpacts, onE
                           <span className="badge badge-info">{imp.resolution || 'PENDING'}</span>
                         </td>
                         <td>
-                          <span className="badge badge-secondary">{imp.resolutionStatus || 'RESOLVED'}</span>
+                          <span className="badge badge-secondary">
+                            {imp.resolutionStatus || 'RESOLVED'}
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -159,8 +170,8 @@ const MaintenanceDetailModal = ({ visible, onClose, block, onResolveImpacts, onE
               type="button"
               className="btn btn-outline-primary"
               onClick={() => {
-                onClose();
-                if (onExtend) onExtend(block);
+                onClose()
+                if (onExtend) onExtend(block)
               }}
             >
               <i className="fa-solid fa-clock-rotate-left me-1"></i> Extend Window
@@ -172,7 +183,7 @@ const MaintenanceDetailModal = ({ visible, onClose, block, onResolveImpacts, onE
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default MaintenanceDetailModal;
+export default MaintenanceDetailModal

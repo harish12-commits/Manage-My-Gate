@@ -64,10 +64,14 @@ export const PaymentCheckoutModal = ({
 
   const totalDue = invoice?.totalDue ?? invoice?.amount ?? 0
   const paidAmount = invoice?.paidAmount ?? 0
-  const invoiceOutstanding = invoice?.outstandingAmount !== undefined
-    ? invoice.outstandingAmount
-    : Math.max(0, totalDue - paidAmount)
-  const maxAmount = totalPortfolioDue && totalPortfolioDue > invoiceOutstanding ? totalPortfolioDue : invoiceOutstanding
+  const invoiceOutstanding =
+    invoice?.outstandingAmount !== undefined
+      ? invoice.outstandingAmount
+      : Math.max(0, totalDue - paidAmount)
+  const maxAmount =
+    totalPortfolioDue && totalPortfolioDue > invoiceOutstanding
+      ? totalPortfolioDue
+      : invoiceOutstanding
   const [customAmount, setCustomAmount] = useState(maxAmount)
 
   useEffect(() => {
@@ -230,7 +234,9 @@ export const PaymentCheckoutModal = ({
       <CModalBody className="p-4">
         {(actionError || localError) && (
           <CAlert color="danger" className="mb-4">
-            {typeof (actionError || localError) === 'object' ? (actionError || localError)?.message || JSON.stringify(actionError || localError) : (actionError || localError)}
+            {typeof (actionError || localError) === 'object'
+              ? (actionError || localError)?.message || JSON.stringify(actionError || localError)
+              : actionError || localError}
           </CAlert>
         )}
 
@@ -263,10 +269,10 @@ export const PaymentCheckoutModal = ({
                 max={maxAmount}
                 min={1}
                 onChange={(e) => {
-                   let val = Number(e.target.value);
-                   if (val > maxAmount) val = maxAmount;
-                   if (val < 0) val = 0;
-                   setCustomAmount(val);
+                  let val = Number(e.target.value)
+                  if (val > maxAmount) val = maxAmount
+                  if (val < 0) val = 0
+                  setCustomAmount(val)
                 }}
               />
             </div>
@@ -348,7 +354,10 @@ export const PaymentCheckoutModal = ({
                 <CIcon icon={cilCreditCard} size="lg" className="text-primary" />
                 <div>
                   <div className="fw-semibold">
-                    {t('billing.checkout.razorpayOptionTitle', 'Razorpay (Cards, UPI, Net Banking)')}
+                    {t(
+                      'billing.checkout.razorpayOptionTitle',
+                      'Razorpay (Cards, UPI, Net Banking)',
+                    )}
                   </div>
                   <div className="text-muted small">
                     {isPaymentGatewayConfigured

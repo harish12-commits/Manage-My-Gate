@@ -6,7 +6,7 @@ import {
   COffcanvasTitle,
   COffcanvasBody,
   CCloseButton,
-  } from '@coreui/react'
+} from '@coreui/react'
 import AppLoader from '../../../components/common/AppLoader'
 
 /**
@@ -51,13 +51,28 @@ export const UserDetailDrawer = ({ visible, onClose, user, loading, organization
       </COffcanvasHeader>
       <COffcanvasBody>
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '60px', gap: '12px', color: '#768192' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '60px',
+              gap: '12px',
+              color: '#768192',
+            }}
+          >
             <AppLoader variant="block" />
-            <span>{t('superAdmin.orgDetails.loadingUserDetail', { defaultValue: 'Loading user details...' })}</span>
+            <span>
+              {t('superAdmin.orgDetails.loadingUserDetail', {
+                defaultValue: 'Loading user details...',
+              })}
+            </span>
           </div>
         ) : !user ? (
           <div style={{ textAlign: 'center', padding: '60px 24px', color: '#768192' }}>
-            {t('superAdmin.orgDetails.noUserSelected', { defaultValue: 'No user details available.' })}
+            {t('superAdmin.orgDetails.noUserSelected', {
+              defaultValue: 'No user details available.',
+            })}
           </div>
         ) : (
           <div>
@@ -66,13 +81,18 @@ export const UserDetailDrawer = ({ visible, onClose, user, loading, organization
               <div className="drawer-avatar">
                 {user.avatar ? (
                   <img src={user.avatar} alt={user.name || 'User'} />
+                ) : user.name ? (
+                  user.name.charAt(0).toUpperCase()
                 ) : (
-                  user.name ? user.name.charAt(0).toUpperCase() : 'U'
+                  'U'
                 )}
               </div>
               <div className="drawer-name">{user.name || 'User Profile'}</div>
               <div className="drawer-email">{user.email}</div>
-              <span className={`status-pill ${getStatusClass(user.status)}`} style={{ display: 'inline-flex' }}>
+              <span
+                className={`status-pill ${getStatusClass(user.status)}`}
+                style={{ display: 'inline-flex' }}
+              >
                 {user.status || 'Active'}
               </span>
             </div>
@@ -93,24 +113,37 @@ export const UserDetailDrawer = ({ visible, onClose, user, loading, organization
                 <div className="drawer-roles-list">
                   {user.roles && user.roles.length > 0 ? (
                     user.roles.map((r) => (
-                      <span key={r.id || r.name} className="drawer-role-pill">{r.name}</span>
+                      <span key={r.id || r.name} className="drawer-role-pill">
+                        {r.name}
+                      </span>
                     ))
                   ) : (
-                    <span className="drawer-role-pill" style={{ background: '#f5f7fb', color: '#768192' }}>Member</span>
+                    <span
+                      className="drawer-role-pill"
+                      style={{ background: '#f5f7fb', color: '#768192' }}
+                    >
+                      Member
+                    </span>
                   )}
                 </div>
               </div>
 
               <div className="drawer-field">
                 <div className="drawer-field-label">
-                  {t('superAdmin.orgDetails.community', { defaultValue: 'Community / Organization' })}
+                  {t('superAdmin.orgDetails.community', {
+                    defaultValue: 'Community / Organization',
+                  })}
                 </div>
-                <div className="drawer-field-value">{organizationName || 'Current Organization'}</div>
+                <div className="drawer-field-value">
+                  {organizationName || 'Current Organization'}
+                </div>
               </div>
 
               <div className="drawer-field">
                 <div className="drawer-field-label">
-                  {t('superAdmin.orgDetails.villaUnit', { defaultValue: 'Villa / Unit Assignment' })}
+                  {t('superAdmin.orgDetails.villaUnit', {
+                    defaultValue: 'Villa / Unit Assignment',
+                  })}
                 </div>
                 <div className="drawer-field-value">
                   {user.villa
@@ -121,7 +154,9 @@ export const UserDetailDrawer = ({ visible, onClose, user, loading, organization
 
               <div className="drawer-field">
                 <div className="drawer-field-label">
-                  {t('superAdmin.orgDetails.joinedDate', { defaultValue: 'Registration / Join Date' })}
+                  {t('superAdmin.orgDetails.joinedDate', {
+                    defaultValue: 'Registration / Join Date',
+                  })}
                 </div>
                 <div className="drawer-field-value">{formatDate(user.joinedDate)}</div>
               </div>

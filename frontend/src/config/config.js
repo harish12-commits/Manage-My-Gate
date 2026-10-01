@@ -1,6 +1,6 @@
 export const isMockRazorpayKey = (key) => {
-  if (!key) return true;
-  const str = String(key).trim();
+  if (!key) return true
+  const str = String(key).trim()
   if (
     !str ||
     str.includes('mock') ||
@@ -11,12 +11,17 @@ export const isMockRazorpayKey = (key) => {
     str === 'test_key' ||
     str.length < 15
   ) {
-    return true;
+    return true
   }
-  return false;
-};
+  return false
+}
 
-const env = (typeof import.meta !== 'undefined' && import.meta?.env) ? import.meta.env : (typeof process !== 'undefined' ? process.env : {})
+const env =
+  typeof import.meta !== 'undefined' && import.meta?.env
+    ? import.meta.env
+    : typeof process !== 'undefined'
+      ? process.env
+      : {}
 
 export const config = {
   isDev: Boolean(env.DEV || env.MODE === 'development'),
@@ -30,12 +35,12 @@ export const config = {
   microsoftTenantId: env.VITE_MICROSOFT_TENANT_ID || 'common',
   razorpayKey: env.VITE_RAZORPAY_KEY || env.VITE_RAZORPAY_KEY_ID || 'rzp_test_mockkey',
   razorpayKeyId: env.VITE_RAZORPAY_KEY_ID || env.VITE_RAZORPAY_KEY || 'rzp_test_mockkey',
-  publicUrl:
-    env.VITE_PUBLIC_URL ||
-    (typeof window !== 'undefined' ? window.location.origin : ''),
+  publicUrl: env.VITE_PUBLIC_URL || (typeof window !== 'undefined' ? window.location.origin : ''),
   appName: env.VITE_APP_NAME || 'Nahom',
   androidPackage: env.VITE_ANDROID_PACKAGE || 'com.atominosconsulting.nahom',
-  playStoreUrl: env.VITE_PLAY_STORE_URL || 'https://play.google.com/store/apps/details?id=com.atominosconsulting.nahom',
+  playStoreUrl:
+    env.VITE_PLAY_STORE_URL ||
+    'https://play.google.com/store/apps/details?id=com.atominosconsulting.nahom',
   customScheme: env.VITE_MOBILE_CUSTOM_SCHEME || 'managemygate',
 }
 

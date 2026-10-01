@@ -27,10 +27,7 @@ describe('issueReportSlice Reducer', () => {
 
   it('should handle setFilters correctly', () => {
     const initialState = getInitialState()
-    const nextState = reducer(
-      initialState,
-      setFilters({ search: 'NAH-0001', reportType: 'bug' }),
-    )
+    const nextState = reducer(initialState, setFilters({ search: 'NAH-0001', reportType: 'bug' }))
 
     assert.equal(nextState.filters.search, 'NAH-0001')
     assert.equal(nextState.filters.reportType, 'bug')

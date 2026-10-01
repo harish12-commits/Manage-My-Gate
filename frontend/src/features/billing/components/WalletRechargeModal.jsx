@@ -93,10 +93,16 @@ const WalletRechargeModal = ({ show, onHide }) => {
       <Modal.Body>
         {!isGatewayReady && (
           <Alert variant="warning" className="small mb-3">
-            <strong>Online Recharge Unavailable:</strong> The community administration has not connected an online payment merchant account. Please contact management for manual or offline top-up.
+            <strong>Online Recharge Unavailable:</strong> The community administration has not
+            connected an online payment merchant account. Please contact management for manual or
+            offline top-up.
           </Alert>
         )}
-        {error && <Alert variant="danger">{typeof error === 'object' ? error.message || JSON.stringify(error) : error}</Alert>}
+        {error && (
+          <Alert variant="danger">
+            {typeof error === 'object' ? error.message || JSON.stringify(error) : error}
+          </Alert>
+        )}
         <Form onSubmit={handleRecharge}>
           <Form.Group className="mb-3">
             <Form.Label>Amount (₹)</Form.Label>
@@ -110,8 +116,19 @@ const WalletRechargeModal = ({ show, onHide }) => {
               required
             />
           </Form.Group>
-          <Button variant="primary" type="submit" disabled={isLoading || !isGatewayReady} className="w-100">
-            {isLoading ? <Spinner size="sm" animation="border" /> : isGatewayReady ? 'Proceed to Pay' : 'Gateway Not Configured'}
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={isLoading || !isGatewayReady}
+            className="w-100"
+          >
+            {isLoading ? (
+              <Spinner size="sm" animation="border" />
+            ) : isGatewayReady ? (
+              'Proceed to Pay'
+            ) : (
+              'Gateway Not Configured'
+            )}
           </Button>
         </Form>
       </Modal.Body>

@@ -1,4 +1,4 @@
-import apiClient from '../../../services/apiClient.js';
+import apiClient from '../../../services/apiClient.js'
 
 export const crmApi = {
   // --- CRM Inquiries ---
@@ -7,7 +7,7 @@ export const crmApi = {
    * @param {Object} [params] - { page, limit, status, search, assignedAgentId }
    */
   async getInquiries(params = {}) {
-    return await apiClient.get('/crm/inquiries', { params });
+    return await apiClient.get('/crm/inquiries', { params })
   },
 
   /**
@@ -15,7 +15,7 @@ export const crmApi = {
    * @param {string} id
    */
   async getInquiryById(id) {
-    return await apiClient.get(`/crm/inquiries/${id}`);
+    return await apiClient.get(`/crm/inquiries/${id}`)
   },
 
   /**
@@ -23,7 +23,7 @@ export const crmApi = {
    * @param {Object} data
    */
   async createInquiry(data) {
-    return await apiClient.post('/crm/inquiries', data);
+    return await apiClient.post('/crm/inquiries', data)
   },
 
   /**
@@ -32,7 +32,7 @@ export const crmApi = {
    * @param {Object} data
    */
   async updateInquiry(id, data) {
-    return await apiClient.put(`/crm/inquiries/${id}`, data);
+    return await apiClient.put(`/crm/inquiries/${id}`, data)
   },
 
   /**
@@ -42,7 +42,7 @@ export const crmApi = {
    * @param {Object} [metadata]
    */
   async transitionInquiryStatus(id, nextStatus, metadata = {}) {
-    return await apiClient.patch(`/platform/inquiries/${id}/status`, { nextStatus, metadata });
+    return await apiClient.patch(`/platform/inquiries/${id}/status`, { nextStatus, metadata })
   },
 
   /**
@@ -50,7 +50,7 @@ export const crmApi = {
    * @param {string} id
    */
   async getInquiryTimeline(id) {
-    return await apiClient.get(`/platform/inquiries/${id}/timeline`);
+    return await apiClient.get(`/platform/inquiries/${id}/timeline`)
   },
 
   /**
@@ -58,7 +58,7 @@ export const crmApi = {
    * @param {string} id
    */
   async getInquirySummary(id) {
-    return await apiClient.get(`/platform/inquiries/${id}/summary`);
+    return await apiClient.get(`/platform/inquiries/${id}/summary`)
   },
 
   /**
@@ -66,7 +66,7 @@ export const crmApi = {
    * @param {string} id
    */
   async deleteInquiry(id) {
-    return await apiClient.delete(`/crm/inquiries/${id}`);
+    return await apiClient.delete(`/crm/inquiries/${id}`)
   },
 
   /**
@@ -77,7 +77,7 @@ export const crmApi = {
   async getInquiriesAssignedToMe(userId, params = {}) {
     return await apiClient.get('/crm/inquiries', {
       params: { ...params, assignedAgentId: userId },
-    });
+    })
   },
 
   /**
@@ -87,7 +87,7 @@ export const crmApi = {
   async getUnassignedInquiries(params = {}) {
     return await apiClient.get('/crm/inquiries', {
       params: { ...params, assignedAgentId: 'null' },
-    });
+    })
   },
 
   /**
@@ -96,7 +96,7 @@ export const crmApi = {
    * @param {string|null} userId
    */
   async assignInquiry(inquiryId, userId) {
-    return await apiClient.patch(`/crm/inquiries/${inquiryId}/assign`, { userId });
+    return await apiClient.patch(`/crm/inquiries/${inquiryId}/assign`, { userId })
   },
 
   // --- CRM Tasks ---
@@ -105,7 +105,7 @@ export const crmApi = {
    * @param {Object} [params] - { page, limit, status, assignedTo, relatedInquiryId, search }
    */
   async getTasks(params = {}) {
-    return await apiClient.get('/crm/tasks', { params });
+    return await apiClient.get('/crm/tasks', { params })
   },
 
   /**
@@ -113,7 +113,7 @@ export const crmApi = {
    * @param {string} id
    */
   async getTaskById(id) {
-    return await apiClient.get(`/crm/tasks/${id}`);
+    return await apiClient.get(`/crm/tasks/${id}`)
   },
 
   /**
@@ -121,7 +121,7 @@ export const crmApi = {
    * @param {Object} data
    */
   async createTask(data) {
-    return await apiClient.post('/crm/tasks', data);
+    return await apiClient.post('/crm/tasks', data)
   },
 
   /**
@@ -130,7 +130,7 @@ export const crmApi = {
    * @param {Object} data
    */
   async updateTask(id, data) {
-    return await apiClient.put(`/crm/tasks/${id}`, data);
+    return await apiClient.put(`/crm/tasks/${id}`, data)
   },
 
   /**
@@ -138,7 +138,7 @@ export const crmApi = {
    * @param {string} id
    */
   async deleteTask(id) {
-    return await apiClient.delete(`/crm/tasks/${id}`);
+    return await apiClient.delete(`/crm/tasks/${id}`)
   },
 
   // --- CRM Meetings ---
@@ -147,7 +147,7 @@ export const crmApi = {
    * @param {Object} [params] - { page, limit, status, inquiryId, search }
    */
   async getMeetings(params = {}) {
-    return await apiClient.get('/crm/meetings', { params });
+    return await apiClient.get('/crm/meetings', { params })
   },
 
   /**
@@ -155,7 +155,7 @@ export const crmApi = {
    * @param {string} id
    */
   async getMeetingById(id) {
-    return await apiClient.get(`/crm/meetings/${id}`);
+    return await apiClient.get(`/crm/meetings/${id}`)
   },
 
   /**
@@ -163,7 +163,7 @@ export const crmApi = {
    * @param {Object} data
    */
   async scheduleMeeting(data) {
-    return await apiClient.post('/crm/meetings', data);
+    return await apiClient.post('/crm/meetings', data)
   },
 
   /**
@@ -172,7 +172,7 @@ export const crmApi = {
    * @param {Object} data
    */
   async updateMeeting(id, data) {
-    return await apiClient.put(`/crm/meetings/${id}`, data);
+    return await apiClient.put(`/crm/meetings/${id}`, data)
   },
 
   /**
@@ -180,7 +180,7 @@ export const crmApi = {
    * @param {string} id
    */
   async deleteMeeting(id) {
-    return await apiClient.delete(`/crm/meetings/${id}`);
+    return await apiClient.delete(`/crm/meetings/${id}`)
   },
 
   /**
@@ -196,7 +196,7 @@ export const crmApi = {
       startTime,
       endTime,
       excludeMeetingId,
-    });
+    })
   },
 
   // --- CRM Threads ---
@@ -205,7 +205,7 @@ export const crmApi = {
    * @param {string} inquiryId
    */
   async getThreadByInquiryId(inquiryId) {
-    return await apiClient.get(`/crm/threads/inquiry/${inquiryId}`);
+    return await apiClient.get(`/crm/threads/inquiry/${inquiryId}`)
   },
 
   /**
@@ -214,8 +214,8 @@ export const crmApi = {
    * @param {Object} messageData
    */
   async sendThreadMessage(inquiryId, messageData) {
-    return await apiClient.post(`/crm/threads/inquiry/${inquiryId}/messages`, messageData);
+    return await apiClient.post(`/crm/threads/inquiry/${inquiryId}/messages`, messageData)
   },
-};
+}
 
-export default crmApi;
+export default crmApi

@@ -42,7 +42,7 @@ export function CommunityIssueReportCard({ report, onPress }: CommunityIssueRepo
           <StatusBadge variant={typeConfig.color} label={typeConfig.label} size="sm" />
         </View>
 
-        <StatusBadge variant="neutral" label="Source: Report an Issue" size="sm" />
+        <StatusBadge variant="neutral" label="Source: Contact Support" size="sm" />
       </View>
 
       {/* Main Title */}

@@ -31,15 +31,15 @@ const msalConfig = {
 }
 
 // MSAL instance initialization
-let msalInstance = null;
+let msalInstance = null
 try {
   if (config.microsoftClientId) {
-    msalInstance = new PublicClientApplication(msalConfig);
+    msalInstance = new PublicClientApplication(msalConfig)
   } else {
-    console.warn('MSAL configuration missing client ID. SSO will be disabled.');
+    console.warn('MSAL configuration missing client ID. SSO will be disabled.')
   }
 } catch (error) {
-  console.error('Failed to instantiate MSAL PublicClientApplication:', error);
+  console.error('Failed to instantiate MSAL PublicClientApplication:', error)
 }
 
 // Retrieve the saved user object from localStorage and hydrate workspace context

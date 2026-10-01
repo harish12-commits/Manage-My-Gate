@@ -52,7 +52,12 @@ const BillingDashboardView = memo(({ onRunBillingClick }) => {
             <button
               type="button"
               className="btn btn-primary d-inline-flex align-items-center me-2"
-              style={{ borderRadius: '10px', padding: '9px 18px', fontSize: '13px', fontWeight: 600 }}
+              style={{
+                borderRadius: '10px',
+                padding: '9px 18px',
+                fontSize: '13px',
+                fontWeight: 600,
+              }}
               onClick={onRunBillingClick}
             >
               <i className="fa-solid fa-play me-2" />

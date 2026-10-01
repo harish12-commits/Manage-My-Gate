@@ -37,7 +37,7 @@ export const useBillingSocket = (userId, communityOrOrgId) => {
     logger.info(`Registering billing & wallet real-time listeners for rooms: ${rooms.join(', ')}`)
 
     // Join rooms dynamically
-    rooms.forEach(room => emit('join_room', room))
+    rooms.forEach((room) => emit('join_room', room))
 
     // Helper: Event Deduplicator within a 3-second window
     const isDuplicateEvent = (eventName, payload) => {
@@ -50,8 +50,12 @@ export const useBillingSocket = (userId, communityOrOrgId) => {
         payload?.data?._id ||
         payload?.data?.id ||
         (Array.isArray(payload) ? payload[0]?._id || payload[0]?.id : undefined) ||
-        (Array.isArray(payload?.invoices) ? payload.invoices[0]?._id || payload.invoices[0]?.id : undefined) ||
-        (typeof payload === 'object' && payload !== null ? JSON.stringify(payload).slice(0, 120) : String(payload));
+        (Array.isArray(payload?.invoices)
+          ? payload.invoices[0]?._id || payload.invoices[0]?.id
+          : undefined) ||
+        (typeof payload === 'object' && payload !== null
+          ? JSON.stringify(payload).slice(0, 120)
+          : String(payload))
 
       const key = `${eventName}:${eventId}:${payload?.status || ''}`
       const now = Date.now()
@@ -120,7 +124,7 @@ export const useBillingSocket = (userId, communityOrOrgId) => {
     // Reconnect handler to ensure room re-subscription and state sync after network restoration
     const handleReconnect = () => {
       logger.info(`Socket reconnected. Re-subscribing to rooms: ${rooms.join(', ')}`)
-      rooms.forEach(room => emit('join_room', room))
+      rooms.forEach((room) => emit('join_room', room))
       triggerDebouncedRefetch()
       dispatch(fetchWalletBalance())
     }
@@ -134,7 +138,7 @@ export const useBillingSocket = (userId, communityOrOrgId) => {
     socket.on('PAYMENT_SUCCESS', handlePaymentSuccess)
     socket.on('WALLET_UPDATED', handleWalletUpdated)
     socket.on('walletUpdated', handleWalletUpdated)
-    
+
     // Listen for offline payment submission to update the admin billing ledger instantly
     socket.on('offline_payment_submitted', (payload) => {
       if (isDuplicateEvent('offline_payment_submitted', payload)) return

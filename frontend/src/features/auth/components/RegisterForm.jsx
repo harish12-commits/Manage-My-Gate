@@ -278,9 +278,20 @@ export const RegisterForm = () => {
 
         {/* Form Registration OR OTP Verification */}
         {isOtpMode ? (
-          <CForm key="otp-verification-form" onSubmit={handleSubmit(onVerifyOtp)} autoComplete="off">
+          <CForm
+            key="otp-verification-form"
+            onSubmit={handleSubmit(onVerifyOtp)}
+            autoComplete="off"
+          >
             {/* Fake fields to prevent browser autofill on OTP screen */}
-            <input type="text" name="fake_email_autofill" style={{ opacity: 0, position: 'absolute', zIndex: -1, width: 0, height: 0 }} tabIndex="-1" aria-hidden="true" autoComplete="off" />
+            <input
+              type="text"
+              name="fake_email_autofill"
+              style={{ opacity: 0, position: 'absolute', zIndex: -1, width: 0, height: 0 }}
+              tabIndex="-1"
+              aria-hidden="true"
+              autoComplete="off"
+            />
 
             <CAlert color="info" className="mb-3">
               We sent a verification code to <strong>{otpEmail}</strong>. Please enter it below to
@@ -665,7 +676,9 @@ export const RegisterForm = () => {
         <div className="text-center mt-2">
           <CButton color="link" onClick={toggleMode} style={styles.toggleLink} className="p-0">
             {isLoginMode
-              ? t('auth.login.noAccount', { defaultValue: "Don't have an account? Create an Account" })
+              ? t('auth.login.noAccount', {
+                  defaultValue: "Don't have an account? Create an Account",
+                })
               : t('auth.register.loginLink', { defaultValue: 'Already have an account? Sign in' })}
           </CButton>
         </div>
@@ -740,7 +753,8 @@ const styles = {
     fontWeight: '600',
     borderRadius: '8px',
     boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)',
-    transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+    transition:
+      'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
   },
   toggleLink: {
     color: '#2563eb',

@@ -36,7 +36,6 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
     errors,
     isSubmitting,
     selectedPermissions,
-    amenityTier,
     isTenantRole,
     integrationMappings,
     isIntegrationDrawerOpen,
@@ -157,7 +156,6 @@ export const RoleFormSheetModal: React.FC<RoleFormSheetModalProps> = ({
               <PermissionMatrixGrid
                 groupedPermissions={permissionsList}
                 selectedIds={selectedPermissions}
-                activeAmenityTier={amenityTier}
                 onSelectAllGroup={handleSelectAllGroup}
                 onTogglePermission={handleTogglePermission}
               />

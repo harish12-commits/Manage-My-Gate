@@ -38,7 +38,10 @@ export const VisitorLogsTable = ({ logs }) => {
 
     const exportData = filteredLogs.map((log) => {
       const name = log.visitorName || log.snapshot?.visitorName || '—'
-      const type = (log.type || (log.entryType === 'PRE_APPROVED' ? 'guest' : 'walk_in')).replace('_', ' ')
+      const type = (log.type || (log.entryType === 'PRE_APPROVED' ? 'guest' : 'walk_in')).replace(
+        '_',
+        ' ',
+      )
       const destination =
         log.villa ||
         log.passId?.villaId?.unitNumber ||
@@ -46,8 +49,7 @@ export const VisitorLogsTable = ({ logs }) => {
         'Villa Gate'
       const resident = log.resident || log.residentId?.name || '—'
       const checkIn =
-        log.checkIn ||
-        (log.checkInTime ? new Date(log.checkInTime).toLocaleString('en-US') : '—')
+        log.checkIn || (log.checkInTime ? new Date(log.checkInTime).toLocaleString('en-US') : '—')
       const checkOut =
         log.checkOut ||
         (log.checkOutTime ? new Date(log.checkOutTime).toLocaleString('en-US') : '—')

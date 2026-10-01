@@ -20,12 +20,12 @@ export const validateInvite = async (token) => {
 }
 
 export const acceptInvite = async (payload) => {
-  const body = typeof payload === 'string' ? { token: payload } : (payload || {})
+  const body = typeof payload === 'string' ? { token: payload } : payload || {}
   return await apiClient.post('/auth/accept-invite', body)
 }
 
 export const rejectInvite = async (payload) => {
-  const body = typeof payload === 'string' ? { token: payload } : (payload || {})
+  const body = typeof payload === 'string' ? { token: payload } : payload || {}
   return await apiClient.post('/auth/reject-invite', body)
 }
 

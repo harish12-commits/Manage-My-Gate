@@ -4,12 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { CPagination, CPaginationItem, CFormSelect } from '@coreui/react'
 import { PAGE_LIMIT_OPTIONS } from '../constants/issueReport.constants.js'
 
-export const IssueReportPagination = ({
-  pagination,
-  onPageChange,
-  onLimitChange,
-  loading,
-}) => {
+export const IssueReportPagination = ({ pagination, onPageChange, onLimitChange, loading }) => {
   const { t } = useTranslation()
 
   const { currentPage, totalPages, totalRecords, limit } = pagination
@@ -55,7 +50,9 @@ export const IssueReportPagination = ({
         </span>
 
         <div className="d-flex align-items-center">
-          <span className="text-muted small me-2">{t('issueReport.perPage', { defaultValue: 'Per page:' })}</span>
+          <span className="text-muted small me-2">
+            {t('issueReport.perPage', { defaultValue: 'Per page:' })}
+          </span>
           <CFormSelect
             size="sm"
             style={{ width: '80px' }}

@@ -4194,7 +4194,7 @@ export const en: Record<string, string> = {
   'raise_complaint': 'Raise Complaint',
   'read_notice': 'Read Notice',
   'remove_screenshot': 'Remove Screenshot',
-  'report_an_issue': 'Report an Issue',
+  'report_an_issue': 'Contact Support',
   'report_an_issue_desc': 'Tell us about a problem so we can help.',
   'report_an_issue_subtitle': 'Send an issue report to the community team',
   'report_issue_type': 'Issue Type',

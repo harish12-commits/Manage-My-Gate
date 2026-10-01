@@ -13,7 +13,17 @@ import {
 } from '@coreui/react'
 
 export const OfflineSettleModal = memo(
-  ({ visible, onClose, settleRef, setSettleRef, settleAmount, setSettleAmount, maxAmount, onSubmit, loading }) => {
+  ({
+    visible,
+    onClose,
+    settleRef,
+    setSettleRef,
+    settleAmount,
+    setSettleAmount,
+    maxAmount,
+    onSubmit,
+    loading,
+  }) => {
     const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
 
     useEffect(() => {

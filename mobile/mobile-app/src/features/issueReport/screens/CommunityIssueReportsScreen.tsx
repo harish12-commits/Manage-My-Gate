@@ -98,7 +98,7 @@ export function CommunityIssueReportsScreen() {
   return (
     <ScreenShell
       title="Issue Reports"
-      subtitle="Resident reports submitted via Report an Issue"
+      subtitle="Resident reports submitted via Contact Support"
       iconName="AlertCircle"
       showBackButton={true}
       onBackPress={() => router.back()}
@@ -148,7 +148,7 @@ export function CommunityIssueReportsScreen() {
                   title={reports.length === 0 ? 'No Issue Reports Yet' : 'No Matching Reports'}
                   description={
                     reports.length === 0
-                      ? 'Resident reports submitted through "Report an Issue" will appear here.'
+                      ? 'Resident reports submitted through "Contact Support" will appear here.'
                       : 'Try adjusting your search criteria or filter selections.'
                   }
                 />

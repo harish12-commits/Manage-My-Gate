@@ -54,11 +54,20 @@ const AdminLedgersView = () => {
       const userObj = b.userId || {}
       const amenityObj = b.amenityId || {}
       const residentName = userObj.name || userObj.username || b.userName || 'Community Resident'
-      const villaUnit = b.villaNumber || userObj.villaNumber || userObj.flatNumber || userObj.unit || 'N/A'
+      const villaUnit =
+        b.villaNumber || userObj.villaNumber || userObj.flatNumber || userObj.unit || 'N/A'
       const amenityName = amenityObj.name || b.amenityName || 'Amenity'
-      
-      const bookingAmt = Number(b.bookingAmount || b.pricingDetails?.totalAmount || b.totalPrice || 0)
-      const paidAmt = Number(b.paidAmount || (['confirmed', 'checked-in', 'completed'].includes(b.status) || ['paid', 'success', 'captured'].includes(b.paymentStatus) ? bookingAmt : 0))
+
+      const bookingAmt = Number(
+        b.bookingAmount || b.pricingDetails?.totalAmount || b.totalPrice || 0,
+      )
+      const paidAmt = Number(
+        b.paidAmount ||
+          (['confirmed', 'checked-in', 'completed'].includes(b.status) ||
+          ['paid', 'success', 'captured'].includes(b.paymentStatus)
+            ? bookingAmt
+            : 0),
+      )
       const refundedAmt = Number(b.refundAmount || b.pricingDetails?.refundAmount || 0)
       const netRev = Math.max(0, paidAmt - refundedAmt)
 
@@ -94,18 +103,42 @@ const AdminLedgersView = () => {
     const s = String(bStatus || '').toLowerCase()
     switch (s) {
       case 'confirmed':
-        return <span className="badge badge-success"><i className="fa-solid fa-check-circle me-1"></i> Confirmed</span>
+        return (
+          <span className="badge badge-success">
+            <i className="fa-solid fa-check-circle me-1"></i> Confirmed
+          </span>
+        )
       case 'pending':
-        return <span className="badge badge-warning"><i className="fa-solid fa-clock me-1"></i> Pending</span>
+        return (
+          <span className="badge badge-warning">
+            <i className="fa-solid fa-clock me-1"></i> Pending
+          </span>
+        )
       case 'cancelled':
-        return <span className="badge badge-danger"><i className="fa-solid fa-times-circle me-1"></i> Cancelled</span>
+        return (
+          <span className="badge badge-danger">
+            <i className="fa-solid fa-times-circle me-1"></i> Cancelled
+          </span>
+        )
       case 'checked-in':
       case 'checked_in':
-        return <span className="badge badge-info"><i className="fa-solid fa-sign-in-alt me-1"></i> Checked In</span>
+        return (
+          <span className="badge badge-info">
+            <i className="fa-solid fa-sign-in-alt me-1"></i> Checked In
+          </span>
+        )
       case 'completed':
-        return <span className="badge badge-secondary"><i className="fa-solid fa-flag-checkered me-1"></i> Completed</span>
+        return (
+          <span className="badge badge-secondary">
+            <i className="fa-solid fa-flag-checkered me-1"></i> Completed
+          </span>
+        )
       case 'rejected':
-        return <span className="badge badge-danger"><i className="fa-solid fa-ban me-1"></i> Rejected</span>
+        return (
+          <span className="badge badge-danger">
+            <i className="fa-solid fa-ban me-1"></i> Rejected
+          </span>
+        )
       default:
         return <span className="badge badge-secondary">{bStatus}</span>
     }
@@ -115,7 +148,10 @@ const AdminLedgersView = () => {
     const ps = String(pStatus || '').toLowerCase()
     const bs = String(bStatus || '').toLowerCase()
 
-    if (['success', 'completed', 'paid', 'captured'].includes(ps) || ['confirmed', 'checked-in', 'completed'].includes(bs)) {
+    if (
+      ['success', 'completed', 'paid', 'captured'].includes(ps) ||
+      ['confirmed', 'checked-in', 'completed'].includes(bs)
+    ) {
       return <span className="badge badge-success text-white">Paid</span>
     }
     if (['refunded', 'partial_refund'].includes(ps) || bs === 'cancelled') {
@@ -132,7 +168,6 @@ const AdminLedgersView = () => {
       <AmenitiesTopNav />
       <div className="view-container">
         <div className="view active" id="view-admin-bookings">
-          
           {/* Header Section */}
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
@@ -149,7 +184,10 @@ const AdminLedgersView = () => {
                 <i className={`fa-solid fa-chart-pie me-1`}></i>
                 {showAmenityBreakdown ? 'Hide Amenity Summary' : 'Show Amenity Summary'}
               </button>
-              <button className="btn btn-primary d-flex align-items-center gap-1" onClick={handleExportCSV}>
+              <button
+                className="btn btn-primary d-flex align-items-center gap-1"
+                onClick={handleExportCSV}
+              >
                 <i className="fa-solid fa-file-csv me-1"></i> Export CSV
               </button>
             </div>
@@ -158,23 +196,45 @@ const AdminLedgersView = () => {
           {/* KPI Summary Header Cards */}
           <div className="row g-3 mb-4">
             <div className="col-12 col-sm-6 col-lg-3">
-              <div className="card border-0 shadow-sm p-3 h-100" style={{ background: 'linear-gradient(135deg, #0084FF 0%, #0066CC 100%)', color: '#fff' }}>
+              <div
+                className="card border-0 shadow-sm p-3 h-100"
+                style={{
+                  background: 'linear-gradient(135deg, #0084FF 0%, #0066CC 100%)',
+                  color: '#fff',
+                }}
+              >
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="small text-white-50 text-uppercase fw-bold">Total Net Revenue</span>
+                  <span className="small text-white-50 text-uppercase fw-bold">
+                    Total Net Revenue
+                  </span>
                   <i className="fa-solid fa-indian-rupee-sign fa-lg opacity-75"></i>
                 </div>
-                <h3 className="fs-2 text-white mb-0">₹{(summary.totalRevenue || 0).toLocaleString('en-IN')}</h3>
-                <span className="small text-white-50 mt-1 d-block">Collected from paid bookings</span>
+                <h3 className="fs-2 text-white mb-0">
+                  ₹{(summary.totalRevenue || 0).toLocaleString('en-IN')}
+                </h3>
+                <span className="small text-white-50 mt-1 d-block">
+                  Collected from paid bookings
+                </span>
               </div>
             </div>
 
             <div className="col-12 col-sm-6 col-lg-3">
-              <div className="card border-0 shadow-sm p-3 h-100" style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', color: '#fff' }}>
+              <div
+                className="card border-0 shadow-sm p-3 h-100"
+                style={{
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  color: '#fff',
+                }}
+              >
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="small text-white-50 text-uppercase fw-bold">Today's Revenue</span>
+                  <span className="small text-white-50 text-uppercase fw-bold">
+                    Today's Revenue
+                  </span>
                   <i className="fa-solid fa-calendar-day fa-lg opacity-75"></i>
                 </div>
-                <h3 className="fs-2 text-white mb-0">₹{(summary.todayRevenue || 0).toLocaleString('en-IN')}</h3>
+                <h3 className="fs-2 text-white mb-0">
+                  ₹{(summary.todayRevenue || 0).toLocaleString('en-IN')}
+                </h3>
                 <span className="small text-white-50 mt-1 d-block">Collected today</span>
               </div>
             </div>
@@ -186,7 +246,9 @@ const AdminLedgersView = () => {
                   <i className="fa-solid fa-receipt text-primary"></i>
                 </div>
                 <h3 className="fs-2 mb-0">{summary.totalBookings || 0}</h3>
-                <span className="small text-muted mt-1 d-block">{summary.paidBookings || 0} Paid</span>
+                <span className="small text-muted mt-1 d-block">
+                  {summary.paidBookings || 0} Paid
+                </span>
               </div>
             </div>
 
@@ -196,8 +258,12 @@ const AdminLedgersView = () => {
                   <span className="small text-muted text-uppercase fw-bold">Refunded Amount</span>
                   <i className="fa-solid fa-hand-holding-dollar text-info"></i>
                 </div>
-                <h3 className="fs-2 mb-0 text-info">₹{(summary.refundedAmount || 0).toLocaleString('en-IN')}</h3>
-                <span className="small text-muted mt-1 d-block">{summary.cancelledBookings || 0} Cancelled</span>
+                <h3 className="fs-2 mb-0 text-info">
+                  ₹{(summary.refundedAmount || 0).toLocaleString('en-IN')}
+                </h3>
+                <span className="small text-muted mt-1 d-block">
+                  {summary.cancelledBookings || 0} Cancelled
+                </span>
               </div>
             </div>
 
@@ -217,7 +283,8 @@ const AdminLedgersView = () => {
           {showAmenityBreakdown && amenitySummary && amenitySummary.length > 0 && (
             <div className="card border-0 shadow-sm mb-4 p-4">
               <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
-                <i className="fa-solid fa-chart-simple text-primary"></i> Amenity-Wise Revenue & Booking Distribution
+                <i className="fa-solid fa-chart-simple text-primary"></i> Amenity-Wise Revenue &
+                Booking Distribution
               </h5>
               <div className="row g-3">
                 {amenitySummary.map((item, idx) => (
@@ -230,7 +297,9 @@ const AdminLedgersView = () => {
                       </div>
                       <div className="d-flex justify-content-between align-items-center text-muted small mb-1">
                         <span>Gross Revenue:</span>
-                        <span className="fw-semibold">₹{(item.grossRevenue || 0).toLocaleString('en-IN')}</span>
+                        <span className="fw-semibold">
+                          ₹{(item.grossRevenue || 0).toLocaleString('en-IN')}
+                        </span>
                       </div>
                       {item.refundedAmount > 0 && (
                         <div className="d-flex justify-content-between align-items-center text-danger small mb-1">
@@ -240,7 +309,9 @@ const AdminLedgersView = () => {
                       )}
                       <div className="d-flex justify-content-between align-items-center border-top pt-1 mt-1">
                         <span className="fw-bold small">Net Revenue:</span>
-                        <strong className="text-success">₹{(item.netRevenue || 0).toLocaleString('en-IN')}</strong>
+                        <strong className="text-success">
+                          ₹{(item.netRevenue || 0).toLocaleString('en-IN')}
+                        </strong>
                       </div>
                     </div>
                   </div>
@@ -272,7 +343,11 @@ const AdminLedgersView = () => {
               {/* Date Preset Selector */}
               <div className="col-6 col-md-2">
                 <label className="form-label small fw-bold text-muted mb-1">Date Period</label>
-                <select className="form-select" value={datePreset} onChange={handleDatePresetChange}>
+                <select
+                  className="form-select"
+                  value={datePreset}
+                  onChange={handleDatePresetChange}
+                >
                   <option value="all">All Time</option>
                   <option value="today">Today</option>
                   <option value="yesterday">Yesterday</option>
@@ -322,7 +397,11 @@ const AdminLedgersView = () => {
               {/* Payment Status Filter */}
               <div className="col-6 col-md-1">
                 <label className="form-label small fw-bold text-muted mb-1">Payment</label>
-                <select className="form-select" value={paymentStatus} onChange={handlePaymentStatusChange}>
+                <select
+                  className="form-select"
+                  value={paymentStatus}
+                  onChange={handlePaymentStatusChange}
+                >
                   <option value="All">All</option>
                   <option value="paid">Paid</option>
                   <option value="pending">Pending</option>
@@ -386,20 +465,38 @@ const AdminLedgersView = () => {
                       <td colSpan="8" className="text-center py-5">
                         <i className="fa-regular fa-folder-open fa-3x text-muted mb-3 opacity-50 d-block"></i>
                         <h5 className="fw-bold">No Ledger Entries Found</h5>
-                        <p className="text-muted small mb-0">No booking records match your selected criteria.</p>
+                        <p className="text-muted small mb-0">
+                          No booking records match your selected criteria.
+                        </p>
                       </td>
                     </tr>
                   ) : (
                     bookings.map((b) => {
                       const userObj = b.userId || {}
                       const amenityObj = b.amenityId || {}
-                      const residentName = userObj.name || userObj.username || b.userName || 'Resident'
-                      const villaUnit = b.villaNumber || userObj.villaNumber || userObj.flatNumber || userObj.unit || '-'
+                      const residentName =
+                        userObj.name || userObj.username || b.userName || 'Resident'
+                      const villaUnit =
+                        b.villaNumber ||
+                        userObj.villaNumber ||
+                        userObj.flatNumber ||
+                        userObj.unit ||
+                        '-'
                       const amenityName = amenityObj.name || b.amenityName || 'Amenity'
 
-                      const bookingAmt = Number(b.bookingAmount || b.pricingDetails?.totalAmount || b.totalPrice || 0)
-                      const paidAmt = Number(b.paidAmount || (['confirmed', 'checked-in', 'completed'].includes(b.status) || ['paid', 'success', 'captured'].includes(b.paymentStatus) ? bookingAmt : 0))
-                      const refundedAmt = Number(b.refundAmount || b.pricingDetails?.refundAmount || 0)
+                      const bookingAmt = Number(
+                        b.bookingAmount || b.pricingDetails?.totalAmount || b.totalPrice || 0,
+                      )
+                      const paidAmt = Number(
+                        b.paidAmount ||
+                          (['confirmed', 'checked-in', 'completed'].includes(b.status) ||
+                          ['paid', 'success', 'captured'].includes(b.paymentStatus)
+                            ? bookingAmt
+                            : 0),
+                      )
+                      const refundedAmt = Number(
+                        b.refundAmount || b.pricingDetails?.refundAmount || 0,
+                      )
                       const netRev = Math.max(0, paidAmt - refundedAmt)
 
                       return (
@@ -418,12 +515,19 @@ const AdminLedgersView = () => {
                             </div>
                           </td>
                           <td className="fw-semibold">
-                            <span className="badge bg-light text-dark border">{b.numberOfPersons || 1} Persons</span>
+                            <span className="badge bg-light text-dark border">
+                              {b.numberOfPersons || 1} Persons
+                            </span>
                           </td>
                           <td>
-                            <div className="fw-bold text-dark">₹{bookingAmt.toLocaleString('en-IN')}</div>
+                            <div className="fw-bold text-dark">
+                              ₹{bookingAmt.toLocaleString('en-IN')}
+                            </div>
                             <div className="small text-muted">
-                              Paid: <span className="text-success fw-semibold">₹{paidAmt.toLocaleString('en-IN')}</span>
+                              Paid:{' '}
+                              <span className="text-success fw-semibold">
+                                ₹{paidAmt.toLocaleString('en-IN')}
+                              </span>
                               {refundedAmt > 0 && (
                                 <span className="text-danger ms-1">(Ref: ₹{refundedAmt})</span>
                               )}
@@ -489,7 +593,9 @@ const AdminLedgersView = () => {
       >
         <CModalHeader>
           <CModalTitle className="fw-bold">
-            Ledger Entry Details #{selectedLedgerDetail?.bookingId || selectedLedgerDetail?._id?.substring(0, 8).toUpperCase()}
+            Ledger Entry Details #
+            {selectedLedgerDetail?.bookingId ||
+              selectedLedgerDetail?._id?.substring(0, 8).toUpperCase()}
           </CModalTitle>
         </CModalHeader>
         <CModalBody className="p-4">
@@ -499,45 +605,108 @@ const AdminLedgersView = () => {
               <div className="row g-3 mb-4">
                 <div className="col-12 col-md-6">
                   <div className="p-3 bg-light rounded-3">
-                    <h6 className="fw-bold text-muted small text-uppercase mb-2">Resident Information</h6>
-                    <div className="fw-bold fs-5">{selectedLedgerDetail.userId?.name || selectedLedgerDetail.userName || 'Resident'}</div>
-                    <div className="text-muted small">Unit / Villa: {selectedLedgerDetail.villaNumber || selectedLedgerDetail.userId?.villaNumber || selectedLedgerDetail.userId?.flatNumber || 'N/A'}</div>
-                    <div className="text-muted small">Email: {selectedLedgerDetail.userId?.email || 'N/A'}</div>
-                    <div className="text-muted small">Phone: {selectedLedgerDetail.userId?.phoneNumber || 'N/A'}</div>
+                    <h6 className="fw-bold text-muted small text-uppercase mb-2">
+                      Resident Information
+                    </h6>
+                    <div className="fw-bold fs-5">
+                      {selectedLedgerDetail.userId?.name ||
+                        selectedLedgerDetail.userName ||
+                        'Resident'}
+                    </div>
+                    <div className="text-muted small">
+                      Unit / Villa:{' '}
+                      {selectedLedgerDetail.villaNumber ||
+                        selectedLedgerDetail.userId?.villaNumber ||
+                        selectedLedgerDetail.userId?.flatNumber ||
+                        'N/A'}
+                    </div>
+                    <div className="text-muted small">
+                      Email: {selectedLedgerDetail.userId?.email || 'N/A'}
+                    </div>
+                    <div className="text-muted small">
+                      Phone: {selectedLedgerDetail.userId?.phoneNumber || 'N/A'}
+                    </div>
                   </div>
                 </div>
 
                 <div className="col-12 col-md-6">
                   <div className="p-3 bg-light rounded-3">
-                    <h6 className="fw-bold text-muted small text-uppercase mb-2">Facility & Time Window</h6>
-                    <div className="fw-bold fs-5 text-primary">{selectedLedgerDetail.amenityId?.name || selectedLedgerDetail.amenityName || 'Amenity'}</div>
+                    <h6 className="fw-bold text-muted small text-uppercase mb-2">
+                      Facility & Time Window
+                    </h6>
+                    <div className="fw-bold fs-5 text-primary">
+                      {selectedLedgerDetail.amenityId?.name ||
+                        selectedLedgerDetail.amenityName ||
+                        'Amenity'}
+                    </div>
                     <div className="text-muted small">Date: {selectedLedgerDetail.bookingDate}</div>
-                    <div className="text-muted small">Time Slot: {selectedLedgerDetail.startTime} - {selectedLedgerDetail.endTime}</div>
-                    <div className="text-muted small">Headcount: {selectedLedgerDetail.numberOfPersons || 1} Persons</div>
+                    <div className="text-muted small">
+                      Time Slot: {selectedLedgerDetail.startTime} - {selectedLedgerDetail.endTime}
+                    </div>
+                    <div className="text-muted small">
+                      Headcount: {selectedLedgerDetail.numberOfPersons || 1} Persons
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Financial Audit Details */}
               <div className="card border-0 bg-body-secondary p-3 mb-4">
-                <h6 className="fw-bold text-uppercase small text-muted mb-3">Financial Audit Breakdown</h6>
+                <h6 className="fw-bold text-uppercase small text-muted mb-3">
+                  Financial Audit Breakdown
+                </h6>
                 <div className="row g-2">
                   <div className="col-6 col-sm-3">
                     <div className="text-muted small">Booking Amount:</div>
-                    <div className="fw-bold fs-6">₹{Number(selectedLedgerDetail.bookingAmount || selectedLedgerDetail.pricingDetails?.totalAmount || 0).toLocaleString('en-IN')}</div>
+                    <div className="fw-bold fs-6">
+                      ₹
+                      {Number(
+                        selectedLedgerDetail.bookingAmount ||
+                          selectedLedgerDetail.pricingDetails?.totalAmount ||
+                          0,
+                      ).toLocaleString('en-IN')}
+                    </div>
                   </div>
                   <div className="col-6 col-sm-3">
                     <div className="text-muted small">Paid Amount:</div>
-                    <div className="fw-bold fs-6 text-success">₹{Number(selectedLedgerDetail.paidAmount || (['confirmed', 'checked-in', 'completed'].includes(selectedLedgerDetail.status) ? (selectedLedgerDetail.pricingDetails?.totalAmount || 0) : 0)).toLocaleString('en-IN')}</div>
+                    <div className="fw-bold fs-6 text-success">
+                      ₹
+                      {Number(
+                        selectedLedgerDetail.paidAmount ||
+                          (['confirmed', 'checked-in', 'completed'].includes(
+                            selectedLedgerDetail.status,
+                          )
+                            ? selectedLedgerDetail.pricingDetails?.totalAmount || 0
+                            : 0),
+                      ).toLocaleString('en-IN')}
+                    </div>
                   </div>
                   <div className="col-6 col-sm-3">
                     <div className="text-muted small">Refunded Amount:</div>
-                    <div className="fw-bold fs-6 text-danger">₹{Number(selectedLedgerDetail.refundAmount || selectedLedgerDetail.pricingDetails?.refundAmount || 0).toLocaleString('en-IN')}</div>
+                    <div className="fw-bold fs-6 text-danger">
+                      ₹
+                      {Number(
+                        selectedLedgerDetail.refundAmount ||
+                          selectedLedgerDetail.pricingDetails?.refundAmount ||
+                          0,
+                      ).toLocaleString('en-IN')}
+                    </div>
                   </div>
                   <div className="col-6 col-sm-3">
                     <div className="text-muted small">Net Revenue:</div>
                     <div className="fw-bold fs-6 text-primary">
-                      ₹{Math.max(0, Number(selectedLedgerDetail.paidAmount || (['confirmed', 'checked-in', 'completed'].includes(selectedLedgerDetail.status) ? (selectedLedgerDetail.pricingDetails?.totalAmount || 0) : 0)) - Number(selectedLedgerDetail.refundAmount || 0)).toLocaleString('en-IN')}
+                      ₹
+                      {Math.max(
+                        0,
+                        Number(
+                          selectedLedgerDetail.paidAmount ||
+                            (['confirmed', 'checked-in', 'completed'].includes(
+                              selectedLedgerDetail.status,
+                            )
+                              ? selectedLedgerDetail.pricingDetails?.totalAmount || 0
+                              : 0),
+                        ) - Number(selectedLedgerDetail.refundAmount || 0),
+                      ).toLocaleString('en-IN')}
                     </div>
                   </div>
                 </div>
@@ -547,7 +716,12 @@ const AdminLedgersView = () => {
               <div className="row g-3">
                 <div className="col-6">
                   <div className="small text-muted">Payment Status:</div>
-                  <div>{getPaymentBadge(selectedLedgerDetail.paymentStatus, selectedLedgerDetail.status)}</div>
+                  <div>
+                    {getPaymentBadge(
+                      selectedLedgerDetail.paymentStatus,
+                      selectedLedgerDetail.status,
+                    )}
+                  </div>
                 </div>
                 <div className="col-6">
                   <div className="small text-muted">Booking Status:</div>
@@ -555,20 +729,31 @@ const AdminLedgersView = () => {
                 </div>
                 <div className="col-6">
                   <div className="small text-muted">Payment Method:</div>
-                  <div className="fw-semibold">{selectedLedgerDetail.paymentMethod || 'Online'}</div>
+                  <div className="fw-semibold">
+                    {selectedLedgerDetail.paymentMethod || 'Online'}
+                  </div>
                 </div>
                 <div className="col-6">
                   <div className="small text-muted">Transaction ID:</div>
-                  <div className="fw-semibold text-truncate">{selectedLedgerDetail.paymentId || selectedLedgerDetail.razorpayTransactionId || 'N/A'}</div>
+                  <div className="fw-semibold text-truncate">
+                    {selectedLedgerDetail.paymentId ||
+                      selectedLedgerDetail.razorpayTransactionId ||
+                      'N/A'}
+                  </div>
                 </div>
                 <div className="col-12">
                   <div className="small text-muted">Created Timestamp:</div>
-                  <div className="fw-semibold">{selectedLedgerDetail.createdAt ? new Date(selectedLedgerDetail.createdAt).toLocaleString() : 'N/A'}</div>
+                  <div className="fw-semibold">
+                    {selectedLedgerDetail.createdAt
+                      ? new Date(selectedLedgerDetail.createdAt).toLocaleString()
+                      : 'N/A'}
+                  </div>
                 </div>
                 {selectedLedgerDetail.cancellationReason && (
                   <div className="col-12">
                     <div className="p-2 bg-danger-subtle rounded border border-danger-subtle text-danger small">
-                      <strong>Cancellation Reason:</strong> {selectedLedgerDetail.cancellationReason}
+                      <strong>Cancellation Reason:</strong>{' '}
+                      {selectedLedgerDetail.cancellationReason}
                     </div>
                   </div>
                 )}

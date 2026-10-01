@@ -88,7 +88,9 @@ export default {
  * @returns {Promise<Blob>}
  */
 export const fetchReportAttachmentBlob = async (attachmentUrl) => {
-  const filename = String(attachmentUrl || '').split('/').pop()
+  const filename = String(attachmentUrl || '')
+    .split('/')
+    .pop()
   if (!filename) throw new Error('Invalid attachment')
   return await apiClient.get(`/support/reports/attachments/${encodeURIComponent(filename)}`, {
     responseType: 'blob',

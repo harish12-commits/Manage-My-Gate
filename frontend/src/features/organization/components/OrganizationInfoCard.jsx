@@ -101,7 +101,9 @@ export const OrganizationInfoCard = ({ organization }) => {
             <div className="features-list">
               {organization.allowedFeatures && organization.allowedFeatures.length > 0 ? (
                 organization.allowedFeatures.map((feat) => (
-                  <span key={feat} className="feature-tag">{feat}</span>
+                  <span key={feat} className="feature-tag">
+                    {feat}
+                  </span>
                 ))
               ) : (
                 <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>

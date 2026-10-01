@@ -129,16 +129,16 @@ const UserList = () => {
   }
 
   const handleDeleteClick = async (user) => {
-    const confirmMessage = `Delete user "${user.name}" from the organization? This action cannot be undone.`;
-      
+    const confirmMessage = `Delete user "${user.name}" from the organization? This action cannot be undone.`
+
     if (window.confirm(confirmMessage)) {
       try {
         setIsDeleting(user.id)
         await deleteUser({ userId: user.id })
-        toast.success(`User ${user.name} deleted successfully`);
+        toast.success(`User ${user.name} deleted successfully`)
       } catch (err) {
-        console.error('Delete failed:', err);
-        toast.error(err?.message || 'Failed to delete user');
+        console.error('Delete failed:', err)
+        toast.error(err?.message || 'Failed to delete user')
       } finally {
         setIsDeleting(null)
       }
@@ -176,14 +176,21 @@ const UserList = () => {
           return (
             <div className="d-flex flex-column gap-3 py-1">
               {val.map((unit, idx) => (
-                <div key={idx} className="d-flex flex-column justify-content-center" style={{ height: '50px' }}>
+                <div
+                  key={idx}
+                  className="d-flex flex-column justify-content-center"
+                  style={{ height: '50px' }}
+                >
                   <div>
                     <span className="fw-bold small text-primary">{unit.villaNumber}</span>
-                    {unit.villaBlock && <span className="text-muted small ms-1">({unit.villaBlock})</span>}
+                    {unit.villaBlock && (
+                      <span className="text-muted small ms-1">({unit.villaBlock})</span>
+                    )}
                   </div>
                   {unit.residentType && unit.residentType !== 'None' && (
                     <div className="text-muted" style={{ fontSize: '0.72rem' }}>
-                      {t('userManagement.table.residency', 'Residency')}: <span className="fw-semibold">{unit.residentType}</span>
+                      {t('userManagement.table.residency', 'Residency')}:{' '}
+                      <span className="fw-semibold">{unit.residentType}</span>
                     </div>
                   )}
                 </div>
@@ -204,7 +211,8 @@ const UserList = () => {
                 </CBadge>
               )
             }
-            const rolesList = typeof roleStr === 'string' ? roleStr.split(',').map((r) => r.trim()) : [roleStr]
+            const rolesList =
+              typeof roleStr === 'string' ? roleStr.split(',').map((r) => r.trim()) : [roleStr]
             return (
               <div className="d-flex flex-wrap gap-1">
                 {rolesList.map((r, i) => (
@@ -257,7 +265,8 @@ const UserList = () => {
               statusLabel = t('invitations.status.pending', 'Pending')
             } else if (statusStr === 'Inactive' || statusStr === 'Rejected') {
               badgeColor = 'danger'
-              statusLabel = statusStr === 'Rejected' ? t('invitations.status.rejected', 'Rejected') : statusStr
+              statusLabel =
+                statusStr === 'Rejected' ? t('invitations.status.rejected', 'Rejected') : statusStr
             }
             return (
               <CBadge color={badgeColor} className="small px-2 py-1">
@@ -425,7 +434,10 @@ const UserList = () => {
       {/* Page Header */}
       <PageHeader
         title={t('userManagement.title', 'User Management')}
-        subtitle={t('userManagement.subtitle', 'Manage organization users and allocate access roles.')}
+        subtitle={t(
+          'userManagement.subtitle',
+          'Manage organization users and allocate access roles.',
+        )}
         actionButtons={
           <div className="d-flex flex-wrap gap-2">
             <CButton

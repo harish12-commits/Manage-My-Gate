@@ -385,8 +385,8 @@ const DeleteAccountPage = () => {
       <footer className="bg-body border-top py-3 mt-auto">
         <CContainer className="d-flex flex-wrap justify-content-between align-items-center small text-body-secondary gap-2">
           <div>
-            <strong>Nahom</strong> &copy; {new Date().getFullYear()} Atominos Consulting
-            Private Limited.
+            <strong>Nahom</strong> &copy; {new Date().getFullYear()} Atominos Consulting Private
+            Limited.
           </div>
           <div className="d-flex align-items-center gap-3">
             <Link to="/privacy-policy" className="text-decoration-none text-body-secondary">

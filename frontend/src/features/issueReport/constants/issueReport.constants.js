@@ -5,7 +5,7 @@
 
 export const REPORT_TYPES = {
   BUG: {
-    label: 'Bug / Problem',
+    label: 'Get Help',
     color: 'danger',
   },
   FEATURE_REQUEST: {
@@ -20,7 +20,7 @@ export const REPORT_TYPES = {
 
 export const REPORT_TYPE_OPTIONS = [
   { value: '', label: 'All Report Types' },
-  { value: 'BUG', label: 'Bug / Problem' },
+  { value: 'BUG', label: 'Get Help' },
   { value: 'FEATURE_REQUEST', label: 'Feature Request' },
   { value: 'OTHER', label: 'Other' },
 ]

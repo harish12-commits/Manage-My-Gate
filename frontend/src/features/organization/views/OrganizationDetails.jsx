@@ -86,15 +86,21 @@ export const OrganizationDetails = () => {
         {/* Back Navigation */}
         <button className="back-nav" onClick={handleBack}>
           <CIcon icon={cilArrowLeft} size="sm" />
-          <span>{t('superAdmin.orgDetails.backBtn', { defaultValue: 'Back to Organizations' })}</span>
+          <span>
+            {t('superAdmin.orgDetails.backBtn', { defaultValue: 'Back to Organizations' })}
+          </span>
         </button>
 
         {/* Page Header */}
         <div className="page-header">
           <div>
-            <h2 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h2
+              className="page-title"
+              style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
+            >
               <span>
-                {organization?.name || t('superAdmin.orgDetails.title', { defaultValue: 'Organization Details' })}
+                {organization?.name ||
+                  t('superAdmin.orgDetails.title', { defaultValue: 'Organization Details' })}
               </span>
               {organization?.status && (
                 <span className={`status-pill ${getStatusClass(organization.status)}`}>
@@ -105,7 +111,16 @@ export const OrganizationDetails = () => {
             {organization && (
               <p className="page-subtitle">
                 {t('superAdmin.orgDetails.orgIdLabel', { defaultValue: 'ID:' })}{' '}
-                <code style={{ fontSize: '13px', color: '#321fdb', fontWeight: 700, background: '#ebedff', padding: '2px 8px', borderRadius: '4px' }}>
+                <code
+                  style={{
+                    fontSize: '13px',
+                    color: '#321fdb',
+                    fontWeight: 700,
+                    background: '#ebedff',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                  }}
+                >
                   {organization._id}
                 </code>
               </p>
@@ -115,9 +130,15 @@ export const OrganizationDetails = () => {
 
         {/* Error Banner */}
         {detailsError && (
-          <div className="alert alert-danger mb-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div
+            className="alert alert-danger mb-4"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+          >
             <span>{detailsError}</span>
-            <button className="btn-pill btn-pill-outline" onClick={() => fetchDetails(organizationId)}>
+            <button
+              className="btn-pill btn-pill-outline"
+              onClick={() => fetchDetails(organizationId)}
+            >
               {t('superAdmin.orgDetails.retryBtn', { defaultValue: 'Retry' })}
             </button>
           </div>
@@ -127,7 +148,11 @@ export const OrganizationDetails = () => {
         {detailsLoading && !organization ? (
           <div className="loading-center">
             <AppLoader variant="block" />
-            <span>{t('superAdmin.orgDetails.loadingDetails', { defaultValue: 'Loading organization details...' })}</span>
+            <span>
+              {t('superAdmin.orgDetails.loadingDetails', {
+                defaultValue: 'Loading organization details...',
+              })}
+            </span>
           </div>
         ) : (
           <>
@@ -142,19 +167,20 @@ export const OrganizationDetails = () => {
               <div className="section-card-header">
                 <div>
                   <h4 className="section-title">
-                    {t('superAdmin.orgDetails.userDirectoryTitle', { defaultValue: 'User Directory' })}
+                    {t('superAdmin.orgDetails.userDirectoryTitle', {
+                      defaultValue: 'User Directory',
+                    })}
                   </h4>
                   <p className="section-subtitle">
                     {t('superAdmin.orgDetails.userDirectorySub', {
-                      defaultValue: 'Browse, search, filter, and inspect member details belonging to this organization.',
+                      defaultValue:
+                        'Browse, search, filter, and inspect member details belonging to this organization.',
                     })}
                   </p>
                 </div>
               </div>
               <div className="section-card-body">
-                {usersError && (
-                  <div className="alert alert-danger mb-3">{usersError}</div>
-                )}
+                {usersError && <div className="alert alert-danger mb-3">{usersError}</div>}
 
                 {/* Filters & Search Bar */}
                 <UserFiltersBar

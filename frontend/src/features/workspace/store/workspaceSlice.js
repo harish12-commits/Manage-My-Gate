@@ -273,7 +273,9 @@ export const workspaceSlice = createSlice({
         }
         if (payloadData && payloadData.availableWorkspaces) {
           state.availableWorkspaces = payloadData.availableWorkspaces
-          const matched = payloadData.availableWorkspaces.find((w) => w.orgId === state.activeOrganizationId)
+          const matched = payloadData.availableWorkspaces.find(
+            (w) => w.orgId === state.activeOrganizationId,
+          )
           state.organizationName = matched ? matched.name : null
         }
       })
@@ -318,10 +320,12 @@ export const workspaceSlice = createSlice({
         state.loading = false
         const updatedWorkspace = action.payload?.data
         state.activeWorkspaceDetails = updatedWorkspace
-        
+
         // Also update the workspace name in availableWorkspaces
         if (updatedWorkspace && state.availableWorkspaces) {
-          const index = state.availableWorkspaces.findIndex(w => w.orgId === updatedWorkspace.organizationId)
+          const index = state.availableWorkspaces.findIndex(
+            (w) => w.orgId === updatedWorkspace.organizationId,
+          )
           if (index !== -1) {
             state.availableWorkspaces[index].name = updatedWorkspace.workspaceName
             localStorage.setItem('availableWorkspaces', JSON.stringify(state.availableWorkspaces))

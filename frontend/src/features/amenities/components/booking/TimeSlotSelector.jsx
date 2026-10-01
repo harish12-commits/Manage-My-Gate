@@ -42,10 +42,10 @@ const TimeSlotSelector = memo(
     // Filter out booked slots and past/closed slots
     const displaySlots = availableSlots.filter((slot) => {
       if (slot.status === 'Booked' || slot.status === 'Closed') {
-        return false;
+        return false
       }
-      return true;
-    });
+      return true
+    })
 
     return (
       <CCard className="border-0 shadow-sm mb-4">
@@ -63,7 +63,9 @@ const TimeSlotSelector = memo(
                 <div className="w-100 text-center p-4 text-muted border rounded bg-body-secondary">
                   <i className="fa-regular fa-calendar-xmark fs-2 mb-3 text-secondary"></i>
                   <h6 className="fw-bold">No available slots for this date.</h6>
-                  <p className="mb-0 small">All slots may already be booked or have passed. Please select another date.</p>
+                  <p className="mb-0 small">
+                    All slots may already be booked or have passed. Please select another date.
+                  </p>
                 </div>
               ) : (
                 <div className="d-flex flex-wrap gap-3">
@@ -140,7 +142,13 @@ const TimeSlotSelector = memo(
                       <div
                         key={idx}
                         className={`position-relative p-3 rounded-4 bg-body ${borderColor}`}
-                        style={{ cursor, minWidth: '150px', transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s', opacity }}
+                        style={{
+                          cursor,
+                          minWidth: '150px',
+                          transition:
+                            'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                          opacity,
+                        }}
                         onClick={() =>
                           !isDisabled &&
                           updateDraft({
@@ -164,9 +172,13 @@ const TimeSlotSelector = memo(
                           ></div>
                         )}
 
-                        <div className="fw-bolder fs-3 text-body mb-1">{formatTo12Hour(slot.startTime)}</div>
+                        <div className="fw-bolder fs-3 text-body mb-1">
+                          {formatTo12Hour(slot.startTime)}
+                        </div>
                         <div className="d-flex align-items-center mb-3">
-                          <span className="text-secondary fw-semibold me-2">{formatTo12Hour(slot.endTime)}</span>
+                          <span className="text-secondary fw-semibold me-2">
+                            {formatTo12Hour(slot.endTime)}
+                          </span>
                           <span className="text-black-50 small">{slot.duration || '60'}m</span>
                         </div>
 

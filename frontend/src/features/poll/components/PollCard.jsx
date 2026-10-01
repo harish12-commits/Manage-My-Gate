@@ -231,7 +231,13 @@ const PollCard = ({ poll, onVote, onDelete, onPublish, onClosePoll, onReopenPoll
                 aria-label="Publish poll"
                 style={{ fontSize: '11.5px', padding: '2px 8px' }}
               >
-                {actionLoading && confirmAction === 'publish' ? <CSpinner size="sm" /> : <><CIcon icon={cilShareAlt} size="sm" className="me-1 align-middle" /> Publish</>}
+                {actionLoading && confirmAction === 'publish' ? (
+                  <CSpinner size="sm" />
+                ) : (
+                  <>
+                    <CIcon icon={cilShareAlt} size="sm" className="me-1 align-middle" /> Publish
+                  </>
+                )}
               </CButton>
             )}
 
@@ -246,7 +252,13 @@ const PollCard = ({ poll, onVote, onDelete, onPublish, onClosePoll, onReopenPoll
                 aria-label="Close poll"
                 style={{ fontSize: '11.5px', padding: '2px 8px' }}
               >
-                {actionLoading && confirmAction === 'close' ? <CSpinner size="sm" /> : <><CIcon icon={cilCheckCircle} size="sm" className="me-1 align-middle" /> Close</>}
+                {actionLoading && confirmAction === 'close' ? (
+                  <CSpinner size="sm" />
+                ) : (
+                  <>
+                    <CIcon icon={cilCheckCircle} size="sm" className="me-1 align-middle" /> Close
+                  </>
+                )}
               </CButton>
             )}
 
@@ -261,7 +273,13 @@ const PollCard = ({ poll, onVote, onDelete, onPublish, onClosePoll, onReopenPoll
                 aria-label="Reopen poll"
                 style={{ fontSize: '11.5px', padding: '2px 8px' }}
               >
-                {actionLoading && confirmAction === 'reopen' ? <CSpinner size="sm" /> : <><CIcon icon={cilCheckCircle} size="sm" className="me-1 align-middle" /> Reopen</>}
+                {actionLoading && confirmAction === 'reopen' ? (
+                  <CSpinner size="sm" />
+                ) : (
+                  <>
+                    <CIcon icon={cilCheckCircle} size="sm" className="me-1 align-middle" /> Reopen
+                  </>
+                )}
               </CButton>
             )}
 
@@ -305,8 +323,8 @@ const PollCard = ({ poll, onVote, onDelete, onPublish, onClosePoll, onReopenPoll
       </CCardBody>
 
       <PollVotersModal visible={showVoters} onClose={() => setShowVoters(false)} poll={poll} />
-      <PollConfirmDialog 
-        visible={!!confirmAction} 
+      <PollConfirmDialog
+        visible={!!confirmAction}
         actionType={confirmAction || ''}
         loading={actionLoading}
         onClose={() => setConfirmAction(null)}

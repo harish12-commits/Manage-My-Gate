@@ -16,7 +16,7 @@ export const useSetupWorkspace = () => {
   const location = useLocation()
 
   const { loading, error } = useAuthRouting()
-  
+
   const isSsoRegister = location.search.includes('intent=sso-register')
   const ssoToken = location.state?.ssoToken
   const ssoProvider = location.state?.provider
@@ -38,7 +38,7 @@ export const useSetupWorkspace = () => {
     defaultValues: {
       name: '',
       timezone: 'Asia/Kolkata',
-      contactEmail: isSsoRegister ? ssoEmail : (authUser?.email || ''),
+      contactEmail: isSsoRegister ? ssoEmail : authUser?.email || '',
       contactPhone: authUser?.phone || '',
     },
     mode: 'onTouched',
@@ -92,7 +92,7 @@ export const useSetupWorkspace = () => {
           ...payload,
           ssoToken,
           provider: ssoProvider,
-        })
+        }),
       ).then((action) => {
         if (registerSsoWithOrg.fulfilled.match(action)) {
           navigate('/workspace-setup')

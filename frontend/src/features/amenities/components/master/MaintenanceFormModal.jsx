@@ -24,7 +24,10 @@ const schema = yup
   .test('date-check', 'End date/time must be after start date/time', function (value) {
     if (value.startDate && value.endDate) {
       if (new Date(value.endDate) < new Date(value.startDate)) {
-        return this.createError({ path: 'endDate', message: 'End date must be after or equal to start date' })
+        return this.createError({
+          path: 'endDate',
+          message: 'End date must be after or equal to start date',
+        })
       }
       if (value.startDate === value.endDate && value.startTime && value.endTime) {
         if (value.endTime <= value.startTime) {

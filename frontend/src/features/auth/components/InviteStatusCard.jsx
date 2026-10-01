@@ -32,7 +32,10 @@ export const InviteStatusCard = ({ status, errorMessage, isAuthenticated }) => {
     </Link>
   )
 
-  if (normalizedStatus === 'EXPIRED' || (errorMessage && errorMessage.toLowerCase().includes('expired'))) {
+  if (
+    normalizedStatus === 'EXPIRED' ||
+    (errorMessage && errorMessage.toLowerCase().includes('expired'))
+  ) {
     icon = cilWarning
     iconBg = 'bg-warning-subtle text-warning'
     title = t('auth.invite.expiredTitle', 'Invitation Expired')
@@ -73,7 +76,10 @@ export const InviteStatusCard = ({ status, errorMessage, isAuthenticated }) => {
       'This invitation has already been accepted and cannot be used again.',
     )
     actionCta = isAuthenticated ? (
-      <Link to="/dashboard" className="btn btn-success px-4 py-2 rounded-pill fw-semibold text-white">
+      <Link
+        to="/dashboard"
+        className="btn btn-success px-4 py-2 rounded-pill fw-semibold text-white"
+      >
         {t('auth.invite.goToDashboard', 'Go to Dashboard')}
       </Link>
     ) : (
@@ -115,7 +121,13 @@ export const InviteStatusCard = ({ status, errorMessage, isAuthenticated }) => {
         </div>
         <h3 className="fw-bold mb-2">{title}</h3>
         <CAlert
-          color={normalizedStatus === 'ACCEPTED' ? 'success' : normalizedStatus === 'REJECTED' ? 'secondary' : 'danger'}
+          color={
+            normalizedStatus === 'ACCEPTED'
+              ? 'success'
+              : normalizedStatus === 'REJECTED'
+                ? 'secondary'
+                : 'danger'
+          }
           className="mb-4 text-start"
         >
           {description}

@@ -77,11 +77,13 @@ const LedgerRow = memo(({ invoice, onMarkPaid, onOfflineSettle }) => (
         {invoice.currency || '₹'}
         {(invoice.amount || 0).toLocaleString('en-IN')}
       </span>
-      {invoice.status === 'VERIFICATION_PENDING' && invoice.offlineAmount && invoice.offlineAmount !== invoice.amount && (
-        <div className="small text-muted mt-1" style={{ fontSize: '0.75rem' }}>
-          (Pending: ₹{invoice.offlineAmount.toLocaleString('en-IN')})
-        </div>
-      )}
+      {invoice.status === 'VERIFICATION_PENDING' &&
+        invoice.offlineAmount &&
+        invoice.offlineAmount !== invoice.amount && (
+          <div className="small text-muted mt-1" style={{ fontSize: '0.75rem' }}>
+            (Pending: ₹{invoice.offlineAmount.toLocaleString('en-IN')})
+          </div>
+        )}
     </td>
     <td className="billing-ledger__cell">
       <StatusBadge status={invoice.status} paymentMethod={invoice.paymentMethod} />
@@ -151,17 +153,27 @@ const BillingLedgerGrid = memo(
       }
     }
 
-    const handleOfflineSettle = useCallback((invoiceId) => {
-      setSettleInvoiceId(invoiceId)
-      setSettleRef('')
-      const inv = invoices.find(i => i._id === invoiceId)
-      const maxAmt = inv ? (inv.outstandingAmount || inv.amount || 0) : 0
-      setMaxAmount(maxAmt)
-      setSettleAmount(maxAmt > 0 ? maxAmt : '')
-    }, [invoices])
+    const handleOfflineSettle = useCallback(
+      (invoiceId) => {
+        setSettleInvoiceId(invoiceId)
+        setSettleRef('')
+        const inv = invoices.find((i) => i._id === invoiceId)
+        const maxAmt = inv ? inv.outstandingAmount || inv.amount || 0 : 0
+        setMaxAmount(maxAmt)
+        setSettleAmount(maxAmt > 0 ? maxAmt : '')
+      },
+      [invoices],
+    )
 
     const handleConfirmOfflineSettle = async () => {
-      if (!settleInvoiceId || !settleRef.trim() || !onSettleOffline || !settleAmount || settleAmount <= 0) return
+      if (
+        !settleInvoiceId ||
+        !settleRef.trim() ||
+        !onSettleOffline ||
+        !settleAmount ||
+        settleAmount <= 0
+      )
+        return
       try {
         const res = await onSettleOffline(settleInvoiceId, {
           offlineReference: settleRef,
@@ -360,7 +372,8 @@ const BillingLedgerGrid = memo(
                   <strong>₹{verifyAmt.toLocaleString('en-IN')}</strong>?
                   {inv?.offlineAmount && inv.offlineAmount < (inv.amount || 0) && (
                     <div className="mt-2 text-danger small">
-                      Note: This is a partial payment. The invoice will be marked as "Partially Paid" and the remaining balance will still be due.
+                      Note: This is a partial payment. The invoice will be marked as "Partially
+                      Paid" and the remaining balance will still be due.
                     </div>
                   )}
                 </>
@@ -447,7 +460,12 @@ const BillingLedgerGrid = memo(
               >
                 Cancel
               </CButton>
-              <CButton type="submit" color="primary" size="sm" disabled={!settleRef.trim() || !settleAmount || settleAmount <= 0}>
+              <CButton
+                type="submit"
+                color="primary"
+                size="sm"
+                disabled={!settleRef.trim() || !settleAmount || settleAmount <= 0}
+              >
                 Record Settlement
               </CButton>
             </CModalFooter>

@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test'
 
 /**
  * Playwright Configuration for Manage-My-Gate E2E Tests
@@ -7,7 +7,7 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 30 * 1000,
   expect: {
-    timeout: 5000
+    timeout: 5000,
   },
   // Run tests in files in parallel
   fullyParallel: true,
@@ -37,4 +37,4 @@ export default defineConfig({
     },
     // We can add Firefox and WebKit later for cross-browser validation
   ],
-});
+})

@@ -1,12 +1,5 @@
 import React, { memo, useState, useEffect } from 'react'
-import {
-  CModal,
-  CModalHeader,
-  CModalTitle,
-  CModalBody,
-  CModalFooter,
-  CButton,
-  } from '@coreui/react'
+import { CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CButton } from '@coreui/react'
 import { formatCurrency } from '../../utils/amenityUtils.js'
 import AppLoader from '../../../../components/common/AppLoader'
 

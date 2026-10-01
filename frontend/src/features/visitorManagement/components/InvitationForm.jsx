@@ -98,7 +98,8 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: guestPassType === 'default' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                  transition:
+                    'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Default Pass
@@ -120,7 +121,8 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: guestPassType === 'id_proof' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                  transition:
+                    'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 By ID Proof
@@ -286,7 +288,8 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: cabUsageType === 'one_time' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                  transition:
+                    'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 One-time Pass
@@ -308,7 +311,8 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: cabUsageType === 'multi_use' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                  transition:
+                    'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Multi-use Pass
@@ -351,7 +355,8 @@ export const InvitationForm = ({
                       ? '0 1px 3px rgba(0,0,0,0.1)'
                       : 'none',
                   cursor: 'pointer',
-                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                  transition:
+                    'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Delivery / Order
@@ -377,7 +382,8 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: formData.cabCategory === 'cab' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                  transition:
+                    'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Cab / Taxi
@@ -566,7 +572,8 @@ export const InvitationForm = ({
                               ? 'var(--primary, #0084FF)'
                               : 'var(--text-muted, #64748B)',
                             cursor: 'pointer',
-                            transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                            transition:
+                              'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                           }}
                         >
                           {day.name}
@@ -577,15 +584,27 @@ export const InvitationForm = ({
                 </div>
 
                 <div className="form-group" style={{ marginTop: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <label className="form-label" style={{ marginBottom: 0 }}>Allowed Entry Time Windows</label>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    <label className="form-label" style={{ marginBottom: 0 }}>
+                      Allowed Entry Time Windows
+                    </label>
                     <button
                       type="button"
                       className="btn btn-outline-primary btn-sm"
                       style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '16px' }}
                       onClick={() => {
                         const current = formData.timeWindows || [
-                          { start: formData.eventStartTime || '07:30', end: formData.eventEndTime || '09:00' },
+                          {
+                            start: formData.eventStartTime || '07:30',
+                            end: formData.eventEndTime || '09:00',
+                          },
                         ]
                         const updated = [...current, { start: '15:30', end: '17:00' }]
                         handleInputChange('timeWindows', updated)
@@ -597,7 +616,12 @@ export const InvitationForm = ({
 
                   {(formData.timeWindows && formData.timeWindows.length > 0
                     ? formData.timeWindows
-                    : [{ start: formData.eventStartTime || '07:30', end: formData.eventEndTime || '19:00' }]
+                    : [
+                        {
+                          start: formData.eventStartTime || '07:30',
+                          end: formData.eventEndTime || '19:00',
+                        },
+                      ]
                   ).map((slot, idx) => (
                     <div
                       key={idx}
@@ -614,7 +638,10 @@ export const InvitationForm = ({
                       }}
                     >
                       <div>
-                        <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>
+                        <label
+                          className="form-label"
+                          style={{ fontSize: '11px', marginBottom: '4px' }}
+                        >
                           Slot #{idx + 1} Start
                         </label>
                         <input
@@ -623,16 +650,24 @@ export const InvitationForm = ({
                           value={slot.start}
                           onChange={(e) => {
                             const current = formData.timeWindows || [
-                              { start: formData.eventStartTime || '07:30', end: formData.eventEndTime || '19:00' },
+                              {
+                                start: formData.eventStartTime || '07:30',
+                                end: formData.eventEndTime || '19:00',
+                              },
                             ]
-                            const updated = current.map((s, i) => (i === idx ? { ...s, start: e.target.value } : s))
+                            const updated = current.map((s, i) =>
+                              i === idx ? { ...s, start: e.target.value } : s,
+                            )
                             handleInputChange('timeWindows', updated)
                             if (idx === 0) handleInputChange('eventStartTime', e.target.value)
                           }}
                         />
                       </div>
                       <div>
-                        <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>
+                        <label
+                          className="form-label"
+                          style={{ fontSize: '11px', marginBottom: '4px' }}
+                        >
                           Slot #{idx + 1} End
                         </label>
                         <input
@@ -641,9 +676,14 @@ export const InvitationForm = ({
                           value={slot.end}
                           onChange={(e) => {
                             const current = formData.timeWindows || [
-                              { start: formData.eventStartTime || '07:30', end: formData.eventEndTime || '19:00' },
+                              {
+                                start: formData.eventStartTime || '07:30',
+                                end: formData.eventEndTime || '19:00',
+                              },
                             ]
-                            const updated = current.map((s, i) => (i === idx ? { ...s, end: e.target.value } : s))
+                            const updated = current.map((s, i) =>
+                              i === idx ? { ...s, end: e.target.value } : s,
+                            )
                             handleInputChange('timeWindows', updated)
                             if (idx === 0) handleInputChange('eventEndTime', e.target.value)
                           }}
@@ -653,7 +693,12 @@ export const InvitationForm = ({
                         <button
                           type="button"
                           className="btn btn-outline-danger btn-sm"
-                          style={{ padding: '6px 10px', height: '36px', marginTop: '18px', borderRadius: '6px' }}
+                          style={{
+                            padding: '6px 10px',
+                            height: '36px',
+                            marginTop: '18px',
+                            borderRadius: '6px',
+                          }}
                           onClick={() => {
                             const current = formData.timeWindows || []
                             const updated = current.filter((_, i) => i !== idx)
@@ -701,7 +746,8 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: servicePassType === 'default' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                  transition:
+                    'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Default Pass
@@ -723,7 +769,8 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: servicePassType === 'id_proof' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                  transition:
+                    'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 By ID Proof
@@ -758,7 +805,8 @@ export const InvitationForm = ({
                       : 'var(--text-muted, #64748B)',
                   boxShadow: serviceUsageType === 'one_time' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                  transition:
+                    'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 One-time Pass
@@ -781,7 +829,8 @@ export const InvitationForm = ({
                   boxShadow:
                     serviceUsageType === 'multi_use' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
-                  transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                  transition:
+                    'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                 }}
               >
                 Multi-use Pass
@@ -952,7 +1001,8 @@ export const InvitationForm = ({
                               ? 'var(--primary, #0084FF)'
                               : 'var(--text-muted, #64748B)',
                             cursor: 'pointer',
-                            transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                            transition:
+                              'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                           }}
                         >
                           {day.name}

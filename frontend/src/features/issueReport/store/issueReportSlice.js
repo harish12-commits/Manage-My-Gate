@@ -11,10 +11,15 @@ export const loadPlatformReports = createAsyncThunk(
         page: queryParams.page || state.pagination.currentPage || 1,
         limit: queryParams.limit || state.pagination.limit || DEFAULT_PAGE_LIMIT,
         search: queryParams.search !== undefined ? queryParams.search : state.filters.search,
-        reportType: queryParams.reportType !== undefined ? queryParams.reportType : state.filters.reportType,
+        reportType:
+          queryParams.reportType !== undefined ? queryParams.reportType : state.filters.reportType,
         feature: queryParams.feature !== undefined ? queryParams.feature : state.filters.feature,
-        organisationId: queryParams.organisationId !== undefined ? queryParams.organisationId : state.filters.organisationId,
-        startDate: queryParams.startDate !== undefined ? queryParams.startDate : state.filters.startDate,
+        organisationId:
+          queryParams.organisationId !== undefined
+            ? queryParams.organisationId
+            : state.filters.organisationId,
+        startDate:
+          queryParams.startDate !== undefined ? queryParams.startDate : state.filters.startDate,
         endDate: queryParams.endDate !== undefined ? queryParams.endDate : state.filters.endDate,
       }
 
@@ -49,16 +54,19 @@ export const loadCommunityReports = createAsyncThunk(
         page: queryParams.page || state.pagination.currentPage || 1,
         limit: queryParams.limit || state.pagination.limit || DEFAULT_PAGE_LIMIT,
         search: queryParams.search !== undefined ? queryParams.search : state.filters.search,
-        reportType: queryParams.reportType !== undefined ? queryParams.reportType : state.filters.reportType,
+        reportType:
+          queryParams.reportType !== undefined ? queryParams.reportType : state.filters.reportType,
         feature: queryParams.feature !== undefined ? queryParams.feature : state.filters.feature,
-        startDate: queryParams.startDate !== undefined ? queryParams.startDate : state.filters.startDate,
+        startDate:
+          queryParams.startDate !== undefined ? queryParams.startDate : state.filters.startDate,
         endDate: queryParams.endDate !== undefined ? queryParams.endDate : state.filters.endDate,
       }
 
       const response = await issueReportApi.fetchCommunityReports(mergedParams)
       return response.data
     } catch (error) {
-      const msg = error.response?.data?.message || error.message || 'Failed to fetch community issue reports'
+      const msg =
+        error.response?.data?.message || error.message || 'Failed to fetch community issue reports'
       return rejectWithValue(msg)
     }
   },
@@ -71,7 +79,10 @@ export const loadCommunityReportDetails = createAsyncThunk(
       const response = await issueReportApi.fetchCommunityReportById(id)
       return response?.data !== undefined ? response.data : response
     } catch (error) {
-      const msg = error.response?.data?.message || error.message || 'This issue report could not be found or is no longer available.'
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        'This issue report could not be found or is no longer available.'
       return rejectWithValue(msg)
     }
   },
@@ -85,7 +96,8 @@ export const loadIssueReportConfig = createAsyncThunk(
       const data = response?.data !== undefined ? response.data : response
       return data
     } catch (error) {
-      const msg = error.response?.data?.message || error.message || 'Failed to fetch email configuration'
+      const msg =
+        error.response?.data?.message || error.message || 'Failed to fetch email configuration'
       return rejectWithValue(msg)
     }
   },
@@ -99,7 +111,8 @@ export const saveIssueReportConfig = createAsyncThunk(
       const data = response?.data !== undefined ? response.data : response
       return data
     } catch (error) {
-      const msg = error.response?.data?.message || error.message || 'Failed to save email configuration'
+      const msg =
+        error.response?.data?.message || error.message || 'Failed to save email configuration'
       return rejectWithValue(msg)
     }
   },
@@ -231,7 +244,10 @@ export const issueReportSlice = createSlice({
       .addCase(loadPlatformReportDetails.fulfilled, (state, action) => {
         state.detailsLoading = false
         const payloadData = action.payload?.data || action.payload || null
-        if (payloadData && (payloadData._id || payloadData.id || payloadData.reportNumber || payloadData.title)) {
+        if (
+          payloadData &&
+          (payloadData._id || payloadData.id || payloadData.reportNumber || payloadData.title)
+        ) {
           state.selectedReport = payloadData
         }
       })
@@ -289,13 +305,17 @@ export const issueReportSlice = createSlice({
       .addCase(loadCommunityReportDetails.fulfilled, (state, action) => {
         state.detailsLoading = false
         const payloadData = action.payload?.data || action.payload || null
-        if (payloadData && (payloadData._id || payloadData.id || payloadData.reportNumber || payloadData.title)) {
+        if (
+          payloadData &&
+          (payloadData._id || payloadData.id || payloadData.reportNumber || payloadData.title)
+        ) {
           state.selectedReport = payloadData
         }
       })
       .addCase(loadCommunityReportDetails.rejected, (state, action) => {
         state.detailsLoading = false
-        state.detailsError = action.payload || 'This issue report could not be found or is no longer available.'
+        state.detailsError =
+          action.payload || 'This issue report could not be found or is no longer available.'
       })
 
       // Issue Report Email Config Load
@@ -322,7 +342,8 @@ export const issueReportSlice = createSlice({
       .addCase(saveIssueReportConfig.fulfilled, (state, action) => {
         state.emailConfig.saving = false
         const payloadData = action.payload?.data || action.payload || {}
-        state.emailConfig.email = payloadData.email !== undefined ? payloadData.email : state.emailConfig.email
+        state.emailConfig.email =
+          payloadData.email !== undefined ? payloadData.email : state.emailConfig.email
         state.emailConfig.successMessage = 'Email configuration saved successfully'
       })
       .addCase(saveIssueReportConfig.rejected, (state, action) => {

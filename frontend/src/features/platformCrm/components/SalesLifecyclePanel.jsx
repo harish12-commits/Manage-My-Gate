@@ -1,6 +1,6 @@
-import React from 'react';
-import { StagePipeline } from './StagePipeline.jsx';
-import { ActivityTimeline } from './ActivityTimeline.jsx';
+import React from 'react'
+import { StagePipeline } from './StagePipeline.jsx'
+import { ActivityTimeline } from './ActivityTimeline.jsx'
 
 export const SalesLifecyclePanel = ({ activeEnquiry, stageHistory, activities }) => {
   return (
@@ -11,5 +11,5 @@ export const SalesLifecyclePanel = ({ activeEnquiry, stageHistory, activities })
         <ActivityTimeline activities={activities} />
       </div>
     </div>
-  );
-};
+  )
+}

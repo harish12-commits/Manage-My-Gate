@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { usePlatformBilling } from '../../hooks/usePlatformBilling';
+import React, { useState } from 'react'
+import { usePlatformBilling } from '../../hooks/usePlatformBilling'
 
 const PricingPage = () => {
-  const { pricingPlans, togglePlan, savePlan } = usePlatformBilling();
-  
+  const { pricingPlans, togglePlan, savePlan } = usePlatformBilling()
+
   // Local state for modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [formData, setFormData] = useState({
     id: null,
     name: '',
@@ -14,12 +14,12 @@ const PricingPage = () => {
     perUnit: '',
     setupFee: '',
     maxDiscount: '',
-    trialDays: '15'
-  });
+    trialDays: '15',
+  })
 
   const handleOpenModal = (plan = null) => {
     if (plan) {
-      setFormData({ ...plan });
+      setFormData({ ...plan })
     } else {
       setFormData({
         id: null,
@@ -29,11 +29,11 @@ const PricingPage = () => {
         perUnit: '',
         setupFee: '',
         maxDiscount: '',
-        trialDays: '15'
-      });
+        trialDays: '15',
+      })
     }
-    setIsModalOpen(true);
-  };
+    setIsModalOpen(true)
+  }
 
   const handleSave = () => {
     savePlan({
@@ -45,23 +45,27 @@ const PricingPage = () => {
       setupFee: Number(formData.setupFee) || 0,
       maxDiscount: Number(formData.maxDiscount) || 0,
       trialDays: Number(formData.trialDays) || 0,
-      status: formData.status || 'ACTIVE'
-    });
-    setIsModalOpen(false);
-  };
+      status: formData.status || 'ACTIVE',
+    })
+    setIsModalOpen(false)
+  }
 
   return (
     <section id="page-pricing" className="page">
       <div className="page-head">
         <div>
           <h1>Master Pricing Catalog</h1>
-          <div className="sub">Global pricing tiers, default free trial durations, and add-ons.</div>
+          <div className="sub">
+            Global pricing tiers, default free trial durations, and add-ons.
+          </div>
         </div>
-        <button className="btn primary" onClick={() => handleOpenModal()}>+ Create Tier</button>
+        <button className="btn primary" onClick={() => handleOpenModal()}>
+          + Create Tier
+        </button>
       </div>
 
       <div className="grid2" id="pricing-plans-container">
-        {pricingPlans.map(plan => (
+        {pricingPlans.map((plan) => (
           <div key={plan.id} className="panel">
             <div className="panel-head">
               <h2>{plan.name}</h2>
@@ -69,12 +73,14 @@ const PricingPage = () => {
                 {plan.status}
               </span>
             </div>
-            
+
             <div className="panel-body">
               <div className="field-grid">
                 <div className="field">
                   <label>Base Price</label>
-                  <div className="field-value">₹{plan.basePrice.toLocaleString('en-IN')} / year</div>
+                  <div className="field-value">
+                    ₹{plan.basePrice.toLocaleString('en-IN')} / year
+                  </div>
                 </div>
                 <div className="field">
                   <label>Per Unit Rate</label>
@@ -92,15 +98,18 @@ const PricingPage = () => {
                   <label>Free Trial Duration</label>
                   <div className="field-value">
                     <span className="badge blue">
-                      🎁 {plan.trialDays > 0 ? `${plan.trialDays} Days Free Trial` : 'No Free Trial'}
+                      🎁{' '}
+                      {plan.trialDays > 0 ? `${plan.trialDays} Days Free Trial` : 'No Free Trial'}
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="actions mt-4">
-                <button className="btn small" onClick={() => handleOpenModal(plan)}>Edit Plan</button>
-                <button 
+                <button className="btn small" onClick={() => handleOpenModal(plan)}>
+                  Edit Plan
+                </button>
+                <button
                   className={`btn small ${plan.status === 'ACTIVE' ? 'danger' : 'success'}`}
                   onClick={() => togglePlan(plan._id || plan.id, plan)}
                 >
@@ -117,27 +126,31 @@ const PricingPage = () => {
         <div className="modal-backdrop open">
           <div className="modal" role="dialog" aria-labelledby="planModalTitle">
             <div className="modal-head">
-              <h2 id="planModalTitle">{formData.id ? 'Edit Pricing Plan' : 'Create Pricing Plan'}</h2>
-              <button className="btn small" onClick={() => setIsModalOpen(false)}>✕</button>
+              <h2 id="planModalTitle">
+                {formData.id ? 'Edit Pricing Plan' : 'Create Pricing Plan'}
+              </h2>
+              <button className="btn small" onClick={() => setIsModalOpen(false)}>
+                ✕
+              </button>
             </div>
-            
+
             <div className="modal-body field-grid">
               <div className="field">
                 <label>Plan Name</label>
-                <input 
-                  type="text" 
-                  className="input" 
+                <input
+                  type="text"
+                  className="input"
                   value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Tier 2 Growth"
                 />
               </div>
               <div className="field">
                 <label>Tier</label>
-                <select 
+                <select
                   className="select"
                   value={formData.tier}
-                  onChange={e => setFormData({...formData, tier: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
                 >
                   <option value="TIER_1">TIER_1</option>
                   <option value="TIER_2">TIER_2</option>
@@ -147,46 +160,46 @@ const PricingPage = () => {
               </div>
               <div className="field">
                 <label>Base Price (₹/year)</label>
-                <input 
-                  type="number" 
-                  className="input" 
+                <input
+                  type="number"
+                  className="input"
                   value={formData.basePrice}
-                  onChange={e => setFormData({...formData, basePrice: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })}
                 />
               </div>
               <div className="field">
                 <label>Per Unit Rate (₹)</label>
-                <input 
-                  type="number" 
-                  className="input" 
+                <input
+                  type="number"
+                  className="input"
                   value={formData.perUnit}
-                  onChange={e => setFormData({...formData, perUnit: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, perUnit: e.target.value })}
                 />
               </div>
               <div className="field">
                 <label>Setup Fee (₹)</label>
-                <input 
-                  type="number" 
-                  className="input" 
+                <input
+                  type="number"
+                  className="input"
                   value={formData.setupFee}
-                  onChange={e => setFormData({...formData, setupFee: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, setupFee: e.target.value })}
                 />
               </div>
               <div className="field">
                 <label>Max Discount %</label>
-                <input 
-                  type="number" 
-                  className="input" 
+                <input
+                  type="number"
+                  className="input"
                   value={formData.maxDiscount}
-                  onChange={e => setFormData({...formData, maxDiscount: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, maxDiscount: e.target.value })}
                 />
               </div>
               <div className="field" style={{ gridColumn: 'span 2' }}>
                 <label>Default Free Trial Duration</label>
-                <select 
+                <select
                   className="select"
                   value={formData.trialDays}
-                  onChange={e => setFormData({...formData, trialDays: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, trialDays: e.target.value })}
                 >
                   <option value="0">No Free Trial (0 Days)</option>
                   <option value="15">15 Days Free Trial</option>
@@ -196,15 +209,18 @@ const PricingPage = () => {
             </div>
 
             <div className="modal-foot">
-              <button className="btn" onClick={() => setIsModalOpen(false)}>Cancel</button>
-              <button className="btn primary" onClick={handleSave}>Save Plan</button>
+              <button className="btn" onClick={() => setIsModalOpen(false)}>
+                Cancel
+              </button>
+              <button className="btn primary" onClick={handleSave}>
+                Save Plan
+              </button>
             </div>
-            
           </div>
         </div>
       )}
     </section>
-  );
-};
+  )
+}
 
-export default PricingPage;
+export default PricingPage

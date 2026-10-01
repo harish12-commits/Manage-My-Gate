@@ -85,11 +85,15 @@ const DefaultLayout = () => {
         billingFrequency: 'YEARLY',
       })
 
-      toast.success('Subscription successfully renewed! Full access restored.', { id: 'renew-toast' })
+      toast.success('Subscription successfully renewed! Full access restored.', {
+        id: 'renew-toast',
+      })
       dispatch(loadCurrentModules())
     } catch (err) {
       const { toast } = await import('react-hot-toast')
-      toast.error('Renewal failed: ' + (err.message || 'Error processing payment'), { id: 'renew-toast' })
+      toast.error('Renewal failed: ' + (err.message || 'Error processing payment'), {
+        id: 'renew-toast',
+      })
     } finally {
       setIsRenewing(false)
     }
@@ -114,7 +118,7 @@ const DefaultLayout = () => {
         <AppHeader />
         <div className="body flex-grow-1 position-relative">
           {!isPlatformUser && accessGranted === false && (
-            <div 
+            <div
               style={{
                 position: 'absolute',
                 top: 0,
@@ -127,10 +131,10 @@ const DefaultLayout = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '20px'
+                padding: '20px',
               }}
             >
-              <div 
+              <div
                 style={{
                   backgroundColor: '#ffffff',
                   borderRadius: '16px',
@@ -138,10 +142,10 @@ const DefaultLayout = () => {
                   width: '100%',
                   padding: '36px',
                   boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                  textAlign: 'center'
+                  textAlign: 'center',
                 }}
               >
-                <div 
+                <div
                   style={{
                     width: '64px',
                     height: '64px',
@@ -152,26 +156,66 @@ const DefaultLayout = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '32px',
-                    marginBottom: '20px'
+                    marginBottom: '20px',
                   }}
                 >
                   ⚠️
                 </div>
-                <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', marginBottom: '10px' }}>
+                <h2
+                  style={{
+                    fontSize: '24px',
+                    fontWeight: '800',
+                    color: '#0f172a',
+                    marginBottom: '10px',
+                  }}
+                >
                   Subscription Plan Expired
                 </h2>
-                <p style={{ color: '#64748b', fontSize: '15px', lineHeight: '1.6', marginBottom: '24px' }}>
-                  {subscriptionReason || 'Your Free Trial or Subscription period has ended. Access to workspace modules is suspended until subscription renewal.'}
+                <p
+                  style={{
+                    color: '#64748b',
+                    fontSize: '15px',
+                    lineHeight: '1.6',
+                    marginBottom: '24px',
+                  }}
+                >
+                  {subscriptionReason ||
+                    'Your Free Trial or Subscription period has ended. Access to workspace modules is suspended until subscription renewal.'}
                 </p>
 
-                <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', marginBottom: '28px', textAlign: 'left' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div
+                  style={{
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    padding: '16px',
+                    marginBottom: '28px',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '8px',
+                    }}
+                  >
                     <span style={{ color: '#64748b', fontSize: '13px' }}>Organization:</span>
-                    <strong style={{ color: '#0f172a' }}>{organizationName || 'Your Organization'}</strong>
+                    <strong style={{ color: '#0f172a' }}>
+                      {organizationName || 'Your Organization'}
+                    </strong>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '8px',
+                    }}
+                  >
                     <span style={{ color: '#64748b', fontSize: '13px' }}>Current Status:</span>
-                    <span style={{ color: '#dc2626', fontWeight: 'bold', fontSize: '13px' }}>{subscriptionStatus || 'EXPIRED'}</span>
+                    <span style={{ color: '#dc2626', fontWeight: 'bold', fontSize: '13px' }}>
+                      {subscriptionStatus || 'EXPIRED'}
+                    </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: '#64748b', fontSize: '13px' }}>Renewal Amount:</span>
@@ -193,10 +237,13 @@ const DefaultLayout = () => {
                     borderRadius: '10px',
                     cursor: 'pointer',
                     boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
-                    transition: 'color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, width 0.2s ease, height 0.2s ease, max-height 0.2s ease'
+                    transition:
+                      'color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, width 0.2s ease, height 0.2s ease, max-height 0.2s ease',
                   }}
                 >
-                  {isRenewing ? 'Processing Renewal...' : '💳 Renew Subscription Now & Restore Access'}
+                  {isRenewing
+                    ? 'Processing Renewal...'
+                    : '💳 Renew Subscription Now & Restore Access'}
                 </button>
               </div>
             </div>

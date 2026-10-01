@@ -292,11 +292,18 @@ const AssignComplaint = ({ complaint, onAssigned, onCancel }) => {
                             padding: '8px',
                             backgroundColor: 'var(--surface)',
                             zIndex: 50,
-                            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',
+                            boxShadow:
+                              '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',
                           }}
                         >
                           {techniciansList.length === 0 ? (
-                            <div style={{ padding: '8px', color: 'var(--ink-soft)', textAlign: 'center' }}>
+                            <div
+                              style={{
+                                padding: '8px',
+                                color: 'var(--ink-soft)',
+                                textAlign: 'center',
+                              }}
+                            >
                               No staff available
                             </div>
                           ) : (
@@ -329,11 +336,17 @@ const AssignComplaint = ({ complaint, onAssigned, onCancel }) => {
                                       } else {
                                         setForm({
                                           ...form,
-                                          technicianIds: form.technicianIds.filter((id) => id !== t._id),
+                                          technicianIds: form.technicianIds.filter(
+                                            (id) => id !== t._id,
+                                          ),
                                         })
                                       }
                                     }}
-                                    style={{ width: '18px', height: '18px', accentColor: '#2563eb' }}
+                                    style={{
+                                      width: '18px',
+                                      height: '18px',
+                                      accentColor: '#2563eb',
+                                    }}
                                   />
                                   <div style={{ flex: 1 }}>
                                     <div style={{ color: 'var(--ink)' }} className="fw-semibold">
@@ -948,7 +961,8 @@ const AssignComplaint = ({ complaint, onAssigned, onCancel }) => {
               color: 'var(--surface)',
               cursor: assignLoading ? 'not-allowed' : 'pointer',
               opacity: assignLoading ? 0.7 : 1,
-              transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+              transition:
+                'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',

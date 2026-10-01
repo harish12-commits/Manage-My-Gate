@@ -100,8 +100,8 @@ export const LoginForm = () => {
     (window.location.href.includes('intent=create-org')
       ? 'create-org'
       : window.location.href.includes('intent=create')
-      ? 'create'
-      : null)
+        ? 'create'
+        : null)
 
   useEffect(() => {
     if (intentParam) {
@@ -138,12 +138,12 @@ export const LoginForm = () => {
   })
 
   // Explicitly force the values into the form fields after mount.
-  // CoreUI components sometimes ignore react-hook-form's defaultValues on initial render, 
+  // CoreUI components sometimes ignore react-hook-form's defaultValues on initial render,
   // so we apply a multi-layered approach to guarantee they appear.
   useEffect(() => {
     const loginVal = emailParam || localStorage.getItem('rememberedEmail') || ''
     const passVal = passwordParam || ''
-    
+
     if (loginVal || passVal) {
       reset({ login: loginVal, password: passVal })
       if (emailParam) setLoginMethod('password')
@@ -152,7 +152,7 @@ export const LoginForm = () => {
       setTimeout(() => {
         setValue('login', loginVal, { shouldValidate: true })
         setValue('password', passVal, { shouldValidate: true })
-        
+
         const loginInput = document.querySelector('input[name="login"]')
         const passInput = document.querySelector('input[name="password"]')
         if (loginInput && loginVal) loginInput.value = loginVal
@@ -175,10 +175,10 @@ export const LoginForm = () => {
           })
           .catch((err) => {
             console.warn('Invite token processing:', err)
-            handlePostAuthRedirect()
+            handlePostAuthRedirect({ skipInviteToken: true })
           })
       } else {
-        handlePostAuthRedirect()
+        handlePostAuthRedirect({ skipInviteToken: inviteAcceptedRef.current })
       }
     }
   }, [isAuthenticated, inviteTokenParam])
@@ -201,6 +201,7 @@ export const LoginForm = () => {
   const handleGoogleSuccess = useCallback(
     async (credentialResponse) => {
       try {
+        if (inviteTokenParam) inviteAcceptedRef.current = true
         const response = await dispatch(
           loginWithGoogle({ token: credentialResponse.credential, inviteToken: inviteTokenParam }),
         ).unwrap()
@@ -214,7 +215,7 @@ export const LoginForm = () => {
             },
           })
         } else {
-          handlePostAuthRedirect()
+          handlePostAuthRedirect({ skipInviteToken: true })
         }
       } catch (err) {
         toast.error(err || 'Failed to verify Google account')
@@ -244,11 +245,15 @@ export const LoginForm = () => {
             toast.error('MSAL succeeded but no tokens were found in the response.')
             return
           }
-          
+
           const tokenToUse = response.idToken || response.accessToken
+          if (inviteTokenParam) inviteAcceptedRef.current = true
           const res = await loginMicrosoft(tokenToUse, inviteTokenParam)
           if (!res.success) {
-            const errorMessage = typeof res.error === 'string' ? res.error : (res.error?.message || 'Microsoft login failed on server.')
+            const errorMessage =
+              typeof res.error === 'string'
+                ? res.error
+                : res.error?.message || 'Microsoft login failed on server.'
             toast.error(errorMessage)
           }
         })
@@ -263,7 +268,9 @@ export const LoginForm = () => {
             localStorage.removeItem('msal.interaction.status')
             triggerLogin()
           } else {
-            toast.error('Microsoft Error: ' + (err.message || 'Unknown error. Check Azure SPA settings.'))
+            toast.error(
+              'Microsoft Error: ' + (err.message || 'Unknown error. Check Azure SPA settings.'),
+            )
           }
         })
     }
@@ -288,16 +295,20 @@ export const LoginForm = () => {
       } else {
         localStorage.removeItem('rememberedEmail')
       }
-      
+
       try {
         const res = await login({
           login: data.login.trim(),
           password: data.password,
           inviteToken: inviteTokenParam || undefined,
         })
-        
+
         if (res?.success) {
-          if (typeof window !== 'undefined' && window.PasswordCredential && navigator.credentials?.store) {
+          if (
+            typeof window !== 'undefined' &&
+            window.PasswordCredential &&
+            navigator.credentials?.store
+          ) {
             try {
               const cred = new window.PasswordCredential({
                 id: data.login.trim(),
@@ -314,15 +325,23 @@ export const LoginForm = () => {
           }
           handlePostAuthRedirect()
         } else if (res?.error) {
-          const backendErrorMessage = typeof res.error === 'string' ? res.error : (res.error?.message || 'Login failed')
+          const backendErrorMessage =
+            typeof res.error === 'string' ? res.error : res.error?.message || 'Login failed'
           const lowerError = backendErrorMessage.toLowerCase()
-          
-          if (lowerError.includes('not found') || lowerError.includes('invalid') || lowerError.includes('credential')) {
+
+          if (
+            lowerError.includes('not found') ||
+            lowerError.includes('invalid') ||
+            lowerError.includes('credential')
+          ) {
             setError('login', { type: 'server', message: backendErrorMessage })
           }
         }
       } catch (err) {
-        setError('login', { type: 'server', message: err?.message || 'An unexpected error occurred' })
+        setError('login', {
+          type: 'server',
+          message: err?.message || 'An unexpected error occurred',
+        })
       }
     } else {
       const isEmail = loginMethod === 'email'
@@ -349,17 +368,16 @@ export const LoginForm = () => {
             {t('auth.login.promoTitle', 'Enterprise Workspace Platform')}
           </h5>
           <p className="mb-0">
-            {t('auth.login.promoText', 'Access your secure organization workspace, manage team privileges, configure third-party API integrations, and view full audit records in one unified dashboard.')}
+            {t(
+              'auth.login.promoText',
+              'Access your secure organization workspace, manage team privileges, configure third-party API integrations, and view full audit records in one unified dashboard.',
+            )}
           </p>
         </CAlert>
 
         <CForm onSubmit={handleSubmit(onSubmit)}>
           <div style={styles.logoContainer}>
-            <img
-              src={nahomLogo}
-              alt="NAHOM"
-              style={styles.brandLogo}
-            />
+            <img src={nahomLogo} alt="NAHOM" style={styles.brandLogo} />
           </div>
 
           <h1 style={styles.title}>{t('auth.login.title', 'Welcome Back')}</h1>
@@ -498,11 +516,17 @@ export const LoginForm = () => {
                       required: t('auth.login.loginRequired', 'Email is required.'),
                       maxLength: {
                         value: 255,
-                        message: t('auth.login.emailMaxLength', 'Email cannot exceed 255 characters'),
+                        message: t(
+                          'auth.login.emailMaxLength',
+                          'Email cannot exceed 255 characters',
+                        ),
                       },
                       pattern: {
                         value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                        message: t('auth.login.emailInvalidFormat', 'Please enter a valid email address format'),
+                        message: t(
+                          'auth.login.emailInvalidFormat',
+                          'Please enter a valid email address format',
+                        ),
                       },
                     })}
                   />
@@ -624,12 +648,7 @@ export const LoginForm = () => {
 
           <CRow>
             <CCol xs={12} className="d-grid mb-3">
-              <CButton
-                type="submit"
-                color="primary"
-                style={styles.submitButton}
-                disabled={loading}
-              >
+              <CButton type="submit" color="primary" style={styles.submitButton} disabled={loading}>
                 {loading ? (
                   <CSpinner size="sm" variant="grow" />
                 ) : loginMethod !== 'password' && !otpSent ? (
@@ -651,11 +670,15 @@ export const LoginForm = () => {
 
           <CRow className="g-3 align-items-center justify-content-center">
             <CCol xs={12} sm={6} className="d-flex justify-content-center">
-              <div style={{ width: '100%', display: 'flex', justifyContent: 'center', maxWidth: '210px' }}>
-                <MemoizedGoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                />
+              <div
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  maxWidth: '210px',
+                }}
+              >
+                <MemoizedGoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
               </div>
             </CCol>
             <CCol xs={12} sm={6} className="d-flex justify-content-center">
@@ -673,7 +696,12 @@ export const LoginForm = () => {
         </CForm>
 
         <div className="text-center mt-3">
-          <CButton color="link" onClick={() => navigate('/register')} style={styles.toggleLink} className="p-0">
+          <CButton
+            color="link"
+            onClick={() => navigate('/register')}
+            style={styles.toggleLink}
+            className="p-0"
+          >
             {t('auth.login.noAccount', "Don't have an account? Create an Account")}
           </CButton>
         </div>
@@ -750,7 +778,8 @@ const styles = {
     fontWeight: '600',
     borderRadius: '8px',
     boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)',
-    transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+    transition:
+      'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
   },
   toggleLink: {
     color: '#2563eb',

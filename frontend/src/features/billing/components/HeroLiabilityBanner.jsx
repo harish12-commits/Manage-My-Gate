@@ -37,7 +37,11 @@ const HeroLiabilityBanner = memo(
     // Determine if there is any cheque/offline payment currently clearing (VERIFICATION_PENDING)
     const clearingInvoice = unitBreakdown.find((inv) => inv.status === 'VERIFICATION_PENDING')
     const isClearing = !!clearingInvoice
-    const clearingAmount = clearingInvoice?.offlineAmount || clearingInvoice?.outstandingAmount || clearingInvoice?.totalDue || 0
+    const clearingAmount =
+      clearingInvoice?.offlineAmount ||
+      clearingInvoice?.outstandingAmount ||
+      clearingInvoice?.totalDue ||
+      0
     const clearingRef = clearingInvoice?.offlineReference || 'Cheque'
 
     const [checkoutInvoice, setCheckoutInvoice] = useState(null)
@@ -49,7 +53,8 @@ const HeroLiabilityBanner = memo(
 
     const handlePayNow = () => {
       const firstUnpaid = unitBreakdown.find(
-        (inv) => ['UNPAID', 'PARTIALLY_PAID', 'OVERDUE'].includes(inv.status) || inv.outstandingAmount > 0
+        (inv) =>
+          ['UNPAID', 'PARTIALLY_PAID', 'OVERDUE'].includes(inv.status) || inv.outstandingAmount > 0,
       )
       if (!firstUnpaid) {
         toast.error('You have no outstanding unpaid invoices!')
@@ -60,7 +65,8 @@ const HeroLiabilityBanner = memo(
 
     const handleOpenOfflineModal = () => {
       const firstUnpaid = unitBreakdown.find(
-        (inv) => ['UNPAID', 'PARTIALLY_PAID', 'OVERDUE'].includes(inv.status) || inv.outstandingAmount > 0
+        (inv) =>
+          ['UNPAID', 'PARTIALLY_PAID', 'OVERDUE'].includes(inv.status) || inv.outstandingAmount > 0,
       )
       if (!firstUnpaid) {
         toast.error('You have no outstanding unpaid invoices!')
@@ -83,12 +89,12 @@ const HeroLiabilityBanner = memo(
             paymentMethod: paymentMethod,
           })
         }
-        
+
         // Offline payment is synchronous in the DB, so we can dispatch immediately
         if (window.dispatchEvent) {
           window.dispatchEvent(new CustomEvent('billing:refreshDues'))
         }
-        
+
         toast.success('Offline payment submitted successfully! Awaiting admin verification.')
         setPayOfflineInvoice(null)
       } catch (err) {
@@ -127,16 +133,18 @@ const HeroLiabilityBanner = memo(
               <div key={item.invoiceId || item._id} className="hero-liability-card__breakdown-row">
                 <span className="hero-liability-card__breakdown-label">
                   <i className="fa-solid fa-circle-dot me-2 opacity-50" />
-                  {item.unitNumber || 'Unit'} — {item.assessmentName || 'Maintenance'} ({item.billingPeriodString})
+                  {item.unitNumber || 'Unit'} — {item.assessmentName || 'Maintenance'} (
+                  {item.billingPeriodString})
                 </span>
                 <div className="text-end">
                   <span className="hero-liability-card__breakdown-value d-block">
                     ₹{(item.outstandingAmount ?? item.totalDue ?? 0).toLocaleString('en-IN')}
                   </span>
                   {item.paidAmount > 0 && (
-                     <span className="small text-white-50" style={{ fontSize: '0.75rem' }}>
-                       Paid: ₹{(item.paidAmount || 0).toLocaleString('en-IN')} / Total: ₹{(item.totalDue || 0).toLocaleString('en-IN')}
-                     </span>
+                    <span className="small text-white-50" style={{ fontSize: '0.75rem' }}>
+                      Paid: ₹{(item.paidAmount || 0).toLocaleString('en-IN')} / Total: ₹
+                      {(item.totalDue || 0).toLocaleString('en-IN')}
+                    </span>
                   )}
                 </div>
               </div>
@@ -193,17 +201,19 @@ const HeroLiabilityBanner = memo(
           onClose={(isSuccess, paidCustomAmount, methodUsed) => {
             if (isSuccess && checkoutInvoice) {
               toast.success('Payment completed successfully!')
-              
-              // Add a small delay to allow the backend's PAYMENT_SUCCESS event listener 
+
+              // Add a small delay to allow the backend's PAYMENT_SUCCESS event listener
               // to finish updating the invoice in the database (Eventual Consistency).
               if (window.dispatchEvent) {
                 setTimeout(() => {
                   window.dispatchEvent(new CustomEvent('billing:refreshDues'))
                 }, 1500)
               }
-              
-              const amountSettled = paidCustomAmount || checkoutInvoice?.outstandingAmount || 0;
-              const newOutstanding = (checkoutInvoice?.outstandingAmount || checkoutInvoice?.totalDue || 0) - amountSettled;
+
+              const amountSettled = paidCustomAmount || checkoutInvoice?.outstandingAmount || 0
+              const newOutstanding =
+                (checkoutInvoice?.outstandingAmount || checkoutInvoice?.totalDue || 0) -
+                amountSettled
               const paidInvoice = {
                 ...checkoutInvoice,
                 alreadyPaidAmount: checkoutInvoice?.paidAmount || 0,
@@ -212,9 +222,9 @@ const HeroLiabilityBanner = memo(
                 outstandingAmount: newOutstanding,
                 status: newOutstanding <= 0 ? 'PAID' : 'PARTIALLY_PAID',
                 paid_at: new Date().toISOString(),
-                paymentMethod: methodUsed || 'ONLINE', 
+                paymentMethod: methodUsed || 'ONLINE',
               }
-              
+
               handleDownloadInvoice(paidInvoice)
             }
             setCheckoutInvoice(null)
@@ -248,13 +258,17 @@ const HeroLiabilityBanner = memo(
             <CModalBody>
               <div className="alert alert-info py-2 px-3 small mb-3">
                 You are paying Invoice <strong>{payOfflineInvoice?.invoiceNumber}</strong> of{' '}
-                <strong>₹{(payOfflineInvoice?.outstandingAmount ?? payOfflineInvoice?.totalDue)?.toLocaleString('en-IN')}</strong>.
+                <strong>
+                  ₹
+                  {(
+                    payOfflineInvoice?.outstandingAmount ?? payOfflineInvoice?.totalDue
+                  )?.toLocaleString('en-IN')}
+                </strong>
+                .
               </div>
 
               <div className="mb-3">
-                <CFormLabel className="small fw-semibold d-block mb-2">
-                  How did you pay?
-                </CFormLabel>
+                <CFormLabel className="small fw-semibold d-block mb-2">How did you pay?</CFormLabel>
                 <div className="btn-group w-full" role="group">
                   <button
                     type="button"
@@ -290,7 +304,8 @@ const HeroLiabilityBanner = memo(
                           return
                         }
                         let val = Number(rawVal)
-                        const max = payOfflineInvoice?.outstandingAmount ?? payOfflineInvoice?.totalDue ?? 0
+                        const max =
+                          payOfflineInvoice?.outstandingAmount ?? payOfflineInvoice?.totalDue ?? 0
                         if (val > max) val = max
                         if (val < 0) val = 0
                         setOfflineAmount(val.toString())
@@ -335,7 +350,8 @@ const HeroLiabilityBanner = memo(
               ) : (
                 <div className="alert alert-warning py-3 px-3 small mb-0">
                   <div className="fw-bold mb-1">Cash Payment Instructions</div>
-                  Please pay the amount to the community office or authorized facility staff. You will receive a digital receipt after your payment is recorded.
+                  Please pay the amount to the community office or authorized facility staff. You
+                  will receive a digital receipt after your payment is recorded.
                 </div>
               )}
             </CModalBody>
@@ -354,7 +370,9 @@ const HeroLiabilityBanner = memo(
                   type="submit"
                   color="primary"
                   size="sm"
-                  disabled={submitting || !offlineRef.trim() || !offlineAmount || Number(offlineAmount) <= 0}
+                  disabled={
+                    submitting || !offlineRef.trim() || !offlineAmount || Number(offlineAmount) <= 0
+                  }
                 >
                   {submitting ? 'Submitting...' : 'Submit Payment'}
                 </CButton>

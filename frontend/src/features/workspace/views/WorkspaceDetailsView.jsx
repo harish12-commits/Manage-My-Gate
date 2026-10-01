@@ -319,7 +319,9 @@ export const WorkspaceDetailsView = () => {
                         label={t('workspace.details.languageLabel', 'Language')}
                         disabled={!isManager}
                         value={watchEdit('language')}
-                        onChange={(val) => setValueEdit('language', val, { shouldDirty: true, shouldValidate: true })}
+                        onChange={(val) =>
+                          setValueEdit('language', val, { shouldDirty: true, shouldValidate: true })
+                        }
                       />
                     </CCol>
                     <CCol md={6}>
@@ -343,7 +345,11 @@ export const WorkspaceDetailsView = () => {
                   </CRow>
                   {isManager && (
                     <div className="mt-4 text-end">
-                      <CButton type="submit" color="primary" disabled={isEditSubmitting || !editForm.formState.isDirty}>
+                      <CButton
+                        type="submit"
+                        color="primary"
+                        disabled={isEditSubmitting || !editForm.formState.isDirty}
+                      >
                         {isEditSubmitting ? (
                           <CSpinner size="sm" />
                         ) : (

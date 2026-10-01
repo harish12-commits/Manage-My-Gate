@@ -284,5 +284,3 @@ TemplateEditorCanvasModal.defaultProps = {
 }
 
 export default TemplateEditorCanvasModal
-
-

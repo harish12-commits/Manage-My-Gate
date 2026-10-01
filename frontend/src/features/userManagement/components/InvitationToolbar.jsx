@@ -35,7 +35,10 @@ const InvitationToolbar = ({
             </span>
             <CFormInput
               id="invitation-search-input"
-              placeholder={t('invitations.searchPlaceholder', 'Search recipient name, email, or username...')}
+              placeholder={t(
+                'invitations.searchPlaceholder',
+                'Search recipient name, email, or username...',
+              )}
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               size="sm"
@@ -74,11 +77,7 @@ const InvitationToolbar = ({
           disabled={loading}
           className="d-flex align-items-center gap-1"
         >
-          {loading ? (
-            <CSpinner size="sm" />
-          ) : (
-            <CIcon icon={cilReload} size="sm" />
-          )}
+          {loading ? <CSpinner size="sm" /> : <CIcon icon={cilReload} size="sm" />}
           <span>{t('common.refresh', 'Refresh')}</span>
         </CButton>
       </div>

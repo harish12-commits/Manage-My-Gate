@@ -78,7 +78,10 @@ export const loadOrganizationDetails = createAsyncThunk(
 
 export const loadOrganizationUsers = createAsyncThunk(
   'organization/loadOrganizationUsers',
-  async ({ orgId, page = 1, limit = 10, search = '', role = '', status = '' }, { rejectWithValue }) => {
+  async (
+    { orgId, page = 1, limit = 10, search = '', role = '', status = '' },
+    { rejectWithValue },
+  ) => {
     try {
       const response = await organizationApi.fetchOrganizationUsers(orgId, {
         page,
@@ -210,7 +213,10 @@ export const organizationSlice = createSlice({
         const updatedOrg = action.payload
         if (updatedOrg && updatedOrg._id) {
           state.list = state.list.map((org) => (org._id === updatedOrg._id ? updatedOrg : org))
-          if (state.selectedOrganization && state.selectedOrganization.organization._id === updatedOrg._id) {
+          if (
+            state.selectedOrganization &&
+            state.selectedOrganization.organization._id === updatedOrg._id
+          ) {
             state.selectedOrganization.organization = updatedOrg
           }
         }

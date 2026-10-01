@@ -55,7 +55,7 @@ export const useAuthSocket = () => {
     }
 
     // Listen to real-time unit allocation or user updates to refresh state seamlessly
-      const handleResidentAssigned = (data) => {
+    const handleResidentAssigned = (data) => {
       if (data?.userId === user.id || data?.residentId === user.id) {
         toast.success(t('auth.unit.allocated', 'You have been allocated to a unit.'))
         dispatch(switchWorkspaceContext({ targetOrgId: user.orgId, targetVillaId: data.villaId }))

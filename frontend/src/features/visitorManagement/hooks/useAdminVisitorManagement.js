@@ -525,7 +525,10 @@ export const useAdminVisitorManagement = () => {
         timeWindowStart,
         timeWindowEnd,
         allowedDays,
-        timeWindows: formData.timeWindows && formData.timeWindows.length > 0 ? formData.timeWindows : undefined,
+        timeWindows:
+          formData.timeWindows && formData.timeWindows.length > 0
+            ? formData.timeWindows
+            : undefined,
       },
       usageLimit: {
         maxUses,

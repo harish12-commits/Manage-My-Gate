@@ -89,7 +89,7 @@ export function CommunityIssueReportDetailSheet({
               {/* HEADER BADGES */}
               <View className="flex-row items-center justify-between mb-3 gap-2 flex-wrap">
                 <StatusBadge variant={typeConfig.color} label={typeConfig.label} size="md" />
-                <StatusBadge variant="neutral" label="Source: Report an Issue" size="md" />
+                <StatusBadge variant="neutral" label="Source: Contact Support" size="md" />
               </View>
 
               {/* TITLE */}

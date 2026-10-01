@@ -93,7 +93,9 @@ export const useWorkspaceDetails = () => {
   }, [activeWorkspaceDetails, resetEdit])
 
   const handleGeneralInfoSubmit = async (formData) => {
-    const isManager = ['Platform Super Admin', 'Super Admin', 'Community Admin'].includes(activeRole)
+    const isManager = ['Platform Super Admin', 'Super Admin', 'Community Admin'].includes(
+      activeRole,
+    )
     if (!isManager) {
       toast.error(t('workspace.details.restrictedAction', 'Residents cannot modify settings.'))
       return

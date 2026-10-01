@@ -13,10 +13,7 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSearch, cilFilterX } from '@coreui/icons'
-import {
-  REPORT_TYPE_OPTIONS,
-  FEATURE_MODULE_OPTIONS,
-} from '../constants/issueReport.constants.js'
+import { REPORT_TYPE_OPTIONS, FEATURE_MODULE_OPTIONS } from '../constants/issueReport.constants.js'
 import { loadOrganizations } from '../../organization/store/organizationSlice.js'
 
 export const IssueReportFilters = ({
@@ -60,11 +57,11 @@ export const IssueReportFilters = ({
 
   const hasActiveFilters = Boolean(
     filters.search ||
-      filters.reportType ||
-      filters.feature ||
-      filters.organisationId ||
-      filters.startDate ||
-      filters.endDate,
+    filters.reportType ||
+    filters.feature ||
+    filters.organisationId ||
+    filters.startDate ||
+    filters.endDate,
   )
 
   return (
@@ -152,7 +149,9 @@ export const IssueReportFilters = ({
               onChange={(e) => onFilterChange({ organisationId: e.target.value })}
               disabled={loading}
             >
-              <option value="">{t('issueReport.allOrgs', { defaultValue: 'All Communities' })}</option>
+              <option value="">
+                {t('issueReport.allOrgs', { defaultValue: 'All Communities' })}
+              </option>
               {organizations.map((org) => (
                 <option key={org._id || org.id} value={org._id || org.id}>
                   {org.name}
@@ -200,7 +199,13 @@ export const IssueReportFilters = ({
         </CCol>
 
         {/* Reset CTA */}
-        <CCol xs={12} sm={4} md={6} lg={8} className="d-flex justify-content-sm-end align-items-center">
+        <CCol
+          xs={12}
+          sm={4}
+          md={6}
+          lg={8}
+          className="d-flex justify-content-sm-end align-items-center"
+        >
           {hasActiveFilters && (
             <CButton
               color="secondary"

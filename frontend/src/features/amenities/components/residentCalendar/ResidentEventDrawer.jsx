@@ -251,7 +251,8 @@ const ResidentEventDrawer = memo(({ visible, onClose, event, onCancel, onPayNow 
                       width: qrExpanded ? '220px' : '150px',
                       height: qrExpanded ? '220px' : '150px',
                       cursor: 'pointer',
-                      transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                      transition:
+                        'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                     }}
                     onClick={() => setQrExpanded(!qrExpanded)}
                   />
@@ -275,7 +276,11 @@ const ResidentEventDrawer = memo(({ visible, onClose, event, onCancel, onPayNow 
           <div className="d-grid gap-2 mt-auto">
             {isPending && (
               <>
-                <CButton color="warning" className="fw-bold" onClick={() => onPayNow && onPayNow(event)}>
+                <CButton
+                  color="warning"
+                  className="fw-bold"
+                  onClick={() => onPayNow && onPayNow(event)}
+                >
                   <i className="fa-solid fa-credit-card me-2"></i> Complete Payment
                 </CButton>
                 <CButton color="danger" variant="ghost" onClick={handleCancelClick}>

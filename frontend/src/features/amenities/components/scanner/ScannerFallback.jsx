@@ -26,7 +26,12 @@ const ScannerFallback = memo(({ onSubmit }) => {
             value={bookingId}
             onChange={(e) => setBookingId(e.target.value)}
           />
-          <CButton type="submit" color="primary" disabled={!bookingId.trim()} className="px-4 fw-semibold">
+          <CButton
+            type="submit"
+            color="primary"
+            disabled={!bookingId.trim()}
+            className="px-4 fw-semibold"
+          >
             Verify
           </CButton>
         </div>

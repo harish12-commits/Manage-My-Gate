@@ -43,7 +43,7 @@ export const useCreateOrganization = () => {
     defaultValues: {
       name: '',
       timezone: 'Asia/Kolkata',
-      contactEmail: isSsoRegister ? ssoEmail : (authUser?.email || ''),
+      contactEmail: isSsoRegister ? ssoEmail : authUser?.email || '',
       contactPhone: authUser?.phone || '',
     },
     mode: 'onTouched',
@@ -71,10 +71,14 @@ export const useCreateOrganization = () => {
         setIsAvailable(Boolean(available))
       } catch (err) {
         if (err.response?.status === 429) {
-          setCheckError(t('organization.create.rateLimit', { defaultValue: 'Too many checks. Please wait.' }))
+          setCheckError(
+            t('organization.create.rateLimit', { defaultValue: 'Too many checks. Please wait.' }),
+          )
         } else {
           setCheckError(
-            t('organization.create.checkError', { defaultValue: 'Failed to verify name availability.' }),
+            t('organization.create.checkError', {
+              defaultValue: 'Failed to verify name availability.',
+            }),
           )
         }
         setIsAvailable(false)

@@ -29,7 +29,10 @@ export const WorkspaceSwitcher = () => {
   // If user belongs to only 1 workspace and is not platform admin, render static badge
   if (!hasMultipleWorkspaces && !activeWorkspace.isPlatform) {
     return (
-      <div className="py-0 nav-link d-flex align-items-center text-body" id="workspace-current-badge">
+      <div
+        className="py-0 nav-link d-flex align-items-center text-body"
+        id="workspace-current-badge"
+      >
         <CIcon icon={cilBuilding} className="me-2" size="lg" />
         <span className="d-none d-md-inline text-truncate" style={{ maxWidth: '160px' }}>
           {activeWorkspace.name || t('workspace.defaultName', { defaultValue: 'Workspace' })}
@@ -48,17 +51,24 @@ export const WorkspaceSwitcher = () => {
       >
         <CIcon icon={cilBuilding} className="me-2" size="lg" />
         <span className="d-none d-md-inline text-truncate" style={{ maxWidth: '160px' }}>
-          {activeWorkspace.name 
-            ? (activeWorkspace.villaId && availableWorkspaces.find(ws => ws.orgId === activeWorkspace.orgId && (ws.villaId||null) === activeWorkspace.villaId)?.villaNumber 
-                ? `${activeWorkspace.name} - Unit ${availableWorkspaces.find(ws => ws.orgId === activeWorkspace.orgId && (ws.villaId||null) === activeWorkspace.villaId).villaNumber}`
-                : activeWorkspace.name)
+          {activeWorkspace.name
+            ? activeWorkspace.villaId &&
+              availableWorkspaces.find(
+                (ws) =>
+                  ws.orgId === activeWorkspace.orgId &&
+                  (ws.villaId || null) === activeWorkspace.villaId,
+              )?.villaNumber
+              ? `${activeWorkspace.name} - Unit ${availableWorkspaces.find((ws) => ws.orgId === activeWorkspace.orgId && (ws.villaId || null) === activeWorkspace.villaId).villaNumber}`
+              : activeWorkspace.name
             : t('workspace.defaultName', { defaultValue: 'Select Workspace' })}
         </span>
       </CDropdownToggle>
       <CDropdownMenu className="pt-0 pb-0" placement="bottom-end">
         {availableWorkspaces.map((ws, idx) => {
-          const isActive = ws.orgId === activeWorkspace.orgId && (ws.villaId || null) === (activeWorkspace.villaId || null)
-          const displayName = ws.villaNumber 
+          const isActive =
+            ws.orgId === activeWorkspace.orgId &&
+            (ws.villaId || null) === (activeWorkspace.villaId || null)
+          const displayName = ws.villaNumber
             ? `${ws.name} - Unit ${ws.villaNumber} (${ws.residentType})`
             : ws.name
 
@@ -78,12 +88,12 @@ export const WorkspaceSwitcher = () => {
                 </div>
                 <div className="small text-body-secondary">{ws.roleName}</div>
               </div>
-            {ws.isPlatform && (
-              <span className="badge bg-primary ms-3 small">
-                {t('workspace.platformBadge', { defaultValue: 'Platform' })}
-              </span>
-            )}
-          </CDropdownItem>
+              {ws.isPlatform && (
+                <span className="badge bg-primary ms-3 small">
+                  {t('workspace.platformBadge', { defaultValue: 'Platform' })}
+                </span>
+              )}
+            </CDropdownItem>
           )
         })}
         <CDropdownItem

@@ -38,7 +38,9 @@ const QrPassCard = memo(({ booking, onCancel }) => {
 
       <CCardBody className="p-0 position-relative d-flex flex-column" style={{ zIndex: 1 }}>
         <div className="p-3 text-center text-white">
-          <h5 className="fw-bold mb-1 opacity-75 text-uppercase" style={{ fontSize: '13px' }}>Digital Access Pass</h5>
+          <h5 className="fw-bold mb-1 opacity-75 text-uppercase" style={{ fontSize: '13px' }}>
+            Digital Access Pass
+          </h5>
           <div className="d-flex align-items-center justify-content-center gap-2 mt-1">
             {booking.amenityImage && (
               <img
@@ -70,38 +72,64 @@ const QrPassCard = memo(({ booking, onCancel }) => {
             )}
           </div>
           <div className="mt-2">
-            <span className="small text-muted text-uppercase fw-bold" style={{ fontSize: '10px' }}>Booking ID</span>
-            <div className="fw-bold font-monospace" style={{ fontSize: '14px' }}>{booking.bookingId || 'N/A'}</div>
+            <span className="small text-muted text-uppercase fw-bold" style={{ fontSize: '10px' }}>
+              Booking ID
+            </span>
+            <div className="fw-bold font-monospace" style={{ fontSize: '14px' }}>
+              {booking.bookingId || 'N/A'}
+            </div>
           </div>
         </div>
 
         <div className="p-3 flex-grow-1">
           <CRow className="g-2">
             <CCol xs={7}>
-              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>Valid On</div>
-              <div className="fw-semibold" style={{ fontSize: '13px' }}>{formattedDate}</div>
+              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>
+                Valid On
+              </div>
+              <div className="fw-semibold" style={{ fontSize: '13px' }}>
+                {formattedDate}
+              </div>
             </CCol>
             <CCol xs={5} className="text-end">
-              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>Persons</div>
-              <div className="fw-semibold" style={{ fontSize: '13px' }}>{booking.numberOfPersons || 1}</div>
+              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>
+                Persons
+              </div>
+              <div className="fw-semibold" style={{ fontSize: '13px' }}>
+                {booking.numberOfPersons || 1}
+              </div>
             </CCol>
             <CCol xs={4}>
-              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>Entry</div>
-              <div className="fw-semibold text-success" style={{ fontSize: '13px' }}>{booking.startTime}</div>
+              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>
+                Entry
+              </div>
+              <div className="fw-semibold text-success" style={{ fontSize: '13px' }}>
+                {booking.startTime}
+              </div>
             </CCol>
             <CCol xs={4}>
-              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>Exit</div>
-              <div className="fw-semibold text-danger" style={{ fontSize: '13px' }}>{booking.endTime}</div>
+              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>
+                Exit
+              </div>
+              <div className="fw-semibold text-danger" style={{ fontSize: '13px' }}>
+                {booking.endTime}
+              </div>
             </CCol>
             <CCol xs={4}>
-              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>Duration</div>
-              <div className="fw-semibold" style={{ fontSize: '13px' }}>{duration}</div>
+              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>
+                Duration
+              </div>
+              <div className="fw-semibold" style={{ fontSize: '13px' }}>
+                {duration}
+              </div>
             </CCol>
             <CCol xs={12}>
               <hr className="my-1 text-muted opacity-25" />
             </CCol>
             <CCol xs={6}>
-              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>Payment</div>
+              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>
+                Payment
+              </div>
               <span
                 className={`badge ${booking.paymentStatus === 'success' ? 'bg-success' : 'bg-warning text-body'}`}
               >
@@ -109,7 +137,9 @@ const QrPassCard = memo(({ booking, onCancel }) => {
               </span>
             </CCol>
             <CCol xs={6}>
-              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>Status</div>
+              <div className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '10px' }}>
+                Status
+              </div>
               {(() => {
                 if (booking.qrStatus === 'expired')
                   return <span className="badge bg-danger">Expired</span>

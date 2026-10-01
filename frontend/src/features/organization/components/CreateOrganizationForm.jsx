@@ -124,7 +124,10 @@ export const CreateOrganizationForm = () => {
                         )}
                         {!checking && isAvailable === true && (
                           <span className="feedback-available">
-                            ✓ {t('organization.create.available', { defaultValue: 'Name is available' })}
+                            ✓{' '}
+                            {t('organization.create.available', {
+                              defaultValue: 'Name is available',
+                            })}
                           </span>
                         )}
                         {!checking && isAvailable === false && !checkError && (

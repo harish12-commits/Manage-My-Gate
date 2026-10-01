@@ -36,7 +36,6 @@ const RoleFormModal = ({ visible, role, onClose, onSave }) => {
     handleSubmit,
     errors,
     selectedPermissions,
-    amenityTier,
     integrationMappings,
     activeMappingsCount,
     setValue,
@@ -154,7 +153,6 @@ const RoleFormModal = ({ visible, role, onClose, onSave }) => {
               <PermissionMatrix
                 groupedPermissions={permissionsList}
                 selectedIds={selectedPermissions}
-                activeAmenityTier={amenityTier}
                 onSelectAllGroup={handleSelectAllGroup}
                 onTogglePermission={handleTogglePermission}
               />

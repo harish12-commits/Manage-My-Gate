@@ -24,12 +24,18 @@ const EnquiryPendingView = () => {
             <CCard className="shadow-lg border-0 rounded-4 text-center">
               <CCardBody className="p-5">
                 <div className="mb-4">
-                  <CIcon icon={cilCheckCircle} size="3xl" className="text-success mb-3" style={{ width: '64px', height: '64px' }} />
+                  <CIcon
+                    icon={cilCheckCircle}
+                    size="3xl"
+                    className="text-success mb-3"
+                    style={{ width: '64px', height: '64px' }}
+                  />
                 </div>
                 <h2 className="fw-bold text-body mb-3">Enquiry Submitted Successfully!</h2>
                 <p className="text-muted mb-4" style={{ fontSize: '16px', lineHeight: '1.6' }}>
-                  Your request has been received. Our team will review your organization details and requested features. 
-                  Once approved and payment is verified, your account will be fully activated.
+                  Your request has been received. Our team will review your organization details and
+                  requested features. Once approved and payment is verified, your account will be
+                  fully activated.
                 </p>
                 <div className="d-flex align-items-center justify-content-center gap-2 mb-5">
                   <CIcon icon={cilBuilding} className="text-primary" />

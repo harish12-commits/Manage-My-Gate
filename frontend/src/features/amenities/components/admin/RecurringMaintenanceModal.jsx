@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState, useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import {
   fetchFacilities,
   fetchResourcesByFacility,
   previewRecurringMaintenance,
   scheduleRecurringMaintenance,
-} from '../../store/amenitySlice.js';
+} from '../../store/amenitySlice.js'
 
 const DAYS_OF_WEEK = [
   { id: 0, label: 'Sun' },
@@ -15,35 +15,37 @@ const DAYS_OF_WEEK = [
   { id: 4, label: 'Thu' },
   { id: 5, label: 'Fri' },
   { id: 6, label: 'Sat' },
-];
+]
 
 const RecurringMaintenanceModal = ({ visible, onClose, onSuccess }) => {
-  const dispatch = useDispatch();
-  const { facilities, resources, loading, error } = useSelector((state) => state.amenities);
+  const dispatch = useDispatch()
+  const { facilities, resources, loading, error } = useSelector((state) => state.amenities)
 
-  const [facilityId, setFacilityId] = useState('');
-  const [resourceId, setResourceId] = useState('');
-  const [title, setTitle] = useState('');
-  const [reason, setReason] = useState('');
-  const [maintenanceType, setMaintenanceType] = useState('CLEANING');
-  const [internalNotes, setInternalNotes] = useState('');
-  const [startDateTime, setStartDateTime] = useState('');
-  const [endDateTime, setEndDateTime] = useState('');
-  const [bufferBeforeMinutes, setBufferBeforeMinutes] = useState(15);
-  const [bufferAfterMinutes, setBufferAfterMinutes] = useState(15);
-  const [isCompleteClosure, setIsCompleteClosure] = useState(true);
+  const [facilityId, setFacilityId] = useState('')
+  const [resourceId, setResourceId] = useState('')
+  const [title, setTitle] = useState('')
+  const [reason, setReason] = useState('')
+  const [maintenanceType, setMaintenanceType] = useState('CLEANING')
+  const [internalNotes, setInternalNotes] = useState('')
+  const [startDateTime, setStartDateTime] = useState('')
+  const [endDateTime, setEndDateTime] = useState('')
+  const [bufferBeforeMinutes, setBufferBeforeMinutes] = useState(15)
+  const [bufferAfterMinutes, setBufferAfterMinutes] = useState(15)
+  const [isCompleteClosure, setIsCompleteClosure] = useState(true)
 
   // Recurrence config
-  const [frequency, setFrequency] = useState('WEEKLY');
-  const [interval, setInterval] = useState(1);
-  const [selectedDays, setSelectedDays] = useState([1]); // Default to Monday
-  const [dayOfMonth, setDayOfMonth] = useState(1);
-  const [occurrenceCount, setOccurrenceCount] = useState(8);
-  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
+  const [frequency, setFrequency] = useState('WEEKLY')
+  const [interval, setInterval] = useState(1)
+  const [selectedDays, setSelectedDays] = useState([1]) // Default to Monday
+  const [dayOfMonth, setDayOfMonth] = useState(1)
+  const [occurrenceCount, setOccurrenceCount] = useState(8)
+  const [timezone, setTimezone] = useState(
+    Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+  )
 
-  const [previewResult, setPreviewResult] = useState(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [validationError, setValidationError] = useState('');
+  const [previewResult, setPreviewResult] = useState(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [validationError, setValidationError] = useState('')
 
   const facilitiesList = Array.isArray(facilities)
     ? facilities
@@ -51,60 +53,60 @@ const RecurringMaintenanceModal = ({ visible, onClose, onSuccess }) => {
       ? facilities.data
       : Array.isArray(facilities?.records)
         ? facilities.records
-        : [];
-  const resourcesList = Array.isArray(resources) ? resources : [];
+        : []
+  const resourcesList = Array.isArray(resources) ? resources : []
 
   useEffect(() => {
     if (visible) {
-      dispatch(fetchFacilities());
-      setFacilityId('');
-      setResourceId('');
-      setTitle('Scheduled Routine Upkeep');
-      setReason('Periodic preventive maintenance');
-      setMaintenanceType('CLEANING');
-      setInternalNotes('');
+      dispatch(fetchFacilities())
+      setFacilityId('')
+      setResourceId('')
+      setTitle('Scheduled Routine Upkeep')
+      setReason('Periodic preventive maintenance')
+      setMaintenanceType('CLEANING')
+      setInternalNotes('')
 
       // Default start 1 day ahead, 08:00 to 10:00
-      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      tomorrow.setHours(8, 0, 0, 0);
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
+      tomorrow.setHours(8, 0, 0, 0)
       const isoStart = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000)
         .toISOString()
-        .slice(0, 16);
-      tomorrow.setHours(10, 0, 0, 0);
+        .slice(0, 16)
+      tomorrow.setHours(10, 0, 0, 0)
       const isoEnd = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000)
         .toISOString()
-        .slice(0, 16);
+        .slice(0, 16)
 
-      setStartDateTime(isoStart);
-      setEndDateTime(isoEnd);
-      setBufferBeforeMinutes(15);
-      setBufferAfterMinutes(15);
-      setIsCompleteClosure(true);
+      setStartDateTime(isoStart)
+      setEndDateTime(isoEnd)
+      setBufferBeforeMinutes(15)
+      setBufferAfterMinutes(15)
+      setIsCompleteClosure(true)
 
-      setFrequency('WEEKLY');
-      setInterval(1);
-      setSelectedDays([1]);
-      setDayOfMonth(1);
-      setOccurrenceCount(8);
-      setPreviewResult(null);
-      setValidationError('');
+      setFrequency('WEEKLY')
+      setInterval(1)
+      setSelectedDays([1])
+      setDayOfMonth(1)
+      setOccurrenceCount(8)
+      setPreviewResult(null)
+      setValidationError('')
     }
-  }, [visible, dispatch]);
+  }, [visible, dispatch])
 
   const handleFacilityChange = (e) => {
-    const selectedId = e.target.value;
-    setFacilityId(selectedId);
-    setResourceId('');
+    const selectedId = e.target.value
+    setFacilityId(selectedId)
+    setResourceId('')
     if (selectedId) {
-      dispatch(fetchResourcesByFacility(selectedId));
+      dispatch(fetchResourcesByFacility(selectedId))
     }
-  };
+  }
 
   const toggleDayOfWeek = (dayId) => {
     setSelectedDays((prev) =>
-      prev.includes(dayId) ? prev.filter((d) => d !== dayId) : [...prev, dayId].sort()
-    );
-  };
+      prev.includes(dayId) ? prev.filter((d) => d !== dayId) : [...prev, dayId].sort(),
+    )
+  }
 
   const buildRecurrenceObject = () => {
     const rec = {
@@ -112,28 +114,28 @@ const RecurringMaintenanceModal = ({ visible, onClose, onSuccess }) => {
       interval: parseInt(interval, 10) || 1,
       occurrenceCount: Math.min(Math.max(parseInt(occurrenceCount, 10) || 1, 1), 60),
       timezone: timezone || 'UTC',
-    };
+    }
     if (frequency === 'WEEKLY' || frequency === 'CUSTOM') {
-      rec.daysOfWeek = selectedDays.length > 0 ? selectedDays : [1];
+      rec.daysOfWeek = selectedDays.length > 0 ? selectedDays : [1]
     }
     if (frequency === 'MONTHLY') {
-      rec.dayOfMonth = parseInt(dayOfMonth, 10) || 1;
+      rec.dayOfMonth = parseInt(dayOfMonth, 10) || 1
     }
-    return rec;
-  };
+    return rec
+  }
 
   const handlePreview = async () => {
-    setValidationError('');
+    setValidationError('')
     if (!facilityId) {
-      setValidationError('Facility is required for preview.');
-      return;
+      setValidationError('Facility is required for preview.')
+      return
     }
     if (!startDateTime || !endDateTime) {
-      setValidationError('Start and End times are required.');
-      return;
+      setValidationError('Start and End times are required.')
+      return
     }
 
-    setPreviewLoading(true);
+    setPreviewLoading(true)
     try {
       const payload = {
         facilityId,
@@ -147,21 +149,21 @@ const RecurringMaintenanceModal = ({ visible, onClose, onSuccess }) => {
         bufferBeforeMinutes: parseInt(bufferBeforeMinutes, 10) || 0,
         bufferAfterMinutes: parseInt(bufferAfterMinutes, 10) || 0,
         recurrence: buildRecurrenceObject(),
-      };
-      const res = await dispatch(previewRecurringMaintenance(payload)).unwrap();
-      setPreviewResult(res);
+      }
+      const res = await dispatch(previewRecurringMaintenance(payload)).unwrap()
+      setPreviewResult(res)
     } catch (err) {
-      setValidationError(typeof err === 'object' ? err.message : err);
+      setValidationError(typeof err === 'object' ? err.message : err)
     } finally {
-      setPreviewLoading(false);
+      setPreviewLoading(false)
     }
-  };
+  }
 
   const handleSchedule = async () => {
-    setValidationError('');
+    setValidationError('')
     if (!facilityId || !title.trim() || !reason.trim() || !startDateTime || !endDateTime) {
-      setValidationError('All required fields must be completed.');
-      return;
+      setValidationError('All required fields must be completed.')
+      return
     }
 
     const payload = {
@@ -182,18 +184,18 @@ const RecurringMaintenanceModal = ({ visible, onClose, onSuccess }) => {
       conflictAction: 'CANCEL_AND_PROCEED',
       impactResolutions: [],
       resolutions: [],
-    };
+    }
 
     try {
-      const res = await dispatch(scheduleRecurringMaintenance(payload)).unwrap();
-      if (onSuccess) onSuccess(res);
-      onClose();
+      const res = await dispatch(scheduleRecurringMaintenance(payload)).unwrap()
+      if (onSuccess) onSuccess(res)
+      onClose()
     } catch (err) {
-      setValidationError(typeof err === 'object' ? err.message : err);
+      setValidationError(typeof err === 'object' ? err.message : err)
     }
-  };
+  }
 
-  if (!visible) return null;
+  if (!visible) return null
 
   return (
     <div className="modal-overlay active amenity-os-theme" onClick={onClose}>
@@ -461,7 +463,9 @@ const RecurringMaintenanceModal = ({ visible, onClose, onSuccess }) => {
             <div className="p-3 border rounded mb-3 bg-light">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <h6 className="m-0 fw-bold">
-                  Generated {previewResult.occurrenceCount || previewResult.occurrences?.length || 0} Occurrence(s)
+                  Generated{' '}
+                  {previewResult.occurrenceCount || previewResult.occurrences?.length || 0}{' '}
+                  Occurrence(s)
                 </h6>
                 <span
                   className={`badge ${(previewResult.totalConflicts || 0) > 0 ? 'badge-warning' : 'badge-success'}`}
@@ -473,17 +477,23 @@ const RecurringMaintenanceModal = ({ visible, onClose, onSuccess }) => {
               {previewResult.occurrences && (
                 <div style={{ maxHeight: '180px', overflowY: 'auto' }} className="small">
                   {previewResult.occurrences.slice(0, 10).map((occ, idx) => (
-                    <div
-                      key={idx}
-                      className="d-flex justify-content-between py-1 border-bottom"
-                    >
+                    <div key={idx} className="d-flex justify-content-between py-1 border-bottom">
                       <span>
                         #{idx + 1}: {new Date(occ.startDateTime).toLocaleDateString()}{' '}
-                        {new Date(occ.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{' '}
-                        - {new Date(occ.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(occ.startDateTime).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}{' '}
+                        -{' '}
+                        {new Date(occ.endDateTime).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </span>
                       {occ.conflictsCount > 0 ? (
-                        <span className="text-danger fw-bold">{occ.conflictsCount} conflict(s)</span>
+                        <span className="text-danger fw-bold">
+                          {occ.conflictsCount} conflict(s)
+                        </span>
                       ) : (
                         <span className="text-success">Clear</span>
                       )}
@@ -501,7 +511,12 @@ const RecurringMaintenanceModal = ({ visible, onClose, onSuccess }) => {
         </div>
 
         <div className="modal-footer">
-          <button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={loading}>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={onClose}
+            disabled={loading}
+          >
             Cancel
           </button>
           <button
@@ -523,7 +538,7 @@ const RecurringMaintenanceModal = ({ visible, onClose, onSuccess }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default RecurringMaintenanceModal;
+export default RecurringMaintenanceModal

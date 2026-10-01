@@ -39,8 +39,9 @@ export const getDayName = (dayIndex) => {
  * @returns {string} Image URL
  */
 export const getAmenityImagePlaceholder = (name) => {
-  if (!name) return 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1470&auto=format&fit=crop'
-  
+  if (!name)
+    return 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1470&auto=format&fit=crop'
+
   const lowerName = name.toLowerCase()
   if (lowerName.includes('gym') || lowerName.includes('fitness') || lowerName.includes('workout')) {
     return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop'
@@ -57,6 +58,6 @@ export const getAmenityImagePlaceholder = (name) => {
   if (lowerName.includes('club') || lowerName.includes('hall') || lowerName.includes('party')) {
     return 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1498&auto=format&fit=crop'
   }
-  
+
   return 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1470&auto=format&fit=crop' // Default
 }

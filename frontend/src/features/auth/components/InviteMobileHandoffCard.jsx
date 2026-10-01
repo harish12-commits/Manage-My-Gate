@@ -18,7 +18,8 @@ export const InviteMobileHandoffCard = ({ handoffData, orgName }) => {
   const { t } = useTranslation()
   const [redirectingToStore, setRedirectingToStore] = useState(false)
 
-  const playStoreFallback = 'https://play.google.com/store/apps/details?id=com.atominosconsulting.nahom'
+  const playStoreFallback =
+    'https://play.google.com/store/apps/details?id=com.atominosconsulting.nahom'
   const appStoreFallback = 'https://apps.apple.com/app/manage-my-gate/id6746501635'
 
   const APP_IN_REVIEW_IOS = true // Set to false once the app is approved on the App Store
@@ -30,8 +31,8 @@ export const InviteMobileHandoffCard = ({ handoffData, orgName }) => {
   const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent || '')
 
   let storeUrl = isAndroid
-    ? (handoffData?.playStoreUrl || playStoreFallback)
-    : (handoffData?.appStoreUrl || appStoreFallback)
+    ? handoffData?.playStoreUrl || playStoreFallback
+    : handoffData?.appStoreUrl || appStoreFallback
 
   // Temporarily route iOS users to the web dashboard if they don't have the app installed,
   // since the App Store link won't work while the app is in review.
@@ -75,7 +76,8 @@ export const InviteMobileHandoffCard = ({ handoffData, orgName }) => {
     }
   }, [deepLink, storeUrl])
 
-  const storeName = isIos && APP_IN_REVIEW_IOS ? 'Web Dashboard' : isIos ? 'Apple App Store' : 'Google Play Store'
+  const storeName =
+    isIos && APP_IN_REVIEW_IOS ? 'Web Dashboard' : isIos ? 'Apple App Store' : 'Google Play Store'
 
   return (
     <CCard className="invite-card invite-handoff-card border-0 shadow-lg rounded-4 overflow-hidden text-center p-4 p-md-5">
@@ -93,8 +95,15 @@ export const InviteMobileHandoffCard = ({ handoffData, orgName }) => {
 
         <p className="text-muted small mb-4">
           {orgName
-            ? t('auth.handoff.joinedSubtitleWithOrg', 'Your account is active and you are now a member of {{orgName}}.', { orgName })
-            : t('auth.handoff.joinedSubtitle', 'Your account is active and your workspace invitation has been accepted.')}
+            ? t(
+                'auth.handoff.joinedSubtitleWithOrg',
+                'Your account is active and you are now a member of {{orgName}}.',
+                { orgName },
+              )
+            : t(
+                'auth.handoff.joinedSubtitle',
+                'Your account is active and your workspace invitation has been accepted.',
+              )}
         </p>
 
         <div className="bg-light rounded-3 p-4 mb-3 text-center">
@@ -103,22 +112,27 @@ export const InviteMobileHandoffCard = ({ handoffData, orgName }) => {
             {redirectingToStore
               ? isIos && APP_IN_REVIEW_IOS
                 ? t('auth.handoff.redirectingDashboard', 'Opening Web Dashboard...')
-                : t('auth.handoff.redirectingStore', 'Opening {{storeName}} to install Nahom...', { storeName })
+                : t('auth.handoff.redirectingStore', 'Opening {{storeName}} to install Nahom...', {
+                    storeName,
+                  })
               : t('auth.handoff.connectingApp', 'Launching the Nahom mobile app...')}
           </span>
           <p className="text-muted small mt-2 mb-0" style={{ fontSize: '0.82rem' }}>
-            {t('auth.handoff.autoHandoffDesc', 'Your authenticated session is being securely synced to your device.')}
+            {t(
+              'auth.handoff.autoHandoffDesc',
+              'Your authenticated session is being securely synced to your device.',
+            )}
           </p>
         </div>
 
         {/* Fallback direct link in case browser pop-up/redirect blocker prevents auto-navigation */}
         <div className="pt-2 text-center">
           <small className="text-muted" style={{ fontSize: '0.78rem' }}>
-            {t('auth.handoff.troubleRedirecting', 'If the app or store does not open automatically,')}{' '}
-            <a
-              href={storeUrl}
-              className="text-primary fw-semibold text-decoration-none"
-            >
+            {t(
+              'auth.handoff.troubleRedirecting',
+              'If the app or store does not open automatically,',
+            )}{' '}
+            <a href={storeUrl} className="text-primary fw-semibold text-decoration-none">
               {t('auth.handoff.tapToContinue', 'tap here to continue.')}
             </a>
           </small>

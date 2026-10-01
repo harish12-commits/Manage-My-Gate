@@ -1,44 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { extendV2MaintenanceBlock } from '../../store/amenitySlice.js';
+import React, { useState, useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { extendV2MaintenanceBlock } from '../../store/amenitySlice.js'
 
 const MaintenanceExtensionModal = ({ visible, onClose, block, onSuccess, onConflictsDetected }) => {
-  const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.amenities);
+  const dispatch = useDispatch()
+  const { loading, error } = useSelector((state) => state.amenities)
 
-  const [newEndDateTime, setNewEndDateTime] = useState('');
-  const [conflictAction, setConflictAction] = useState('CANCEL_AND_PROCEED');
-  const [validationError, setValidationError] = useState('');
+  const [newEndDateTime, setNewEndDateTime] = useState('')
+  const [conflictAction, setConflictAction] = useState('CANCEL_AND_PROCEED')
+  const [validationError, setValidationError] = useState('')
 
   useEffect(() => {
     if (visible && block) {
-      setValidationError('');
-      const currentEnd = new Date(block.endDateTime || Date.now());
+      setValidationError('')
+      const currentEnd = new Date(block.endDateTime || Date.now())
       // Suggest 2 hours past current end
-      const extended = new Date(currentEnd.getTime() + 2 * 60 * 60 * 1000);
+      const extended = new Date(currentEnd.getTime() + 2 * 60 * 60 * 1000)
       const isoLocal = new Date(extended.getTime() - extended.getTimezoneOffset() * 60000)
         .toISOString()
-        .slice(0, 16);
-      setNewEndDateTime(isoLocal);
-      setConflictAction('CANCEL_AND_PROCEED');
+        .slice(0, 16)
+      setNewEndDateTime(isoLocal)
+      setConflictAction('CANCEL_AND_PROCEED')
     }
-  }, [visible, block]);
+  }, [visible, block])
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setValidationError('');
+    e.preventDefault()
+    setValidationError('')
 
     if (!newEndDateTime) {
-      setValidationError('New end date/time is required.');
-      return;
+      setValidationError('New end date/time is required.')
+      return
     }
 
-    const currentEpoch = new Date(block.endDateTime).getTime();
-    const newEpoch = new Date(newEndDateTime).getTime();
+    const currentEpoch = new Date(block.endDateTime).getTime()
+    const newEpoch = new Date(newEndDateTime).getTime()
 
     if (newEpoch <= currentEpoch) {
-      setValidationError('New end date/time must be strictly after the current end time.');
-      return;
+      setValidationError('New end date/time must be strictly after the current end time.')
+      return
     }
 
     try {
@@ -50,22 +50,22 @@ const MaintenanceExtensionModal = ({ visible, onClose, block, onSuccess, onConfl
             conflictAction,
             resolutions: [],
           },
-        })
-      ).unwrap();
+        }),
+      ).unwrap()
 
-      if (onSuccess) onSuccess(res);
-      onClose();
+      if (onSuccess) onSuccess(res)
+      onClose()
     } catch (err) {
       if (err?.code === 'MAINTENANCE_IMPACT_NOT_RESOLVED' && onConflictsDetected) {
-        onConflictsDetected(block._id, err.details?.conflicts || []);
-        onClose();
+        onConflictsDetected(block._id, err.details?.conflicts || [])
+        onClose()
       } else {
-        setValidationError(typeof err === 'object' ? err.message : err);
+        setValidationError(typeof err === 'object' ? err.message : err)
       }
     }
-  };
+  }
 
-  if (!visible || !block) return null;
+  if (!visible || !block) return null
 
   return (
     <div className="modal-overlay active amenity-os-theme" onClick={onClose}>
@@ -92,7 +92,8 @@ const MaintenanceExtensionModal = ({ visible, onClose, block, onSuccess, onConfl
                 Current End: {new Date(block.endDateTime).toLocaleString()}
               </div>
               <div className="text-muted small">
-                Effective End (inc. buffer): {new Date(block.effectiveEndDateTime || block.endDateTime).toLocaleString()}
+                Effective End (inc. buffer):{' '}
+                {new Date(block.effectiveEndDateTime || block.endDateTime).toLocaleString()}
               </div>
             </div>
 
@@ -132,7 +133,12 @@ const MaintenanceExtensionModal = ({ visible, onClose, block, onSuccess, onConfl
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={loading}>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={onClose}
+              disabled={loading}
+            >
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
@@ -150,7 +156,7 @@ const MaintenanceExtensionModal = ({ visible, onClose, block, onSuccess, onConfl
         </form>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default MaintenanceExtensionModal;
+export default MaintenanceExtensionModal

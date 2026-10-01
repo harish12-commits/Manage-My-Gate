@@ -46,7 +46,10 @@ export const UserDirectoryTable = ({
 
   return (
     <div>
-      <div className="table-wrapper" style={{ maxHeight: 'calc(100vh - 460px)', overflowY: 'auto' }}>
+      <div
+        className="table-wrapper"
+        style={{ maxHeight: 'calc(100vh - 460px)', overflowY: 'auto' }}
+      >
         <table className="ent-table">
           <thead>
             <tr>
@@ -68,7 +71,11 @@ export const UserDirectoryTable = ({
                 <td colSpan={8}>
                   <div className="loading-center" style={{ padding: '40px' }}>
                     <AppLoader variant="block" />
-                    <span>{t('superAdmin.orgDetails.loadingUsers', { defaultValue: 'Loading organization users...' })}</span>
+                    <span>
+                      {t('superAdmin.orgDetails.loadingUsers', {
+                        defaultValue: 'Loading organization users...',
+                      })}
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -81,7 +88,9 @@ export const UserDirectoryTable = ({
                       {t('superAdmin.orgDetails.noUsersFound', { defaultValue: 'No users found' })}
                     </div>
                     <div className="empty-desc">
-                      {t('superAdmin.orgDetails.noUsersFoundDesc', { defaultValue: 'Try adjusting your search or filter criteria.' })}
+                      {t('superAdmin.orgDetails.noUsersFoundDesc', {
+                        defaultValue: 'Try adjusting your search or filter criteria.',
+                      })}
                     </div>
                   </div>
                 </td>
@@ -127,11 +136,21 @@ export const UserDirectoryTable = ({
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                         {roles.length === 0 ? (
                           <span className="count-badge">
-                            {t('superAdmin.orgDetails.defaultMemberRole', { defaultValue: 'Member' })}
+                            {t('superAdmin.orgDetails.defaultMemberRole', {
+                              defaultValue: 'Member',
+                            })}
                           </span>
                         ) : (
                           roles.map((r) => (
-                            <span key={r._id || r.name} className="count-badge" style={{ background: 'var(--info-bg)', color: 'var(--info)', borderColor: 'transparent' }}>
+                            <span
+                              key={r._id || r.name}
+                              className="count-badge"
+                              style={{
+                                background: 'var(--info-bg)',
+                                color: 'var(--info)',
+                                borderColor: 'transparent',
+                              }}
+                            >
                               {r.name}
                             </span>
                           ))
@@ -161,7 +180,9 @@ export const UserDirectoryTable = ({
                       <div className="action-btn-group">
                         <button
                           className="action-icon-btn btn-view"
-                          title={t('superAdmin.orgDetails.viewUserBtn', { defaultValue: 'View Details' })}
+                          title={t('superAdmin.orgDetails.viewUserBtn', {
+                            defaultValue: 'View Details',
+                          })}
                           onClick={() => onViewUser(u.userId || u.userId?._id)}
                         >
                           <CIcon icon={cilFolderOpen} size="sm" />

@@ -57,12 +57,24 @@ export const UserFiltersBar = ({
         aria-label="Filter by role"
         style={{ maxWidth: '180px' }}
       >
-        <option value="">{t('superAdmin.orgDetails.allRoles', { defaultValue: 'All Roles' })}</option>
-        <option value="Admin">{t('superAdmin.orgDetails.roleAdmin', { defaultValue: 'Admin' })}</option>
-        <option value="Resident">{t('superAdmin.orgDetails.roleResident', { defaultValue: 'Resident' })}</option>
-        <option value="Owner">{t('superAdmin.orgDetails.roleOwner', { defaultValue: 'Owner' })}</option>
-        <option value="Security">{t('superAdmin.orgDetails.roleSecurity', { defaultValue: 'Security Guard' })}</option>
-        <option value="Staff">{t('superAdmin.orgDetails.roleStaff', { defaultValue: 'Staff' })}</option>
+        <option value="">
+          {t('superAdmin.orgDetails.allRoles', { defaultValue: 'All Roles' })}
+        </option>
+        <option value="Admin">
+          {t('superAdmin.orgDetails.roleAdmin', { defaultValue: 'Admin' })}
+        </option>
+        <option value="Resident">
+          {t('superAdmin.orgDetails.roleResident', { defaultValue: 'Resident' })}
+        </option>
+        <option value="Owner">
+          {t('superAdmin.orgDetails.roleOwner', { defaultValue: 'Owner' })}
+        </option>
+        <option value="Security">
+          {t('superAdmin.orgDetails.roleSecurity', { defaultValue: 'Security Guard' })}
+        </option>
+        <option value="Staff">
+          {t('superAdmin.orgDetails.roleStaff', { defaultValue: 'Staff' })}
+        </option>
       </select>
 
       {/* Status Filter */}
@@ -73,11 +85,21 @@ export const UserFiltersBar = ({
         aria-label="Filter by status"
         style={{ maxWidth: '180px' }}
       >
-        <option value="">{t('superAdmin.orgDetails.allStatuses', { defaultValue: 'All Statuses' })}</option>
-        <option value="Active">{t('superAdmin.orgDetails.statusActive', { defaultValue: 'Active' })}</option>
-        <option value="Pending">{t('superAdmin.orgDetails.statusPending', { defaultValue: 'Pending' })}</option>
-        <option value="Inactive">{t('superAdmin.orgDetails.statusInactive', { defaultValue: 'Inactive' })}</option>
-        <option value="Blocked">{t('superAdmin.orgDetails.statusBlocked', { defaultValue: 'Blocked' })}</option>
+        <option value="">
+          {t('superAdmin.orgDetails.allStatuses', { defaultValue: 'All Statuses' })}
+        </option>
+        <option value="Active">
+          {t('superAdmin.orgDetails.statusActive', { defaultValue: 'Active' })}
+        </option>
+        <option value="Pending">
+          {t('superAdmin.orgDetails.statusPending', { defaultValue: 'Pending' })}
+        </option>
+        <option value="Inactive">
+          {t('superAdmin.orgDetails.statusInactive', { defaultValue: 'Inactive' })}
+        </option>
+        <option value="Blocked">
+          {t('superAdmin.orgDetails.statusBlocked', { defaultValue: 'Blocked' })}
+        </option>
       </select>
     </div>
   )

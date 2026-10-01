@@ -73,7 +73,11 @@ const InviteUserModal = ({ visible, onClose, onSendInvite }) => {
     setRoleTouched(true)
     setSubmitError(null)
 
-    if (emailValidation.state === 'empty' || emailValidation.state === 'incomplete' || emailValidation.state === 'invalid') {
+    if (
+      emailValidation.state === 'empty' ||
+      emailValidation.state === 'incomplete' ||
+      emailValidation.state === 'invalid'
+    ) {
       return
     }
 
@@ -103,7 +107,9 @@ const InviteUserModal = ({ visible, onClose, onSendInvite }) => {
       })
       handleClose()
     } catch (err) {
-      setSubmitError(parseBackendError(err, 'Failed to send invitation. Please verify the email and try again.'))
+      setSubmitError(
+        parseBackendError(err, 'Failed to send invitation. Please verify the email and try again.'),
+      )
     } finally {
       setSubmitting(false)
     }
@@ -132,7 +138,12 @@ const InviteUserModal = ({ visible, onClose, onSendInvite }) => {
       <form onSubmit={handleSubmit}>
         <CModalBody>
           {submitError && (
-            <CAlert color="danger" className="mb-3" dismissible onDismiss={() => setSubmitError(null)}>
+            <CAlert
+              color="danger"
+              className="mb-3"
+              dismissible
+              onDismiss={() => setSubmitError(null)}
+            >
               {submitError}
             </CAlert>
           )}
@@ -155,9 +166,17 @@ const InviteUserModal = ({ visible, onClose, onSendInvite }) => {
               }}
               onBlur={() => setEmailTouched(true)}
               valid={emailTouched && emailValidation.state === 'valid'}
-              invalid={emailTouched && (emailValidation.state === 'invalid' || (emailValidation.state === 'empty' && emailTouched))}
+              invalid={
+                emailTouched &&
+                (emailValidation.state === 'invalid' ||
+                  (emailValidation.state === 'empty' && emailTouched))
+              }
               feedbackValid="Valid email address format"
-              feedbackInvalid={emailValidation.state === 'empty' ? 'Email address is required' : emailValidation.message}
+              feedbackInvalid={
+                emailValidation.state === 'empty'
+                  ? 'Email address is required'
+                  : emailValidation.message
+              }
               text={
                 emailTouched && emailValidation.state === 'incomplete'
                   ? 'Keep typing... (e.g. resident@example.com)'

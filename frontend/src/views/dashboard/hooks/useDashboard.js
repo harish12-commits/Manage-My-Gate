@@ -67,9 +67,7 @@ export const useDashboard = () => {
     (item) => !SUPER_ADMIN_PATHS.has(item.to) && item.to !== '/dashboard',
   )
 
-  const SUPER_ADMIN_CATEGORIES = navigation.filter(
-    (item) => SUPER_ADMIN_PATHS.has(item.to),
-  )
+  const SUPER_ADMIN_CATEGORIES = navigation.filter((item) => SUPER_ADMIN_PATHS.has(item.to))
 
   let navigationItems = isPlatform
     ? [...SUPER_ADMIN_CATEGORIES, ...PORTAL_CATEGORIES]
@@ -87,8 +85,10 @@ export const useDashboard = () => {
 
     const isModuleEnabled = (key) => {
       if (allowedFeatures.includes(key)) return true
-      if (activeWorkspace?.modules?.some((m) => m.moduleKey === key && m.enabled !== false)) return true
-      if (activeWorkspace?.workspaceModules?.some((m) => m.moduleKey === key && m.enabled === true)) return true
+      if (activeWorkspace?.modules?.some((m) => m.moduleKey === key && m.enabled !== false))
+        return true
+      if (activeWorkspace?.workspaceModules?.some((m) => m.moduleKey === key && m.enabled === true))
+        return true
       return false
     }
 
@@ -117,10 +117,15 @@ export const useDashboard = () => {
     }
 
     if (Array.isArray(item.requiredPermission)) {
-      return item.requiredPermission.some((perm) => isFeatureEnabled(perm) && (isPlatform || checkPermission(perm)))
+      return item.requiredPermission.some(
+        (perm) => isFeatureEnabled(perm) && (isPlatform || checkPermission(perm)),
+      )
     }
 
-    return isFeatureEnabled(item.requiredPermission) && (isPlatform || checkPermission(item.requiredPermission))
+    return (
+      isFeatureEnabled(item.requiredPermission) &&
+      (isPlatform || checkPermission(item.requiredPermission))
+    )
   }
 
   // Filter based on allowedFeatures and required permissions, also cleaning up any empty titles

@@ -145,27 +145,40 @@ const ResidentActionCenterView = memo(() => {
                   <tr key={inv.invoiceId || inv._id} className="invoice-history__row">
                     <td className="invoice-history__cell">
                       <div className="invoice-history__period">{inv.billingPeriodString}</div>
-                      <div className="invoice-history__assessment-name">{inv.assessmentName || 'Maintenance'}</div>
+                      <div className="invoice-history__assessment-name">
+                        {inv.assessmentName || 'Maintenance'}
+                      </div>
                     </td>
                     <td className="invoice-history__cell">
                       <span className="invoice-history__unit">{inv.unitNumber}</span>
                     </td>
                     <td className="invoice-history__cell">
-                      <span className="invoice-history__amount">₹{(inv.totalDue || 0).toLocaleString('en-IN')}</span>
+                      <span className="invoice-history__amount">
+                        ₹{(inv.totalDue || 0).toLocaleString('en-IN')}
+                      </span>
                     </td>
                     <td className="invoice-history__cell">
-                      <span style={{ fontWeight: 600, color: '#065F46' }}>₹{(inv.paidAmount || 0).toLocaleString('en-IN')}</span>
+                      <span style={{ fontWeight: 600, color: '#065F46' }}>
+                        ₹{(inv.paidAmount || 0).toLocaleString('en-IN')}
+                      </span>
                     </td>
                     <td className="invoice-history__cell">
-                      <span className="invoice-history__amount">₹{(inv.outstandingAmount ?? inv.totalDue ?? 0).toLocaleString('en-IN')}</span>
+                      <span className="invoice-history__amount">
+                        ₹{(inv.outstandingAmount ?? inv.totalDue ?? 0).toLocaleString('en-IN')}
+                      </span>
                     </td>
                     <td className="invoice-history__cell">
-                      <span className={`invoice-history__status ${
-                        inv.status === 'PAID' ? 'invoice-history__status--paid' :
-                        inv.status === 'PARTIALLY_PAID' ? 'invoice-history__status--partial' :
-                        inv.status === 'UNPAID' || inv.status === 'OVERDUE' ? 'invoice-history__status--unpaid' :
-                        'invoice-history__status--other'
-                      }`}>
+                      <span
+                        className={`invoice-history__status ${
+                          inv.status === 'PAID'
+                            ? 'invoice-history__status--paid'
+                            : inv.status === 'PARTIALLY_PAID'
+                              ? 'invoice-history__status--partial'
+                              : inv.status === 'UNPAID' || inv.status === 'OVERDUE'
+                                ? 'invoice-history__status--unpaid'
+                                : 'invoice-history__status--other'
+                        }`}
+                      >
                         {inv.status ? inv.status.replace('_', ' ') : 'UNKNOWN'}
                       </span>
                     </td>

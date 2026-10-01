@@ -44,7 +44,9 @@ const FeatureConfigWizard = React.lazy(
   () => import('./features/workspace/views/FeatureConfigWizard'),
 )
 const PublicCheckoutPage = React.lazy(() => import('./views/pages/pay/PublicCheckoutPage'))
-const BillingInvoiceLinkPage = React.lazy(() => import('./views/pages/billing/BillingInvoiceLinkPage'))
+const BillingInvoiceLinkPage = React.lazy(
+  () => import('./views/pages/billing/BillingInvoiceLinkPage'),
+)
 const SetPasswordPage = React.lazy(() => import('./views/pages/auth/SetPasswordPage'))
 const EnquiryPendingView = React.lazy(() => import('./features/workspace/views/EnquiryPendingView'))
 const PrivacyPolicyPage = React.lazy(() => import('./views/pages/privacyPolicy/PrivacyPolicyPage'))
@@ -152,13 +154,38 @@ const App = () => {
               name="Accept Invitation Page"
               element={<AcceptInvitePage />}
             />
-            <Route exact path="/invite/web/:token" name="Web Invite Handler" element={<WebInviteHandler />} />
-            <Route exact path="/invite/web" name="Web Invite Handler" element={<WebInviteHandler />} />
-            <Route exact path="/invite/app/:token" name="App Invite Handler" element={<AppInviteHandler />} />
-            <Route exact path="/invite/app" name="App Invite Handler" element={<AppInviteHandler />} />
+            <Route
+              exact
+              path="/invite/web/:token"
+              name="Web Invite Handler"
+              element={<WebInviteHandler />}
+            />
+            <Route
+              exact
+              path="/invite/web"
+              name="Web Invite Handler"
+              element={<WebInviteHandler />}
+            />
+            <Route
+              exact
+              path="/invite/app/:token"
+              name="App Invite Handler"
+              element={<AppInviteHandler />}
+            />
+            <Route
+              exact
+              path="/invite/app"
+              name="App Invite Handler"
+              element={<AppInviteHandler />}
+            />
             <Route exact path="/invite/:token" name="Invite Handler" element={<InviteHandler />} />
             <Route exact path="/invite" name="Invite Handler" element={<InviteHandler />} />
-            <Route exact path="/billing/invoice/:id" name="Invoice Link" element={<BillingInvoiceLinkPage />} />
+            <Route
+              exact
+              path="/billing/invoice/:id"
+              name="Invoice Link"
+              element={<BillingInvoiceLinkPage />}
+            />
             <Route exact path="/pay/:id" name="Payment Checkout" element={<PublicCheckoutPage />} />
             <Route exact path="/pay" name="Payment Checkout" element={<PublicCheckoutPage />} />
             <Route

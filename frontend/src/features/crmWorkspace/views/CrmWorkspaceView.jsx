@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
-import LifecycleStepper from '../components/LifecycleStepper.jsx';
-import WorkspaceTabs from '../components/WorkspaceTabs.jsx';
-import { useCrmWorkspace } from '../hooks/useCrmWorkspace.js';
-import '../styles/_crmWorkspace.scss';
+import React, { useEffect } from 'react'
+import LifecycleStepper from '../components/LifecycleStepper.jsx'
+import WorkspaceTabs from '../components/WorkspaceTabs.jsx'
+import { useCrmWorkspace } from '../hooks/useCrmWorkspace.js'
+import '../styles/_crmWorkspace.scss'
 
 /**
  * CrmWorkspaceView — Top-level view container for the Phase 1 CRM Customer Workspace.
@@ -29,43 +29,41 @@ export const CrmWorkspaceView = () => {
     fetchThreadData,
     scheduleMeetingItem,
     sendChatMessage,
-  } = useCrmWorkspace();
+  } = useCrmWorkspace()
 
-  const selectedInquiry = activeInquiry || inquiries[0] || null;
+  const selectedInquiry = activeInquiry || inquiries[0] || null
 
   // Load initial data on mount
   useEffect(() => {
-    fetchInquiriesList({ page: 1, limit: 10 });
-    fetchMeetingsList({ page: 1, limit: 10 });
-  }, [fetchInquiriesList, fetchMeetingsList]);
+    fetchInquiriesList({ page: 1, limit: 10 })
+    fetchMeetingsList({ page: 1, limit: 10 })
+  }, [fetchInquiriesList, fetchMeetingsList])
 
   // Load thread data when active inquiry changes or Conversations tab is selected
   useEffect(() => {
     if (selectedInquiry?._id && (activeTab === 'Conversations' || activeTab === 'Communication')) {
-      fetchThreadData(selectedInquiry._id);
+      fetchThreadData(selectedInquiry._id)
     }
-  }, [selectedInquiry?._id, activeTab, fetchThreadData]);
+  }, [selectedInquiry?._id, activeTab, fetchThreadData])
 
   // Load immutable timeline data when Activity tab is selected or inquiry changes
   useEffect(() => {
     if (selectedInquiry?._id && activeTab === 'Activity') {
-      fetchTimelineData(selectedInquiry._id);
+      fetchTimelineData(selectedInquiry._id)
     }
-  }, [selectedInquiry?._id, activeTab, fetchTimelineData]);
+  }, [selectedInquiry?._id, activeTab, fetchTimelineData])
 
   return (
     <div className="billing-module-wrapper billing-os-theme crm-workspace-theme">
       <div className="view-container">
         <div className="view active" id="view-crm-workspace">
-
           {/* ── Page Header Toolbar ───────────────────────────────────── */}
           <div className="crm-header-toolbar">
             <div>
-              <h4 className="crm-header-toolbar__title">
-                CRM Inquiry Workspace (Phase 1)
-              </h4>
+              <h4 className="crm-header-toolbar__title">CRM Inquiry Workspace (Phase 1)</h4>
               <p className="crm-header-toolbar__sub">
-                Backend-driven inquiry state machine, meeting scheduler, and immutable activity feed.
+                Backend-driven inquiry state machine, meeting scheduler, and immutable activity
+                feed.
               </p>
             </div>
             <div className="crm-header-toolbar__actions">
@@ -97,11 +95,10 @@ export const CrmWorkspaceView = () => {
             onSendMessage={sendChatMessage}
             onTransitionStatus={(id, targetStatus) => handleStatusTransition(id, targetStatus)}
           />
-
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default CrmWorkspaceView;
+export default CrmWorkspaceView

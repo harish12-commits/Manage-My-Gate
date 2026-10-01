@@ -71,7 +71,12 @@ const ResidentBookingList = ({ events, onEventClick, onBookClick, loading }) => 
           return (
             <div key={event.id} className="rbl-card" onClick={() => onEventClick(event)}>
               {/* Image */}
-              <div className="rbl-card__image" style={{ backgroundImage: `url(${event.image || getAmenityImagePlaceholder(event.amenityName)})` }} />
+              <div
+                className="rbl-card__image"
+                style={{
+                  backgroundImage: `url(${event.image || getAmenityImagePlaceholder(event.amenityName)})`,
+                }}
+              />
 
               {/* Body */}
               <div className="rbl-card__body">
@@ -134,8 +139,6 @@ const ResidentBookingList = ({ events, onEventClick, onBookClick, loading }) => 
           )
         })}
       </div>
-
-
     </div>
   )
 }

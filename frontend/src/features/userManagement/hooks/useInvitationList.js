@@ -39,18 +39,21 @@ export const useInvitationList = () => {
     loading,
     actionLoadingId,
     error,
-  } = useSelector((state) => state.userManagement?.invitations || {
-    items: [],
-    currentPage: 1,
-    rowsPerPage: 10,
-    totalRecords: 0,
-    totalPages: 1,
-    statusFilter: 'ALL',
-    searchQuery: '',
-    loading: false,
-    actionLoadingId: null,
-    error: null,
-  })
+  } = useSelector(
+    (state) =>
+      state.userManagement?.invitations || {
+        items: [],
+        currentPage: 1,
+        rowsPerPage: 10,
+        totalRecords: 0,
+        totalPages: 1,
+        statusFilter: 'ALL',
+        searchQuery: '',
+        loading: false,
+        actionLoadingId: null,
+        error: null,
+      },
+  )
 
   const activeOrgId = useSelector((state) => state.workspace?.activeOrganizationId)
 
@@ -63,10 +66,10 @@ export const useInvitationList = () => {
           limit: overrides.limit !== undefined ? overrides.limit : rowsPerPage,
           status: overrides.status !== undefined ? overrides.status : statusFilter,
           search: overrides.search !== undefined ? overrides.search : searchQuery,
-        })
+        }),
       )
     },
-    [dispatch, currentPage, rowsPerPage, statusFilter, searchQuery]
+    [dispatch, currentPage, rowsPerPage, statusFilter, searchQuery],
   )
 
   // Initial load and reload on workspace change

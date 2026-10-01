@@ -137,7 +137,8 @@ const ComplaintDashboard = () => {
               padding: '32px 24px',
               border: '1px solid var(--border)',
               cursor: 'pointer',
-              transition: 'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, max-height 0.3s ease',
+              transition:
+                'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, max-height 0.3s ease',
               display: 'flex',
               flexDirection: 'column',
               gap: '16px',
@@ -188,7 +189,8 @@ const ComplaintDashboard = () => {
               padding: '32px 24px',
               border: '1px solid var(--border)',
               cursor: 'pointer',
-              transition: 'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, max-height 0.3s ease',
+              transition:
+                'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, max-height 0.3s ease',
               display: 'flex',
               flexDirection: 'column',
               gap: '16px',
@@ -239,7 +241,8 @@ const ComplaintDashboard = () => {
               padding: '32px 24px',
               border: '1px solid var(--border)',
               cursor: 'pointer',
-              transition: 'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, max-height 0.3s ease',
+              transition:
+                'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, max-height 0.3s ease',
               display: 'flex',
               flexDirection: 'column',
               gap: '16px',
@@ -290,7 +293,8 @@ const ComplaintDashboard = () => {
               padding: '32px 24px',
               border: '1px solid var(--border)',
               cursor: 'pointer',
-              transition: 'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, max-height 0.3s ease',
+              transition:
+                'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, max-height 0.3s ease',
               display: 'flex',
               flexDirection: 'column',
               gap: '16px',

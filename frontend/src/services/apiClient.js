@@ -174,16 +174,19 @@ apiClient.interceptors.response.use(
     }
 
     // Extract backend error message if available to prevent raw Axios error strings
-    if (error.response?.status === 400 && error.response?.data?.message === 'Workspace context is required.') {
-      console.warn('Workspace context lost. Forcing auto-logout to recover corrupted local state.');
+    if (
+      error.response?.status === 400 &&
+      error.response?.data?.message === 'Workspace context is required.'
+    ) {
+      console.warn('Workspace context lost. Forcing auto-logout to recover corrupted local state.')
       if (store) {
         try {
-          store.dispatch({ type: 'auth/logout' });
+          store.dispatch({ type: 'auth/logout' })
         } catch (dispatchErr) {
-          console.error('Failed to trigger auto-logout on 400 Bad Request', dispatchErr);
+          console.error('Failed to trigger auto-logout on 400 Bad Request', dispatchErr)
         }
       }
-      window.location.href = '/login';
+      window.location.href = '/login'
     }
 
     if (error.response && error.response.data && error.response.data.message) {

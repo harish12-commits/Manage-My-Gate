@@ -18,17 +18,30 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilUser, cilEnvelopeClosed, cilLockLocked } from '@coreui/icons'
 
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\\[\]{};':"\\|,.<>\\/?]).{8,}$/
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\\[\]{};':"\\|,.<>\\/?]).{8,}$/
 
 const EyeIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    fill="currentColor"
+    viewBox="0 0 16 16"
+  >
     <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
     <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
   </svg>
 )
 
 const EyeSlashIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    fill="currentColor"
+    viewBox="0 0 16 16"
+  >
     <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a18.883 18.883 0 0 0-2.79.223L6.36 3.868C7.458 3.597 8.761 3.5 9 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.7-.7zm-1.802 1.802a8.72 8.72 0 0 1-1.162.721C9.28 14.232 8.704 14.5 8 14.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8c.028-.042.063-.092.109-.151.272-.349.689-.817 1.218-1.348l1.414 1.414A3.5 3.5 0 0 0 8 11.5c.34 0 .668-.05 1.002-.132l1.155 1.155z" />
     <path d="M11.643 14.127L1.393 3.877l-.707.707 1.848 1.848A18.883 18.883 0 0 0 0 8s3 5.5 8 5.5a9.06 9.06 0 0 0 2.737-.418l1.199 1.199.707-.707zM5.337 7.45L8.55 10.662A2.5 2.5 0 0 1 5.337 7.45z" />
     <path d="M12.454 9.638A3.491 3.491 0 0 0 12.5 8a3.5 3.5 0 0 0-7-0c0 .343.05.668.132 1.002L3.93 7.302A3.5 3.5 0 0 1 8 4.5c1.93 0 3.5 1.57 3.5 3.5a3.49 3.49 0 0 1-.132 1.002l1.086 1.336z" />
@@ -52,12 +65,15 @@ export const InviteSignUpForm = ({ email, token, onSubmit, submitting, submissio
       .optional()
       .test(
         'phone-valid',
-        t('auth.invite.phoneInvalid', 'Please enter a valid phone number for the selected country.'),
+        t(
+          'auth.invite.phoneInvalid',
+          'Please enter a valid phone number for the selected country.',
+        ),
         (value) => {
           const clean = value ? String(value).replace(/\D/g, '') : ''
           if (!clean || clean === selectedDialCode) return true
           return clean.length >= expectedPhoneLength
-        }
+        },
       ),
     password: yup
       .string()
@@ -136,7 +152,8 @@ export const InviteSignUpForm = ({ email, token, onSubmit, submitting, submissio
       {/* Pre-filled Email (Read-Only) */}
       <div className="mb-3">
         <label className="form-label small fw-semibold text-muted">
-          {t('auth.invite.emailLabel', 'Email Address')} ({t('auth.invite.invitedEmailLocked', 'Verified Invitation Recipient')})
+          {t('auth.invite.emailLabel', 'Email Address')} (
+          {t('auth.invite.invitedEmailLocked', 'Verified Invitation Recipient')})
         </label>
         <CInputGroup>
           <CInputGroupText className="bg-light">
@@ -151,7 +168,10 @@ export const InviteSignUpForm = ({ email, token, onSubmit, submitting, submissio
           />
         </CInputGroup>
         <small className="text-muted" style={{ fontSize: '0.75rem' }}>
-          {t('auth.invite.emailLockedHelp', 'This account will be permanently registered to the invited email.')}
+          {t(
+            'auth.invite.emailLockedHelp',
+            'This account will be permanently registered to the invited email.',
+          )}
         </small>
       </div>
 
@@ -212,7 +232,11 @@ export const InviteSignUpForm = ({ email, token, onSubmit, submitting, submissio
             className="position-absolute end-0 top-50 translate-middle-y border-0 bg-transparent text-secondary opacity-75 pe-3"
             onClick={() => setShowPassword(!showPassword)}
             style={{ zIndex: 10 }}
-            aria-label={showPassword ? t('common.hidePassword', 'Hide password') : t('common.showPassword', 'Show password')}
+            aria-label={
+              showPassword
+                ? t('common.hidePassword', 'Hide password')
+                : t('common.showPassword', 'Show password')
+            }
           >
             {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
           </button>
@@ -221,7 +245,10 @@ export const InviteSignUpForm = ({ email, token, onSubmit, submitting, submissio
           <div className="text-danger small mt-1">{errors.password.message}</div>
         ) : (
           <small className="text-muted" style={{ fontSize: '0.75rem' }}>
-            {t('auth.invite.passwordHint', 'Minimum 8 characters with upper, lower, number, and symbol.')}
+            {t(
+              'auth.invite.passwordHint',
+              'Minimum 8 characters with upper, lower, number, and symbol.',
+            )}
           </small>
         )}
       </div>
@@ -248,7 +275,11 @@ export const InviteSignUpForm = ({ email, token, onSubmit, submitting, submissio
             className="position-absolute end-0 top-50 translate-middle-y border-0 bg-transparent text-secondary opacity-75 pe-3"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             style={{ zIndex: 10 }}
-            aria-label={showConfirmPassword ? t('common.hidePassword', 'Hide password') : t('common.showPassword', 'Show password')}
+            aria-label={
+              showConfirmPassword
+                ? t('common.hidePassword', 'Hide password')
+                : t('common.showPassword', 'Show password')
+            }
           >
             {showConfirmPassword ? <EyeSlashIcon /> : <EyeIcon />}
           </button>

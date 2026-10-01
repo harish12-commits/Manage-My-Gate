@@ -120,7 +120,8 @@ const DateDetailsPanel = memo(
                       selectedAmenityId === a._id
                         ? 'none'
                         : '1px solid var(--border-light, #E2E8F0)',
-                    transition: 'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
+                    transition:
+                      'color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s, width 0.2s, height 0.2s, max-height 0.2s',
                     fontWeight: selectedAmenityId === a._id ? '600' : '400',
                     color: selectedAmenityId !== a._id ? '#475569' : '',
                   }}

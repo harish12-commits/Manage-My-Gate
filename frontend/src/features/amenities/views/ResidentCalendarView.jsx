@@ -106,7 +106,11 @@ const ResidentCalendarView = () => {
 
   useEffect(() => {
     if (autoOpenQRBookingId && rawEvents.length > 0) {
-      const event = rawEvents.find(e => (e.id === autoOpenQRBookingId || e.bookingId === autoOpenQRBookingId) && e.metadata?.qrCode)
+      const event = rawEvents.find(
+        (e) =>
+          (e.id === autoOpenQRBookingId || e.bookingId === autoOpenQRBookingId) &&
+          e.metadata?.qrCode,
+      )
       if (event) {
         setSelectedEvent(event)
         setDrawerVisible(true)
@@ -185,7 +189,7 @@ const ResidentCalendarView = () => {
     setPaymentIntent(null)
     setAutoOpenQRBookingId(pendingBookingId)
     setPendingBookingId(null)
-    
+
     // The backend processes the payment success event asynchronously (generating the QR code)
     // We poll refreshAll every 1 second for 5 seconds to ensure the UI updates as soon as the QR is ready.
     let attempts = 0
@@ -196,7 +200,7 @@ const ResidentCalendarView = () => {
         clearInterval(interval)
       }
     }, 1000)
-    
+
     // Also trigger an immediate refresh
     refreshAll()
   }
@@ -219,7 +223,7 @@ const ResidentCalendarView = () => {
       paymentId: event.metadata.paymentId,
       amount: event.price,
       currency: 'INR',
-      status: 'pending'
+      status: 'pending',
     }
     setPaymentIntent(intent)
     setPendingBookingId(event.id)
@@ -288,7 +292,16 @@ const ResidentCalendarView = () => {
         )}
 
         {/* Calendar + Sidebar */}
-        <div style={{ display: 'flex', gap: '32px', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'flex-start' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '32px',
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+          }}
+        >
           {/* Main Calendar Area */}
           <div style={{ flex: '1 1 500px', maxWidth: '750px' }} className="card p-4">
             <CalendarHeader

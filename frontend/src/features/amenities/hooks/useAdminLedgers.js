@@ -15,7 +15,12 @@ export const useAdminLedgers = () => {
   const [endDate, setEndDate] = useState('')
   const [page, setPage] = useState(1)
 
-  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalRecords: 0, limit: 10 })
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalRecords: 0,
+    limit: 10,
+  })
   const [summary, setSummary] = useState({
     totalRevenue: 0,
     todayRevenue: 0,
@@ -65,7 +70,9 @@ export const useAdminLedgers = () => {
       if (res) {
         const payload = res.data || res
         setBookings(payload.data || [])
-        setPagination(payload.pagination || { currentPage: 1, totalPages: 1, totalRecords: 0, limit: 10 })
+        setPagination(
+          payload.pagination || { currentPage: 1, totalPages: 1, totalRecords: 0, limit: 10 },
+        )
         if (payload.summary) {
           setSummary(payload.summary)
         }

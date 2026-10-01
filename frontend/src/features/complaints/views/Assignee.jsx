@@ -95,20 +95,18 @@ const Assignee = () => {
       `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
     ).toLowerCase()
     const assignedName = (c.assignedTechnicianName || '').toLowerCase()
-    const isNameMatch = Boolean(
-      assignedName && currentUserName && assignedName === currentUserName,
-    )
+    const isNameMatch = Boolean(assignedName && currentUserName && assignedName === currentUserName)
 
     const isBroadcastMatch = Boolean(
       c.isBroadcast &&
-        c.status === 'Waiting For Acceptance' &&
-        c.broadcastTechnicianIds?.some((bid) => {
-          const bidStr =
-            typeof bid === 'object' && bid !== null
-              ? String(bid._id || bid.id || '')
-              : String(bid || '')
-          return Boolean(bidStr && (bidStr === uid || (techId && bidStr === techId)))
-        }),
+      c.status === 'Waiting For Acceptance' &&
+      c.broadcastTechnicianIds?.some((bid) => {
+        const bidStr =
+          typeof bid === 'object' && bid !== null
+            ? String(bid._id || bid.id || '')
+            : String(bid || '')
+        return Boolean(bidStr && (bidStr === uid || (techId && bidStr === techId)))
+      }),
     )
 
     return isDirectMatch || isNameMatch || isBroadcastMatch

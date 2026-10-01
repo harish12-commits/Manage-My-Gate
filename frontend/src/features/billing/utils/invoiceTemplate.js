@@ -24,7 +24,11 @@ export function openInvoicePrintWindow(item, options = {}) {
   const residentType = item.residentType || 'Resident'
   const status = (item.status || 'UNKNOWN').replace(/_/g, ' ')
   const invoiceDate = item.createdAt
-    ? new Date(item.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    ? new Date(item.createdAt).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
     : new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 
   // ── Financial fields ─────────────────────────────────────────────────
@@ -41,14 +45,32 @@ export function openInvoicePrintWindow(item, options = {}) {
   const paymentMethod = item.paymentMethod || '—'
   const offlineRef = item.offlineReference || '—'
   const paidAt = item.paid_at
-    ? new Date(item.paid_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    ? new Date(item.paid_at).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
     : '—'
 
   // ── Status pill colour ───────────────────────────────────────────────
-  let statusBg = '#F1F5F9'; let statusColor = '#64748B'; let statusBorder = '#E2E8F0'
-  if (item.status === 'PAID') { statusBg = '#D1FAE5'; statusColor = '#065F46'; statusBorder = '#86EFAC' }
-  else if (item.status === 'PARTIALLY_PAID') { statusBg = '#FEF3C7'; statusColor = '#92400E'; statusBorder = '#FCD34D' }
-  else if (item.status === 'UNPAID' || item.status === 'OVERDUE') { statusBg = '#FEE2E2'; statusColor = '#991B1B'; statusBorder = '#FCA5A5' }
+  let statusBg = '#F1F5F9'
+  let statusColor = '#64748B'
+  let statusBorder = '#E2E8F0'
+  if (item.status === 'PAID') {
+    statusBg = '#D1FAE5'
+    statusColor = '#065F46'
+    statusBorder = '#86EFAC'
+  } else if (item.status === 'PARTIALLY_PAID') {
+    statusBg = '#FEF3C7'
+    statusColor = '#92400E'
+    statusBorder = '#FCD34D'
+  } else if (item.status === 'UNPAID' || item.status === 'OVERDUE') {
+    statusBg = '#FEE2E2'
+    statusColor = '#991B1B'
+    statusBorder = '#FCA5A5'
+  }
 
   // ── Build line-item rows ─────────────────────────────────────────────
   let lineItemsHTML = ''
@@ -175,23 +197,31 @@ export function openInvoicePrintWindow(item, options = {}) {
             <td style="padding:12px 16px;font-weight:600;color:#64748b;text-align:right;">Total Due Billed:</td>
             <td style="padding:12px 16px;font-weight:700;color:#1e293b;text-align:right;">₹${totalDue.toLocaleString('en-IN')}</td>
           </tr>
-          ${alreadyPaidAmount > 0 ? `
+          ${
+            alreadyPaidAmount > 0
+              ? `
           <tr style="background:#f8fafc;">
             <td style="padding:12px 16px;font-weight:600;color:#64748b;text-align:right;">Already Paid Amount:</td>
             <td style="padding:12px 16px;font-weight:700;color:#065f46;text-align:right;">-₹${alreadyPaidAmount.toLocaleString('en-IN')}</td>
           </tr>
-          ` : ''}
-          ${currentPaymentAmount > 0 ? `
+          `
+              : ''
+          }
+          ${
+            currentPaymentAmount > 0
+              ? `
           <tr style="background:#f0fdf4;">
             <td style="padding:12px 16px;font-weight:600;color:#64748b;text-align:right;">Current Amount Paid:</td>
             <td style="padding:12px 16px;font-weight:700;color:#065f46;text-align:right;">-₹${currentPaymentAmount.toLocaleString('en-IN')}</td>
           </tr>
-          ` : `
+          `
+              : `
           <tr style="background:#f8fafc;">
             <td style="padding:12px 16px;font-weight:600;color:#64748b;text-align:right;">Amount Paid:</td>
             <td style="padding:12px 16px;font-weight:700;color:#065f46;text-align:right;">-₹${paidAmount.toLocaleString('en-IN')}</td>
           </tr>
-          `}
+          `
+          }
           <tr style="border-top:3px solid #1e293b;background:#f1f5f9;">
             <td style="padding:16px;font-weight:800;color:#0f172a;text-align:right;font-size:16px;text-transform:uppercase;">Outstanding Balance:</td>
             <td style="padding:16px;font-weight:800;color:#0f172a;text-align:right;font-size:20px;">₹${outstanding.toLocaleString('en-IN')}</td>

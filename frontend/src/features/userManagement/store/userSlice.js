@@ -31,7 +31,9 @@ export const inviteUserAsync = createAsyncThunk(
       const response = await userApi.inviteUser(inviteData)
       return response
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to invite user')
+      return rejectWithValue(
+        error.response?.data?.message || error.message || 'Failed to invite user',
+      )
     }
   },
 )
@@ -43,7 +45,9 @@ export const bulkInviteUsersAsync = createAsyncThunk(
       const response = await userApi.bulkInviteUsers(invitations)
       return response
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to bulk invite users')
+      return rejectWithValue(
+        error.response?.data?.message || error.message || 'Failed to bulk invite users',
+      )
     }
   },
 )
@@ -74,7 +78,10 @@ export const updateUserRolesAsync = createAsyncThunk(
 
 export const fetchInvitationsAsync = createAsyncThunk(
   'userManagement/fetchInvitations',
-  async ({ page, limit, status, search, sortBy, sortOrder } = {}, { getState, rejectWithValue }) => {
+  async (
+    { page, limit, status, search, sortBy, sortOrder } = {},
+    { getState, rejectWithValue },
+  ) => {
     try {
       const invState = getState().userManagement.invitations
       const targetPage = page !== undefined ? page : invState.currentPage
@@ -92,7 +99,9 @@ export const fetchInvitationsAsync = createAsyncThunk(
       })
       return response
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch invitations')
+      return rejectWithValue(
+        error.response?.data?.message || error.message || 'Failed to fetch invitations',
+      )
     }
   },
 )
@@ -104,7 +113,9 @@ export const resendInvitationAsync = createAsyncThunk(
       const response = await userApi.resendInvitation(invitationId)
       return response
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to resend invitation')
+      return rejectWithValue(
+        error.response?.data?.message || error.message || 'Failed to resend invitation',
+      )
     }
   },
 )
@@ -116,7 +127,9 @@ export const revokeInvitationAsync = createAsyncThunk(
       const response = await userApi.revokeInvitation(invitationId)
       return response
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to revoke invitation')
+      return rejectWithValue(
+        error.response?.data?.message || error.message || 'Failed to revoke invitation',
+      )
     }
   },
 )
@@ -265,7 +278,7 @@ const userSlice = createSlice({
       })
       .addCase(updateUserRolesAsync.fulfilled, (state, action) => {
         state.loading = false
-        // We rely on fetchUsersAsync (dispatched by useUserList) to get the latest accurate 
+        // We rely on fetchUsersAsync (dispatched by useUserList) to get the latest accurate
         // assignedUnits array and role mappings from the backend.
       })
       .addCase(updateUserRolesAsync.rejected, (state, action) => {

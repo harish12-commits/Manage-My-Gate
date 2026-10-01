@@ -1,6 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CButton, CSpinner } from '@coreui/react'
+import {
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
+  CButton,
+  CSpinner,
+} from '@coreui/react'
 
 export const PollConfirmDialog = ({ visible, onClose, onConfirm, loading, actionType }) => {
   const getDialogContent = () => {
@@ -11,7 +19,7 @@ export const PollConfirmDialog = ({ visible, onClose, onConfirm, loading, action
           message: 'Are you sure you want to delete this poll? This action cannot be undone.',
           confirmText: 'Delete',
           confirmColor: 'danger',
-          loadingText: 'Deleting...'
+          loadingText: 'Deleting...',
         }
       case 'publish':
         return {
@@ -19,7 +27,7 @@ export const PollConfirmDialog = ({ visible, onClose, onConfirm, loading, action
           message: 'Are you sure you want to publish this poll? Residents will be able to vote.',
           confirmText: 'Publish',
           confirmColor: 'success',
-          loadingText: 'Publishing...'
+          loadingText: 'Publishing...',
         }
       case 'close':
         return {
@@ -27,15 +35,16 @@ export const PollConfirmDialog = ({ visible, onClose, onConfirm, loading, action
           message: 'Are you sure you want to close this poll? No more votes can be cast.',
           confirmText: 'Close Poll',
           confirmColor: 'warning',
-          loadingText: 'Closing...'
+          loadingText: 'Closing...',
         }
       case 'reopen':
         return {
           title: 'Reopen Poll',
-          message: 'Are you sure you want to reopen this poll? Residents will be able to vote again.',
+          message:
+            'Are you sure you want to reopen this poll? Residents will be able to vote again.',
           confirmText: 'Reopen',
           confirmColor: 'info',
-          loadingText: 'Reopening...'
+          loadingText: 'Reopening...',
         }
       default:
         return {
@@ -43,7 +52,7 @@ export const PollConfirmDialog = ({ visible, onClose, onConfirm, loading, action
           message: 'Are you sure you want to proceed?',
           confirmText: 'Confirm',
           confirmColor: 'primary',
-          loadingText: 'Processing...'
+          loadingText: 'Processing...',
         }
     }
   }
@@ -53,14 +62,10 @@ export const PollConfirmDialog = ({ visible, onClose, onConfirm, loading, action
   return (
     <CModal visible={visible} onClose={onClose} alignment="center">
       <CModalHeader className="border-0 pb-0">
-        <CModalTitle className="h5 fw-bold text-body">
-          {content.title}
-        </CModalTitle>
+        <CModalTitle className="h5 fw-bold text-body">{content.title}</CModalTitle>
       </CModalHeader>
       <CModalBody>
-        <p className="mb-0 text-secondary">
-          {content.message}
-        </p>
+        <p className="mb-0 text-secondary">{content.message}</p>
       </CModalBody>
       <CModalFooter className="border-0 pt-0">
         <CButton
@@ -81,7 +86,9 @@ export const PollConfirmDialog = ({ visible, onClose, onConfirm, loading, action
           style={{ borderRadius: '8px' }}
         >
           {loading ? (
-            <><CSpinner size="sm" className="me-1" /> {content.loadingText}</>
+            <>
+              <CSpinner size="sm" className="me-1" /> {content.loadingText}
+            </>
           ) : (
             content.confirmText
           )}

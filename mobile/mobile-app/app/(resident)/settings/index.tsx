@@ -397,7 +397,7 @@ export default function SettingsScreen() {
             icon={HelpCircle}
             iconColor="#f59e0b"
             iconBgColor="rgba(245, 158, 11, 0.12)"
-            title={t('report_an_issue', 'Report an Issue')}
+            title={t('report_an_issue', 'Contact Support')}
             subtitle={t('report_an_issue_desc', 'Report a problem or suggest an improvement')}
             onPress={() => router.push('/(resident)/settings/report-issue' as any)}
             isLast={true}
