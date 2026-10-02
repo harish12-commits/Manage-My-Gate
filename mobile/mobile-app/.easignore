@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+**/node_modules/
 .expo/
 dist/
 web-build/
@@ -8,8 +9,12 @@ web-build/
 android/
 ios/
 
+# Core Git and OS folders
+.git/
+.DS_Store
+*.log
+
 # Logs and environment
 npm-debug.*
 yarn-debug.*
 yarn-error.*
-.DS_Store

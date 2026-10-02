@@ -1,0 +1,37 @@
+# Core Git and OS folders
+.git/
+.DS_Store
+*.log
+
+# Ignore all node_modules globally just to be absolutely sure
+**/node_modules/
+node_modules/
+
+# Ignore backend and frontend services (Not needed for mobile build)
+backend/
+frontend/
+tailwind-frontend/
+
+# Ignore database data
+mongodb-data/
+mongodb_data/
+
+# Ignore IDE folders
+.idea/
+.agents/
+.vscode/
+
+# Ignore documentation and assets not required for build
+docs/
+*.md
+*.docx
+*.pdf
+*.xlsx
+*.zip
+
+# Ignore mobile-specific build/native artifacts
+mobile/mobile-app/.expo/
+mobile/mobile-app/dist/
+mobile/mobile-app/web-build/
+mobile/mobile-app/android/
+mobile/mobile-app/ios/
