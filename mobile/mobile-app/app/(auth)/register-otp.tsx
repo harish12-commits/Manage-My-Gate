@@ -83,7 +83,7 @@ export default function RegisterOtpScreen() {
           keyboardDismissMode="on-drag"
           className="p-6"
         >
-          <View className="gap-6 flex-1 justify-center max-w-sm mx-auto w-full py-8">
+          <View className="gap-6 flex-1 mt-12 max-w-sm mx-auto w-full py-8">
             {/* Header */}
             <View className="items-center mb-6">
               <View className="bg-primary/10 p-4 rounded-full mb-3">

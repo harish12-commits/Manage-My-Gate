@@ -152,7 +152,7 @@ export default function RegisterScreen() {
           automaticallyAdjustKeyboardInsets: Platform.OS === 'ios',
         }}
       >
-        <View className="gap-5 flex-1 justify-center max-w-sm sm:max-w-md mx-auto w-full py-2 sm:py-4">
+        <View className="gap-5 flex-1 max-w-sm sm:max-w-md mx-auto w-full py-2 sm:py-4 mt-6">
             {/* Brand Header */}
             <View className="items-center mb-1">
               <View className="bg-primary/10 p-3.5 rounded-2xl mb-2.5 items-center justify-center">

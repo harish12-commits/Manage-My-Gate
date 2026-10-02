@@ -624,7 +624,7 @@ export default function AcceptInviteScreen() {
           },
           automaticallyAdjustKeyboardInsets: Platform.OS === 'ios',
         }}>
-        <View className="mx-auto w-full max-w-sm flex-1 justify-center gap-5 py-2 sm:max-w-md sm:py-4">
+        <View className="mx-auto w-full max-w-sm flex-1 mt-12 gap-5 py-2 sm:max-w-md sm:py-4">
           {/* Header / Brand Icon */}
           <View className="mb-1 items-center">
             <View

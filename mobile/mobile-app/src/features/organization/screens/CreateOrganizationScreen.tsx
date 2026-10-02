@@ -36,31 +36,33 @@ export const CreateOrganizationScreen: React.FC<CreateOrganizationScreenProps> =
     <>
       <Stack.Screen
         options={{
-          title: t('create_organization', 'Create Organization'),
+          title: t('create_community', 'Create Community'),
           headerBackVisible: showCancel,
         }}
       />
-      <KeyboardAvoidingShell className="bg-background">
-        <ScrollView
-          contentContainerStyle={{
+      <KeyboardAvoidingShell 
+        className="bg-background"
+        scrollViewProps={{
+          contentContainerStyle: {
             paddingHorizontal: 16,
             paddingVertical: 24,
             flexGrow: 1,
-            justifyContent: 'center',
-          }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View className="gap-5 flex-1 justify-center max-w-sm sm:max-w-md mx-auto w-full py-2 sm:py-4">
+            
+          },
+          keyboardShouldPersistTaps: 'handled'
+        }}
+      >
+          <View className="gap-5 flex-1 max-w-sm sm:max-w-md mx-auto w-full py-2 sm:py-4 mt-6">
             {/* Header / Hero Brand Section */}
             <View className="items-center mb-1">
               <View className="bg-primary/10 p-3.5 rounded-2xl mb-2.5 items-center justify-center">
                 <Building2 className="size-9 text-primary" size={34} color="#03A9F4" />
               </View>
               <Text className="text-2xl font-extrabold text-foreground tracking-tight text-center">
-                {t('create_organization', 'Create Organization')}
+                {t('create_community', 'Create Community')}
               </Text>
               <Text className="text-muted-foreground text-sm text-center mt-1 px-2">
-                {t('create_organization_subtitle', 'Establish your community or enterprise workspace environment')}
+                {t('create_community_subtitle', 'Establish your community or enterprise workspace environment')}
               </Text>
             </View>
 
@@ -83,8 +85,7 @@ export const CreateOrganizationScreen: React.FC<CreateOrganizationScreenProps> =
               </TouchableOpacity>
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingShell>
+        </KeyboardAvoidingShell>
     </>
   );
 };

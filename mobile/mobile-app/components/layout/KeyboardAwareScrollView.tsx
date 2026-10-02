@@ -52,7 +52,7 @@ export const KeyboardAwareScrollView = forwardRef<ScrollView, KeyboardAwareScrol
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         keyboardDismissMode={keyboardDismissMode}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-        automaticallyAdjustKeyboardInsets={false}
+        automaticallyAdjustKeyboardInsets={true}
         contentContainerStyle={[
           { flexGrow: 1 },
           contentContainerStyle,
@@ -64,14 +64,6 @@ export const KeyboardAwareScrollView = forwardRef<ScrollView, KeyboardAwareScrol
         </View>
       </ScrollView>
     );
-
-    if (Platform.OS === 'ios') {
-      return (
-        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-          {scrollView}
-        </KeyboardAvoidingView>
-      );
-    }
 
     return scrollView;
   }
