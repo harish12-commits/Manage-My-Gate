@@ -48,7 +48,7 @@ export const CreateOrganizationForm = () => {
                 <CForm onSubmit={handleSubmit(onSubmit)} noValidate>
                   <div className="text-center mb-4">
                     <h2 className="create-org-title">
-                      {t('organization.create.title', { defaultValue: 'Create Your Organization' })}
+                      {t('organization.create.title', { defaultValue: 'Create Your Community' })}
                     </h2>
                     <p className="create-org-subtitle">
                       {t('organization.create.subtitle', {
@@ -65,7 +65,7 @@ export const CreateOrganizationForm = () => {
 
                   <div className="mb-3">
                     <label htmlFor="org-name-input" className="form-label visually-hidden">
-                      {t('organization.create.nameLabel', { defaultValue: 'Organization Name' })}
+                      {t('organization.create.nameLabel', { defaultValue: 'Community Name' })}
                     </label>
                     <CInputGroup>
                       <CInputGroupText className="create-org-input-group-text">
@@ -75,25 +75,25 @@ export const CreateOrganizationForm = () => {
                         id="org-name-input"
                         className="create-org-input"
                         placeholder={t('organization.create.namePlaceholder', {
-                          defaultValue: 'Organization Name',
+                          defaultValue: 'Community Name',
                         })}
                         disabled={loading}
                         aria-invalid={errors.name ? 'true' : 'false'}
                         aria-describedby="org-name-feedback"
                         {...register('name', {
                           required: t('organization.create.nameRequired', {
-                            defaultValue: 'Organization name is required.',
+                            defaultValue: 'Community name is required.',
                           }),
                           minLength: {
                             value: 3,
                             message: t('organization.create.nameLengthMin', {
-                              defaultValue: 'Organization name must be at least 3 characters.',
+                              defaultValue: 'Community name must be at least 3 characters.',
                             }),
                           },
                           maxLength: {
                             value: 100,
                             message: t('organization.create.nameLengthMax', {
-                              defaultValue: 'Organization name must not exceed 100 characters.',
+                              defaultValue: 'Community name must not exceed 100 characters.',
                             }),
                           },
                         })}
@@ -134,7 +134,7 @@ export const CreateOrganizationForm = () => {
                           <span className="feedback-unavailable">
                             ✗{' '}
                             {t('organization.create.taken', {
-                              defaultValue: 'Organization name is already taken',
+                              defaultValue: 'Community name is already taken',
                             })}
                           </span>
                         )}
@@ -165,11 +165,11 @@ export const CreateOrganizationForm = () => {
                         <>
                           <CSpinner size="sm" className="me-2" />
                           {t('organization.create.loading', {
-                            defaultValue: 'Creating Organization...',
+                            defaultValue: 'Creating Community...',
                           })}
                         </>
                       ) : (
-                        t('organization.create.submit', { defaultValue: 'Create Organization' })
+                        t('organization.create.submit', { defaultValue: 'Create Community' })
                       )}
                     </CButton>
                   </div>

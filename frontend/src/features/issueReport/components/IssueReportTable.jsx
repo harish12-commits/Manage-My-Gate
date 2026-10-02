@@ -72,7 +72,7 @@ export const IssueReportTable = ({ reports, loading, onViewDetails }) => {
               {t('issueReport.colReporter', { defaultValue: 'Reporter' })}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" className="col-org">
-              {t('issueReport.colOrg', { defaultValue: 'Organisation' })}
+              {t('issueReport.colOrg', { defaultValue: 'Community' })}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" className="col-created">
               {t('issueReport.colCreated', { defaultValue: 'Submitted' })}
@@ -151,13 +151,13 @@ export const IssueReportTable = ({ reports, loading, onViewDetails }) => {
                   </div>
                 </CTableDataCell>
 
-                {/* Organisation Snapshot */}
+                {/* Community Snapshot */}
                 <CTableDataCell className="align-middle">
                   <span
                     className="small text-dark fw-medium text-truncate d-inline-block org-name"
-                    title={report.organisation?.name || ''}
+                    title={report.community?.name || ''}
                   >
-                    {report.organisation?.name || '—'}
+                    {report.community?.name || '—'}
                   </span>
                 </CTableDataCell>
 

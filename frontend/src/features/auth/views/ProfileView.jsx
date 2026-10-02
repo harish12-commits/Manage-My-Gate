@@ -41,7 +41,7 @@ const ProfileView = () => {
     organizationName ||
     currentUser?.organizationName ||
     currentUser?.orgName ||
-    'Active Organisation'
+    'Active Community'
   const currentActiveRole = activeRole || currentUser?.role || 'User'
   const activeAssignment =
     useSelector((state) => state.workspace.activeAssignment) ||
@@ -53,7 +53,7 @@ const ProfileView = () => {
     currentUser?.accessibleAssignments ||
     []
 
-  // Extract only roles assigned to the user within the currently selected organisation
+  // Extract only roles assigned to the user within the currently selected community
   const currentWs = availableWorkspaces.find((w) => (w.orgId || w._id) === activeOrgId)
   const rolesInOrg = useMemo(() => {
     if (currentWs?.roles && Array.isArray(currentWs.roles) && currentWs.roles.length > 0) {
@@ -260,7 +260,7 @@ const ProfileView = () => {
             </CAlert>
           )}
 
-          {/* Organisation & Role Context */}
+          {/* Community & Role Context */}
           <CCard className="mb-4 shadow-sm border-0">
             <CCardHeader className="bg-white py-3 border-bottom">
               <h5 className="mb-0 fw-bold text-dark">Profile Context</h5>
@@ -271,7 +271,7 @@ const ProfileView = () => {
                   className="text-uppercase text-secondary fw-semibold small"
                   style={{ letterSpacing: '0.5px' }}
                 >
-                  Current Organisation
+                  Current Community
                 </div>
                 <div className="fw-bold fs-5 text-dark mt-1 d-flex align-items-center gap-2">
                   <svg
@@ -407,7 +407,7 @@ const ProfileView = () => {
                       >
                         <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
                       </svg>
-                      Switch Organisation
+                      Switch Community
                     </CButton>
                   )}
 
@@ -519,7 +519,7 @@ const ProfileView = () => {
                   </div>
                   {rolesInOrg.length === 0 ? (
                     <div className="small text-muted py-2 px-1">
-                      No other roles assigned to this account in this organisation.
+                      No other roles assigned to this account in this community.
                     </div>
                   ) : (
                     <div className="d-flex flex-column gap-1.5">
@@ -560,15 +560,15 @@ const ProfileView = () => {
                 </div>
               )}
 
-              {/* Inline Organisation Picker */}
+              {/* Inline Community Picker */}
               {showOrgPicker && (
                 <div className="mt-3 p-3 bg-light rounded-3 border">
                   <div className="small fw-semibold text-secondary mb-2 px-1">
-                    Select an organisation:
+                    Select an community:
                   </div>
                   {availableWorkspaces.length === 0 ? (
                     <div className="small text-muted py-2 px-1">
-                      No other organisations found for this account.
+                      No other communitys found for this account.
                     </div>
                   ) : (
                     <div className="d-flex flex-column gap-1.5">

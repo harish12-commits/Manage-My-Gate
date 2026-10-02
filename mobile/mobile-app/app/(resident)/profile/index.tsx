@@ -685,14 +685,14 @@ export default function ProfileScreen() {
           onUnitPress={isResidentRole ? () => setVillaModalOpen(true) : undefined}
         />
 
-        {/* Section: Organisation, Role & Villa Switching */}
+        {/* Section: Community, Role Organisation, Role & Villa Villa Switching */}
         <View className="gap-2.5">
           <Text className="text-base font-extrabold font-sans text-foreground px-1 tracking-tight">
-            {t('workspace_context', 'Organisation, Role & Villa')}
+            {t('workspace_context', 'Community, Role Organisation, Role & Villa Villa')}
           </Text>
 
           <View className="bg-card border border-border/70 rounded-3xl p-5 shadow-2xs gap-4">
-            {/* Current Organisation */}
+            {/* Current Community */}
             <View className="flex-row items-center justify-between gap-3">
               <View className="flex-row items-center gap-3 flex-1">
                 <View className="size-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 items-center justify-center">
@@ -700,7 +700,7 @@ export default function ProfileScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    {t('current_organisation', 'Current Organisation')}
+                    {t('current_organisation', 'Current Community')}
                   </Text>
                   <Text className="text-base font-bold text-foreground mt-0.5" numberOfLines={1}>
                     {dynamicCommunity}
@@ -790,7 +790,7 @@ export default function ProfileScreen() {
                     <View className="flex-row items-center justify-center gap-2">
                       <Building2 size={15} color="#6366f1" />
                       <Text className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                        {t('switch_organisation', 'Switch Organisation')}
+                        {t('switch_organisation', 'Switch Community')}
                       </Text>
                     </View>
                   </Button>
@@ -1413,7 +1413,7 @@ export default function ProfileScreen() {
         onClose={() => setRoleModalOpen(false)}
       />
 
-      {/* Organisation Switch Modal */}
+      {/* Community Switch Modal */}
       <OrgSwitchModal
         visible={orgModalOpen}
         onClose={() => setOrgModalOpen(false)}

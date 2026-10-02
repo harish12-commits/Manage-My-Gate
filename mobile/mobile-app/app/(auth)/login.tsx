@@ -1116,12 +1116,12 @@ export default function LoginScreen() {
                 />
               </View>
 
-              {/* Create Organisation Prompt */}
+              {/* Create Community Prompt */}
               <View className="items-center justify-center pt-2.5 pb-2">
                 <Animated.View style={{ transform: [{ scale: createAccountPressScale }] }}>
                   <View className="bg-transparent flex-row items-center justify-center">
                     <Text className="text-[12.5px] text-white font-bold" style={{ textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
-                      {t('dont_have_organisation', "Don't have an Organisation?")}{' '}
+                      {t('dont_have_community', "Don't have a Community?")}{' '}
                     </Text>
                     <TouchableOpacity
                       onPress={() => router.push('/(auth)/signup')}
@@ -1129,10 +1129,10 @@ export default function LoginScreen() {
                       onPressOut={handleCreateAccountPressOut}
                       activeOpacity={0.8}
                       accessibilityRole="button"
-                      accessibilityLabel="Create Organisation"
+                      accessibilityLabel="Create Community"
                     >
                       <Text className="text-[12.5px] font-bold text-[#FF6A00]" style={{ textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
-                        {t('create_organisation', 'Create Organisation')}
+                        {t('create_organisation', 'Create Community')}
                       </Text>
                     </TouchableOpacity>
                   </View>

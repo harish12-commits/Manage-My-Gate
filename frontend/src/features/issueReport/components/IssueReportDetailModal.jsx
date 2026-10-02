@@ -181,7 +181,7 @@ export const IssueReportDetailModal = ({ visible, onClose, report, loading, erro
 
               {/* 2-Column Info Cards */}
               <CRow className="g-3 mb-4">
-                {/* Column 1: Reporter & Organisation */}
+                {/* Column 1: Reporter & Community */}
                 <CCol xs={12} md={6}>
                   <CCard className="h-100 border">
                     <CCardBody>
@@ -221,12 +221,12 @@ export const IssueReportDetailModal = ({ visible, onClose, report, loading, erro
 
                       <div className="pt-2 border-top">
                         <span className="text-muted small d-block">
-                          {t('issueReport.colOrg', { defaultValue: 'Organisation' })}
+                          {t('issueReport.colOrg', { defaultValue: 'Community' })}
                         </span>
-                        <strong className="text-dark">{report.organisation?.name || '—'}</strong>
-                        {(report.organisation?.organisationId || report.organisation?.id) && (
+                        <strong className="text-dark">{report.community?.name || '—'}</strong>
+                        {(report.community?.communityId || report.community?.id) && (
                           <div className="text-muted font-monospace org-id-text">
-                            ID: {report.organisation.organisationId || report.organisation.id}
+                            ID: {report.community.communityId || report.community.id}
                           </div>
                         )}
                       </div>

@@ -41,7 +41,7 @@ const UserProfileModal = ({ visible, onClose }) => {
     organizationName ||
     currentUser?.organizationName ||
     currentUser?.orgName ||
-    'Active Organisation'
+    'Active Community'
   const currentActiveRole = activeRole || currentUser?.role || 'User'
   const activeAssignment =
     useSelector((state) => state.workspace.activeAssignment) ||
@@ -53,7 +53,7 @@ const UserProfileModal = ({ visible, onClose }) => {
     currentUser?.accessibleAssignments ||
     []
 
-  // Extract only roles assigned to the user within the currently selected organisation
+  // Extract only roles assigned to the user within the currently selected community
   const currentWs = availableWorkspaces.find((w) => (w.orgId || w._id) === activeOrgId)
   const rolesInOrg = useMemo(() => {
     if (currentWs?.roles && Array.isArray(currentWs.roles) && currentWs.roles.length > 0) {
@@ -237,7 +237,7 @@ const UserProfileModal = ({ visible, onClose }) => {
             </CAlert>
           )}
 
-          {/* Organisation & Role Context */}
+          {/* Community & Role Context */}
           <div className="card mb-3 border bg-light rounded-3 shadow-xs">
             <div className="card-body p-3">
               <div className="mb-2">
@@ -245,7 +245,7 @@ const UserProfileModal = ({ visible, onClose }) => {
                   className="text-uppercase text-secondary fw-semibold"
                   style={{ fontSize: '0.72rem', letterSpacing: '0.5px' }}
                 >
-                  Current Organisation
+                  Current Community
                 </div>
                 <div className="fw-bold fs-6 text-dark mt-1 d-flex align-items-center gap-2">
                   <svg
@@ -347,7 +347,7 @@ const UserProfileModal = ({ visible, onClose }) => {
                   >
                     <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
                   </svg>
-                  Switch Organisation
+                  Switch Community
                 </CButton>
 
                 <CButton
@@ -420,7 +420,7 @@ const UserProfileModal = ({ visible, onClose }) => {
                   </div>
                   {rolesInOrg.length === 0 ? (
                     <div className="small text-muted py-2 px-1">
-                      No other roles assigned to this account in this organisation.
+                      No other roles assigned to this account in this community.
                     </div>
                   ) : (
                     <div className="d-flex flex-column gap-1">
@@ -459,15 +459,15 @@ const UserProfileModal = ({ visible, onClose }) => {
                 </div>
               )}
 
-              {/* Inline Organisation Picker */}
+              {/* Inline Community Picker */}
               {showOrgPicker && (
                 <div className="mt-3 p-2 bg-white rounded border">
                   <div className="small fw-semibold text-secondary mb-2 px-1">
-                    Select an organisation:
+                    Select an community:
                   </div>
                   {availableWorkspaces.length === 0 ? (
                     <div className="small text-muted py-2 px-1">
-                      No other organisations found for this account.
+                      No other communitys found for this account.
                     </div>
                   ) : (
                     <div className="d-flex flex-column gap-1">

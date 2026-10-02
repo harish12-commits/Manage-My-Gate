@@ -47,15 +47,15 @@ export const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
 
   return (
     <View className="bg-card border border-border rounded-2xl p-4 sm:p-6 gap-4 shadow-xs">
-      {/* 1. Organization Name Field */}
+      {/* 1. Community Name Field */}
       <Controller
         control={control}
         name="name"
         render={({ field: { onChange, onBlur, value } }) => (
           <View className="gap-1.5">
             <TextInput
-              label={t('organization_name', 'Organization Name')}
-              placeholder={t('organization_name_placeholder', 'e.g. Nahom Heights Community')}
+              label={t('community_name', 'Community Name')}
+              placeholder={t('community_name_placeholder', 'e.g. Nahom Heights Community')}
               required
               leftIcon={<Building2 size={18} className="text-muted-foreground me-1" />}
               value={value}
@@ -65,11 +65,11 @@ export const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
               status={nameStatus}
               error={
                 errors.name?.message
-                  ? t(errors.name.message, 'Invalid organization name')
+                  ? t(errors.name.message, 'Invalid community name')
                   : undefined
               }
-              accessibilityLabel={t('organization_name', 'Organization Name')}
-              accessibilityHint={t('organization_name_hint', 'Enter between 3 and 100 characters')}
+              accessibilityLabel={t('community_name', 'Community Name')}
+              accessibilityHint={t('community_name_hint', 'Enter between 3 and 100 characters')}
             />
 
             {/* Live Name Availability Status Indicator */}
@@ -97,7 +97,7 @@ export const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
                   <View className="flex-row items-center gap-1.5">
                     <XCircle size={15} color="#ef4444" />
                     <Text className="text-xs text-destructive font-semibold">
-                      {availabilityMessage || t('name_unavailable', 'Organization name is already taken')}
+                      {availabilityMessage || t('name_unavailable', 'Community name is already taken')}
                     </Text>
                   </View>
                 )}
@@ -120,7 +120,7 @@ export const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
       {Boolean(createError) && (
         <ErrorBanner
           title={t('error', 'Error')}
-          message={createError || t('server_error', 'Failed to create organization')}
+          message={createError || t('server_error', 'Failed to create community')}
         />
       )}
 
@@ -133,12 +133,12 @@ export const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
           disabled={isSubmitDisabled}
           className="h-12 w-full items-center justify-center rounded-xl"
           accessibilityRole="button"
-          accessibilityLabel={t('create_organization', 'Create Organization')}
+          accessibilityLabel={t('create_community', 'Create Community')}
         >
           <Text className="font-bold text-base text-primary-foreground">
             {createLoading
               ? t('creating', 'Creating...')
-              : t('create_organization', 'Create Organization')}
+              : t('create_community', 'Create Community')}
           </Text>
         </Button>
 
