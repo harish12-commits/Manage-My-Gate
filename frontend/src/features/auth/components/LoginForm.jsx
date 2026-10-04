@@ -394,7 +394,7 @@ export const LoginForm = () => {
           <p className="mb-0">
             {t(
               'auth.login.promoText',
-              'Access your secure organization workspace, manage team privileges, configure third-party API integrations, and view full audit records in one unified dashboard.',
+              'Access your secure community workspace, manage team privileges, configure third-party API integrations, and view full audit records in one unified dashboard.',
             )}
           </p>
         </CAlert>
