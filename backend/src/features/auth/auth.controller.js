@@ -112,23 +112,7 @@ export class AuthController {
     }
   }
 
-  async registerSsoWithOrg(req, res, next) {
-    try {
-      const payload = req.body;
-      const data = await authService.registerSsoWithOrg(payload);
-      
-      if (data && data.token) {
-        setAuthCookie(res, data.token);
-      }
-      if (data && data.refreshToken) {
-        setRefreshTokenCookie(res, data.refreshToken);
-      }
 
-      res.success(data, 'SSO Registration and Organization setup successful', 201);
-    } catch (error) {
-      next(error);
-    }
-  }
 
   async switchContext(req, res, next) {
     try {
@@ -174,10 +158,6 @@ export class AuthController {
       const { token, code, codeVerifier, redirectUri, clientId, inviteToken } = req.body;
       const credentialOrPayload = token ? token : { code, codeVerifier, redirectUri, clientId };
       const data = await authService.loginWithGoogle(credentialOrPayload, inviteToken, true);
-      
-      if (data.isNewUser) {
-        return res.success(data, 'Google token verified. User not found.', 200);
-      }
 
       setAuthCookie(res, data.token);
       if (data.refreshToken) {

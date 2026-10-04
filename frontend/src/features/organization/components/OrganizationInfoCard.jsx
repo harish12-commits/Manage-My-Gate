@@ -45,7 +45,7 @@ export const OrganizationInfoCard = ({ organization }) => {
         <div className="info-grid">
           <div className="info-item">
             <div className="info-label">
-              {t('superAdmin.orgDetails.name', { defaultValue: 'Organization Name' })}
+              {t('superAdmin.orgDetails.name', { defaultValue: 'Community Name' })}
             </div>
             <div className="info-value">{organization.name}</div>
           </div>

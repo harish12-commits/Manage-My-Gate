@@ -33,8 +33,13 @@ export const setRefreshTokenCookie = (res, token) => {
  * @param {import('express').Response} res - Express response object
  */
 export const clearAuthCookie = (res) => {
-  res.clearCookie('token');
-  res.clearCookie('refreshToken');
+  const options = {
+    httpOnly: true,
+    secure: config.nodeEnv === 'production',
+    sameSite: config.nodeEnv === 'production' ? 'none' : 'lax',
+  };
+  res.clearCookie('token', options);
+  res.clearCookie('refreshToken', options);
 };
 
 export default {

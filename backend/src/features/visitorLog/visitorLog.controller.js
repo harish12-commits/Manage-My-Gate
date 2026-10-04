@@ -84,7 +84,7 @@ export class VisitorLogController {
     try {
       const orgId = req.params.orgId || req.tenant?.orgId;
       if (!req.tenant?.isPlatform && req.tenant?.orgId && String(req.tenant.orgId) !== String(orgId)) {
-        throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
+        throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested community.');
       }
       const data = await visitorLogService.getActiveLogsInside(orgId, req.user);
       res.success(data, 'Active logs retrieved successfully');
@@ -100,7 +100,7 @@ export class VisitorLogController {
     try {
       const { orgId } = req.params;
       if (!req.tenant?.isPlatform && req.tenant?.orgId && String(req.tenant.orgId) !== String(orgId)) {
-        throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
+        throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested community.');
       }
       const data = await visitorLogService.getPendingApprovals(orgId, req.user);
       res.success(data, 'Pending approvals retrieved successfully');
@@ -116,7 +116,7 @@ export class VisitorLogController {
     try {
       const { orgId } = req.params;
       if (!req.tenant?.isPlatform && req.tenant?.orgId && String(req.tenant.orgId) !== String(orgId)) {
-        throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
+        throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested community.');
       }
       const now = Date.now();
       const requested = req.query.since ? new Date(req.query.since).getTime() : now - DAY_MS;
@@ -136,7 +136,7 @@ export class VisitorLogController {
     try {
       const { orgId } = req.params;
       if (!req.tenant?.isPlatform && req.tenant?.orgId && String(req.tenant.orgId) !== String(orgId)) {
-        throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
+        throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested community.');
       }
       const skip = parseInt(req.query.skip, 10) || 0;
       const limit = parseInt(req.query.limit, 10) || 10;

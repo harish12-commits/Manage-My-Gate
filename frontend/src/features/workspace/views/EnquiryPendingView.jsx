@@ -33,7 +33,7 @@ const EnquiryPendingView = () => {
                 </div>
                 <h2 className="fw-bold text-body mb-3">Enquiry Submitted Successfully!</h2>
                 <p className="text-muted mb-4" style={{ fontSize: '16px', lineHeight: '1.6' }}>
-                  Your request has been received. Our team will review your organization details and
+                  Your request has been received. Our team will review your community details and
                   requested features. Once approved and payment is verified, your account will be
                   fully activated.
                 </p>

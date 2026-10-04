@@ -28,7 +28,7 @@ import useAuth from '../../auth/hooks/useAuth.js'
 /**
  * SetupWorkspace Component
  *
- * Simplified, decoupled view for organization/workspace creation.
+ * Simplified, decoupled view for community/workspace creation.
  * Implements 500ms debounced live organization name availability validation.
  * Adheres to the "Thin View" architectural pattern.
  */
@@ -76,7 +76,7 @@ export const SetupWorkspace = () => {
                 <CForm onSubmit={handleSubmit(onSubmit)}>
                   <div className="text-center mb-4">
                     <h2 style={styles.title}>
-                      {t('workspace.setup.title', { defaultValue: 'Create Your Organization' })}
+                      {t('workspace.setup.title', { defaultValue: 'Create Your Community' })}
                     </h2>
                     <p style={styles.subtitle}>
                       {t('workspace.setup.subtitle', {
@@ -99,17 +99,17 @@ export const SetupWorkspace = () => {
                       <CFormInput
                         style={styles.input}
                         placeholder={t('workspace.setup.namePlaceholder', {
-                          defaultValue: 'Organization Name',
+                          defaultValue: 'Community Name',
                         })}
                         disabled={loading}
                         {...register('name', {
                           required: t('workspace.setup.nameRequired', {
-                            defaultValue: 'Organization name is required.',
+                            defaultValue: 'Community name is required.',
                           }),
                           minLength: {
                             value: 3,
                             message: t('workspace.setup.nameLength', {
-                              defaultValue: 'Organization name must be at least 3 characters.',
+                              defaultValue: 'Community name must be at least 3 characters.',
                             }),
                           },
                         })}
@@ -145,7 +145,7 @@ export const SetupWorkspace = () => {
                           <span style={styles.unavailableText}>
                             ✗{' '}
                             {t('workspace.setup.taken', {
-                              defaultValue: 'Organization name is already taken',
+                              defaultValue: 'Community name is already taken',
                             })}
                           </span>
                         )}
@@ -178,7 +178,7 @@ export const SetupWorkspace = () => {
                           {t('workspace.setup.loading', { defaultValue: 'Creating Workspace...' })}
                         </>
                       ) : (
-                        t('workspace.setup.submit', { defaultValue: 'Create Organization' })
+                        t('workspace.setup.submit', { defaultValue: 'Create Community' })
                       )}
                     </CButton>
                   </div>

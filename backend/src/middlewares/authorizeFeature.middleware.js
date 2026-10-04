@@ -20,7 +20,7 @@ export const authorizeFeature = (featureKey) => {
 
       if (!orgId) {
         return next(
-          new HttpError(403, 'Forbidden. User is not associated with an active organization ID.')
+          new HttpError(403, 'Forbidden. User is not associated with an active community ID.')
         );
       }
 
@@ -30,7 +30,7 @@ export const authorizeFeature = (featureKey) => {
         return next(
           new HttpError(
             403,
-            `Forbidden. Organization does not have an active entitlement for feature '${featureKey}'.`
+            `Forbidden. Community does not have an active entitlement for feature '${featureKey}'.`
           )
         );
       }

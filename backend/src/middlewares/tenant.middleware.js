@@ -62,7 +62,7 @@ export const tenantContext = (optionsOrReq, res, next) => {
 
           if (!targetMembership || (targetMembership.status && targetMembership.status !== 'Active')) {
             console.error(`[TENANT DEBUG] 403 Forbidden. User ${userId} has no active membership in ${requestedOrgIdStr}.`);
-            throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
+            throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested community.');
           }
 
           // Resolve target organization role name and permissions

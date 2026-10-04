@@ -1507,127 +1507,7 @@ export class AuthService {
     return await this._handleSsoAuthentication(identityData);
   }
 
-  /**
-   * Registers a new user via SSO and creates an organization atomically.
-   */
-  async registerSsoWithOrg(payload) {
-    const { ssoToken, provider, name: orgName, organizationType, timezone, contactEmail, contactPhone } = payload;
-    const identityData = await userIdentityService.verifyAndNormalizeProviderToken(provider, ssoToken);
-    
-    const mongoose = (await import('mongoose')).default;
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
-    try {
-      const existingIdentity = await userIdentityService.getIdentityByProviderId(provider, identityData.providerId, session);
-      let user = null;
-      if (existingIdentity) {
-        try {
-          user = await userService.getUserById(existingIdentity.userId, session);
-        } catch (err) {
-          if (err.statusCode === 404) {
-            // Orphan identity, user was deleted. We will proceed to create a new user.
-            user = null;
-          } else {
-            throw err;
-          }
-        }
-      }
-      if (!user) {
-        user = await userService.getUserByEmail(identityData.providerEmail, session);
-      }
 
-      if (user) {
-        // If user already exists, we could just create the workspace for them,
-        // but they should technically use the authenticated setup route.
-        // For convenience, we will just proceed with their existing user account.
-        user = await this._updateExistingSsoUser(user, identityData, session);
-      } else {
-        user = await this._registerSsoUser(identityData, session);
-      }
-
-      // Import org service dynamically to avoid circular dependency
-      const organizationService = (await import('../organization/organization.services.js')).default;
-      
-      const setupResult = await organizationService.setupWorkspace({
-        name: orgName,
-        organizationType,
-        contactEmail,
-        contactPhone,
-        timezone,
-        userId: user._id
-      });
-      
-      // setupWorkspace creates its own transaction if not provided, but we want it in ours? 
-      // setupWorkspace doesn't take session as parameter currently based on the signature.
-      // Wait, let's check if setupWorkspace takes a session in organization.services.js.
-      // If not, it will run independently. This is acceptable for now.
-      
-      const refreshToken = await sessionService.createSession(user._id, {}, session);
-      await session.commitTransaction();
-
-      // Because setupWorkspace happened, the user now has an org.
-      // Refetch scoped token payload
-      const { tokenPayload, permissions, availableWorkspaces } = await this.getScopedTokenPayload(user);
-      const token = signToken(tokenPayload);
-
-      authEvents.emit('PROVIDER_LOGIN', { userId: user._id, provider });
-      authEvents.emit('LOGIN_SUCCESS', { userId: user._id, method: provider });
-
-      return {
-        token,
-        refreshToken,
-        user: this._formatAuthUser(user, tokenPayload, permissions, availableWorkspaces),
-        availableWorkspaces,
-      };
-    } catch (error) {
-      if (session) {
-        try { await session.abortTransaction(); } catch (e) {}
-      }
-      throw error;
-    } finally {
-      if (session) {
-        await session.endSession();
-      }
-    }
-  }
-
-  /**
-   * Registers a new user via SSO.
-   * @private
-   */
-  async _registerSsoUser(identityData, session) {
-    const { providerEmail: email, profileData, provider, providerId } = identityData;
-    const name = profileData?.name || '';
-    
-    const { v4: uuidv4 } = await import('uuid');
-    const emailPrefix = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
-    let derivedUsername = emailPrefix;
-    if (derivedUsername.length < 3) {
-      derivedUsername = 'user' + Math.floor(100 + Math.random() * 900);
-    } else if (derivedUsername.length > 30) {
-      derivedUsername = derivedUsername.substring(0, 30);
-    }
-
-    const randomPassword = uuidv4();
-    const userData = {
-      email,
-      username: derivedUsername,
-      password: randomPassword,
-      status: 'Active',
-      name: name,
-      emailVerified: true, // SSO emails are pre-verified
-    };
-
-    const newUser = await userService.createUser(userData, session);
-    
-    // Assign default role logic could go here if handled by user.services, but tenant context handles most roles.
-    // Ensure identity is linked securely
-    await userIdentityService.linkIdentity(newUser._id, identityData, session);
-    
-    authEvents.emit('USER_CREATED', { userId: newUser._id, provider });
-    return newUser;
-  }
 
   /**
    * Updates an existing user's details upon successful SSO login.
@@ -1706,13 +1586,7 @@ export class AuthService {
       }
 
       if (!user) {
-        if (!email) {
-          throw new HttpError(
-            400,
-            'Apple did not return an email for this account. Please complete the first Apple sign-in on this app or use your existing sign-in method.'
-          );
-        }
-        user = await this._registerSsoUser(identityData, session);
+        throw new HttpError(401, 'User account not found. You must be invited to a community to log in.');
       } else {
         user = await this._updateExistingSsoUser(user, identityData, session);
       }
@@ -1738,6 +1612,12 @@ export class AuthService {
 
       // Resolve scoped token and workspaces
       const { tokenPayload, permissions, availableWorkspaces } = await this.getScopedTokenPayload(user, targetOrgIdFromInvite);
+      
+      // Enforce organization check
+      if (!availableWorkspaces || availableWorkspaces.length === 0) {
+        throw new HttpError(403, 'Your account does not have access to any active organization.');
+      }
+
       const token = signToken(tokenPayload);
       
       authEvents.emit('PROVIDER_LOGIN', { userId: user._id, provider });
@@ -2598,7 +2478,7 @@ export class AuthService {
 
       const quote = inquiry ? await PlatformQuote.findOne({ inquiryId: inquiry._id }).sort({ createdAt: -1 }).catch(() => null) : null;
 
-      const orgName = orgNameFromReq || inquiry?.organizationName || quote?.communitySnapshot?.organizationName || 'Your Organization';
+      const orgName = orgNameFromReq || inquiry?.organizationName || quote?.communitySnapshot?.organizationName || 'Your Community';
       const selectedPlan = quote?.pricingSnapshot?.planName || quote?.pricingSnapshot?.tier || quote?.planName || inquiry?.planName || 'COMMUNITY_STARTER';
 
       let basePlanFeatures = ['visitor', 'villas', 'users', 'roles', 'complaints', 'notices'];

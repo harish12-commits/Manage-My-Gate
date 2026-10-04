@@ -16,7 +16,6 @@ import {
   resetPasswordRules,
   setupAccountPasswordRules,
   acceptInviteSsoRules,
-  registerSsoWithOrgRules,
   exchangeHandoffRules,
 } from './auth.validateRules.js';
 import { isAuthenticated, optionalAuth } from '../../middlewares/auth.middleware.js';
@@ -191,8 +190,6 @@ router.post('/reject-invite', authController.rejectInvite);
  */
 router.post('/accept-invite/sso', validate(acceptInviteSsoRules), authController.acceptInviteWithSSO);
 
-router.post('/register-with-org/sso', authLimiter, validate(registerSsoWithOrgRules), authController.registerSsoWithOrg);
-
 /**
  * @swagger
  * /auth/invite/handoff:
@@ -316,6 +313,6 @@ router.get('/check-account-status', authController.checkAccountStatus);
 
 // Session Routes
 router.post('/refresh-token', authController.refreshToken);
-router.post('/logout', isAuthenticated, authController.logout);
+router.post('/logout', optionalAuth, authController.logout);
 
 export default router;

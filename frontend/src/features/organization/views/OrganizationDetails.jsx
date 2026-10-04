@@ -150,7 +150,7 @@ export const OrganizationDetails = () => {
             <AppLoader variant="block" />
             <span>
               {t('superAdmin.orgDetails.loadingDetails', {
-                defaultValue: 'Loading organization details...',
+                defaultValue: 'Loading community details...',
               })}
             </span>
           </div>
@@ -174,7 +174,7 @@ export const OrganizationDetails = () => {
                   <p className="section-subtitle">
                     {t('superAdmin.orgDetails.userDirectorySub', {
                       defaultValue:
-                        'Browse, search, filter, and inspect member details belonging to this organization.',
+                        'Browse, search, filter, and inspect member details belonging to this community.',
                     })}
                   </p>
                 </div>

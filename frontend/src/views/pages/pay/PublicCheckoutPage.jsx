@@ -835,7 +835,7 @@ const PublicCheckoutPage = () => {
                 >
                   <div>
                     <span style={{ color: '#64748b', fontSize: '12px', display: 'block' }}>
-                      Registered Organization
+                      Registered Community
                     </span>
                     <strong style={{ color: '#0f172a', fontSize: '16px' }}>
                       {checkoutData?.organizationName}
@@ -1153,7 +1153,7 @@ const PublicCheckoutPage = () => {
                 </div>
               </div>
 
-              {/* CUSTOMER & ORGANIZATION DETAILS */}
+              {/* CUSTOMER & COMMUNITY DETAILS */}
               <div
                 style={{
                   backgroundColor: '#ffffff',
@@ -1216,7 +1216,7 @@ const PublicCheckoutPage = () => {
                     }}
                   >
                     <div style={{ fontWeight: 700, color: '#1e3a8a', marginBottom: '8px' }}>
-                      🏢 Organization Profile
+                      🏢 Community Profile
                     </div>
                     <p style={{ margin: '4px 0' }}>
                       <strong>Organization:</strong> {checkoutData?.organizationName}
@@ -1415,7 +1415,7 @@ const PublicCheckoutPage = () => {
                             width: '100%',
                           }}
                         >
-                          Go to Registered Organization Login Page ➔
+                          Go to Registered Community Login Page ➔
                         </button>
                       </>
                     )}

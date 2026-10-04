@@ -22,7 +22,7 @@ const PlatformQuotesView = () => {
           <thead>
             <tr>
               <th>Quote #</th>
-              <th>Organization</th>
+              <th>Community</th>
               <th>Trial Duration</th>
               <th>Post-Trial Amount</th>
               <th>Status</th>
@@ -37,7 +37,7 @@ const PlatformQuotesView = () => {
                 item.communitySnapshot?.organizationName ||
                 item.customerSnapshot?.organizationName ||
                 item.inquiryId?.organizationName ||
-                'Your Organization'
+                'Your Community'
               const total = item.totalAmount || item.grandTotal || 0
               return (
                 <tr key={item._id || item.id}>
@@ -91,13 +91,13 @@ const PlatformQuotesView = () => {
             </div>
             <div className="modal-body">
               <div>
-                <strong>Organization Name:</strong>{' '}
+                <strong>Community Name:</strong>{' '}
                 {selectedQuote.organizationId?.name ||
                   selectedQuote.organizationName ||
                   selectedQuote.communitySnapshot?.organizationName ||
                   selectedQuote.customerSnapshot?.organizationName ||
                   selectedQuote.inquiryId?.organizationName ||
-                  'Your Organization'}
+                  'Your Community'}
               </div>
               <div>
                 <strong>Plan &amp; Tier:</strong>{' '}

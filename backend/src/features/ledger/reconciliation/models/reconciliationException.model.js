@@ -21,7 +21,7 @@ const reconciliationExceptionSchema = new mongoose.Schema(
     orgId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',
-      required: [true, 'Organization (tenant) ID is required'],
+      required: [true, 'Community (tenant) ID is required'],
       index: true,
     },
     sourceType: {

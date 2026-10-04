@@ -163,7 +163,7 @@ const SubscriptionManagerView = () => {
           <thead>
             <tr>
               <th>Subscription #</th>
-              <th>Organization</th>
+              <th>Community</th>
               <th>Plan Type</th>
               <th>Free Trial</th>
               <th>Start Date</th>
@@ -180,7 +180,7 @@ const SubscriptionManagerView = () => {
                 item.communitySnapshot?.organizationName ||
                 item.customerSnapshot?.organizationName ||
                 item.inquiryId?.organizationName ||
-                'Your Organization'
+                'Your Community'
               const isTrial = item.status === 'TRIALING' || item.isTrial
               const trialText = isTrial ? '14 Days Free Trial (Active)' : 'Trial Completed'
 
@@ -310,12 +310,12 @@ const SubscriptionManagerView = () => {
             </div>
             <div style={{ fontSize: '14px', lineHeight: '1.8', color: '#334155' }}>
               <div>
-                <strong>Organization Name:</strong>{' '}
+                <strong>Community Name:</strong>{' '}
                 {selectedSub.organizationId?.name ||
                   selectedSub.organizationName ||
                   selectedSub.communitySnapshot?.organizationName ||
                   selectedSub.customerSnapshot?.organizationName ||
-                  'Your Organization'}
+                  'Your Community'}
               </div>
               <div>
                 <strong>Active Plan:</strong>{' '}
@@ -462,7 +462,7 @@ const SubscriptionManagerView = () => {
                   {renewSub.organizationId?.name ||
                     renewSub.organizationName ||
                     renewSub.communitySnapshot?.organizationName ||
-                    'Your Organization'}
+                    'Your Community'}
                 </strong>
               </div>
               <div style={{ fontSize: '14px', color: '#334155', marginBottom: '6px' }}>

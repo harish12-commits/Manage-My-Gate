@@ -31,7 +31,7 @@ export class FinancialLedgerService {
 
     // 1. Tenant validation
     if (!orgId) {
-      throw new HttpError(400, 'Cannot record ledger entry: Organization (tenant) ID is required.');
+      throw new HttpError(400, 'Cannot record ledger entry: Community (tenant) ID is required.');
     }
     if (!amount || amount <= 0) {
       throw new HttpError(400, `Cannot record ledger entry: Invalid amount ${amount}.`);
@@ -341,12 +341,12 @@ export class FinancialLedgerService {
   }
 
   async getFinancialHistory(orgId, filters = {}, options = {}) {
-    if (!orgId) throw new HttpError(400, 'Organization (tenant) ID is required');
+    if (!orgId) throw new HttpError(400, 'Community (tenant) ID is required');
     return await financialLedgerRepository.getFinancialHistory(orgId, filters, options);
   }
 
   async getAccountBalances(orgId) {
-    if (!orgId) throw new HttpError(400, 'Organization (tenant) ID is required');
+    if (!orgId) throw new HttpError(400, 'Community (tenant) ID is required');
     return await financialLedgerRepository.getAccountBalances(orgId);
   }
 

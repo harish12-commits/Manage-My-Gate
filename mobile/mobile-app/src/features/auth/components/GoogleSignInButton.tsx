@@ -53,6 +53,22 @@ export function GoogleSignInButton({ inviteToken, onSuccess, onError }: GoogleSi
     default: googleClientId,
   });
 
+  const extractMessage = (rawPayload: any, fallback: string): string => {
+    let errMsg = fallback;
+    if (typeof rawPayload === 'string') {
+      errMsg = rawPayload;
+    } else if (rawPayload?.message) {
+      errMsg = rawPayload.message;
+    } else if (rawPayload?.error) {
+      errMsg = rawPayload.error;
+    }
+    try {
+      const parsed = JSON.parse(errMsg);
+      if (parsed && parsed.message) return parsed.message;
+    } catch (e) {}
+    return errMsg;
+  };
+
   const handlePayload = React.useCallback(
     async (payload: any) => {
       setSubmitting(true);
@@ -65,7 +81,7 @@ export function GoogleSignInButton({ inviteToken, onSuccess, onError }: GoogleSi
           };
           const res: any = await acceptSsoInvite(invitePayload);
           if (res?.meta?.requestStatus === 'rejected' || res?.error) {
-            const errMsg = (res.payload as string) || res.error?.message || 'Failed to accept invitation via Google';
+            const errMsg = extractMessage(res.payload || res.error, 'Failed to accept invitation via Google');
             if (onError) onError(errMsg);
             else Alert.alert('Google Sign-In Failed', errMsg);
             return;
@@ -78,7 +94,7 @@ export function GoogleSignInButton({ inviteToken, onSuccess, onError }: GoogleSi
         } else {
           const res: any = await loginWithGoogle(payload);
           if (res?.meta?.requestStatus === 'rejected' || res?.error) {
-            const errMsg = (res.payload as string) || res.error?.message || 'Google sign in failed';
+            const errMsg = extractMessage(res.payload || res.error, 'Google sign in failed');
             if (onError) onError(errMsg);
             else Alert.alert('Google Sign-In Failed', errMsg);
             return;
@@ -102,7 +118,7 @@ export function GoogleSignInButton({ inviteToken, onSuccess, onError }: GoogleSi
           }
         }
       } catch (err: any) {
-        const errMsg = err?.response?.data?.message || err?.message || 'Failed to complete Google Sign-In';
+        const errMsg = extractMessage(err?.response?.data || err, 'Failed to complete Google Sign-In');
         if (onError) onError(errMsg);
         else Alert.alert('Google Sign-In Failed', errMsg);
       } finally {

@@ -36,7 +36,7 @@ export const CreateOrganizationScreen: React.FC<CreateOrganizationScreenProps> =
     <>
       <Stack.Screen
         options={{
-          title: t('create_organization', 'Create Organization'),
+          title: t('create_organization', 'Create Community'),
           headerBackVisible: showCancel,
         }}
       />
@@ -57,7 +57,7 @@ export const CreateOrganizationScreen: React.FC<CreateOrganizationScreenProps> =
                 <Building2 className="size-9 text-primary" size={34} color="#03A9F4" />
               </View>
               <Text className="text-2xl font-extrabold text-foreground tracking-tight text-center">
-                {t('create_organization', 'Create Organization')}
+                {t('create_organization', 'Create Community')}
               </Text>
               <Text className="text-muted-foreground text-sm text-center mt-1 px-2">
                 {t('create_organization_subtitle', 'Establish your community or enterprise workspace environment')}

@@ -50,8 +50,16 @@ export function useGoogleAuthSession() {
       try {
         const res: any = await loginWithGoogle(payload);
         if (res?.meta?.requestStatus === 'rejected' || res?.error) {
-          const errMsg = (res?.payload as string) || res?.error?.message || 'Google sign in failed';
-          Alert.alert('Google Sign-In Failed', errMsg);
+          let errMsg = res?.payload || res?.error?.message || 'Google sign in failed';
+          try {
+            if (typeof errMsg === 'string') {
+              const parsed = JSON.parse(errMsg);
+              if (parsed && parsed.message) errMsg = parsed.message;
+            } else if (errMsg?.message) {
+              errMsg = errMsg.message;
+            }
+          } catch (e) {}
+          Alert.alert('Google Sign-In Failed', typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
           return;
         }
         if (res?.payload?.isNewUser) {

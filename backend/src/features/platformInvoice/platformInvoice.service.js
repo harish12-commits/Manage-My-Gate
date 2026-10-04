@@ -87,7 +87,7 @@ export class PlatformInvoiceService {
         dueDate,
         customerSnapshot: order.customerSnapshot || {},
         commercialSnapshot: {
-          organizationName: order.communitySnapshot?.organizationName || order.customerSnapshot?.organizationName || order.organizationId?.name || 'Your Organization',
+          organizationName: order.communitySnapshot?.organizationName || order.customerSnapshot?.organizationName || order.organizationId?.name || 'Your Community',
           planName: order.pricingSnapshot?.planName || order.pricingSnapshot?.tier || 'COMMUNITY_ENTERPRISE',
           villaCount: order.communitySnapshot?.villaCount || order.unitCount || 250,
         },
@@ -248,7 +248,7 @@ export class PlatformInvoiceService {
    */
   async generateInvoiceHtml(invoiceId) {
     const invoice = await this.getInvoiceById(invoiceId);
-    const orgName = invoice.commercialSnapshot?.organizationName || invoice.customerSnapshot?.customerName || invoice.organizationId?.name || 'Your Organization';
+    const orgName = invoice.commercialSnapshot?.organizationName || invoice.customerSnapshot?.customerName || invoice.organizationId?.name || 'Your Community';
     const planName = invoice.commercialSnapshot?.planName || 'COMMUNITY_ENTERPRISE';
     const totalAmount = invoice.totalAmount || 0;
     const subtotal = invoice.subtotal || Math.round(totalAmount / 1.18);

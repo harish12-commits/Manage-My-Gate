@@ -218,7 +218,19 @@ export const LoginForm = () => {
           handlePostAuthRedirect({ skipInviteToken: true })
         }
       } catch (err) {
-        toast.error(err || 'Failed to verify Google account')
+        let errorMessage = 'Failed to verify Google account'
+        if (typeof err === 'string') {
+          errorMessage = err
+        } else if (err?.message) {
+          errorMessage = err.message
+        }
+        
+        try {
+          const parsed = JSON.parse(errorMessage)
+          if (parsed && parsed.message) errorMessage = parsed.message
+        } catch (e) {}
+        
+        toast.error(errorMessage)
       }
     },
     [dispatch, inviteTokenParam, navigate, handlePostAuthRedirect],
@@ -268,8 +280,20 @@ export const LoginForm = () => {
             localStorage.removeItem('msal.interaction.status')
             triggerLogin()
           } else {
+            let msErrMsg = 'Unknown error. Check Azure SPA settings.'
+            if (typeof err === 'string') {
+              msErrMsg = err
+            } else if (err?.message) {
+              msErrMsg = err.message
+            }
+            
+            try {
+              const parsed = JSON.parse(msErrMsg)
+              if (parsed && parsed.message) msErrMsg = parsed.message
+            } catch (e) {}
+            
             toast.error(
-              'Microsoft Error: ' + (err.message || 'Unknown error. Check Azure SPA settings.'),
+              'Microsoft Error: ' + msErrMsg,
             )
           }
         })

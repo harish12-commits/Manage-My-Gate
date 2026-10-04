@@ -214,7 +214,7 @@ const PrivacyPolicyPage = () => {
                     <ul>
                       <li>
                         <strong>Unit Binding:</strong> Villa or apartment unit number, associated
-                        organization/community name, occupancy status (Owner / Resident / Tenant /
+                        community name, occupancy status (Owner / Resident / Tenant /
                         Staff).
                       </li>
                       <li>

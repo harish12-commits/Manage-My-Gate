@@ -47,7 +47,7 @@ const InvoiceLedgerView = () => {
             <tr>
               <th>Invoice #</th>
               <th>Order Ref</th>
-              <th>Organization</th>
+              <th>Community</th>
               <th>Trial Status</th>
               <th>Status</th>
               <th>Actions</th>
@@ -63,7 +63,7 @@ const InvoiceLedgerView = () => {
                     item.organizationName ||
                     item.commercialSnapshot?.organizationName ||
                     item.customerSnapshot?.customerName ||
-                    'Your Organization'}
+                    'Your Community'}
                 </td>
                 <td>
                   {item.trialStatus ||

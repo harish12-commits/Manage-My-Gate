@@ -74,7 +74,7 @@ const NewEnquiryModal = ({ isOpen, onClose }) => {
           </div>
 
           <div style={formGroupStyle}>
-            <label>Organization Name *</label>
+            <label>Community Name *</label>
             <input
               type="text"
               name="organizationName"

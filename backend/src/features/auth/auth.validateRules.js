@@ -366,42 +366,6 @@ export const resetPasswordRules = [
 /**
  * Validation rules for register via SSO with Organization
  */
-export const registerSsoWithOrgRules = [
-  body('ssoToken')
-    .notEmpty()
-    .withMessage('SSO token is required')
-    .isString()
-    .withMessage('SSO token must be a string')
-    .trim(),
-  body('provider')
-    .notEmpty()
-    .withMessage('Provider is required')
-    .isIn(['google', 'microsoft'])
-    .withMessage('Provider must be google or microsoft'),
-  body('name')
-    .notEmpty()
-    .withMessage('Organization name is required')
-    .isString()
-    .withMessage('Organization name must be a string')
-    .trim(),
-  body('timezone')
-    .optional()
-    .isString()
-    .trim(),
-  body('contactEmail')
-    .optional({ nullable: true, checkFalsy: true })
-    .isEmail()
-    .withMessage('Must be a valid email'),
-  body('contactPhone')
-    .optional({ nullable: true, checkFalsy: true })
-    .isString()
-    .trim(),
-  body('organizationType')
-    .optional()
-    .isString()
-    .trim(),
-];
-
 /**
  * Validation rules for accepting an invitation via SSO
  */

@@ -968,7 +968,7 @@ class WalletService {
       throw new HttpError(400, 'User ID is required for wallet debit');
     }
     if (!orgId) {
-      throw new HttpError(400, 'Organization (tenant) ID is required for wallet debit');
+      throw new HttpError(400, 'Community (tenant) ID is required for wallet debit');
     }
 
     let session = outerSession;
@@ -1145,7 +1145,7 @@ class WalletService {
       throw new HttpError(400, 'User ID is required for wallet credit');
     }
     if (!orgId) {
-      throw new HttpError(400, 'Organization (tenant) ID is required for wallet credit');
+      throw new HttpError(400, 'Community (tenant) ID is required for wallet credit');
     }
 
     let session = outerSession;

@@ -22,7 +22,7 @@ export class WorkspaceService {
     // Check organization exists
     const org = await Organization.findById(organizationId).session(session);
     if (!org) {
-      throw new HttpError(404, 'Organization not found.');
+      throw new HttpError(404, 'Community not found.');
     }
 
     // Check name uniqueness in organization

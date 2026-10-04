@@ -20,7 +20,7 @@ export const OverviewPanel = ({ activeEnquiry, insights, activities }) => {
         </h3>
         <div className="space-y-3">
           <div className="flex justify-between">
-            <span className="text-gray-500 text-sm">Organization</span>
+            <span className="text-gray-500 text-sm">Community</span>
             <span className="font-medium text-gray-900 text-sm text-right">
               {activeEnquiry.organizationName}
             </span>

@@ -23,7 +23,7 @@ const OrderDetailsView = () => {
           <thead>
             <tr>
               <th>Order #</th>
-              <th>Organization</th>
+              <th>Community</th>
               <th>Order Type / Plan</th>
               <th>Grand Total</th>
               <th>Status</th>
@@ -38,7 +38,7 @@ const OrderDetailsView = () => {
                 item.communitySnapshot?.organizationName ||
                 item.customerSnapshot?.organizationName ||
                 item.inquiryId?.organizationName ||
-                'Your Organization'
+                'Your Community'
               const total = item.totalAmount || item.grandTotal || 0
               return (
                 <tr key={item._id || item.id}>
@@ -91,13 +91,13 @@ const OrderDetailsView = () => {
             </div>
             <div className="modal-body">
               <div>
-                <strong>Organization Name:</strong>{' '}
+                <strong>Community Name:</strong>{' '}
                 {selectedOrder.organizationId?.name ||
                   selectedOrder.organizationName ||
                   selectedOrder.communitySnapshot?.organizationName ||
                   selectedOrder.customerSnapshot?.organizationName ||
                   selectedOrder.inquiryId?.organizationName ||
-                  'Your Organization'}
+                  'Your Community'}
               </div>
               <div>
                 <strong>Plan / Package:</strong>{' '}

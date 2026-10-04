@@ -44,6 +44,25 @@ if (__DEV__ && Platform.OS === 'web' && typeof window !== 'undefined') {
 if (Platform.OS === 'web' && typeof window !== 'undefined') {
   LogBox.ignoreAllLogs(true);
   
+  const filterWarning = (msg: any) => {
+    if (typeof msg === 'string') {
+      if (msg.includes('textShadow') || msg.includes('Cross-Origin-Opener-Policy') || msg.includes('window.closed')) return true;
+    }
+    return false;
+  };
+
+  const originalWarn = window.console.warn;
+  window.console.warn = function (...args) {
+    if (filterWarning(args[0])) return;
+    originalWarn.apply(console, args);
+  };
+
+  const originalError = window.console.error;
+  window.console.error = function (...args) {
+    if (filterWarning(args[0])) return;
+    originalError.apply(console, args);
+  };
+  
   const originalAddEventListener = EventTarget.prototype.addEventListener;
   EventTarget.prototype.addEventListener = function (
     this: EventTarget,
