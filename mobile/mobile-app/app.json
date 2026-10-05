@@ -1,24 +1,41 @@
 {
   "expo": {
-    "name": "ManageMyGate",
-    "slug": "mobile-app",
-    "version": "1.0.0",
+    "name": "Nahom",
+    "slug": "atominos",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile-app",
+    "scheme": [
+      "mobile-app",
+      "managemygate",
+      "com.atominosconsulting.nahom",
+      "com.googleusercontent.apps.512495714957-ppgtahfr70hmjclhmq7n3c7822aacd41"
+    ],
     "userInterfaceStyle": "automatic",
-    "jsEngine": "hermes",
     "assetBundlePatterns": [
       "**/*"
     ],
+    "updates": {
+      "enabled": false
+    },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.naveenpvn.managemygate",
-      "buildNumber": "1.0.0",
+      "deploymentTarget": "16.4",
+      "supportsTablet": false,
+      "usesAppleSignIn": true,
+      "bundleIdentifier": "com.atominosconsulting.nahom",
+      "buildNumber": "20",
+      "associatedDomains": [
+        "applinks:nahom.e3esg.com",
+        "applinks:app.managemygate.com"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "ManageMyGate requires camera access to scan visitor QR passes and capture photo attachments for maintenance complaints.",
-        "NSPhotoLibraryUsageDescription": "ManageMyGate requires photo library access to upload images for amenity bookings and complaint tickets.",
+        "UIBackgroundModes": [
+          "fetch",
+          "remote-notification"
+        ],
+        "NSCameraUsageDescription": "Nahom requires camera access to scan visitor QR passes and capture photo attachments for maintenance complaints.",
+        "NSPhotoLibraryUsageDescription": "Nahom requires photo library access to upload images for amenity bookings and complaint tickets.",
         "LSApplicationQueriesSchemes": [
           "tel",
           "whatsapp"
@@ -26,15 +43,73 @@
       }
     },
     "android": {
-      "package": "com.naveenpvn.managemygate",
+      "softwareKeyboardLayoutMode": "resize",
+      "package": "com.atominosconsulting.nahom",
+      "versionCode": 24,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "backgroundColor": "#0D1015"
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.READ_CONTACTS"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "nahom.e3esg.com",
+              "pathPrefix": "/invite/handoff"
+            },
+            {
+              "scheme": "https",
+              "host": "app.managemygate.com",
+              "pathPrefix": "/invite/handoff"
+            },
+            {
+              "scheme": "https",
+              "host": "nahom.e3esg.com",
+              "pathPrefix": "/billing"
+            },
+            {
+              "scheme": "https",
+              "host": "app.managemygate.com",
+              "pathPrefix": "/billing"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "managemygate",
+              "host": "invite",
+              "pathPrefix": "/handoff"
+            },
+            {
+              "scheme": "managemygate",
+              "host": "accept-invite"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -44,32 +119,55 @@
         {
           "image": "./assets/images/splash.png",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#0D1015"
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "ManageMyGate requires photo library access to upload images for amenity bookings and complaint tickets.",
-          "cameraPermission": "ManageMyGate requires camera access to scan visitor QR passes and capture photo attachments for maintenance complaints."
+          "photosPermission": "Nahom requires photo library access to upload images for amenity bookings and complaint tickets.",
+          "cameraPermission": "Nahom requires camera access to scan visitor QR passes and capture photo attachments for maintenance complaints."
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "ManageMyGate requires camera access to scan visitor QR passes and verify amenity tickets."
+          "cameraPermission": "Nahom requires camera access to scan visitor QR passes and verify amenity tickets."
+        }
+      ],
+      "expo-secure-store",
+      "expo-asset",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/adaptive-icon.png",
+          "color": "#FF6A00",
+          "defaultChannel": "general"
+        }
+      ],
+      "expo-font",
+      "expo-sharing",
+      "expo-status-bar",
+      "expo-web-browser",
+      "expo-localization",
+      "expo-apple-authentication",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Nahom uses your contacts only when you choose one, to fill in a visitor's or staff member's name and phone number. Contacts are never uploaded."
         }
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "tsconfigPaths": true
     },
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "20145594-5bc2-4f26-be5b-75a575444e78"
+        "projectId": "94a573d9-5e93-4827-8fbd-605e0ef3a50a"
       }
     },
-    "owner": "naveenpvn"
+    "owner": "atominos-consulting-private-limited"
   }
 }
