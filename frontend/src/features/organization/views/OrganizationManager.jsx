@@ -8,7 +8,7 @@ import '../styles/_organization.scss'
 import AppLoader from '../../../components/common/AppLoader'
 
 /**
- * Super Admin View — Organization Manager list (Notice Board aligned design).
+ * Super Admin View — Community Manager list (Notice Board aligned design).
  */
 export const OrganizationManager = () => {
   const { t } = useTranslation()
@@ -49,7 +49,7 @@ export const OrganizationManager = () => {
         <div className="page-header">
           <div>
             <h2 className="page-title">
-              {t('superAdmin.orgManager.title', { defaultValue: 'Organization Manager' })}
+              {t('superAdmin.orgManager.title', { defaultValue: 'Community Manager' })}
             </h2>
             <p className="page-subtitle">
               {t('superAdmin.orgManager.subtitle', {

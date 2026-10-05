@@ -19,6 +19,7 @@
       "enabled": false
     },
     "ios": {
+      "deploymentTarget": "16.4",
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.atominosconsulting.nahom",

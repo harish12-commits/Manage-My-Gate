@@ -67,7 +67,7 @@ async function handleInvoiceGenerated(payload) {
 
   const template = await messageTemplateService.getTemplateByPurpose(orgId, 'email', 'invoice_generated');
 
-  const subject = template?.subject || `Invoice Generated for ${organizationName || 'Your Organization'}`;
+  const subject = template?.subject || `Invoice Generated for ${organizationName || 'Your Community'}`;
   const bodyTemplate = template?.body || DEFAULT_INVOICE_BODY;
 
   const compiledSubject = subject

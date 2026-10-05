@@ -65,7 +65,7 @@ export const UserOrganizationPanel = ({ activeEnquiry }) => {
           </h4>
           <div className="space-y-3">
             <div>
-              <p className="text-xs text-gray-500">Organization Name</p>
+              <p className="text-xs text-gray-500">Community Name</p>
               <p className="font-medium text-gray-900">{activeEnquiry.organizationName}</p>
             </div>
             <div>

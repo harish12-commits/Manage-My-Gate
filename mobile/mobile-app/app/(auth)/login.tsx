@@ -1132,7 +1132,7 @@ export default function LoginScreen() {
                       accessibilityLabel="Create Community"
                     >
                       <Text className="text-[12.5px] font-bold text-[#FF6A00]" style={{ textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
-                        {t('create_organisation', 'Create Community')}
+                        {t('create_community', 'Create Community')}
                       </Text>
                     </TouchableOpacity>
                   </View>

@@ -282,7 +282,7 @@ export const InvitationDetailModal: React.FC<InvitationDetailModalProps> = ({
         {!loading ? (
           <View className="bg-card border border-border/80 rounded-2xl px-4 py-1 shadow-xs">
             <DetailRow
-              label={t('organization', 'Organization')}
+              label={t('organization', 'Community')}
               value={inviteDetails?.orgName || '—'}
               iconName="Building2"
             />

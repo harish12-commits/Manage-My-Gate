@@ -40,7 +40,7 @@ router.get('/checkout/:id', async (req, res, next) => {
 
 const buildInvoiceHtml = (checkoutInfo) => {
   const invNum = checkoutInfo?.invoiceNumber || (checkoutInfo?.invoiceId ? `INV-2026-${String(checkoutInfo.invoiceId).slice(-6).toUpperCase()}` : `INV-2026-ONLINE`);
-  const orgName = checkoutInfo?.organizationName || checkoutInfo?.organizationDetails?.organizationName || 'Your Organization';
+  const orgName = checkoutInfo?.organizationName || checkoutInfo?.organizationDetails?.organizationName || 'Your Community';
   const custName = checkoutInfo?.contactName || checkoutInfo?.customerDetails?.customerName || 'Valued Customer';
   const email = checkoutInfo?.email || checkoutInfo?.customerDetails?.email || 'N/A';
   const phone = checkoutInfo?.contactPhone || checkoutInfo?.customerDetails?.contactPhone || 'N/A';
@@ -99,7 +99,7 @@ const buildInvoiceHtml = (checkoutInfo) => {
 
     <div class="inv-meta">
       <div>
-        <div class="inv-meta-label">Billed To Organization</div>
+        <div class="inv-meta-label">Billed To Community</div>
         <div class="inv-meta-val">${orgName}</div>
         <div style="font-size: 12.5px; color: #475569;">Attn: ${custName}</div>
         <div style="font-size: 12px; color: #2563eb;">${email}</div>

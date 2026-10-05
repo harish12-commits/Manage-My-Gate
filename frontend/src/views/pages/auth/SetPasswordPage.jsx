@@ -25,7 +25,7 @@ const SetPasswordPage = () => {
   const dispatch = useDispatch()
 
   const emailParam = searchParams.get('email') || 'naveenpv5886@gmail.com'
-  const orgParam = searchParams.get('org') || 'Your Organization'
+  const orgParam = searchParams.get('org') || 'Your Community'
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -289,14 +289,14 @@ const SetPasswordPage = () => {
                   </div>
                   <h2 className="h4 font-weight-bold text-dark mb-1">Set Account Password</h2>
                   <p className="text-muted small mb-0">
-                    Create your password to activate organization account access.
+                    Create your password to activate community account access.
                   </p>
                 </div>
 
                 {/* Organization Info Banner */}
                 <div className="p-3 mb-4 rounded-3 border bg-light">
                   <div className="d-flex align-items-center mb-1">
-                    <span className="badge bg-primary me-2">ORGANIZATION</span>
+                    <span className="badge bg-primary me-2">COMMUNITY</span>
                     <strong className="text-dark">{orgParam}</strong>
                   </div>
                   <div className="text-muted small">

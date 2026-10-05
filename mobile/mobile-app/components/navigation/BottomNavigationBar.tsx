@@ -200,7 +200,13 @@ const InsetTabButton = React.memo(function InsetTabButton({
     <Pressable
       onPress={onPress}
       onPressIn={onPressIn}
-      className="flex-1 items-center justify-center h-full select-none z-10"
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        zIndex: 10,
+      }}
       accessibilityRole="tab"
       accessibilityState={{ selected: isActive }}
       accessibilityLabel={translatedLabel}
@@ -473,7 +479,6 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
             onLayout={handleLayout}
             style={[
               {
-                
                 height: 56,
                 overflow: 'hidden',
                 backgroundColor: isDark ? 'rgba(16, 17, 20, 0.65)' : 'rgba(255, 255, 255, 0.75)',
@@ -487,10 +492,13 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
                 shadowOffset: { width: 0, height: 6 },
                 shadowOpacity: isDark ? 0.50 : 0.12,
                 shadowRadius: isDark ? 22 : 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: 6,
               },
               barAnimatedStyle,
             ]}
-            className="px-1.5 flex-row items-center justify-between relative overflow-hidden"
           >
             <BlurView
               intensity={isDark ? 60 : 80}

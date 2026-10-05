@@ -56,7 +56,7 @@ export const nameCheckLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     success: false,
-    message: 'Too many organization name checks from this IP, please try again after 15 minutes',
+    message: 'Too many community name checks from this IP, please try again after 15 minutes',
   },
 });
 

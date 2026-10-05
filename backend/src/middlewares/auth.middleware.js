@@ -33,13 +33,13 @@ const assertOrgHeaderAllowed = async (req, decoded) => {
   const requested = String(headerOrg);
   if (decoded.orgId && String(decoded.orgId) === requested) return;
   if (!/^[a-f\d]{24}$/i.test(requested)) {
-    throw new HttpError(400, 'Invalid organization identifier.');
+    throw new HttpError(400, 'Invalid community identifier.');
   }
   const membership = await OrgMembership.findOne({ userId: decoded.id, orgId: requested, status: 'Active' })
     .select('_id')
     .lean();
   if (!membership) {
-    throw new HttpError(403, 'Forbidden. You are not a member of the requested organization.');
+    throw new HttpError(403, 'Forbidden. You are not a member of the requested community.');
   }
 };
 

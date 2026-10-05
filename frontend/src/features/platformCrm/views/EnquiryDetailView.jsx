@@ -129,7 +129,7 @@ export const EnquiryDetailView = ({ enquiryId, onBack }) => {
             </div>
 
             <div className="bg-white p-5 rounded-lg border shadow-sm">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">User & Organization</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-4">User & Community</h3>
               <UserOrganizationPanel activeEnquiry={activeEnquiry} />
             </div>
           </div>

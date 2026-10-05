@@ -259,7 +259,7 @@ const ContactSupportPage = () => {
                           </CCol>
                           <CCol md={6}>
                             <label className="form-label fw-semibold small">
-                              Community / Organization Name
+                              Community / Community Name
                             </label>
                             <CFormInput
                               type="text"

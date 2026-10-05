@@ -93,7 +93,7 @@ export class VisitorPassController {
       assertVisitorPermission(['resident', 'gate', 'manager'], req.user);
       const { orgId } = req.params;
       if (!req.tenant?.isPlatform && req.tenant?.orgId && String(req.tenant.orgId) !== String(orgId)) {
-        throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested organization.');
+        throw new HttpError(403, 'Forbidden. Active workspace context does not match the requested community.');
       }
       const skip = parseInt(req.query.skip, 10) || 0;
       const limit = parseInt(req.query.limit, 10) || 10;

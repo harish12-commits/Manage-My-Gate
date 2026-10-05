@@ -36,7 +36,7 @@ const ProvisioningJobsView = () => {
                 item.customerSnapshot?.organizationName ||
                 item.targetOrganizationId?.name ||
                 item.inquiryId?.organizationName ||
-                'Your Organization'
+                'Your Community'
               return (
                 <tr key={item._id || item.id}>
                   <td>
@@ -87,7 +87,7 @@ const ProvisioningJobsView = () => {
                   selectedJob.organizationName ||
                   selectedJob.customerSnapshot?.organizationName ||
                   selectedJob.targetOrganizationId?.name ||
-                  'Your Organization'}
+                  'Your Community'}
               </div>
               <div>
                 <strong>Workflow Status:</strong>{' '}

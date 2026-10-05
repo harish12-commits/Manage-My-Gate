@@ -45,7 +45,7 @@ const OverviewTab = ({ lead }) => {
       <div className="grid2">
         <div className="panel shadow-none">
           <div className="panel-head">
-            <h2>User & Organization</h2>
+            <h2>User & Community</h2>
           </div>
           <div className="panel-body">
             <div className="field-grid">
@@ -54,7 +54,7 @@ const OverviewTab = ({ lead }) => {
                 <div className="field-value">{lead?.contactName || 'No Name Provided'}</div>
               </div>
               <div className="field">
-                <label>Organization</label>
+                <label>Community</label>
                 <div className="field-value">{lead?.organizationName || 'No Organization'}</div>
               </div>
               <div className="field">

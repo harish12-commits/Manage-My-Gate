@@ -234,7 +234,7 @@ export const RegisterForm = () => {
           <p className="mb-0">
             {t('auth.register.alertText', {
               defaultValue:
-                'Create an account to access the platform and set up your secure organization workspace.',
+                'Create an account to access the platform and set up your secure community workspace.',
             })}
           </p>
         </CAlert>

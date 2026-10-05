@@ -110,7 +110,7 @@ export const EnquiryDetail = ({ enquiryId, onBack }) => {
             <h3 className="text-lg font-semibold mb-3 border-b pb-2">Organization Details</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-gray-500">Organization Name</p>
+                <p className="text-gray-500">Community Name</p>
                 <p className="font-medium text-gray-900">{activeEnquiry.organizationName}</p>
               </div>
               <div>

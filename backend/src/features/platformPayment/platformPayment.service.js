@@ -300,7 +300,7 @@ export class PlatformPaymentService {
     }
 
     const recipientEmail = email || inquiry?.contactEmail || inquiry?.email || 'naveenpv5886@gmail.com';
-    const orgName = organizationName || inquiry?.organizationName || 'Your Organization';
+    const orgName = organizationName || inquiry?.organizationName || 'Your Community';
     const clientName = customerName || inquiry?.customerName || inquiry?.username || 'Valued Customer';
     const amountVal = amount || 186300;
     const baseUrl = process.env.CLIENT_URL || 'http://localhost:3004';
@@ -533,7 +533,7 @@ export class PlatformPaymentService {
       invoice = Array.isArray(existingInvoices) && existingInvoices.length > 0 ? existingInvoices[0] : (Array.isArray(existingInvoices) ? null : existingInvoices);
     }
 
-    const organizationName = inquiry?.organizationName || inquiry?.communityName || inquiry?.companyName || quote?.communitySnapshot?.organizationName || quote?.communitySnapshot?.communityName || quote?.organizationName || order?.communitySnapshot?.organizationName || order?.communitySnapshot?.communityName || order?.organizationName || 'Your Organization';
+    const organizationName = inquiry?.organizationName || inquiry?.communityName || inquiry?.companyName || quote?.communitySnapshot?.organizationName || quote?.communitySnapshot?.communityName || quote?.organizationName || order?.communitySnapshot?.organizationName || order?.communitySnapshot?.communityName || order?.organizationName || 'Your Community';
     const contactName = inquiry?.customerName || inquiry?.contactName || inquiry?.username || inquiry?.name || quote?.customerSnapshot?.customerName || order?.customerSnapshot?.customerName || 'Valued Customer';
     const email = inquiry?.contactEmail || inquiry?.email || quote?.customerSnapshot?.contactEmail || order?.customerSnapshot?.contactEmail || 'user@managemygate.com';
     
@@ -737,7 +737,7 @@ export class PlatformPaymentService {
     let order = quote ? await platformOrderRepository.findByQuoteId(quote._id).catch(() => null) : null;
 
     const recipientEmail = email || inquiry?.contactEmail || inquiry?.email || quote?.customerSnapshot?.contactEmail || 'user@managemygate.com';
-    const orgName = inquiry?.organizationName || inquiry?.communityName || inquiry?.companyName || quote?.communitySnapshot?.organizationName || quote?.communitySnapshot?.communityName || 'Your Organization';
+    const orgName = inquiry?.organizationName || inquiry?.communityName || inquiry?.companyName || quote?.communitySnapshot?.organizationName || quote?.communitySnapshot?.communityName || 'Your Community';
     const clientName = inquiry?.contactName || quote?.customerSnapshot?.customerName || 'Valued Customer';
     const totalPaidAmount = amount || quote?.totalAmount || order?.totalAmount || inquiry?.postTrialTotal || 0;
 

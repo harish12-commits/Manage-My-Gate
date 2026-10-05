@@ -25,7 +25,7 @@ const TenantSubscriptionCenter = () => {
   if (!subscription) {
     return (
       <div className="p-8 text-center text-red-500 font-medium bg-red-50 rounded border border-red-200 m-6">
-        No active subscription found for this organization.
+        No active subscription found for this community.
       </div>
     )
   }

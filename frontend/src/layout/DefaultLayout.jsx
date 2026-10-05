@@ -104,7 +104,7 @@ const DefaultLayout = () => {
     return <Navigate to="/login" replace />
   }
 
-  // Redirect to workspace setup if the user has no active organizations/workspaces
+  // Redirect to workspace setup if the user has no active communities/workspaces
   if (availableWorkspaces.length === 0) {
     return <Navigate to="/workspace-setup" replace />
   }
@@ -202,7 +202,7 @@ const DefaultLayout = () => {
                   >
                     <span style={{ color: '#64748b', fontSize: '13px' }}>Organization:</span>
                     <strong style={{ color: '#0f172a' }}>
-                      {organizationName || 'Your Organization'}
+                      {organizationName || 'Your Community'}
                     </strong>
                   </div>
                   <div

@@ -150,7 +150,7 @@ export class PlatformQuoteService {
     };
 
     const communitySnapshot = {
-      organizationName: inquiry.organizationName || inquiry.communityName || inquiry.companyName || 'Your Organization',
+      organizationName: inquiry.organizationName || inquiry.communityName || inquiry.companyName || 'Your Community',
       villaCount: unitCount,
     };
 
@@ -785,7 +785,7 @@ export class PlatformQuoteService {
       }
 
       const recipientEmail = inquiry?.contactEmail || inquiry?.email || quote?.customerSnapshot?.contactEmail || payload.email || payload.contactEmail || payload.recipientEmail || 'user@example.com';
-      const orgName = inquiry?.organizationName || inquiry?.communityName || inquiry?.companyName || quote?.communitySnapshot?.organizationName || quote?.communitySnapshot?.communityName || payload.organizationName || 'Your Organization';
+      const orgName = inquiry?.organizationName || inquiry?.communityName || inquiry?.companyName || quote?.communitySnapshot?.organizationName || quote?.communitySnapshot?.communityName || payload.organizationName || 'Your Community';
       const displayAmount = payment?.amount || invoice?.totalAmount || quote?.totalAmount || 0;
       const appUrl = process.env.CLIENT_URL || 'http://localhost:3004';
       const paymentLink = `${appUrl}/#/pay/${quote._id}`;

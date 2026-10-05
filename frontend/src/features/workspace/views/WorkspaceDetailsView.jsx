@@ -280,7 +280,7 @@ export const WorkspaceDetailsView = () => {
                     </CCol>
                     <CCol md={6}>
                       <CFormInput
-                        label={t('workspace.details.orgNameLabel', 'Organization Name')}
+                        label={t('workspace.details.orgNameLabel', 'Community Name')}
                         disabled={!isManager}
                         {...registerEdit('organizationName')}
                       />

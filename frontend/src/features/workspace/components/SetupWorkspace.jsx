@@ -28,7 +28,7 @@ import useAuth from '../../auth/hooks/useAuth.js'
 /**
  * SetupWorkspace Component
  *
- * Simplified, decoupled view for organization/workspace creation.
+ * Simplified, decoupled view for community/workspace creation.
  * Implements 500ms debounced live organization name availability validation.
  * Adheres to the "Thin View" architectural pattern.
  */

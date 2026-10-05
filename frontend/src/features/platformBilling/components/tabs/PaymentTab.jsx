@@ -50,7 +50,7 @@ const PaymentTab = ({
         email: targetEmail,
         amount: postTrialTotal || lead?.postTrialTotal || 0,
         paymentLink: calculatedLink,
-        organizationName: lead?.organizationName || 'Your Organization',
+        organizationName: lead?.organizationName || 'Your Community',
         customerName: lead?.contactName || lead?.username || 'Valued Customer',
       })
 
@@ -148,7 +148,7 @@ const PaymentTab = ({
                 <strong>⚠️ Order &amp; Free Trial Not Generated Yet</strong>
                 <p>
                   No active quote or order has been generated for{' '}
-                  <strong>{lead?.organizationName || 'this organization'}</strong>. Please switch to
+                  <strong>{lead?.organizationName || 'this community'}</strong>. Please switch to
                   the <strong>Pricing &amp; Quote</strong> tab, select your plan features, and click{' '}
                   <strong>&ldquo;Generate &amp; Start Trial&rdquo;</strong> to generate the order
                   and activate the payment link.
